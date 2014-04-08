@@ -1,0 +1,7 @@
+*.o
+*.mod
+*.so
+*.a
+boltzmann/camb/camb
+*Makefile.mine
+likelihood/planck_v1/build
