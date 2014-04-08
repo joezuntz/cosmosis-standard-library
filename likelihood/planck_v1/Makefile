@@ -1,4 +1,4 @@
-include ../../Makefile.mine
+include ../../../Makefile.mine
 -include Makefile.mine
 
 
@@ -10,7 +10,7 @@ SO=so
 
 VERSION=1.0-PACKAGED-WITH-COSMOSIS
 
-#DEFINESMACOS = -D HAS_RTLD_DEFAULT
+DEFINESMACOS = -D HAS_RTLD_DEFAULT
 #DEFINES = -D HAS_RTLD_DEFAULT -D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D CLIKSVNVERSION='"$(VERSION)"'
 DEFINES =  -D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D CLIKSVNVERSION='"$(VERSION)"'
 
@@ -24,7 +24,7 @@ BDIR := ./lib
 ODIR := ./build
 
 # tools
-LD = gcc
+LD = $(CC)
 INSTALL = install
 ECHO = echo
 
@@ -45,8 +45,8 @@ CFLAGS+=$(DEFINES) -I $(SOURCE_DIR) -I $(SOURCE_DIR)/cldf -I $(SOURCE_DIR)/minip
 FFLAGS+=$(FM64) $(FOPENMP) $(FFPIC) $(DEFINES)  $(FMODULEPATH) $(ODIR)
 
 # Lapack section
-CFLAGS+=-I../../glue/include 
-LDFLAGS+=-L../../glue/lib -lcfitswrap -lini -lcfitsio
+CFLAGS+=-I../../../datablock
+LDFLAGS+=-L../../../datablock -lcosmosis -lcfitsio -lgfortran
 LDFLAG=$(LDFLAGS)
 #LDFLAG = $(CM64) $(CFITSIO) $(LAPACK) $(FRUNTIME) -ldl -lm -lpthread
 
@@ -65,6 +65,7 @@ endif
 
 ifeq ($(shell uname),Darwin)
 	RPATH_FLAGS=-Xlinker -rpath -Xlinker $(PWD)
+	DEFINES+=-D HAS_RTLD_DEFAULT
 else
 	RPATH_FLAGS=-Wl,-rpath,$(PWD)
 endif
@@ -132,7 +133,6 @@ $(CLIKLIB): | $(ODIR) $(ODIR)/.print_info
 
 planck_interface.so: libclik.$(SO) planck_interface.c
 	$(CC) $(CFLAGS) $(CFLAGS) -L$(PWD) -lclik $(RPATH_FLAGS) $(SHARED) -o $@ planck_interface.c  $(LDFLAGS) 
-	# $(CC) $(CFLAGS) $(CFLAGS) -L$(PWD)  -lclik $(SHARED) -o $@ planck_interface.c  $(LDFLAGS) 
 
 
 #$(ODIR)/.test_cfitsio
@@ -140,7 +140,6 @@ planck_interface.so: libclik.$(SO) planck_interface.c
 libclik.$(SO): $(CLIKLIB) 
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
 	$(LD)  $(SHARED)  $(LAPACK) $(LDFLAG) $(RPATH_FLAGS)  $^ -o $@
-#	$(LD)  $(SHARED)  $(LAPACK) $(LDFLAG)  $^ -o $@
 
 $(BDIR)/libclik_f90.$(SO): $(BDIR)/libclik.$(SO) $(addprefix $(ODIR)/,clik_fortran.o clik.f90.o)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"

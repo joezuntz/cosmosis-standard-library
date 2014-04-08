@@ -1,6 +1,5 @@
 #include "clik.h"
-#include "internal_fits.h"
-#include "des_options.h"
+#include "c_datablock.h"
 
 
 typedef struct configuration_data{
@@ -33,50 +32,51 @@ static int find_max_lmax(clik_object * like_obj)
 
 
 
-configuration_data * setup(des_optionset * options){
+configuration_data * setup(c_datablock * options){
 	error * err = initError();
 
-	const char * T_low_file = des_optionset_get_default(options, DEFAULT_OPTION_SECTION, "t_low_file", (const char*)NULL);
-	const char * P_low_file = des_optionset_get_default(options, DEFAULT_OPTION_SECTION, "p_low_file", (const char*)NULL);
-	const char * T_high_file = des_optionset_get_default(options, DEFAULT_OPTION_SECTION, "t_high_file", (const char*)NULL);
-	const char * lensing_file = des_optionset_get_default(options, DEFAULT_OPTION_SECTION, "lensing_file",(const char*)NULL);
-
 	configuration_data * config = malloc(sizeof(configuration_data));
+	char * T_low_file; 
+	char * P_low_file;
+	char * T_high_file;
+	char * lensing_file;
+
+	int status = 0;
+	status |= c_datablock_get_string_default(options, OPTION_SECTION,  "t_low_file", "", &T_low_file);
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "p_low_file", "", &P_low_file);
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "t_high_file", "", &T_high_file);
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "lensing_file", "", &lensing_file);
+
+	printf("Likelihood files to be used by Planck:\n");
+	printf("t_low_file = %s\np_low_file = %s\nt_high_file = %s\nlensing_file = %s\n\n", T_low_file, P_low_file, T_high_file, lensing_file);
 	config->T_low_data = NULL;
 	config->P_low_data = NULL;
 	config->T_high_data = NULL;
 	config->lensing_data = NULL;
 
-	if (T_low_file) {
-		config->T_low_data = clik_init((char*)T_low_file,&err);
-	}
-	if (P_low_file) {
-		config->P_low_data = clik_init((char*)P_low_file,&err);
-	}
-	if (T_high_file) {
-		config->T_high_data = clik_init((char*)T_high_file,&err);
+	if (strlen(T_low_file))   config->T_low_data   = clik_init(T_low_file, &err);
+	if (strlen(P_low_file))   config->P_low_data   = clik_init(P_low_file, &err);
+	if (strlen(T_high_file))  config->T_high_data  = clik_init(T_high_file,&err);
+	if (strlen(lensing_file)) config->lensing_data = clik_lensing_init(lensing_file,&err);
+
+	if (status || isError(err)){
+		fprintf(stderr,"There was an error initializating the Planck likelihoods.  See below.\n");
+		fprintf(stderr,"The error below may be hard to understand.  It probably means that one of the files that you specified (printed above) was not found.\n\n");
+		quitOnError(err,__LINE__,stderr);
 	}
 
-	if (lensing_file) {
-		config->lensing_data = clik_lensing_init((char*)lensing_file,&err);
-	}
-
-	if (T_low_file==NULL && P_low_file==NULL && T_high_file==NULL && lensing_file==NULL){
+	if (config->T_low_data==NULL && config->P_low_data==NULL && config->T_high_data==NULL && config->lensing_data==NULL){
 		fprintf(stderr, "No data files were specified for Planck at all!\n");
-		fprintf(stderr, "In the options file you need to set at least one of:\n");
-		fprintf(stderr, " - t_low_file\n");
-		fprintf(stderr, " - t_high_file\n");
-		fprintf(stderr, " - p_low_file\n");
-		fprintf(stderr, " - lensing_file\n");
-		fprintf(stderr, " To the path to the planck files you can download from:\n");
-		fprintf(stderr, " http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
+		fprintf(stderr, "In the options file (not the values.ini file) you need to set in the section for Planck at least one of:\n");
+		fprintf(stderr, "   t_low_file\n");
+		fprintf(stderr, "   t_high_file\n");
+		fprintf(stderr, "   p_low_file\n");
+		fprintf(stderr, "   lensing_file\n");
+		fprintf(stderr, "To the path to the planck files you can download from:\n");
+		fprintf(stderr, "http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
 		exit(1);
 	}
 
-	if (isError(err)){
-		fprintf(stderr,"There was an error initializating the Planck likelihoods.  See below.\n");
-		quitOnError(err,__LINE__,stderr);
-	}
 
 	endError(&err);
 
@@ -85,49 +85,14 @@ configuration_data * setup(des_optionset * options){
 
 
 static 
-int run_clik_cosmosis(fitsfile * package, clik_object * like_obj, double * output_like)
+int extract_c_ell(c_datablock * block, int n_cl, 
+	char * package_names[n_cl], int lmax_by_type[n_cl], int n_nuisance, 
+	parname nuisance_names[n_nuisance], double *p, double *cl)
 {
 	int i;
-#define N_CL 6
-	int param_count=0;
-	int status = 0;
-	char * package_names[N_CL] = {"TT","EE","BB","TE","TB","EB"};
-	int lmax_by_type[N_CL];
+	int status=0;
 
-	error * err = initError();
-
-	// Get the lmax values for the different spectra and sum them
-	clik_get_lmax(like_obj, lmax_by_type,&err);
-	for (i=0;i<N_CL;i++) if (lmax_by_type[i]>0) param_count += lmax_by_type[i]+1; 
-
-	if (isError(err)){
-		fprintf(stderr,"There was an error getting lmax from a Planck likelihood.\n");
-		return 1;
-	}
-
-
-	// Get the number and names of extra parameters and add to total
-	int n_nuisance;
-	parname * nuisance_names;
-
-
-	n_nuisance = clik_get_extra_parameter_names(like_obj, &nuisance_names, &err);
-
-	param_count += n_nuisance;
-
-	if (isError(err)){
-		fprintf(stderr,"There was an error getting nuisance params from a Planck likelihood.\n");
-		return 2;
-	}
-
-
-	// p is the overall space and cl is the space within it for each spectra.
-	double * p = malloc(sizeof(double)*param_count);
-	double * cl = p;
-
-	// 
-	status |= fits_goto_extension(package, CMB_CL_SECTION);
-	for (i=0;i<N_CL;i++) {
+	for (i=0;i<n_cl;i++) {
 		// Check lmax for this spectrum.  If not needed, continue
 		int lmax = lmax_by_type[i];
 
@@ -136,67 +101,130 @@ int run_clik_cosmosis(fitsfile * package, clik_object * like_obj, double * outpu
 		cl[0]=0.0;
 		cl[1]=0.0;
 		int nread=0;
-		status |= fits_get_double_column_preallocated(package, package_names[i], cl+2, lmax-1, &nread);
+		double * ell_squared_cl = NULL;
+		status |= c_datablock_get_double_array_1d(block, CMB_CL_SECTION, package_names[i], 
+			&ell_squared_cl, &nread);
 
-		// Check it all worked
-		FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not load TT or ell for Planck likelihood");
-		if (nread<lmax_by_type[i]-1) status=nread+1;
+		if (status){
+			fprintf(stderr, "Could not get C_ell values for %s (status=%d)\n", 
+				package_names[i],status);
+			status = 1;
+			return status;
+		}
+		if (nread<lmax-1){
+			fprintf(stderr, "Could not get enough C_ell values for %s (read lmax=%d but needed lmax=%d).  May need to adjust lmax.\n", 
+				package_names[i], nread+1, lmax_by_type[i], status);
+			status = 1;
+			return status;
+		}
 
-		FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not get long enough column for TT Planck");
 
 		// Transform to raw cl from l**2 cl
 		int ell;
-
 		for (ell=2; ell<=lmax; ell++) {
-			cl[ell]/= (ell*(ell+1.0)/2.0/M_PI);
+			cl[ell] = ell_squared_cl[ell-2] / (ell*(ell+1.0)/2.0/M_PI);
 		}
+		free(ell_squared_cl);
 
-		// Move the spectrum pointer forward ready for the next bit
+		// Move the spectrum pointer forward ready for the next spectrum (e.g. TT->EE)
 		cl+=lmax+1;
 	}
 
-	// Now move to the planck section to get the nuisance parameters
-	status |= fits_goto_extension(package, PLANCK_SECTION);
+	// ... and now get the nuisance parameters
 	for (i=0; i<n_nuisance; i++){
-		status|=fits_get_double_parameter(package, nuisance_names[i], 	cl+i  ); //ok
+		int this_status=c_datablock_get_double(block, PLANCK_SECTION, nuisance_names[i], 	cl+i  ); //ok
+		// Report any missing parameters
+		if (this_status) fprintf(stderr, "Could not get required Planck parameter %s in section %s\n",nuisance_names[i], PLANCK_SECTION);
+		status |= this_status;
 	}
+	return status;
+}
+
+
+static 
+int run_clik_cosmosis(c_datablock * block, clik_object * like_obj, double * output_like)
+{
+	int i;
+#define N_CL 6
+	int param_count=0;
+	int status = 0;
+	char * package_names[N_CL] = {"TT","EE","BB","TE","TB","EB"};
+	int lmax_by_type[N_CL];
+
+	// Planck internal error system
+	error * err = initError();
+
+	// Get the lmax values for the different spectra and sum them
+	clik_get_lmax(like_obj, lmax_by_type,&err);
+	for (i=0;i<N_CL;i++) if (lmax_by_type[i]>0) param_count += lmax_by_type[i]+1; 
+
+	// Check for any errors from the Planck library
+	if (isError(err)){
+		fprintf(stderr,"There was an error getting lmax from a Planck likelihood.\n");
+		endError(&err);
+		return 1;
+	}
+
+	// Get the number and names of extra parameters and add to total
+	int n_nuisance;
+	parname * nuisance_names;
+	n_nuisance = clik_get_extra_parameter_names(like_obj, &nuisance_names, &err);
+	param_count += n_nuisance;
+
+	// Check for any errors from the Planck library
+	if (isError(err)){
+		fprintf(stderr,"There was an error getting nuisance params from a Planck likelihood.\n");
+		endError(&err);
+		return 2;
+	}
+
+	// p is the overall space and cl is the space within it for each spectra.
+	double * p = malloc(sizeof(double)*param_count);
+	double * cl = p;
+
+	// Get the c_ell we need, and the nuisance parameters (if any)
+	status |= extract_c_ell(block, N_CL, package_names, lmax_by_type, n_nuisance, 
+		nuisance_names, p,cl);
 
 	free(nuisance_names);
-	FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not get one or more of the Planck nuisance parameters");
+	// Check for any errors reading things in
+	if (status){
+		free(p);
+		return status;
+	}
 
-
-	// Compute the actual likelihood and check for errors
+	// Compute the actual likelihood
 	double like = clik_compute(like_obj, p, &err);
 	free(p);
-
+	// ...  and check for errors
 	if (isError(err)){
 		status = 1;
-		FAIL_AND_CLOSE_ON_STATUS(package, status,"Planck likelihood error");
+		fprintf(stderr,"Planck likelihood error\n");
 	}
+	// Clean up Planck error system and 
+	// return required outputs
 	endError(&err);	
 	*output_like = like;
-
 	return 0;
 }
 #undef N_CL
 
 static 
-int run_clik_cosmosis_lensing(fitsfile * package, clik_object * like_obj, double * output_like)
+int run_clik_cosmosis_lensing(c_datablock * block, clik_object * like_obj, double * output_like)
 {
 	int i;
 #define N_CL 2
 	int param_count=0;
 	int status = 0;
-
 	char * package_names[N_CL] = {"PP","TT"};
-
 	error * err = initError();
 
 	// Get the lmax values for the different spectra and sum them
 	int lmax = clik_lensing_get_lmax(like_obj,&err);
 	int lmax_by_type[N_CL] = {lmax, lmax};
-	param_count = 2*(lmax+1);
+	param_count = N_CL*(lmax+1);
 
+	// Check for any errors from the Planck library
 	if (isError(err)){
 		fprintf(stderr,"There was an error getting lmax from a Planck likelihood.\n");
 		return 1;
@@ -205,115 +233,84 @@ int run_clik_cosmosis_lensing(fitsfile * package, clik_object * like_obj, double
 	// Get the number and names of extra parameters and add to total
 	int n_nuisance;
 	parname * nuisance_names;
-
 	n_nuisance = clik_lensing_get_extra_parameter_names(like_obj, &nuisance_names, &err);
-
 	param_count += n_nuisance;
 
+	// Check for any errors from the Planck library
 	if (isError(err)){
 		fprintf(stderr,"There was an error getting nuisance params from a Planck likelihood.\n");
 		return 2;
 	}
 
-
 	// p is the overall space and cl is the space within it for each spectra.
 	double * p = malloc(sizeof(double)*param_count);
 	double * cl = p;
 
-	// 
-	status |= fits_goto_extension(package, CMB_CL_SECTION);
-	for (i=0;i<N_CL;i++) {
-		// Check lmax for this spectrum.  If not needed, continue
-		lmax = lmax_by_type[i];
-		if (lmax<=0) continue;
-		// Otherwise fill in first the trivial cl and then the rest, loaded fromt the package
-		cl[0]=0.0;
-		cl[1]=0.0;
-		int nread=0;
-		status |= fits_get_double_column_preallocated(package, package_names[i], cl+2, lmax-1, &nread);
-
-		// Check it all worked
-		FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not load TT or ell for Planck likelihood");
-		if (nread<lmax_by_type[i]-1) status=nread+1;
-
-		FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not get long enough column for TT Planck");
-
-		// Transform to raw cl from l**2 cl
-		int ell;
-		// FILE * f = fopen("temp.txt","w");
-		for (ell=2; ell<=lmax; ell++) {
-			cl[ell]/= (ell*(ell+1.0)/2.0/M_PI);
-			// fprintf(f,"%d    %le\n",ell,cl[ell]);
-		}
-		// fclose(f);
-		// Move the spectrum pointer forward ready for the next bit
-		cl+=lmax+1;
-	}
-
-	// Now move to the planck section to get the nuisance parameters
-	status |= fits_goto_extension(package, PLANCK_SECTION);
-	for (i=0; i<n_nuisance; i++){
-		status|=fits_get_double_parameter(package, nuisance_names[i], 	cl+i  ); //ok
-	}
+	// Get the c_ell we need, and the nuisance parameters (if any)
+	status |= extract_c_ell(block, N_CL, package_names, lmax_by_type, n_nuisance, 
+		nuisance_names, p,cl);
 
 	free(nuisance_names);
-	FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not get one or more of the Planck nuisance parameters");
+
+	// Check for any errors reading things in and quit early if problem
+	if (status){
+		free(p);
+		return status;
+	}
 
 
 	// Compute the actual likelihood and check for errors
 	double like = clik_lensing_compute(like_obj, p, &err);
 	free(p);
 
+	//Clean up
 	if (isError(err)){
 		status = 1;
-		FAIL_AND_CLOSE_ON_STATUS(package, status,"Planck likelihood error");
+		fprintf(stderr, "Error running Planck lensing\n");
 	}
+
+	// Clean up Planck error system and 
+	// return required outputs
 	endError(&err);	
 	*output_like = like;
+	return 0;
 
 	return 0;
 }
 #undef N_CL
 
-int execute(internal_fits * handle, configuration_data * config){
-
-	fitsfile * package = fitsfile_from_internal(handle);
+int execute(c_datablock * block, configuration_data * config){
 
 	double tt_high_like = 0.0;
 	double tt_low_like = 0.0;
 	double p_low_like = 0.0;
 	double lensing_like = 0.0;
 	int status = 0;
-	if (config->T_high_data) status = run_clik_cosmosis(package, config->T_high_data, &tt_high_like);
-	if (config->T_low_data) status |= run_clik_cosmosis(package, config->T_low_data, &tt_low_like );
-	if (config->P_low_data) status |= run_clik_cosmosis(package, config->P_low_data, &p_low_like  );
-	if (config->lensing_data) status |= run_clik_cosmosis_lensing(package, config->lensing_data, &lensing_like  );
+
+	// Run the individual clik likelihoods
+	if (config->T_high_data){
+		status = run_clik_cosmosis(block, config->T_high_data, &tt_high_like);
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_TT_HIGH_LIKE", tt_high_like);
+	}
+	if (config->T_low_data){
+		status |= run_clik_cosmosis(block, config->T_low_data, &tt_low_like );
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_TT_LOW_LIKE", tt_low_like);
+	}
+	if (config->P_low_data){
+		status |= run_clik_cosmosis(block, config->P_low_data, &p_low_like  );	
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_P_LOW_LIKE", p_low_like);
+	} 
+	// The lensing one is a little different
+	if (config->lensing_data) {
+		status |= run_clik_cosmosis_lensing(block, config->lensing_data, &lensing_like  );		
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LENSING_LIKE", lensing_like);
+	}
 
 	if (status) return status;
 
+	// Save the total likelihood
 	double like = tt_high_like + tt_low_like + p_low_like + lensing_like;
-	status |= fits_goto_or_create_extension(package, LIKELIHOODS_SECTION);
-	status |= fits_put_double_parameter(package,  "PLANCK_LIKE", like, "Planck likelihood(s)");
-	FAIL_AND_CLOSE_ON_STATUS(package, status,"Could not set the Planck like okay");
-
-	status |= close_fits_object(package);
-
-
-
-
-
-
-
-
-
-	// Get T data vector from handle
-
-
-	// Pull planck nuisance parameters out of package Exact vector will depend on likes used
-
-	// Run each of the likelihoods in turn.  
-
-	//Save PLANCK_LIKE
+	status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LIKE", like);
 
 	return 0;
 }
