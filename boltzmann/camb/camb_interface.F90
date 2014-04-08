@@ -96,7 +96,7 @@ module camb_interface_tools
 
 		!We do not use the CMB lmax if only using the background mode
 		if (mode .ne. CAMB_MODE_BG) then
-			status = status + datablock_get_int_default(block, option_section, "cmb_lmax", default_lmax, standard_lmax)
+			status = status + datablock_get_int_default(block, option_section, "lmax", default_lmax, standard_lmax)
 		endif
 		!We can always set an optional feedback level,
 		!which defaults to zero (silent)
