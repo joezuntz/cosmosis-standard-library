@@ -130,29 +130,39 @@ end function
 
 end module halofit_interface_tools
 
-function setup(options) result(settings)
+function setup(options) result(result)
 	use cosmosis_modules
 	use halofit_interface_tools
 	implicit none
-	integer(cosmosis_block) :: options
+	integer(cosmosis_block), value :: options
 	integer(cosmosis_status) :: status
 	type(halofit_settings), pointer :: settings
+	type(c_ptr) :: result
 	allocate(settings)
+	settings%kmin = 1.0d-04
+	settings%kmax = 1.0d+02
+	settings%nk = 200
+
 	status = 0
 	status = status + datablock_get_double_default(options, option_section, "kmin", 1.0D-04, settings%kmin)
 	status = status + datablock_get_double_default(options, option_section, "kmax", 1.0D+02, settings%kmax)
 	status = status + datablock_get_int_default(options, option_section, "nk", 200, settings%nk)
-
+	if (status .ne. 0) then 
+		write(*,*) "Failed setup of halofit!", status
+		stop
+	endif
+	result = c_loc(settings)
 end function setup
 
-function execute(block, settings) result(status)
+function execute(block, config) result(status)
 	use halofit1
 	use halofit_interface_tools
 	use cosmosis_modules
 	implicit none
 	integer(cosmosis_block), value :: block
 	integer(cosmosis_status) :: status
-	type(halofit_settings) :: settings	
+	type(c_ptr), value :: config
+	type(halofit_settings), pointer :: settings	
 	type(MatterPowerdata) :: PK
 	type(MatterPowerdata) :: PK_NL
 	real(dl), dimension(:,:), allocatable :: nonlin_ratio, p
@@ -163,7 +173,8 @@ function execute(block, settings) result(status)
 	integer iz
 
 	status = 0
-	
+	call c_f_pointer(config, settings)
+
 	
 	!Set Halofit internal numbers
 	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
@@ -177,9 +188,9 @@ function execute(block, settings) result(status)
 
 	!Load suggested output numbers or just use defaults
 	kmin = settings%kmin
-	kmin = settings%kmax
+	kmax = settings%kmax
 	nk = settings%nk
-	
+
 	
 	!Run halofit
 	status = load_matter_power(block,PK)
