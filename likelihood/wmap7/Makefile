@@ -1,13 +1,13 @@
 #Top level Makefile
-include ../../Makefile.mine
+include ../../../Makefile.mine
 
 #Optional (that's what the dash means) Makefile locally
 -include Makefile.mine
 
 
-ifeq ($(WMAP_DATA_DIR),)
+ifeq ($(WMAP7_DATA_DIR),)
 ifneq ($(MAKECMDGOALS),clean)
-$(error To compile the WMAP likelihood you must specify WMAP_DATA_DIR=/path/to/wmap/data in your Makefile.mine or cmb/wmap7/Makefile.mine)
+$(error To compile the WMAP likelihood you must specify WMAP7_DATA_DIR=/path/to/wmap/data in your Makefile.mine or standard-library/likelihoods/wmap7/Makefile.mine)
 endif
 endif
 
@@ -52,8 +52,8 @@ WMAPFLAGS  = -DOPTIMIZE
 #FFLAGS = -O3 $(WMAPFLAGS) -ffixed-line-length-none -ffree-line-length-none -DWMAP_DATA_DIR='"/Users/joe/src/packages/likelihood_v4p1/data/"'
 #INCS   = -I. -I$(CFITSIO)/include 
 #LIBS   = -L. -L$(CFITSIO)/lib -lcfitsio -framework veclib
-FFLAGS+= -fPIC -I. -I$(CFITSIO_INC) -DWMAP_DATA_DIR='"$(WMAP_DATA_DIR)/"'
-LDFLAGS+=-L. -L$(CFITSIO_LIB) -lcfitsio
+FFLAGS+= -fPIC -I.  -DWMAP_DATA_DIR='"$(WMAP7_DATA_DIR)/"'
+LDFLAGS+=-L. -lcfitsio
 
 #			Rules.
 #
@@ -82,7 +82,7 @@ distclean: clean
 	$(RM) test
 
 interface: $(WMAPLIB)
-	$(F90) $(FFLAGS) wmap_interface.f90 -shared -fPIC -o wmap_interface.so -L. -lwmap7 -L../../glue/lib -lcfitswrap -lffitswrap $(INCS) $(LDFLAGS) -I../../glue/include
+	$(F90) $(FFLAGS) wmap_interface.f90 -shared -fPIC -o wmap_interface.so -L. -lwmap7  $(INCS) $(LDFLAGS)
 
 
 py: $(WMAPLIB)
