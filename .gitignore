@@ -5,3 +5,5 @@
 boltzmann/camb/camb
 *Makefile.mine
 likelihood/planck_v1/build
+likelihood/wmap9/test
+likelihood/wmap7/test
