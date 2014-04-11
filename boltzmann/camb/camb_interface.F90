@@ -144,13 +144,13 @@ module camb_interface_tools
 		status = status + datablock_get_double(block, cosmo, "Omega_b", params%omegab)
 		status = status + datablock_get_double(block, cosmo, "Omega_m", omegam)
 		status = status + datablock_get_double(block, cosmo, "h0", params%h0)
-		write(*,*) status
+
 		if (perturbations) then
 			status = status + datablock_get_double(block, cosmo, "n_s",     params%initpower%an(1))
 			status = status + datablock_get_double(block, cosmo, "A_s",     params%initpower%ScalarPowerAmp(1))
 			status = status + datablock_get_double(block, cosmo, "tau", params%Reion%optical_depth)
 		endif
-		write(*,*) status
+
 		status = status + datablock_get_double_default(block, cosmo, "Omega_K", 0.0D0, params%omegak)
 		status = status + datablock_get_double_default(block, cosmo, "cs2_de", 1.0D0, cs2_lam)
 		call setcgammappf()
