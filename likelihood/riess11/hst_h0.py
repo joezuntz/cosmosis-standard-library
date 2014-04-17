@@ -3,8 +3,8 @@ from numpy import log, pi
 cosmo = cosmosis_py.names.cosmological_parameters_section
 likes = cosmosis_py.names.likelihoods_section
 
-HST_H0_MEAN = 0.71
-HST_H0_SIGMA = 0.02
+HST_H0_MEAN = 0.738
+HST_H0_SIGMA = 0.024
 
 def setup(options):
 	mean = options.get_float(section, "mean", default=HST_H0_MEAN)
@@ -22,7 +22,7 @@ def execute(block, config):
 
 	#compute the likelihood - just a simple Gaussian
 	like = -(h0-mean)**2/sigma**2/2.0 - norm
-	block[likes, 'HST_LIKE'] = like
+	block[likes, 'RIESS_LIKE'] = like
 
 	#signal that everything went fine
 	return 0
