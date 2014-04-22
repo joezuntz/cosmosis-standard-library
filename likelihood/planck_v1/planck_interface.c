@@ -36,10 +36,10 @@ configuration_data * setup(c_datablock * options){
 	error * err = initError();
 
 	configuration_data * config = malloc(sizeof(configuration_data));
-	char * T_low_file; 
-	char * P_low_file;
-	char * T_high_file;
-	char * lensing_file;
+	char * T_low_file=""; 
+	char * P_low_file="";
+	char * T_high_file="";
+	char * lensing_file="";
 
 	int status = 0;
 	status |= c_datablock_get_string_default(options, OPTION_SECTION,  "t_low_file", "", &T_low_file);
