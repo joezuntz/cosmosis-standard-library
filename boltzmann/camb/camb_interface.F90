@@ -12,6 +12,25 @@ module camb_interface_tools
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
 	integer :: linear_nz = 401
 
+	integer :: k_eta_max_scalar = 2400
+	logical :: do_lensing, do_nonlinear, do_tensors
+	integer :: sterile_neutrino = 0
+	real(dl) :: delta_neff = 0.0
+	real(dl) :: sterile_mass_fraction = 0.0
+	real(dl) :: cmb_output_scale = 7.4311e12
+
+	real(dl), parameter :: default_yhe = 0.24
+	real(dl), parameter :: default_cs2de = 1.0
+	real(dl), parameter :: default_omegak = 0.0D0
+	real(dl), parameter :: default_omeganu = 0.0D0
+	real(dl), parameter :: default_r = 0.0
+	real(dl), parameter :: default_nrun = 0.0
+	real(dl), parameter :: default_w = -1.0
+	real(dl), parameter :: default_wa = 0.0
+	integer,  parameter :: default_massive_nu = 0
+	integer,  parameter :: default_sterile_neutrinos = 0
+
+
 
 
 	contains
@@ -36,7 +55,7 @@ module camb_interface_tools
 		real(dl) :: omega_m, ombh2, omdmh2, zstar, shift_parameter
 		real(dl), parameter :: c_km_per_s = 299792.458
 
-		omega_m = params%omegac + params%omegab
+		omega_m = params%omegac + params%omegab + params%omegan
 
          ombh2 = CP%omegab*(CP%h0/100.0d0)**2
          omdmh2 = (CP%omegac+CP%omegan)*(CP%h0/100.0d0)**2
@@ -97,12 +116,14 @@ module camb_interface_tools
 		!We do not use the CMB lmax if only using the background mode
 		if (mode .ne. CAMB_MODE_BG) then
 			status = status + datablock_get_int_default(block, option_section, "lmax", default_lmax, standard_lmax)
+			status = status + datablock_get_int_default(block, option_section, "k_eta_max_scalar", 2*standard_lmax, k_eta_max_scalar)
+
 		endif
 		!We can always set an optional feedback level,
 		!which defaults to zero (silent)
 		status = status + datablock_get_int_default(block, option_section, "feedback", 0, FeedbackLevel)
-		use_tabulated_w = .false.
 		status = status + datablock_get_logical_default(block, option_section, "use_tabulated_w", .false., use_tabulated_w)
+		status = status + datablock_get_logical_default(block, option_section, "do_tensors", .false., do_tensors)
 
 		if (mode == CAMB_MODE_ALL) then
 			status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
@@ -115,7 +136,28 @@ module camb_interface_tools
 			write(*,*) "Problem setting some options for camb. Status code =  ", status
 		endif
 
+		status = status + datablock_get_logical_default(block, option_section,"do_nonlinear", .false. , do_nonlinear)
+		status = status + datablock_get_logical_default(block, option_section,"do_lensing", .false. , do_lensing)
 
+ 		if (do_lensing) then
+ 			status = status + datablock_get_string(block, option_section, "high_ell_template", highL_unlensed_cl_template)
+ 			if ((status .ne. 0 ) .or. trim(highL_unlensed_cl_template)=="") then
+ 				status = 1
+ 				write(*,*) "If you set do_lensing=1 then you also need to set"
+ 				write(*,*) "the parameter high_ell_template to the complete path"
+ 				write(*,*) "to the file HighLExtrapTemplate_lenspotentialCls.dat"
+ 				write(*,*) "which comes with CAMB - i.e. in your ini file camb section, put:"
+ 				write(*,*) "high_ell_template = /path/to/cosmosis/src/standard-library/boltzmann/camb/HighLExtrapTemplate_lenspotentialCls.dat"
+ 			elseif (.not. FileExists(trim(highL_unlensed_cl_template))) then
+ 				status = 2
+ 				write(*,*) "You set the parameter high_ell_template in the ini file to the value:"
+ 				write(*,*) trim(highL_unlensed_cl_template)
+ 				write(*,*) "But I could not find a file there.  You need to include the full"
+ 				write(*,*) "path to that file as that parameter, i.e.:"
+ 				write(*,*) "high_ell_template = /path/to/cosmosis/src/standard-library/boltzmann/camb/HighLExtrapTemplate_lenspotentialCls.dat"
+ 			endif
+ 		endif
+ 		
 
 
 		!If noisy, report relevant params
@@ -133,6 +175,7 @@ module camb_interface_tools
 		logical :: perturbations
 		type(CambParams) :: params
 		real(8) :: omegam
+		integer :: sterile_neutrino
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
 		perturbations = .true.
@@ -149,10 +192,56 @@ module camb_interface_tools
 			status = status + datablock_get_double(block, cosmo, "n_s",     params%initpower%an(1))
 			status = status + datablock_get_double(block, cosmo, "A_s",     params%initpower%ScalarPowerAmp(1))
 			status = status + datablock_get_double(block, cosmo, "tau", params%Reion%optical_depth)
+			status = status + datablock_get_double_default(block, cosmo, "R_T", default_r, params%initpower%rat(1))
+
+			status = status + datablock_get_double_default(block, cosmo, "n_run", default_nrun, params%initpower%n_run(1))
+			if (params%initpower%rat(1) .ne. 0) then
+				status = status + datablock_get_double(block, cosmo, "n_T", params%initpower%ant(1))
+			endif
 		endif
 
-		status = status + datablock_get_double_default(block, cosmo, "Omega_K", 0.0D0, params%omegak)
-		status = status + datablock_get_double_default(block, cosmo, "cs2_de", 1.0D0, cs2_lam)
+		!Neutrinos
+
+		status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
+		status = status + datablock_get_double_default(block, cosmo, "omega_nu", default_omeganu, params%omegan)
+
+		status = status + datablock_get_double_default(block, cosmo, "Omega_K", default_omegak, params%omegak)
+		status = status + datablock_get_double_default(block, cosmo, "cs2_de", default_cs2de, cs2_lam)
+		status = status + datablock_get_double_default(block, cosmo, "yhe", default_yhe, params%yhe)
+		status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
+
+
+		if (params%omegan .ne. 0) then
+			status = status + datablock_get_int_default(block, cosmo, "massive_nu", default_massive_nu, params%Num_Nu_massive)
+
+			!  We have coded for two massive neturino scenarios so far:
+			!  sterile neutrinos, and a single massive neutrino.
+			if (sterile_neutrino > 0) then
+				status = status + datablock_get_double(block, cosmo, "DELTA_NEFF", delta_neff)
+				status = status + datablock_get_double(block, cosmo, "sterile_mass_fraction", sterile_mass_fraction)
+				params%share_delta_neff = .false.
+				params%Num_Nu_massless = 2.0307
+				params%Nu_mass_eigenstates = 2
+				params%Num_Nu_massive = 2
+				params%nu_mass_degeneracies(1) = 1.0153
+				params%nu_mass_degeneracies(2) = delta_neff
+				params%nu_mass_fractions(1) = (1.0 - sterile_mass_fraction) 
+				params%nu_mass_fractions(2) = sterile_mass_fraction
+			elseif (params%Num_Nu_massive == 1) then
+				params%Nu_mass_eigenstates = 1
+				params%nu_mass_numbers(1) = 1
+				params%Nu_mass_fractions(1) = 1.0
+				params%share_delta_neff = .true.
+			elseif (params%Num_Nu_massive == 0) then
+				write(*,*) 'You need massive_nu>0 to have any omega_nu!=0'
+				status=1
+				return
+			else
+				stop "Sorry - we have not coded up the neutrino scenario your parameters implied"
+			endif
+		endif
+
+
 		call setcgammappf()
 
 		! tabulated dark energy EoS
@@ -179,6 +268,7 @@ module camb_interface_tools
 
 		params%wantTransfer = .true.
 		params%transfer%kmax = 50.0
+		params%wantTensors = (params%initpower%rat(1) .ne. 0.0) .or. do_tensors
 
         params%Max_l=standard_lmax
         params%Max_eta_k=2*standard_lmax
@@ -186,13 +276,13 @@ module camb_interface_tools
 	
 	
 		!Some extras and modifications - assume flatness.
-		params%omegac = omegam-params%omegab
+		params%omegac = omegam-params%omegab-params%omegan
 		params%omegav = 1-omegam-params%omegak
 		params%H0 = params%H0*100
 		params%want_zdrag = .true.
 		params%want_zstar = .true.
 		params%reion%use_optical_depth = .true.
-		use_spline_template=.false.
+		use_spline_template=params%DoLensing
 		params%AccurateReionization = .true.
         params%Transfer%PK_num_redshifts = 1
         params%Transfer%PK_redshifts = 0
