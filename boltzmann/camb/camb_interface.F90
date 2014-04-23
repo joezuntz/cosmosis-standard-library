@@ -131,13 +131,15 @@ module camb_interface_tools
 			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 		endif
 
+		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
+		status = status + datablock_get_logical_default(block, option_section, "do_lensing", .false. , do_lensing)
+
 		!Error check
 		if (status .ne. 0) then
 			write(*,*) "Problem setting some options for camb. Status code =  ", status
+			return
 		endif
 
-		status = status + datablock_get_logical_default(block, option_section,"do_nonlinear", .false. , do_nonlinear)
-		status = status + datablock_get_logical_default(block, option_section,"do_lensing", .false. , do_lensing)
 
  		if (do_lensing) then
  			status = status + datablock_get_string(block, option_section, "high_ell_template", highL_unlensed_cl_template)
@@ -165,6 +167,7 @@ module camb_interface_tools
 			write(*,*) "camb mode  = ", mode
 			if (mode .ne. CAMB_MODE_BG) write(*,*) "camb cmb_lmax = ", standard_lmax
 			write(*,*) "camb FeedbackLevel = ", FeedbackLevel
+			if (status .ne. 0) write(*,*) "Setup status: ", status
 		endif
 	end function camb_initial_setup
 
@@ -272,6 +275,15 @@ module camb_interface_tools
 
         params%Max_l=standard_lmax
         params%Max_eta_k=2*standard_lmax
+
+        params%DoLensing = do_lensing
+
+		!Set nonlinear behaviour
+		if (do_nonlinear) then
+			params%NonLinear=2
+		else
+			params%NonLinear=0
+		endif
 
 	
 	
