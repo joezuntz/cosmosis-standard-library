@@ -5,7 +5,7 @@ FITSDIR = $(CFITSIO_LIB)
 FITSLIB = cfitsio
 
 F90C = $(F90)
-FFLAGS += -fPIC 
+FFLAGS += -fPIC -O2
 
 #Set FISHER=Y to compile bispectrum fisher matrix code
 FISHER=
