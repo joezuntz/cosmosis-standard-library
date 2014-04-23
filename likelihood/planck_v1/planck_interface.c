@@ -42,10 +42,12 @@ configuration_data * setup(c_datablock * options){
 	char * lensing_file="";
 
 	int status = 0;
-	status |= c_datablock_get_string_default(options, OPTION_SECTION,  "t_low_file", "", &T_low_file);
+
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "t_low_file", "", &T_low_file);
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "p_low_file", "", &P_low_file);
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "t_high_file", "", &T_high_file);
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "lensing_file", "", &lensing_file);
+
 
 	printf("Likelihood files to be used by Planck:\n");
 	printf("t_low_file = %s\np_low_file = %s\nt_high_file = %s\nlensing_file = %s\n\n", T_low_file, P_low_file, T_high_file, lensing_file);
@@ -59,7 +61,13 @@ configuration_data * setup(c_datablock * options){
 	if (strlen(T_high_file))  config->T_high_data  = clik_init(T_high_file,&err);
 	if (strlen(lensing_file)) config->lensing_data = clik_lensing_init(lensing_file,&err);
 
-	if (status || isError(err)){
+	if (status){
+		fprintf(stderr,"There was an getting parameters to initialize the Planck likelihood.\n");
+		fprintf(stderr,"The error code was %d\n\n", status);
+		exit(1);
+	}
+
+	if (isError(err)){
 		fprintf(stderr,"There was an error initializating the Planck likelihoods.  See below.\n");
 		fprintf(stderr,"The error below may be hard to understand.  It probably means that one of the files that you specified (printed above) was not found.\n\n");
 		quitOnError(err,__LINE__,stderr);
