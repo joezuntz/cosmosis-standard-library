@@ -12,6 +12,7 @@ typedef struct IntegrandData{
 	double chimin;
 	double chimax;
 	double ell;
+	double prefactor;
 	gsl_spline * WX;
 	gsl_spline * WY;
 	Interpolator2D * P;
@@ -116,7 +117,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		if (config->ylog) c_ell = log(c_ell);
 
 		// Record the results into arrays
-		c_ell_vector[i_ell] = c_ell;
+		c_ell_vector[i_ell] = config->prefactor * c_ell;
 		ell_vector[i_ell] = ell;
 	}
 
