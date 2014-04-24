@@ -388,65 +388,56 @@ module camb_interface_tools
 		return
 	end function
 	
-	
-
-	
-
 	function camb_interface_save_transfer(block) result(status)
 		integer (cosmosis_block) :: block
 		integer (cosmosis_status) :: status
-		integer nz, nk, nt, iz, ik, idx
-		real(8), allocatable, dimension(:) :: k, z, t, P
 		Type(MatterPowerData) :: PK
-	    
-		
-
-		status = 0
+		integer nz, nk, iz, ik
+		real(8), allocatable, dimension(:) :: k, z
+		real(8), allocatable, dimension(:,:) :: P, T
 
 		call Transfer_GetMatterPowerData(MT, PK, 1)
-		!Extract the transfer data from CAMB internal structures
+
 		nz = CP%Transfer%num_redshifts
 		nk = MT%num_q_trans
-		nt = nk*nz
-		allocate(k(nt))
-		allocate(z(nt))
-		allocate(T(nt))
-		allocate(P(nt))
-		T=0.0
+
+		allocate(k(nk))
+		allocate(z(nz))
+		allocate(P(nk,nz))
+		allocate(T(nk,nz))
+
+		do ik=1,nk
+			k(ik) = MT%TransferData(Transfer_kh,ik,1)
+		enddo
+
+		do iz=1,nz
+			z(iz) = CP%Transfer%Redshifts(nz-iz+1)
+		enddo
+
 		do ik=1,nk
 			do iz=1,nz
-				idx = ((ik-1)*nz+iz)
-				k(idx) = MT%TransferData(Transfer_kh,ik,nz-iz+1)
-				z(idx) = CP%Transfer%Redshifts(nz-iz+1)
-				T(idx) = MT%TransferData(Transfer_cdm,ik,nz-iz+1)
-				P(idx) = MatterPowerData_k(PK,  k(idx), nz-iz+1)
+				P(ik,iz) = MatterPowerData_k(PK, k(ik), nz-iz+1)
+				T(ik,iz) = MT%TransferData(Transfer_cdm,ik,nz-iz+1)
 			enddo
 		enddo
-	
-		call MatterPowerdata_Free(PK)
-		status = status + datablock_put_double_array_1d(block, linear_cdm_transfer_section, "K_H", k);
-		status = status + datablock_put_double_array_1d(block, linear_cdm_transfer_section, "Z", z);
-		status = status + datablock_put_double_array_1d(block, linear_cdm_transfer_section, "DELTA_CDM", T);
-		status = status + datablock_put_int(block, linear_cdm_transfer_section, "NK", nk);
-		status = status + datablock_put_int(block, linear_cdm_transfer_section, "NZ", nz);
-		status = status + datablock_put_int(block, linear_cdm_transfer_section, "NT", nt);
 
-		status = status + datablock_put_double_array_1d(block, matter_power_lin_section, "K_H", k);
-		status = status + datablock_put_double_array_1d(block, matter_power_lin_section, "Z", z);
-		status = status + datablock_put_double_array_1d(block, matter_power_lin_section, "P_K", P);
-		status = status + datablock_put_int(block, matter_power_lin_section, "NK", nk);
-		status = status + datablock_put_int(block, matter_power_lin_section, "NZ", nz);
-		status = status + datablock_put_int(block, matter_power_lin_section, "NT", nt);
+		status = datablock_put_double_grid(block, matter_power_lin_section, &
+        	"k_h", k, "z", z, "P_k", P)
 
 		if (status .ne. 0) then
-			write(*,*) "Failed to save transfer/matter power sections."
+			write(*,*) "Failed to save transfer function in CAMB."
 		endif
-		
-		
-		deallocate(k, z, T, P)
-		return
-		
+
+		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
+        	"k_h", k, "z", z, "delta_cdm", P)
+
+		if (status .ne. 0) then
+			write(*,*) "Failed to save matter power in CAMB."
+		endif
+
+		deallocate(k, z, P, T)
 	end function
+
 	
 	function camb_interface_save_da(params, block, save_density, save_thermal) result(status)
 		integer (cosmosis_block) :: block
