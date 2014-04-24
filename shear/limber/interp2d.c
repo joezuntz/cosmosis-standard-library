@@ -3,6 +3,7 @@
 #include "interp2d.h"
 
 
+
 Interpolator2D * load_interp_2d(const char * filename, int N1, int N2)
 {
   FILE * infile = fopen(filename,"r");
@@ -29,8 +30,11 @@ Interpolator2D * load_interp_2d(const char * filename, int N1, int N2)
 
 }
 
-Interpolator2D * init_interp_2d(double *x1, double *x2, 
-  double *y, int N1, int N2, const gsl_interp_type *T) {
+
+
+static
+Interpolator2D * init_interp_2d_core(double *x1, double *x2, 
+  void *y, int N1, int N2, const gsl_interp_type *T, int from_2d) {
   Interpolator2D * interp2d;
   int i,j;
   
@@ -52,9 +56,20 @@ Interpolator2D * init_interp_2d(double *x1, double *x2,
   
   interp2d->y = (double*)malloc(sizeof(double)*N1*N2);
   assert(interp2d->y != NULL);
-  for(i=0;i<N1;++i)
-    for(j=0;j<N2;++j)
-      interp2d->y[i*N2+j] = y[i*N2+j];
+  
+  if (from_2d){
+    double **p = (double**) y;
+    for(i=0;i<N1;++i)
+      for(j=0;j<N2;++j)
+        interp2d->y[i*N2+j] = p[i][j]; 
+  }
+  else {
+    double *p = (double*) y;
+    for(i=0;i<N1;++i)
+      for(j=0;j<N2;++j)
+        interp2d->y[i*N2+j] = p[i*N2+j]; 
+  }
+  
   
   interp2d->y1 = (double*)malloc(sizeof(double)*N1);
   assert(interp2d->y1 != NULL);
@@ -70,7 +85,7 @@ Interpolator2D * init_interp_2d(double *x1, double *x2,
       interp2d->x2dir_splines[i] = gsl_spline_alloc(T,(size_t) N2);
       assert(interp2d->x2dir_splines[i] != NULL);
       
-      gsl_spline_init(interp2d->x2dir_splines[i],x2,y+(i*N2),(size_t) N2);
+      gsl_spline_init(interp2d->x2dir_splines[i],x2,interp2d->y+(i*N2),(size_t) N2);
       
       interp2d->x2dir_accels[i] = gsl_interp_accel_alloc();
       assert(interp2d->x2dir_accels[i] != NULL);
@@ -147,3 +162,30 @@ void destroy_interp_2d(Interpolator2D * interp2d)
   free(interp2d);
 }
 
+
+
+Interpolator2D * init_interp_2d(double *x1, double *x2, 
+  double *y, int N1, int N2, const gsl_interp_type *T)
+{
+  int from_2d = 0;
+  return init_interp_2d_core(x1, x2, y, N1, N2, T, from_2d);
+
+}
+
+Interpolator2D * init_interp_2d_grid(double *x1, double *x2, 
+  double **y, int N1, int N2, const gsl_interp_type *T)
+{
+  int from_2d = 1;
+  return init_interp_2d_core(x1, x2, y, N1, N2, T, from_2d);
+}
+
+
+Interpolator2D * init_interp_2d_akima(double *x1, double *x2, double *y, int N1, int N2)
+{
+  return init_interp_2d(x1, x2, y, N1, N2, gsl_interp_akima);
+}
+
+Interpolator2D * init_interp_2d_akima_grid(double *x1, double *x2, double **y, int N1, int N2)
+{
+  return init_interp_2d_grid(x1, x2, y, N1, N2, gsl_interp_akima);
+}

@@ -12,12 +12,13 @@ typedef struct limber_config{
 	bool ylog;  // The output spline will return log(C_ell) not C_ell
 	int n_ell;  // Number of ell values you want in the spline
 	double * ell;  // The chosen ell values you want
+	double prefactor; //Scaling prefactor
 } limber_config;
 
 
 // Do a flat universe Limber approximation integral, of the form:
 // C^{XY}(\ell) 
-// = \int_0^{\chi_{\mathrm{max}}} 
+// = A \int_0^{\chi_{\mathrm{max}}} 
 //       \frac{W^X(\chi) W^Y(\chi)}{\chi^2} P(\ell/\chi, \chi)
 
 // The two splines and the matter power passed into the function

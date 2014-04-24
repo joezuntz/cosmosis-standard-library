@@ -1,12 +1,12 @@
-include ../../Makefile.mine
+include ../../../Makefile.mine
 -include Makefile.mine
 
 
 CFLAGS +=  -std=c99
 LDFLAGS += -lgsl -lgslcblas  -lm
 
-CFLAGS += -I../../glue/include  -fPIC
-LDFLAGS += -L../../glue/lib -lcfitswrap -lcfitsio -lini
+CFLAGS += -fPIC
+
 
 
 AR = ar rc
