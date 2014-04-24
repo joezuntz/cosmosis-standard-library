@@ -1,7 +1,5 @@
 include ${COSMOSIS_DIR}/config/compilers.mk
 
-SUBDIRS = 
-
 all: halofit_module.so
 
 clean:
