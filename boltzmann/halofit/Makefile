@@ -1,18 +1,10 @@
-include ../../../config/compilers.mk
-include ../../../config/subdirs.mk
+include ${COSMOSIS_DIR}/config/compilers.mk
 
 SUBDIRS = 
 
-.PHONY: all
-
 all: halofit_module.so
-	$(process_subdirs)
-
-test:
-	$(process_subdirs)
 
 clean:
-	@echo Cleaning in $$(PWD)
 	rm -f halofilt_module.so *.o *.mod
 	$(process_subdirs)
 
