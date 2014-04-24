@@ -2,6 +2,8 @@ include ${COSMOSIS_DIR}/config/compilers.mk
 
 all: halofit_module.so
 
+test:
+
 clean:
 	rm -f halofit_module.so *.o *.mod
 
