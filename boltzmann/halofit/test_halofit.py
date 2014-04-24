@@ -30,7 +30,7 @@ else:
 	data = pydesglue.DesDataPackage.from_file(data_file)
 	h = data.to_new_fits_handle()
 
-halofit=pydesglue.load_module("../../boltzmann/halofit/halofit_interface.so","execute")
+halofit=pydesglue.load_module("../../boltzmann/halofit/halofit_module.so","execute")
 status = halofit(h)
 print "halofit status was:", status
 data = pydesglue.DesDataPackage.from_fits_handle(h)

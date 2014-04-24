@@ -1,15 +1,20 @@
-include ../../../Makefile.mine
-#-include Makefile.mine
+include ../../../config/compilers.mk
+include ../../../config/subdirs.mk
 
+SUBDIRS = 
 
-default: interface
+.PHONY: all
 
-all: interface
+all: halofit_module.so
+	$(process_subdirs)
 
-interface: halofit.F90 halofit_interface.F90
-	$(F90) $(FFLAGS) -fPIC -c -o halofit.o halofit.F90
-	$(F90) $(FFLAGS)  -fPIC -shared -o halofit_interface.so halofit_interface.F90 halofit.o $(LDFLAGS)
-
+test:
+	$(process_subdirs)
 
 clean:
-	rm -f *.o *~ *.flc smith2demo fsmith2  halofit_interface.so 
+	@echo Cleaning in $$(PWD)
+	rm -f halofilt_module.so *.o *.mod
+	$(process_subdirs)
+
+halofit_module.so: halofit.F90 halofit_module.F90 ../../../cosmosis/datablock/libcosmosis_fortran.so
+	$(FC) $(FFLAGS) -J../../../cosmosis/datablock -shared -o $@ $+
