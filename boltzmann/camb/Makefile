@@ -1,16 +1,11 @@
-include ../../../Makefile.mine
-#include Makefile.mine
+include ${COSMOSIS_DIR}/config/compilers.mk
 
-FITSDIR = $(CFITSIO_LIB)
-FITSLIB = cfitsio
+USER_LDFLAGS = -lcosmosis_fortran
 
-F90C = $(F90)
-FFLAGS += -fPIC -O2
+F90C=$(FC)
 
 #Set FISHER=Y to compile bispectrum fisher matrix code
-FISHER=
-#FFLAGS += -Ofast -ffast-math -funroll-loops 
-FFLAGS += -ffree-line-length-none
+FISHER ?=
 
 ifneq ($(FISHER),)
 FFLAGS += -DFISHER
@@ -19,5 +14,6 @@ else
 EXTCAMBFILES =
 endif
 EQUATIONS=equations_ppf
+FITSLIB=cfitsio
 
 include ./Makefile_main
