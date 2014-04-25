@@ -2,7 +2,7 @@
 #Needs updating!  Some things should move to setup function
 
 import numpy as np
-import cosmosis_py
+import cosmosis.datablock.cosmosis_py
 
 def gaussian(z,mu,sigma):
 	return np.exp(-0.5*(z-mu)**2/sigma**2) / np.sqrt(2*np.pi) / sigma
