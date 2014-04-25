@@ -10,47 +10,6 @@ implicit none
 
 contains
 
-function save_matter_power(block, nk, k, nz, z, p) result(status)
-	use halofit1
-	integer(cosmosis_block) :: block
-	integer(cosmosis_status) :: status
-	integer nk, nz, i
-	real(dl), dimension(nk) :: k
-	real(dl), dimension(nz) :: z
-	real(dl), dimension(nk,nz) :: p
-	real(dl), allocatable, dimension(:) :: col
-	integer nt
-	
-	nt = nk*nz
-	
-	status = 0
-	status = status + datablock_put_int(block, matter_power_nl_section ,'NK', nk)
-	status = status + datablock_put_int(block, matter_power_nl_section, 'NZ', nz)
-	status = status + datablock_put_int(block, matter_power_nl_section, 'NT', nt)
-	if (status .ne. 0) return
-
-
-	allocate(col(nt))
-
-	do i=1,nk
-		col( (i-1)*nz+1:i*nz) = k(i)
-	enddo
-	status = status + datablock_put_double_array_1d(block, matter_power_nl_section, "K_H", col)
-	
-	do i=1,nk
-		col( (i-1)*nz+1:i*nz) = z(:)
-	enddo
-	status = status + datablock_put_double_array_1d(block, matter_power_nl_section, "Z", col)
-	
-	do i=1,nk
-		col( (i-1)*nz+1:i*nz) = p(i,:)
-	enddo
-	status = status + datablock_put_double_array_1d(block, matter_power_nl_section, "P_K", col)
-	
-	deallocate(col)
-	
-end function 
-
 
 function load_matter_power(block, PK) result(status)
 	use cosmosis_modules
@@ -58,74 +17,34 @@ function load_matter_power(block, PK) result(status)
 	integer(cosmosis_block) :: block
 	integer(cosmosis_status) :: status
 	type(MatterPowerData) :: PK
-	real(dl), allocatable, dimension(:) :: k_col, z_col, p_col
+	real(dl), allocatable, dimension(:) :: k, z
+	real(dl), allocatable, dimension(:,:) :: P
+
 	logical :: k_changes_fastest
 	integer nkz
 	integer i,j
 	
 	!Get the data columns from the fits data
 	status = 0
-	status = status + datablock_get_int(block, matter_power_lin_section, "NK", PK%num_k)
-	status = status + datablock_get_int(block, matter_power_lin_section, "NZ", PK%num_z)
-	status = status + datablock_get_double_array_1d(block, matter_power_lin_section, "Z", z_col,   nkz)
-	status = status + datablock_get_double_array_1d(block, matter_power_lin_section, "K_H", k_col, nkz)
-	status = status + datablock_get_double_array_1d(block, matter_power_lin_section, "P_K", p_col, nkz)
-	if (PK%num_k * PK%num_z .ne. nkz) status = status + 1
-	if (status .ne. 0) then
-		write(*,*) "Failed to read data in properly from fits file"
-		return
-	endif
-	
+
+	!Load k, z, P
+	status = datablock_get_double_grid(block, matter_power_lin_section, &
+		"K_H", k, "Z", z, "P_K", P)
+
+	!Fill in Halofit's data structure
+	PK%num_k = size(k)
+	PK%num_z = size(z)
 	call allocate_matterpower(PK)
-	k_changes_fastest = (z_col(2)==z_col(1))
-	PK%matpower = 0.0d0
-	!Read from the long-columns we have loaded in into the shorter ones.
-	if (k_changes_fastest) then
-		!Since k changes fastest we just need the first nk elements of the array.  It should repeat after that.
-		!Take logs since that is what this code wants.
-		do i=1,PK%num_k
-			PK%log_kh(i) = log(k_col(i))
-		enddo
-		!Every nk'th element should be the next redshift, since it is changing slower so will be in blocks
-		do i=1,PK%num_z
-			PK%redshifts(i) = z_col( PK%num_k*(i-1)+1 )
-		enddo
-		
-		!Then finally we change the matter power from 1D to 2D
-		do j=1,PK%num_z
-			do i=1,PK%num_k
-				PK%matpower(i,j) = log(p_col(PK%num_k*(j-1)+i))
-			enddo
-		enddo
-		
+	PK%log_kh = log(k)
+	PK%redshifts = z
+	PK%matpower = log(P)
 
-	else
-		!Now z changes fastest so the uniq k values are every num_z elements
-		!We want log of k.
-		do i=1,PK%num_k
-			PK%log_kh(i) = log(k_col(PK%num_z*(i-1)+1))
-		enddo
-		!And simularly the z elements are in blocks, so we take the one at the start.
-		do i=1,PK%num_z
-			PK%redshifts(i) = z_col(i)
-		enddo
-
-		!Then finally we change the matter power from 1D to 2D
-		do j=1,PK%num_z
-			do i=1,PK%num_k
-				PK%matpower(i,j) = log(p_col(PK%num_z*(i-1)+j))
-			enddo
-		enddo
-		
-	endif
-	
-	!Now set up the splines
+	!Allocate memory
 	call MatterPowerdata_getsplines(PK)
+
+	!Clean up
+	deallocate(k, z, P)
 	
-	!Free memory
-	deallocate(k_col)
-	deallocate(p_col)
-	deallocate(z_col)
 end function
 
 end module halofit_interface_tools
@@ -201,24 +120,28 @@ function execute(block, config) result(status)
 	endif
 	
 	allocate(nonlin_ratio(PK%num_k,PK%num_z))
-!	PK%redshifts = PK%redshifts + 0.01
 	call NonLinear_GetNonLinRatios(PK,nonlin_ratio)
 	
+	!Copy the power spectrum so we can non-linearify it
 	PK_NL%num_k = PK%num_k
 	PK_NL%num_z = PK%num_z
 	call allocate_matterpower(PK_NL)
 	PK_NL%log_kh = PK%log_kh
 	PK_NL%redshifts = PK%redshifts
-	PK_NL%matpower = PK%matpower + 2*log(nonlin_ratio)  !Since logarithmic
 
-	!log spaced results
+	!Make non-linear splines
+	PK_NL%matpower = PK%matpower + 2*log(nonlin_ratio)  !Since logarithmic
+	call MatterPowerdata_getsplines(PK_NL)
+
+	!Get the k values for the output - log spaced
 	log_kmin = log(kmin)
 	log_kmax = log(kmax)
-	call MatterPowerdata_getsplines(PK_NL)
 	allocate(k(nk))
 	do ik=1,nk
 		k(ik) =  exp( log_kmin + (log_kmax-log_kmin)/(nk-1)*(ik-1)  )
 	enddo
+
+	!And do the interpolation
 	allocate(p(nk,PK%num_z))
 	do iz=1,PK%num_z
 		do ik=1,nk
@@ -227,9 +150,15 @@ function execute(block, config) result(status)
 		enddo
 	enddo
 
-	status = save_matter_power(block, nk, k, PK%num_z, PK%redshifts, p)
+	!Finally we save results
+	status = datablock_put_double_grid(block, matter_power_nl_section, &
+		"K_H", k, "Z", PK_NL%redshifts, "P_K", p)
+
 
 	deallocate(k)
 	deallocate(nonlin_ratio)
 	deallocate(p)
+	call deallocate_matterpower(PK)
+	call deallocate_matterpower(PK_NL)
+
 end function
