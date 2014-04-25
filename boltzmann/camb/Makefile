@@ -1,7 +1,7 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-USER_LDFLAGS = -lcosmosis_fortran
-
+USER_FFLAGS=-I.
+USER_LDFLAGS=-lcosmosis_fortran
 F90C=$(FC)
 
 #Set FISHER=Y to compile bispectrum fisher matrix code
