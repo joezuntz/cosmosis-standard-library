@@ -1,4 +1,4 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_LDFLAGS = -lcosmosis_fortran
 
@@ -17,3 +17,6 @@ EQUATIONS=equations_ppf
 FITSLIB=cfitsio
 
 include ./Makefile_main
+
+test:
+	@echo "Alas, camb has no tests"
