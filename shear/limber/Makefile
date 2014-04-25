@@ -1,5 +1,4 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
-include ${COSMOSIS_SRC_DIR}/config/subdirs.mk
 
 USER_CFLAGS=-I ${GSL_INC}
 USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas
