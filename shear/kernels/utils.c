@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "assert.h"
+#include <assert.h>
 
 gsl_spline * spline_from_arrays(int n, double * x, double *y)
 {

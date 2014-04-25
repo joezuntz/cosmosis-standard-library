@@ -1,5 +1,5 @@
 #include "gsl/gsl_spline.h"
-#include "c_datablock.h"
+#include "cosmosis/datablock/c_datablock.h"
 
 
 gsl_spline * spline_from_arrays(int n, double * x, double *y);
