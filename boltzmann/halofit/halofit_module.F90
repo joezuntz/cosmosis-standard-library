@@ -28,7 +28,7 @@ function load_matter_power(block, PK) result(status)
 	status = 0
 
 	!Load k, z, P
-	status = c_datablock_get_double_grid(block, matter_power_lin_section, &
+	status = datablock_get_double_grid(block, matter_power_lin_section, &
 		"K_H", k, "Z", z, "P_K", P)
 
 	!Fill in Halofit's data structure
