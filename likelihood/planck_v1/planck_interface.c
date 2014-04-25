@@ -1,5 +1,5 @@
 #include "clik.h"
-#include "c_datablock.h"
+#include "cosmosis/datablock/c_datablock.h"
 
 
 typedef struct configuration_data{
