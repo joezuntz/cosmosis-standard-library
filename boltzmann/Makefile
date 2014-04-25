@@ -1,4 +1,4 @@
 include ${COSMOSIS_DIR}/config/compilers.mk
 include ${COSMOSIS_DIR}/config/subdirs.mk
 
-SUBDIRS = halofit
+SUBDIRS = halofit camb
