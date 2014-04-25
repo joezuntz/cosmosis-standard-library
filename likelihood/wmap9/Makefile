@@ -1,8 +1,6 @@
-#Top level Makefile
-include ../../../Makefile.mine
+include ${COSMOSIS_DIR}/config/compilers.mk
+LDFLAGS+= -lcosmosis_fortran -lcosmosis 
 
-#Optional (that's what the dash means) Makefile locally
--include Makefile.mine
 
 
 ifeq ($(WMAP9_DATA_DIR),)

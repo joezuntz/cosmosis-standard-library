@@ -1,9 +1,12 @@
-include ../../../Makefile.mine
+include ${COSMOSIS_DIR}/config/compilers.mk
 
-CFLAGS+=-I../../../datablock -std=c99 -I ../limber
-LDFLAGS+=-L../../../datablock -lcosmosis -lgsl -L../limber -llimber
+CFLAGS+= -I ../limber
+LDFLAGS+= -lcosmosis -lgsl -L../limber -llimber
+
+all: interface.so
 
 interface.so:utils.c shear_shear.c interface.c
+	echo $(CFLAGS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o interface.so utils.c shear_shear.c interface.c
 
 clean:

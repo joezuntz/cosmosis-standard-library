@@ -1,5 +1,5 @@
-include ../../../Makefile.mine
--include Makefile.mine
+include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_DIR}/config/subdirs.mk
 
 
 CFLAGS +=  -std=c99

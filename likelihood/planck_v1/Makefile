@@ -1,10 +1,10 @@
-include ../../../Makefile.mine
--include Makefile.mine
+include ${COSMOSIS_DIR}/config/compilers.mk
+LDFLAGS+= -lcosmosis_fortran -lcosmosis 
 
 
 #CC = gcc
 #FC = ifort
-FC = $(F90)
+#FC = $(F90)
 
 SO=so
 
