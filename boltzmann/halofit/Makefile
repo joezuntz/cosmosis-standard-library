@@ -1,15 +1,11 @@
-include ../../../Makefile.mine
-#-include Makefile.mine
+include ${COSMOSIS_DIR}/config/compilers.mk
 
+all: halofit_module.so
 
-default: interface
-
-all: interface
-
-interface: halofit.F90 halofit_interface.F90
-	$(F90) $(FFLAGS) -fPIC -c -o halofit.o halofit.F90
-	$(F90) $(FFLAGS)  -fPIC -shared -o halofit_interface.so halofit_interface.F90 halofit.o $(LDFLAGS)
-
+test:
 
 clean:
-	rm -f *.o *~ *.flc smith2demo fsmith2  halofit_interface.so 
+	rm -f halofit_module.so *.o *.mod
+
+halofit_module.so: halofit.F90 halofit_module.F90 ${COSMOSIS_DIR}/cosmosis/datablock/libcosmosis_fortran.so
+	$(FC) $(FFLAGS) -shared -o $@ $+
