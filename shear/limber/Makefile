@@ -1,5 +1,5 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
-include ${COSMOSIS_DIR}/config/subdirs.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/subdirs.mk
 
 
 CFLAGS +=  -std=c99

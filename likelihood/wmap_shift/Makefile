@@ -1,4 +1,4 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 LDFLAGS+= -lcosmosis_fortran -lcosmosis 
 
 all: wmap_shift.so

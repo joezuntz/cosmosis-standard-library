@@ -1,4 +1,4 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 CFLAGS+= -I ../limber
 LDFLAGS+= -lcosmosis -lgsl -L../limber -llimber
