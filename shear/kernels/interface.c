@@ -112,8 +112,23 @@ load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline,
 }
  
 
+static
+int save_c_ell(c_datablock * block, const char * section, 
+	int bin1, int bin2, gsl_spline * s, limber_config * lc)
+{
+	char name[64];
+	snprintf(name, 64, "bin_%d_%d",bin1,bin2);
+	int n_ell = lc->n_ell;
+	double c_ell[n_ell];
+	for (int i=0; i<n_ell; i++){
+		double ell = lc->ell[i];
+		if (lc->xlog) ell = log(ell);
+		c_ell[i] = gsl_spline_eval(s, ell, NULL);
+		if (lc->ylog) c_ell[i] = exp(c_ell[i]);
+	}
 
-
+	return c_datablock_put_double_array_1d(block, section, name, c_ell, n_ell);
+}
 
 int shear_shear_spectra(c_datablock * block, int nbin, 
 	gsl_spline * W[nbin], Interpolator2D * PK)
@@ -124,11 +139,14 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 	limber_config lc;
 	int status = shear_shear_config(block, &lc);
 	if (status) {free(lc.ell); return status;}
+	status = status + c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
 
 	for (int bin1=1; bin1<=nbin; bin1++){
 		for (int bin2=1; bin2<=bin1; bin2++){
 			gsl_spline * c_ell = limber_integral(&lc, W[bin1-1], W[bin2-1], PK);
-			for (double ell=50; ell<500; ell*=1.1) printf("%le  %le\n",ell, exp(gsl_spline_eval(c_ell, log(ell),NULL)));
+			int status = save_c_ell(block, SHEAR_CL_SECTION, bin1, bin2,  c_ell, &lc);
+			gsl_spline_free(c_ell);
+			if (status) return status;
 		}
 	}
 	free(lc.ell);
@@ -185,7 +203,7 @@ int execute(c_datablock * block, void * config)
 
 	// Get the P(k) we need
 	Interpolator2D * PK = load_interpolator(
-		block, chi_of_z_spline, "grid_pk", "k_h", "z", "P_k");
+		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
 	// This is P(k,z)
 	// We need P(k, chi)
 	if (!PK) {
