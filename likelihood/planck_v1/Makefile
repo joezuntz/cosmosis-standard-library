@@ -1,6 +1,13 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
-LDFLAGS+= -lcosmosis_fortran -lcosmosis 
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+LDFLAGS+= -lcosmosis_fortran
 
+ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),)
+$(error To compile the WMAP 9-year likelihood you must activate the UPS package cfitsio or set the environment variables CFITSIO_INC and CFITSIO_LIB)
+endif
+
+CFLAGS+= -I${CFITSIO_INC} -D_GNU_SOURCE
+LDFLAGS+= -L${CFITSIO_LIB} -L${LAPACK_LIB}
+LAPACK=-llapack -lblas
 
 #CC = gcc
 #FC = ifort
@@ -45,8 +52,8 @@ CFLAGS+=$(DEFINES) -I $(SOURCE_DIR) -I $(SOURCE_DIR)/cldf -I $(SOURCE_DIR)/minip
 FFLAGS+=$(FM64) $(FOPENMP) $(FFPIC) $(DEFINES)  $(FMODULEPATH) $(ODIR)
 
 # Lapack section
-CFLAGS+=-I../../../datablock
-LDFLAGS+=-L../../../datablock -lcosmosis -lcfitsio -lgfortran
+#CFLAGS+=-I../../../datablock
+#LDFLAGS+=-L../../../datablock -lcosmosis -lcfitsio -lgfortran
 LDFLAG=$(LDFLAGS)
 #LDFLAG = $(CM64) $(CFITSIO) $(LAPACK) $(FRUNTIME) -ldl -lm -lpthread
 

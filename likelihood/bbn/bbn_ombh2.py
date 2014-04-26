@@ -1,5 +1,5 @@
 from numpy import log, pi
-import cosmosis_py
+import cosmosis.datablock.cosmosis_py
 
 cosmo = cosmosis_py.names.cosmological_parameters_section
 likes = cosmosis_py.names.likelihoods_section

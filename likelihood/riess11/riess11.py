@@ -1,5 +1,5 @@
 from numpy import log, pi
-import cosmosis_py
+import cosmosis.datablock.cosmosis_py
 
 
 cosmo = cosmosis_py.section_names.cosmological_parameters

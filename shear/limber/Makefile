@@ -1,13 +1,7 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
-include ${COSMOSIS_DIR}/config/subdirs.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-
-CFLAGS +=  -std=c99
-LDFLAGS += -lgsl -lgslcblas  -lm
-
-CFLAGS += -fPIC
-
-
+USER_CFLAGS=-I ${GSL_INC}
+USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas
 
 AR = ar rc
 

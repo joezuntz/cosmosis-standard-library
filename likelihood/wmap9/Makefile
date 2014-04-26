@@ -1,12 +1,23 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
-LDFLAGS+= -lcosmosis_fortran -lcosmosis 
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
+ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),) 
+$(error To compile the WMAP 9-year likelihood you must activate the UPS package cfitsio or set the environment variables CFITSIO_INC and CFITSIO_LIB)
+endif
 
+ifeq ($(LAPACK_LIB),)
+$(error To compile the WMAP 9-year likelihood you must activate the UPS package LAPACK or set the environment variable LAPACK_LIB)
+endif
 
-ifeq ($(WMAP9_DATA_DIR),)
+F90    = ${FC}
+INCS = -I$(CFITSIO_INC) 
+LIBS = -L ${LAPACK_LIB} -llapack -lblas -L ${CFITSIO_LIB} -lcfitsio
+
+FFLAGS+=-DWMAP9_DATA_DIR='"$(WMAP_DATA_DIR)/"'
+
+ifeq ($(WMAP_DATA_DIR),)
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),distclean)
-$(error To compile the WMAP 9-year likelihood you must specify WMAP9_DATA_DIR=/path/to/wmap/data in your Makefile.mine or likelihood/wmap9/Makefile.mine)
+$(error To compile the WMAP 9-year likelihood you must specify WMAP_DATA_DIR=/path/to/wmap/data in your Makefile.mine or likelihood/wmap9/Makefile.mine)
 endif
 endif
 endif
@@ -51,17 +62,6 @@ WMAPFLAGS  = -DOPTIMIZE
 #			are supplied.
 #
 
-## Linux GCC compiler and UPS products
-
-F90    = gfortran
-# We do not specify FFLAGS here, because we define the in the build_wmap.sh script.
-#FFLAGS = -O2 -fpic $(WMAPFLAGS) 
-#INCS   = -I. -I$(CFITSIO_INC)
-#LIBS = -L. -L/usr/local/lib -llapack -lblas -lcfitsio
-
-FFLAGS+= -fPIC -I.  -DWMAP9_DATA_DIR='"$(WMAP9_DATA_DIR)/"'
-LDFLAGS+=-L. -lcfitsio
-
 #
 #			Rules.
 #
@@ -74,10 +74,10 @@ check: test
 	./test
 
 test: test.F90 $(WMAPLIB)
-	$(F90) $(FFLAGS) -o $@ test.F90  -L. -l$(WMAPLIBNAME) $(LDFLAGS)
+	$(F90) $(FFLAGS) -o $@ test.F90  -L. -l$(WMAPLIBNAME) $(LDFLAGS) $(LIBS)
 
 %.o: %.c
-	$(CC) -c -fPIC $(CCFLAGS) -o $@ $^
+	$(CC) -c $(CCFLAGS) -o $@ $^
 
 $(WMAPLIB): $(OBJS)
 	ar rc $@ $^
@@ -98,7 +98,7 @@ distclean: clean
 	$(RM) $(WMAPLIB) $(PROGRAMS)
 
 interface: $(WMAPLIB)
-	$(F90) $(FFLAGS) wmap_interface.f90 -shared -fPIC -o wmap_interface.so  -L. -l${WMAPLIBNAME}  $(INCS) $(LDFLAGS) -lcosmosis_fortran -lcfitsio
+	$(F90) $(FFLAGS) wmap_interface.f90 -shared -o wmap_interface.so  -L. -l${WMAPLIBNAME}  $(INCS) $(LDFLAGS) -lcosmosis_fortran $(LIBS)
 
 
 

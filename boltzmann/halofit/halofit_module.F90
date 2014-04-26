@@ -63,9 +63,9 @@ function setup(options) result(result)
 	settings%nk = 200
 
 	status = 0
-	status = status + datablock_get_double_default(options, option_section, "kmin", 1.0D-04, settings%kmin)
-	status = status + datablock_get_double_default(options, option_section, "kmax", 1.0D+02, settings%kmax)
-	status = status + datablock_get_int_default(options, option_section, "nk", 200, settings%nk)
+	status = status + c_datablock_get_double_default(options, option_section, "kmin", 1.0D-04, settings%kmin)
+	status = status + c_datablock_get_double_default(options, option_section, "kmax", 1.0D+02, settings%kmax)
+	status = status + c_datablock_get_int_default(options, option_section, "nk", 200, settings%nk)
 	if (status .ne. 0) then 
 		write(*,*) "Failed setup of halofit!", status
 		stop
@@ -96,8 +96,8 @@ function execute(block, config) result(status)
 
 	
 	!Set Halofit internal numbers
-	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
-	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_M", omega_matter)
+	status = status + c_datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
+	status = status + c_datablock_get_double(block, cosmological_parameters_section, "OMEGA_M", omega_matter)
 	omegav = 1 - omega_matter
 
     if (status .ne. 0) then
@@ -151,7 +151,7 @@ function execute(block, config) result(status)
 	enddo
 
 	!Finally we save results
-	status = datablock_put_double_grid(block, matter_power_nl_section, &
+	status = c_datablock_put_double_grid(block, matter_power_nl_section, &
 		"K_H", k, "Z", PK_NL%redshifts, "P_K", p)
 
 

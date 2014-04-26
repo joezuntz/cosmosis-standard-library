@@ -1,11 +1,11 @@
 // #include "shear_shear.h"
-#include "c_datablock.h"
+#include "cosmosis/datablock/c_datablock.h"
 #include "gsl/gsl_spline.h"
 #include "shear_shear.h"
 #include "utils.h"
-#include "stdio.h"
+#include <stdio.h>
 #include "limber.h"
-#include "math.h"
+#include <math.h>
 
 // Short-hand names for the sections we will 
 // be looking at

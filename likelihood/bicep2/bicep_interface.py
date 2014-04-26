@@ -2,7 +2,7 @@ import bicep_util as bu
 from contextlib import contextmanager
 import os
 import sys
-from cosmosis_py.section_names import likelihoods, cmb_cl
+from cosmosis.datablock.cosmosis_py.section_names import likelihoods, cmb_cl
 
 dirname = os.path.split(__file__)[0]
 
