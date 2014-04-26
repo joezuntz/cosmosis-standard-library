@@ -1,12 +1,18 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
-LDFLAGS+= -lcosmosis_fortran
+LDFLAGS+= -lcosmosis_fortran -lcosmosis
 
 ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),)
 $(error To compile the WMAP 9-year likelihood you must activate the UPS package cfitsio or set the environment variables CFITSIO_INC and CFITSIO_LIB)
 endif
 
+
+ifeq ($(LAPACK_LIB),)
+$(error To compile the WMAP 9-year likelihood you must activate the UPS package lapack or set the environment variable LAPACK_LIB)
+endif
+
+
 CFLAGS+= -I${CFITSIO_INC} -D_GNU_SOURCE
-LDFLAGS+= -L${CFITSIO_LIB} -L${LAPACK_LIB}
+LDFLAGS+= -L${CFITSIO_LIB} -L${LAPACK_LIB} -lgfortran -lcfitsio
 LAPACK=-llapack -lblas
 
 #CC = gcc
