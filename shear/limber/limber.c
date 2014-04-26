@@ -112,7 +112,6 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
-		printf("Limber: %d  %le  %le  %le  %le  %le\n", i_ell, ell, c_ell, config->prefactor, data.chimin, data.chimax);
 
 		// It is often useful to interpolate into the logs of the functions
 		// This is optional in the config
