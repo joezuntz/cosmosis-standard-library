@@ -52,7 +52,7 @@ int shear_shear_config(c_datablock * block, limber_config * lc){
 	// Compute the prefactor, (1.5 Omega_M H0^2)^2
 	// The units of this need to be consistent with 
 	// what we 		
-	double omega_m, H0, h;
+	double omega_m;
 	int status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
 	// in (Mpc/h)^-2
 	// We leave the factor of h in because our P(k) 
@@ -91,6 +91,11 @@ load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline,
 		z_name, &nz, &z, 
 		P_name, &P);
 
+	if (status){
+		fprintf(stderr, "Could not load interpolator for P(k).  Error %d\n",status);
+		return NULL;
+	}
+
 	// What we have now is P(k, z)
 	// What we need is P(k, chi)
 	// So we loop, lookup, and replace
@@ -127,9 +132,9 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 		}
 	}
 	free(lc.ell);
+	return status;
 
-
-}
+}	
 
 
 int execute(c_datablock * block, void * config)
@@ -183,7 +188,13 @@ int execute(c_datablock * block, void * config)
 		block, chi_of_z_spline, "grid_pk", "k_h", "z", "P_k");
 	// This is P(k,z)
 	// We need P(k, chi)
-
+	if (!PK) {
+		free(chi);
+		free(a);
+		free(z);
+		gsl_spline_free(a_of_chi_spline);
+		return 1;
+	}
 
 	// Make the C_ell and save them
 	status |= shear_shear_spectra(block, nbin, W_splines, PK);
