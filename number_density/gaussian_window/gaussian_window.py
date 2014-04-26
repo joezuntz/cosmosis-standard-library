@@ -1,4 +1,4 @@
-import cosmosis.datablock.cosmosis_py
+import cosmosis_py.section_names
 from cosmosis_py.block import option_section
 import numpy as np
 import scipy.integrate
