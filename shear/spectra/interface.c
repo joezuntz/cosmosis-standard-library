@@ -13,9 +13,27 @@ const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 const char * dist = DISTANCES_SECTION;
 const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
 
+typedef struct shear_spectrum_config {
+	int n_ell;
+	double ell_min;
+	double ell_max;
+} shear_spectrum_config;
+
 
 void * setup(c_datablock * options){
-	return NULL;
+
+	shear_spectrum_config * config = malloc(sizeof(shear_spectrum_config));
+	int status = 0;
+	status |= c_datablock_get_int(options, OPTION_SECTION, "n_ell", &(config->n_ell));
+	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_min", &(config->ell_min));
+	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_max", &(config->ell_max));
+
+	if (status){
+		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
+		exit(status);
+	}
+
+	return config;
 }
 
 
@@ -47,7 +65,7 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 
 
 
-int shear_shear_config(c_datablock * block, limber_config * lc){
+int shear_shear_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
 
 	// Compute the prefactor, (1.5 Omega_M H0^2)^2
 	// The units of this need to be consistent with 
@@ -68,11 +86,14 @@ int shear_shear_config(c_datablock * block, limber_config * lc){
 	// everything should be positive
 	lc->xlog = true;
 	lc->ylog = true;
-	lc->n_ell = 100;// printf("only one ell\n");
+	lc->n_ell = config->n_ell;
 	lc->prefactor = scaling*scaling;
+
+	// Log spaced target ell based on input
 	lc->ell = malloc(sizeof(double)*lc->n_ell);
-	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = 20*pow(1.05,i);
-	// lc->ell[0] = 1500.0; printf("Here also\n");
+	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
+	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
+
 	return status;
 }
 
@@ -131,13 +152,13 @@ int save_c_ell(c_datablock * block, const char * section,
 }
 
 int shear_shear_spectra(c_datablock * block, int nbin, 
-	gsl_spline * W[nbin], Interpolator2D * PK)
+	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config)
 {
 
 	// Get the prefactor
 
 	limber_config lc;
-	int status = shear_shear_config(block, &lc);
+	int status = shear_shear_config(block, &lc, config);
 	if (status) {free(lc.ell); return status;}
 	status |= c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
 	status |= c_datablock_put_int(block, SHEAR_CL_SECTION, "nbin", nbin);
@@ -156,7 +177,7 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 }	
 
 
-int execute(c_datablock * block, void * config)
+int execute(c_datablock * block, void * config_in)
 {
 	DATABLOCK_STATUS status=0;
 	double * chi;
@@ -164,6 +185,8 @@ int execute(c_datablock * block, void * config)
 	double * z;
 	int nz1, nz2;
 	int nbin;
+
+	shear_spectrum_config * config = (shear_spectrum_config*) config_in;
 
 
 	// Load the number of bins we 
@@ -222,7 +245,7 @@ int execute(c_datablock * block, void * config)
 	}
 
 	// Make the C_ell and save them
-	status |= shear_shear_spectra(block, nbin, W_splines, PK);
+	status |= shear_shear_spectra(block, nbin, W_splines, PK, config);
 
 
 
