@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <fstream>
-#include <cstring>
-#include <cstdlib>
+// #include <cstring>
+// #include <cstdlib>
 #include <gsl/gsl_cblas.h>
 #include <cmath>
 

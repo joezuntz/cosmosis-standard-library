@@ -1,15 +1,13 @@
-include ../../../Makefile.mine
-# CLASS is required to compile the test code
-#CLASSROOT=/home/marc/soft/class_v2.0.4
-LDFLAGS+= -lblas -llapack -lgsl
-CXXFLAGS+= -O3 -Wall -framework veclib -I../../../datablock -std=c++11
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-#CLASS_CXXFLAGS= -I$(CLASSROOT)/include/ -Isrc/
-#CLASS_LFLAGS= -fopenmp $(CLASSROOT)/libclass.a
+
+USER_CXXFLAGS+= -I ${GSL_INC}
+USER_LDFLAGS+= -lcosmosis -L ${LAPACK_LIB} -lblas -llapack -L ${GSL_LIB} -lgsl 
+
 
 all: libjla.a jla.so
 
-libjla.a: src/jla.o src/ini.o
+libjla.a: src/jla.o
 	$(AR) $(ARFLAGS) $@ $^
 
 jla.so: interface.cc libjla.a
