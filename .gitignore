@@ -2,6 +2,7 @@
 *.mod
 *.so
 *.a
+*.dSYM
 boltzmann/camb/camb
 *Makefile.mine
 likelihood/planck_v1/build
