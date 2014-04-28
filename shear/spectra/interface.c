@@ -184,6 +184,12 @@ int execute(c_datablock * block, void * config)
 	reverse(a, nz2);
 	reverse(chi, nz2);
 
+	// Convert chi from Mpc to Mpc/h
+	double h0=0.0;
+	status |= c_datablock_get_double(block, cosmo, "h0", &h0);
+	for (int i=0; i<nz2; i++) chi[i]*=h0;
+
+
 	// At the moment "a" is still actually redshift z
 	gsl_spline * chi_of_z_spline = spline_from_arrays(nz2, a, chi);
 
