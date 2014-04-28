@@ -16,6 +16,9 @@ endif
 EQUATIONS=equations_ppf
 FITSLIB=cfitsio
 
+interface: $(CAMBLIB) camb_interface.F90
+	$(F90C) $(F90FLAGS) -shared camb_interface.F90 camb_mode.F90 -fPIC -o camb.so $(LDFLAGS)   -L. -lcamb_$(RECOMBINATION)
+
 include ./Makefile_main
 
 test:
