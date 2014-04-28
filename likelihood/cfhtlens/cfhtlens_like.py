@@ -65,8 +65,8 @@ def theta_lims_from_bin_mids(theta):
 
 class CFHTLensLikelihood(object):
     def __init__(self, covmat_filename, data_filename,plus_only,cut_low_theta):
-        self.plus_only=eval(plus_only)
-        self.cut_low_theta=eval(cut_low_theta)
+        self.plus_only=plus_only
+        self.cut_low_theta=cut_low_theta
         theta, self.data = load_data_vector(data_filename, self.plus_only, self.cut_low_theta)
         #Convert thetas from arcminutes to radians?? to match theory thetas
         self.theta = np.radians(theta/60.)
@@ -158,7 +158,7 @@ class CFHTLensLikelihood(object):
                     xi_plus_theory = xi_theory[:len(theta_theory)]
                     xi_minus_theory = xi_theory[len(theta_theory):]
                     #print xi_plus_theory,xi_minus_theory
-                    #interpolate to data values - this is correct if self.theta values are mean for each bin
+                    #interpolate to data values - this is correct if self.theta values are mean for each binp the
                     xi_plus_binned = self.interpolate_to_bin(theta_theory, xi_plus_theory) 
                     xi_minus_binned = self.interpolate_to_bin(theta_theory, xi_minus_theory)
                     '''
