@@ -139,7 +139,8 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 	limber_config lc;
 	int status = shear_shear_config(block, &lc);
 	if (status) {free(lc.ell); return status;}
-	status = status + c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
+	status |= c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
+	status |= c_datablock_put_int(block, SHEAR_CL_SECTION, "nbin", nbin);
 
 	for (int bin1=1; bin1<=nbin; bin1++){
 		for (int bin2=1; bin2<=bin1; bin2++){
