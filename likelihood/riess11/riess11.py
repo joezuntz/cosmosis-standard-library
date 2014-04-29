@@ -1,9 +1,10 @@
 from numpy import log, pi
-import cosmosis.datablock.cosmosis_py
+from cosmosis.datablock import cosmosis_py
+from cosmosis_py import section_names
 
 
-cosmo = cosmosis_py.section_names.cosmological_parameters
-likes = cosmosis_py.section_names.likelihoods
+cosmo = section_names.cosmological_parameters
+likes = section_names.likelihoods
 
 HST_H0_MEAN = 0.738
 HST_H0_SIGMA = 0.024
