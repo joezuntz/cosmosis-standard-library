@@ -312,3 +312,15 @@ function execute(block,config) result(status)
 	endif
 
 end function execute
+
+
+function cleanup(config) result(status)
+	use camb
+	use cosmosis_modules
+	integer(c_size_t), value :: config
+	integer(cosmosis_status) :: status
+
+	!CAMB has its own built-in clean-up function
+	call CAMB_cleanup()
+
+end function cleanup

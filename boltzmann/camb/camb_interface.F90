@@ -258,6 +258,7 @@ module camb_interface_tools
 			endif
 			w_ppf(1:nw_ppf) = w_array(1:nw_ppf)
 			a_ppf(1:nw_ppf) = dlog(a_array(1:nw_ppf))  !a is stored as log(a)
+			deallocate(w_array, a_array)
 			call setddwa()
 			call interpolrde()
 		else
