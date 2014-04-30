@@ -1,7 +1,6 @@
 from numpy import log, pi
-from cosmosis.datablock import cosmosis_py
-from cosmosis_py import section_names
-
+from cosmosis.datablock import names as section_names
+from cosmosis.datablock import option_section
 
 cosmo = section_names.cosmological_parameters
 likes = section_names.likelihoods
@@ -10,7 +9,7 @@ HST_H0_MEAN = 0.738
 HST_H0_SIGMA = 0.024
 
 def setup(options):
-	section = cosmosis_py.block.option_section
+	section = option_section
 	mean = options.get_double(section, "mean", default=HST_H0_MEAN)
 	sigma = options.get_double(section, "sigma", default=HST_H0_SIGMA)
 	norm = 0.5*log(2*pi*sigma**2)
