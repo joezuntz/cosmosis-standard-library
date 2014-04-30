@@ -162,3 +162,19 @@ function execute(block, config) result(status)
 	call deallocate_matterpower(PK_NL)
 
 end function
+
+
+function cleanup(config) result(status)
+	use halofit_interface_tools
+	use cosmosis_modules
+	type(c_ptr), value :: config
+	type(halofit_settings), pointer :: settings	
+	integer(cosmosis_status) :: status
+
+	!Free memory allocated in the setup function
+	call c_f_pointer(config, settings)
+	deallocate(settings)
+
+	status = 0
+
+end function cleanup
