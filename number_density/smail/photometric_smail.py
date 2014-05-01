@@ -103,6 +103,11 @@ def execute(fits_handle):
 		return 1
 	return 0
 		
+
+def cleanup(config):
+	#nothing to do here!  We just include this 
+	# for completeness
+	return 0
 	
 
 # function [n_z_tot ngals_bin pzpzs]=get_nofz_amarar06(s,z_vals,verb)

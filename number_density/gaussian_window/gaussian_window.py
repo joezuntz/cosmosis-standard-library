@@ -43,3 +43,9 @@ def execute(block, config):
 		#Save n(z)
 		block[section, "BIN_%d"%i] = nz_bin
 	return 0
+
+
+def cleanup(config):
+	#nothing to do here!  We just include this 
+	# for completeness
+	return 0
