@@ -108,3 +108,10 @@ def execute(block, config):
 
 	#Signal that all is well
 	return 0
+
+
+
+def cleanup(config):
+	#nothing to do here!  We just include this 
+	# for completeness
+	return 0

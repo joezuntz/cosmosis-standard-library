@@ -32,3 +32,7 @@ def execute(block, config):
 	#signal that everything went fine
 	return 0
 
+def cleanup(config):
+	#nothing to do here!  We just include this 
+	# for completeness
+	return 0
