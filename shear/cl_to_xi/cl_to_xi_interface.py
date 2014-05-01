@@ -46,3 +46,8 @@ def execute(block, config):
 			block[output_section, "xiplus_%d_%d"%(i,j)] = xi_plus
 			block[output_section, "ximinus_%d_%d"%(i,j)] = xi_minus
 	return 0
+
+def cleanup(config):
+    #nothing to do here!  We just include this 
+    # for completeness.  The joy of python.
+    return 0
