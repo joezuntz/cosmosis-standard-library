@@ -1,6 +1,5 @@
 import numpy as np
-import cosmosis_py.section_names
-from cosmosis_py.block import option_section
+from cosmosis.datablock import option_section, names as section_names
 
 def setup(options):
 	#only one parameter - filepath
@@ -22,7 +21,7 @@ def setup(options):
 def execute(block, config):
 	(nz, nbin, z, n_of_z) = config
 
-	section = cosmosis_py.section_names.wl_number_density
+	section = section_names.wl_number_density
 	block[section, 'nz'] = nz
 	block[section, 'nbin'] = nbin
 	block[section, 'z'] = z

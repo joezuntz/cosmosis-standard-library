@@ -1,5 +1,4 @@
-import cosmosis_py.section_names
-from cosmosis_py.block import option_section
+from cosmosis.datablock import option_section, names as section_names
 import cfhtlens_like
 from cfhtlens_like import n_z_bin
 import numpy as np
@@ -25,7 +24,7 @@ def execute(block, config):
     #Get theta for the sample values.
     #We need theta twice because our CFHTLens
     #code wants xminus and xplus
-    section=cosmosis_py.section_names.shear_xi
+    section=section_names.shear_xi
     theta = block[section, "theta"]
     theta = np.concatenate((theta, theta))
 
@@ -46,7 +45,7 @@ def execute(block, config):
     like = calculator(xi_data)
 
     #save the result
-    section=cosmosis_py.section_names.likelihoods
+    section=section_names.likelihoods
     block[section, "cfhtlens_like"] = like
 
     return 0

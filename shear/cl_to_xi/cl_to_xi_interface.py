@@ -1,8 +1,7 @@
 #coding: utf-8
 import cl_to_xi
 import numpy as np
-import cosmosis_py.section_names
-from cosmosis_py.block import option_section
+from cosmosis.datablock import option_section, names as section_names
 
 
 def setup(options):
@@ -32,8 +31,8 @@ def execute(block, config):
 	thetas = config['theta']
 	n_theta = len(thetas)
 
-	section = cosmosis_py.section_names.shear_cl
-	output_section = cosmosis_py.section_names.shear_xi
+	section = section_names.shear_cl
+	output_section = section_names.shear_xi
 	ell = block[section, "ell"]
 	nbin = block[section, 'nbin']
 	block[output_section, "theta"] = thetas
