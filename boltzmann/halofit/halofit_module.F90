@@ -98,6 +98,8 @@ function execute(block, config) result(status)
 	!Set Halofit internal numbers
 	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
 	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_M", omega_matter)
+	status = status + datablock_get_double_default(block, cosmological_parameters_section, "OMEGA_NU", 0.0D0, omega_nu)
+	status = status + datablock_get_double_default(block, cosmological_parameters_section, "W", -1.0D0, w_lam)
 	omegav = 1 - omega_matter
 
     if (status .ne. 0) then

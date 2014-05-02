@@ -18,11 +18,12 @@ module halofit1
 
 	integer, parameter :: dl=8       
 	real, parameter :: Min_kh_nonlinear = 0.005
-	real(dl), parameter :: neutrino_fraction = 0.01
 	real(dl) :: omega_matter
 	real(dl) :: omegav
+  real(dl) :: omega_nu
+
 	real(dl), parameter :: pi = 3.141592654
-	real(dl), parameter :: w_lam = -1.0
+	real(dl) :: w_lam = -1.0
 
        real(dl):: om_m,om_v,fnu,omm0
       
@@ -116,7 +117,7 @@ module halofit1
 
        !!BR09 putting neutrinos into the matter as well, not sure if this is correct, but at least one will get a consisent omk.
        omm0 = omega_matter
-       fnu = neutrino_fraction
+       fnu = omega_nu/omega_matter
 
        nonlin_ratio = 1
 
