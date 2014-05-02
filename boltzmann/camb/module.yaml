@@ -1,0 +1,123 @@
+name: camb
+version: Nov13
+purpose: "Boltzmann and background integrator for BG, CMB, and matter power"
+url: http://camb.info
+attribution: [Antony Lewis, Anthony Challinor]
+rules:
+    "Please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"
+cite:
+    - "http://arxiv.org/abs/1201.3654"
+    - "http://arxiv.org/abs/astro-ph/9911177"
+
+assumptions:
+    - The wLCDM model
+
+explanation: >
+    The Code for Anisotropies in the Microwave Background, in equations_ppf mode
+
+    CAMB is the standard cosmology code for evolving perturbations
+    in the primordial universe into CMB and matter power spectra, as
+    well as various auxiliary quantities.
+
+    See http://camb.info for a fuller description
+
+    It has a wide variety of options only a few of which are currently
+    exposed here.  This will be extended in future.  This version of
+    camb has been modified very slightly to output a few new pieces
+    of data useful in other modules, notably the dark matter density
+    history rho(z) (which can vary in non-lcdm models)
+
+    Anthony Lewis has kindly given permission for CAMB to be packaged
+    with CosmoSIS.
+
+    The CosmoSIS team packaged this module into cosmosis form so any issues
+    running it here please ask us first.
+
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    - mode:
+        String, choose from Background, thermal, cmb, or all.
+
+        In background mode only the expansion history is calculated.
+        In thermal mode the recombination history is computed and rs_zdrag and related quantities also.
+        In cmb mode the CMB power spectra are also calculated.
+        In all mode the matter power spectrum at low redshift and sigma8 are also calculated.
+    - lmax:  "Integer, only if mode!=background, default 1200 - the max ell to use for cmb calculation"
+    - feedback: "Integer, amount of output to print.  0 for no feedback.  1 for basic, 2 for extended, maybe higher?"
+    - use_tabulated_w: "Logical, set to true to load w(z) from previous module"
+    - k_eta_max_scalar: "Integer, maximum value of (k eta) to evolve for scalars."
+    - do_tensors: "Include tensor modes"
+    - zmin: "Min value to save P(k,z)"
+    - zmax: "Max value to save P(k,z)"
+    - nz: "Number of z values to save P(k,z)"
+    - do_nonlinear: "Apply non-linear halofit corrections to matter-power.  Relevant only for lensing right now"
+    - do_lensing: "Include lensing of CMB, and save C_ell phi-phi"
+    - high_ell_template: "Required for lensing - set to the file included in the camb dir"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    - cosmological_parameters:
+        - omega_b:  "real, baryon density fraction today"
+        - omega_m:  "real, baryon + cdm density fraction today"
+        - h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        - tau:  "real, optical depth to last-scattering (ignored in background mode)"
+        - n_s:  "real, scalar spectral index (ignored in background/thermal mode)"
+        - A_s:  "real, scalar spectrum primordial amplitude (ignored in background/thermal mode)"
+        #There rest of these are always optional
+        - r_t:  "real, tensor to scalar ratio (default 0.0)"
+        - n_run:  "real, running of scalar spectrum d n_s / d log_k (default 0.0)"
+        - n_t:  "real, tensor spectral index (default 0.0)"
+        - massless_nu:  "real, effective number of massless neutrinos (default 3.046)"
+        - massive_nu:  "integer, number of massive neutrinos (default 0)"
+        - sterile_neutrino:  "integer, number of sterile neutrinos (default 0)"
+        - delta_neff:  "real, contribution to N_eff by sterile neutrino (default 0)"
+        - sterile_mass_fraction:  "real, fraction of omega_nu in sterile neutrino"
+        - omega_nu:  "real, neutrino density fraction today (default 0.0)"
+        - yhe:  "real, helium fraction (default 0.24)"
+        - w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
+        - wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
+        - omega_k:  "real, curvature density fraction today (default 0.0)"
+        - cs2_de:  "real, dark energy sound speed/c (default 1.0)"
+
+
+
+outputs:
+    - cosmological_parameters:
+        - sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
+
+    - distances:
+        - nz: "integer, number of z samples"
+        - z: "1D real array, redshifts of samples"
+        - d_a: "1D real array, angular diameter distance in Mpc"
+        - d_m: "1D real array, co-moving distance in Mpc"
+        - d_l: "1D real array, luminosity distance in Mpc"
+        - mu:  "1D real array, distance modulus"
+        - h:  "1D real array, hubble parameter with in units of Mpc"
+        - rho: "1D real array, matter density "
+        # Scalars:
+        - age: "real, age of universe in GYr"
+        - zdrag: "real, redshift where baryons no longer dragged by photons"
+        - rs_zdrag: "real, sound horizon size at zdrag"
+        - zstar: "real, redshift of unity optical depth"
+        - theta: "real, angular size of sound horizon at zstar"
+        - chistar: "real, comoving distance to zstar"
+
+    - matter_power_lin:
+        - z: "1D real array, redshifts of samples"
+        - k: "1D real array, k wavenumbers of samples in Mpc/h"
+        - p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
+
+    - linear_cdm_transfer:
+        - z: "1D real array, redshifts of samples"
+        - k: "1D real array, k wavenumbers of samples in Mpc/h"
+        - delta_cdm: "2D real array, Linear CDM transfer function at samples"
+
+    - cmb_cl:
+        - ell: "1D integer array, angular frequencies"
+        - tt:  "1D real array, ell * (ell+1) C_ell^TT / 2 pi in mu K^2"
+        - ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2"
+        - bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2"
+        - te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2"
+        - PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi"
