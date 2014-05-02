@@ -342,23 +342,31 @@ module camb_interface_tools
 	
 		integer, parameter :: input_set = 1
 		real  :: cls(2:standard_lmax,1:4)
-		real(8)  :: cls_double(2:standard_lmax,1:4)
+		real(8)  :: cls_double(2:standard_lmax,1:4), cls_phi(2:standard_lmax)
 		integer  :: ell(2:standard_lmax), l
 		logical, parameter :: switch_polarization_convention = .false.	
 	
 		status = 0
 		call CAMB_GetCls(cls, standard_lmax, input_set, switch_polarization_convention)
-		cls_double = cls * 7.4311e12  !cmb output scale
+		cls_double(:,1:4) = cls * 7.4311e12  !cmb output scale
 	    do l=2,standard_lmax
 			ell(l) = l
 		enddo
+
+		if (do_lensing) then
+		    do l=2,standard_lmax		
+				cls_phi(l) = Cl_scalar(l, input_set,  C_phi) * (l+1.0) / ((l*1.0)**3 * twopi)
+			enddo
+		endif
 	
 		status = status + datablock_put_int_array_1d(block, cmb_cl_section, "ELL", ell)
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "TT", cls_double(:,1))
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "EE", cls_double(:,2))
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "BB", cls_double(:,3))
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "TE", cls_double(:,4))
-
+		if (do_lensing) then
+			status = status + datablock_put_double_array_1d(block, cmb_cl_section, "PP", cls_phi)
+		endif
 	
 		if (status .ne. 0) then
 			write(*,*) "Failed to save cmb!."
