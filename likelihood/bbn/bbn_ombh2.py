@@ -1,13 +1,12 @@
 from numpy import log, pi
-import cosmosis.datablock.cosmosis_py
+from import cosmosis.datablock import names as section_names
 
-cosmo = cosmosis_py.names.cosmological_parameters_section
-likes = cosmosis_py.names.likelihoods_section
+cosmo = section_names.cosmological_parameters_section
+likes = section_names.likelihoods_section
 
-
-#Steigman 2008, equation 9
-BBN_OMBH2_MEAN = 0.0218
-BBN_OMBH2_SIGMA = 0.0011
+#Particle Data Group 2013
+BBN_OMBH2_MEAN = 0.023
+BBN_OMBH2_SIGMA = 0.002
 
 def setup(options):
 	mean = options.get_float(section, "mean", default=BBN_OMBH2_MEAN)
