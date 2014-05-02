@@ -2,7 +2,7 @@
 #Needs updating!  Some things should move to setup function
 
 import numpy as np
-import cosmosis.datablock.cosmosis_py
+from cosmosis.datablock import names as section_names
 
 def gaussian(z,mu,sigma):
 	return np.exp(-0.5*(z-mu)**2/sigma**2) / np.sqrt(2*np.pi) / sigma
@@ -38,7 +38,6 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 		ni = z_prob_matrix[w,:].sum(axis=0)
 		#make this integrate to ngal/nbin, since we
 		#have divided the ngal total up evenly
-		ni/=(ni.sum() * dz) 
 		ni*=ngal/(nbin*ni.sum()*dz)
 		assert(len(ni)==len(z))
 		NI.append(ni)
@@ -53,54 +52,48 @@ def compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias):
 	bin_nz = compute_bin_nz(z_prob_matrix, z, edges, ngal)
 	return edges,bin_nz
 		
-def execute(fits_handle):
+def setup(options):
+	dz = options.get_int(option_section, "dz", default=0.01)
+	zmax = options.get_float(option_section, "zmax", default=4.0)
+	nbin = options.get_int(option_section, "nbin")
+	return (dz, zmax, nbin)
+
+def execute(block, config):
+	(dz, zmax, nbin) = config
 	#read fits file data
-	try:
-		data = pydesglue.DesDataPackage.from_fits_handle(fits_handle)
+	params = section_names.number_density_params
+	alpha = block[params, "alpha"]
+	beta = block[params, "beta"]
+	z0 = block[params, "z0"]
+	sigz = block[params, "sigz"]
+	ngal = block[params, "ngal"]
+	bias = block.get(params, "bias", default=0.0)
 
-		#get parameters from fits data
-		section = pydesglue.section_names.number_density_params
-		dz      = data.get_param(section,"DZ")
-		zmax    = data.get_param(section,"ZMAX")
-		alpha   = data.get_param(section,"ALPHA")
-		beta    = data.get_param(section,"BETA")
-		z0      = data.get_param(section,"Z0")
-		sigma_z = data.get_param(section,"SIGZ")
-		nbin    = data.get_param(section,"NBIN")
-		ngal    = data.get_param(section,"NGAL",default=20.0)
-		bias    = data.get_param(section,"BIAS",default=0.0)
-		
-		#Compute the redshift vector
-		z = np.arange(0,zmax+dz/2,dz)
-		
-		#Run the main code for getting n(z) in bins
-		edges,bins = compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias)
+	
+	#Compute the redshift vector
+	z = np.arange(0,zmax+dz/2,dz)
+	
+	#Run the main code for getting n(z) in bins
+	edges,bins = compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias)
 
-		#Save them back to memory
-		nz_section = pydesglue.section_names.wl_number_density
-		#Save the basic parameters
-		data.set_param(nz_section,"NBIN",nbin)
-		data.set_param(nz_section,"NZ",len(z))
-		data.set_data(nz_section, "Z", z)
-		#Loop through the bins
-		for i,bin in enumerate(bins):
-			#The bin numbering starts at 1
-			b=i+1
-			name = "BIN_%d" % b
-			#Save the bin edges as parameters
-			data.set_param(nz_section,"EDGE_%d"%b,edges[i])
-			#And save the bin n(z) as a column
-			data.set_data(nz_section, name, bin)
-		#Also save the upper limit to the top bin
-		data.set_param(nz_section,"EDGE_%d"%(nbin+1),edges[-1])
-		#Finally save everything back to the fits file.
-		data.write_to_fits_handle(fits_handle)
-	except KeyboardInterrupt:
-		raise KeyboardInterrupt
-	except Exception as error:
-		print "Failed to generate spectra in kirk_nz"
-		print error
-		return 1
+	#Save the results
+	nz_section = section_names.wl_number_density
+	data[nz_section,"nbin"] = nbin
+	data[nz_section,"nz"] = len(z)
+	data[nz_section,"z"] = z
+
+	#Loop through the bins
+	for i,bin in enumerate(bins):
+		#The bin numbering starts at 1
+		b=i+1
+		name = "BIN_%d" % b
+		#Save the bin edges as parameters
+		data[nz_section,"EDGE_%d"%b] = edges[i]
+		#And save the bin n(z) as a column
+		data[nz_section, name] =  bin
+	#Also save the upper limit to the top bin
+	data[nz_section,"EDGE_%d"%(nbin+1)] = edges[-1]
+
 	return 0
 		
 
