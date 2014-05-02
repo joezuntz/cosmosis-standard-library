@@ -1,0 +1,36 @@
+#This is a template for module description files
+name: "BICEP2"
+version: "20140314"
+purpose: "Compute the likelihood of the supplied CMB power spectra"
+url: "http://bicepkeck.org"
+attribution: [BICEP2 Team]
+rules:
+    ""
+cite:
+    - "http://arxiv.org/abs/1403.4302"
+    - "http://arxiv.org/abs/1403.3985"
+
+assumptions:
+    - "CAMB or other CMB code must be set up to do lensing and include high k modes"
+    - "BICEP2 2014-03-14 dataset"
+
+explanation: >
+    "The 2014 BICEP2 results are a detection of cosmological B-modes
+    on the scales that indicate a primordial gravitational wave bump.
+
+    This module wraps the likelihood code released by the BICEP2 team.
+    "
+
+#no parameters right now.
+
+params: []
+
+inputs:
+    - cmb_cl:
+        - ell: "1D integers, Angular wavenumbers for the input spectra"
+        - EE:  "1D real, EE CMB power spectrum, at wavenumbers from ell"
+        - BB:  "1D real, BB CMB power spectraum, at wavenumbers from ell"
+
+outputs:
+    - likelihoods:
+        - BICEP_LIKe: "real, likelihood of supplied spectra from BICEP2"
