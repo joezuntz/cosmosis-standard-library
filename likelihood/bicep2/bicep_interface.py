@@ -54,9 +54,12 @@ def setup(options):
 
 		# A quick warning for the unwary user...
 		print
-		print "WARNING: Now uses spectrum from CAMB...but make sure you have lensing turned on!"
-		print "Also apparently you need do_nonlinear = 2, k_eta_max_scalar = 14000 to get"
-		print "an accurate BB power spectrum"
+		print "You're using the BICEP2 likelihood code."
+		print "That's great, but just one quick note: "
+		print "If using camb for your spectra you need do_nonlinear = T, k_eta_max_scalar = 14000 to get"
+		print "accurate enough lensing B-modes for good results.  There will be equivalents for other codes too."
+		print
+		print "If you're running demo 3 then don't worry, we took care of this for you."
 		print
 	return C_l, C_l_hat, N_l, C_fl, M_inv, bpwf_l, bpwf_Cs_l, ell1, inpmodLCDM_Cs_l, expvLCDM, BB_Cs_l, ell
 
