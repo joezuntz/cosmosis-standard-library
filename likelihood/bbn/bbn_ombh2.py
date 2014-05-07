@@ -1,6 +1,6 @@
 from numpy import log, pi
-from import cosmosis.datablock import names as section_names
-
+from cosmosis.datablock import names as section_names
+from cosmosis.datablock import option_section
 cosmo = section_names.cosmological_parameters_section
 likes = section_names.likelihoods_section
 
