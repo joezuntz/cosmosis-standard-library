@@ -1,5 +1,4 @@
 #Code by Donnacha Kirk
-#Needs updating!  Some things should move to setup function
 
 import numpy as np
 from cosmosis.datablock import names as section_names
