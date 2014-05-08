@@ -1,0 +1,32 @@
+#This is a template for module description files
+name: gaussian_window
+version: 1
+purpose: Compute Gaussian n(z) window functions for weak lensing bins
+url: ""
+attribution: [CosmoSIS Team]
+rules: "You can do what you want with this file"
+cite: []
+
+assumptions:
+    - "Gaussian window in redshift"
+
+explanation: >
+    "This very simple module sets up fixed redshift n(z) bins for weak lensing.
+     We should probably upgrade it to take the redshift and sigma from the 
+     sampling instead of the ini file."
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    z: "Real scalar or vector; redshift(s) of the bins"
+    sigma: "Real scalar or vector; width of the bins in redshift"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs: {}
+
+outputs:
+    wl_number_density:
+        nz: "Integer; number of redshift samples"
+        nbin: "Integer; number of bins"
+        z: "Real vector; redshift sample values"
+        bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."
