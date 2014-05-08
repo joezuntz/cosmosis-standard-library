@@ -140,6 +140,8 @@ int execute(cosmosis::DataBlock * block, void * config){
 		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL);
 	}
 
+	gsl_spline_free(mu_of_z);
+
 	//Get the chi^2 and convert to log-like
 	double chi2 = calculator->computeLikelihood(mu_sn, nuisance);
 	double like = -chi2/2.0;

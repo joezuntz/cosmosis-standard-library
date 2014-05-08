@@ -147,6 +147,7 @@ load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline,
 
 	if (status) return NULL;
 	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
+	deallocate_2d_double(&P, nk);
 	return interp;
 
 }
@@ -285,6 +286,7 @@ int execute(c_datablock * block, void * config_in)
 		free(a);
 		free(z);
 		gsl_spline_free(a_of_chi_spline);
+		gsl_spline_free(chi_of_z_spline);
 		return 1;
 	}
 
@@ -296,6 +298,8 @@ int execute(c_datablock * block, void * config_in)
 	// tidy up global data
 	for (int bin=0; bin<nbin; bin++) gsl_spline_free(W_splines[bin]);
 	gsl_spline_free(a_of_chi_spline);
+	gsl_spline_free(chi_of_z_spline);
+	destroy_interp_2d(PK);
 	free(chi);
 	free(a);
 	free(z);
