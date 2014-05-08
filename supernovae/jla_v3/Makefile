@@ -2,7 +2,7 @@ include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 
 USER_CXXFLAGS+= -I ${GSL_INC}
-USER_LDFLAGS+= -Wl,--whole-archive -lcosmosis -L ${LAPACK_LIB} -lblas -Wl,--no-whole-archive  -llapack -lgfortran -L ${GSL_LIB} -lgslcblas -lgsl 
+USER_LDFLAGS+=  -lcosmosis -L ${LAPACK_LIB} -lblas   -llapack -lgfortran -L ${GSL_LIB} -lgslcblas -lgsl 
 
 
 all: libjla.a jla.so
