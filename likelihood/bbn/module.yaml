@@ -20,17 +20,17 @@ explanation: >
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-        - mean: "float, replace the standard value measurement omega_b h^2 = 0.023 with a custom one (default 0.023)"
-        - sigma: "float, replace the standard value error 0.002 with a custom one (default 0.002)"
+    mean: "float, replace the standard value measurement omega_b h^2 = 0.023 with a custom one (default 0.023)"
+    sigma: "float, replace the standard value error 0.002 with a custom one (default 0.002)"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
-    - cosmological_parameters:
-        - omega_b:  "real, baryon density fraction today"
-        - h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+    cosmological_parameters:
+        omega_b:  "real, baryon density fraction today"
+        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
 
 outputs:
-    - likelihoods:
-        - BBN_LIKE: "Gaussian likelihood value of supplied parameters"
+    likelihoods:
+        BBN_LIKE: "Gaussian likelihood value of supplied parameters"
 

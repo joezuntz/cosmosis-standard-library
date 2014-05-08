@@ -23,14 +23,14 @@ explanation: >
 
 #no parameters right now.
 
-params: []
+params: {}
 
 inputs:
-    - cmb_cl:
-        - ell: "1D integers, Angular wavenumbers for the input spectra"
-        - EE:  "1D real, EE CMB power spectrum, at wavenumbers from ell"
-        - BB:  "1D real, BB CMB power spectraum, at wavenumbers from ell"
+    cmb_cl:
+        ell: "1D integers, Angular wavenumbers for the input spectra"
+        EE:  "1D real, EE CMB power spectrum, at wavenumbers from ell"
+        BB:  "1D real, BB CMB power spectraum, at wavenumbers from ell"
 
 outputs:
-    - likelihoods:
-        - BICEP_LIKe: "real, likelihood of supplied spectra from BICEP2"
+    likelihoods:
+        BICEP_LIKe: "real, likelihood of supplied spectra from BICEP2"

@@ -1,0 +1,31 @@
+#This is a template for module description files
+name: load_nz
+version: 1
+purpose: Load a number density n(z) for weak lensing from a file
+url: ""
+attribution: [CosmoSIS Team]
+rules: "If you use a file from a particular survey you should cite that survey"
+cite: []
+
+assumptions:
+    - "n(z) file first column = z, others = bin n(z)"
+
+explanation: >
+    "This simple module just loads a set of n(z) for different bins from a
+    fixed file and provides it as-is.  The n(z) are normalized before being saved."
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    filepath: "String; absolute or relative path to an n(z) file"
+    sigma: "Real scalar or vector; width of the bins in redshift"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs: {}
+
+outputs:
+    wl_number_density:
+        nz: "Integer; number of redshift samples"
+        nbin: "Integer; number of bins"
+        z: "Real vector; redshift sample values"
+        bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."

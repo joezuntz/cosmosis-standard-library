@@ -1,4 +1,4 @@
-// #include "shear_shear.h"
+
 #include "cosmosis/datablock/c_datablock.h"
 #include "gsl/gsl_spline.h"
 #include "shear_shear.h"
@@ -97,6 +97,25 @@ int shear_shear_config(c_datablock * block, limber_config * lc, shear_spectrum_c
 	return status;
 }
 
+
+
+int intrinsic_intrinsic_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
+	// Set up the integration rules.
+	// We can interpolate in the logs because
+	// everything should be positive, just as in shear-shear
+	lc->xlog = true;
+	lc->ylog = true;
+	lc->n_ell = config->n_ell;
+	lc->prefactor = 1.0;
+
+	// Log spaced target ell based on input
+	lc->ell = malloc(sizeof(double)*lc->n_ell);
+	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
+	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
+
+	return 0;
+}
+
 Interpolator2D * 
 load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline, 
 	const char * section,
@@ -128,6 +147,7 @@ load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline,
 
 	if (status) return NULL;
 	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
+	deallocate_2d_double(&P, nk);
 	return interp;
 
 }
@@ -173,8 +193,33 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 	}
 	free(lc.ell);
 	return status;
-
 }	
+
+
+int intrinsic_intrinsic_spectra(c_datablock * block, int nbin, 
+	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config)
+{
+
+	// Get the prefactor
+
+	limber_config lc;
+	int status = shear_shear_config(block, &lc, config);
+	if (status) {free(lc.ell); return status;}
+	status |= c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
+	status |= c_datablock_put_int(block, SHEAR_CL_SECTION, "nbin", nbin);
+
+	for (int bin1=1; bin1<=nbin; bin1++){
+		for (int bin2=1; bin2<=bin1; bin2++){
+			gsl_spline * c_ell = limber_integral(&lc, W[bin1-1], W[bin2-1], PK);
+			int status = save_c_ell(block, SHEAR_CL_SECTION, bin1, bin2,  c_ell, &lc);
+			gsl_spline_free(c_ell);
+			if (status) return status;
+		}
+	}
+	free(lc.ell);
+	return status;
+}	
+
 
 
 int execute(c_datablock * block, void * config_in)
@@ -241,6 +286,7 @@ int execute(c_datablock * block, void * config_in)
 		free(a);
 		free(z);
 		gsl_spline_free(a_of_chi_spline);
+		gsl_spline_free(chi_of_z_spline);
 		return 1;
 	}
 
@@ -252,6 +298,8 @@ int execute(c_datablock * block, void * config_in)
 	// tidy up global data
 	for (int bin=0; bin<nbin; bin++) gsl_spline_free(W_splines[bin]);
 	gsl_spline_free(a_of_chi_spline);
+	gsl_spline_free(chi_of_z_spline);
+	destroy_interp_2d(PK);
 	free(chi);
 	free(a);
 	free(z);
