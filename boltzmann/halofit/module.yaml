@@ -18,25 +18,25 @@ explanation: >
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    - kmin: "real, minimum k in Mpc/h to generate values for (default 1e-4)"
-    - kmax: "real, maximum k in Mpc/h to generate values for (default 100.0"
-    - nk: "integer, number of log-spaced k values to sample (default 200)"
+    kmin: "real, minimum k in Mpc/h to generate values for (default 1e-4)"
+    kmax: "real, maximum k in Mpc/h to generate values for (default 100.0"
+    nk: "integer, number of log-spaced k values to sample (default 200)"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
-    - cosmological_parameters:
-        - omega_m:  "real, Total matter density fraction today"
-        - omega_b:  "real, Baryon density fraction today"
-        - omega_nu:  "real, Neutrino density fraction today (default 0.0)"
-        - w:  "real, Dark energy equation of state (default -1)"
-    - matter_power_lin:
-        - k: "real 1D array, sample values of linear spectrum in Mpc/h"
-        - z: "real 1D array, redshift of linear spectrum samples"
-        - k: "real 2D array, linear spectrum in (Mpc/h)^{-3}"
+    cosmological_parameters:
+        omega_m:  "real, Total matter density fraction today"
+        omega_b:  "real, Baryon density fraction today"
+        omega_nu:  "real, Neutrino density fraction today (default 0.0)"
+        w:  "real, Dark energy equation of state (default -1)"
+    matter_power_lin:
+        k: "real 1D array, sample values of linear spectrum in Mpc/h"
+        z: "real 1D array, redshift of linear spectrum samples"
+        P: "real 2D array, linear spectrum in (Mpc/h)^{-3}"
 
 outputs:
-    - matter_power_nl:
-        - k: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
-        - z: "real 1D array, redshift of nonlinear spectrum samples"
-        - k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+    matter_power_nl:
+        k: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        z: "real 1D array, redshift of nonlinear spectrum samples"
+        P: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
