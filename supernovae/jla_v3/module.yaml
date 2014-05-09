@@ -1,0 +1,52 @@
+#This is a template for module description files
+name: "jla"
+version: "3"
+purpose: "Supernova likelihood for SDSS-II/SNLS3"
+url: "http://supernovae.in2p3.fr/sdss_snls_jla/ReadMe.html"
+attribution: [Marc Betoule]
+rules:
+    ""
+cite:
+    - "http://arxiv.org/abs/1401.4064"
+
+assumptions:
+    - "SALT2 used to fit light curves"
+    - "Akima interpolation between mu(z) samples"
+
+explanation: >
+    "This JLA code uses 731 supernovae from the JLA SDSS-II/SNLS3 sample 
+    to get a likelihood of a given theory mu(z).
+
+    Systematic error propagation is done with a collection of separate 
+    covariance matrices for the various light-curve parameters.
+
+    You can copy the standard parameters to use for this from demos/demo5.ini
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    data_dir: "String; dir for other files. Use cosmosis-standard-library/supernovae/jla_v3/data (unless trying a different data set)"
+    data_file: "String; dir for other files. Use jla_lcparams.txt (unless trying a different data set)"
+    scriptmcut: "String; dir for other files. Use 10.0"
+    mag_covmat_file: "String; dir for other files. Use jla_v0_covmatrix.dat"
+    stretch_covmat_file: "String; dir for other files. Use jla_va_covmatrix.dat"
+    colour_covmat_file: "String; dir for other files. Use jla_vb_covmatrix.dat"
+    mag_stretch_covmat_file: "String; dir for other files. Use jla_v0a_covmatrix.dat"
+    mag_colour_covmat_file: "String; dir for other files. Use jla_v0b_covmatrix.dat"
+    stretch_colour_covmat_file: "String; dir for other files. Use jla_vab_covmatrix.dat"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    distances:
+        z:  "Real vector; redshift sample values for theory "
+        mu:  "Real vector; theory distance modulus at sample redshifts"
+    supernova_params:
+        alpha: "Real; SN shape parameter coefficient"
+        beta: "Real; SN color parameter coefficient"
+        M: "Real; SN magnitude parameter baseline value; leave this fixed and vary deltaM."
+        deltaM: "Real; SN magnitude parameter where M_actual = M + deltaM"
+
+outputs:
+    likelihoods:
+        JLA_LIKE: Gaussian likelihood for this data set and theory mu(z)
