@@ -48,9 +48,7 @@ F90CRLINK += -L$(HYREC_PATH) -lhyrec
 endif
 
 
-default: camb interface
-
-all: camb $(CAMBLIB) interface
+all: camb $(CAMBLIB)
 
 
 subroutines.o: constants.o utils.o

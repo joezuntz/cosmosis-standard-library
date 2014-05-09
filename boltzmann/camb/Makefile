@@ -16,10 +16,15 @@ endif
 EQUATIONS=equations_ppf
 FITSLIB=cfitsio
 
-interface: $(CAMBLIB) camb_interface.F90
-	$(F90C) $(F90FLAGS) -shared camb_interface.F90 camb_mode.F90 -fPIC -o camb.so $(LDFLAGS)   -L. -lcamb_$(RECOMBINATION)
+INTERFACE = camb.so
+
+default: $(CAMBLIB) $(INTERFACE)
 
 include ./Makefile_main
+
+$(INTERFACE): $(CAMBLIB) camb_interface.F90
+	echo $(CAMBLIB)
+	$(F90C) $(FFLAGS) -shared camb_interface.F90 camb_mode.F90 -o $(INTERFACE) $(LDFLAGS)   -L. -lcamb_$(RECOMBINATION)
 
 test:
 	@echo "Alas, camb has no tests"
