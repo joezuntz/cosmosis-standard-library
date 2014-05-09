@@ -1,5 +1,6 @@
 *.pyc
 *.o
+*.DS_Store
 *.mod
 *.so
 *.a
