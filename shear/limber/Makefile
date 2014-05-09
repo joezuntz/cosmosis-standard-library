@@ -10,21 +10,20 @@ USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas
 AR = ar rc
 
 OBJS = limber.o interp2d.o
-LIBNAME = liblimber.a
+LIB = liblimber.a
 SHLIBNAME = interface.so
 EXEC=test_limber
 
-default:lib  $(EXEC)
+default:$(LIB) $(EXEC)
 all: $(EXEC)
 
 OBJS1=$(OBJS)
 
-$(EXEC): lib test_limber.o
+$(EXEC): $(LIB) test_limber.o
 	$(CC) $(CFLAGS) -o $@ $(OBJS1)  test_limber.o $(LDFLAGS) -L. -llimber
 
-
-lib: $(OBJS)
-	$(AR) $(LIBNAME) $(OBJS)
+$(LIB): $(OBJS)
+	$(AR) $(LIB) $(OBJS)
 
 
 .PHONY : clean
