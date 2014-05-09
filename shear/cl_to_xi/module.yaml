@@ -1,0 +1,48 @@
+#This is a template for module description files
+name: cl_to_xi
+version: "1.0"
+purpose: "Compute WL correlation functions xi+, xi- from C_ell"
+url: ""
+attribution: [CosmoSIS team, Niall MacCrann]
+rules: ""
+cite: []
+
+assumptions:
+    - "To lessen ringing we extrapolate log-linearly beyond k_max in P(k)"
+    - "Some ringing still remains in the outputs of this code; it will not be suitable for high-res calculations"
+
+explanation: >
+    "
+    The correlation functions are related to the spectra via Bessel functions:
+    xi_{(+/-)}(theta) = \int_0^\infty C_\ell J_{(0,4)}(\ell \theta) \ell d\ell / 2\pi
+
+    In this module that integral is done directly via trapezium rule summation
+    of sample values.
+
+    Because we do not really have C_\infty there are edge effects at low \theta
+    from the cut-off which can cause ringing and similar phenomena.  We try to 
+    minimize those by extrapolation C_\ell, but some will remain.
+
+    Better solutions very welcome!
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    n_theta: "Integer; number of log-spaced theta values to compute"
+    theta_min: "Real; minimum theta value to compute in arcmin"
+    theta_max: "Real; maximum theta value to compute in arcmin"
+    theta: "Real vector; can specify this instead of the three above to choose theta explicitly"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    shear_cl:
+        ell: "Sample ell values for output C_ell"
+        nbin: "Number of redshift bins used"
+        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only need j<=i."
+
+outputs:
+    shear_xi:
+        theta: "Sample theta values for output xi(theta)"
+        xiplus_i_j: "xi_plus(theta) (auto-correlation) bin i and j. Only stores j<=i."
+        ximinus_i_j: "xi_minus(theta) (auto-correlation) bin i and j. Only stores j<=i."
