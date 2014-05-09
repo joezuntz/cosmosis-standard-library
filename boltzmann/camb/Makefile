@@ -23,7 +23,6 @@ default: $(CAMBLIB) $(INTERFACE)
 include ./Makefile_main
 
 $(INTERFACE): $(CAMBLIB) camb_interface.F90
-	echo $(CAMBLIB)
 	$(F90C) $(FFLAGS) -shared camb_interface.F90 camb_mode.F90 -o $(INTERFACE) $(LDFLAGS)   -L. -lcamb_$(RECOMBINATION)
 
 test:
