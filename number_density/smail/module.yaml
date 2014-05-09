@@ -36,7 +36,7 @@ inputs:
         beta: "Double; Smail distribution parameter"
         z0: "Double; Smail distribution parameter"
         sigz: "Double; Photometric error at z=0"
-        ngal:"Double; Total number density of galaxies per square arcmin"
+        ngal: "Double; Total number density of galaxies per square arcmin"
         bias: "Double; Bias on all photometric measurements"
 
 outputs:
