@@ -22,7 +22,7 @@ minipmc/mvdens.c
 
 
 CFLAGS = -DNO_HEALPIX -I/System/Library/Frameworks/vecLib.framework/Versions/A/Headers/ -framework veclib -I./minipmc 
-LDFLAGS = -lgsl -lcfitsio
+LDFLAGS = -lgsl -lcfitsio -lgslcblas
 all:
 	gcc $(OBJ) $(CFLAGS) -o lib1.a $(LDFLAGS)
 
