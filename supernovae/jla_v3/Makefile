@@ -21,3 +21,7 @@ jla.so: interface.cc libjla.a
 clean:
 	rm -f src/*.o
 	rm -f libjla.a
+
+test:
+	@echo Alas, supernovae/jla_v3 has no tests
+

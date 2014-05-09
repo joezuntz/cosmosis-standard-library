@@ -249,3 +249,7 @@ clean:
 
 
 .PHONY :clean  LAPACK_PRINT LAPACK_DEP tidy
+
+test:
+	@echo Alas, planck_v1 has no tests
+

@@ -31,3 +31,7 @@ lib: $(OBJS)
 
 clean: 
 	rm -rf *.o $(LIBNAME) $(LIBNAME).dSYM $(EXEC) $(EXEC).dSYM $(SHLIBNAME) $(SHLIBNAME).dSYM
+
+test:
+	@echo Alas, shear/limber has no tests
+

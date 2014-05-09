@@ -10,3 +10,7 @@ interface.so: utils.c shear_shear.c interface.c ../limber/liblimber.a
 
 clean:
 	rm -rf interface.so interface.so.dSYM
+
+test:
+	@echo Alas, shear/spectra has no tests
+
