@@ -18,7 +18,7 @@ FITSLIB=cfitsio
 
 INTERFACE = camb.so
 
-default: $(CAMBLIB) $(INTERFACE)
+all: $(CAMBLIB) $(INTERFACE)
 
 include ./Makefile_main
 
