@@ -1,4 +1,5 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+
 LDFLAGS+= -lcosmosis_fortran -lcosmosis
 
 ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),)
@@ -23,7 +24,6 @@ SO=so
 
 VERSION=1.0-PACKAGED-WITH-COSMOSIS
 
-DEFINESMACOS = -D HAS_RTLD_DEFAULT
 #DEFINES = -D HAS_RTLD_DEFAULT -D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D CLIKSVNVERSION='"$(VERSION)"'
 DEFINES =  -D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D CLIKSVNVERSION='"$(VERSION)"'
 
@@ -77,7 +77,7 @@ BLUE_COLOR=\x1b[35;11m
 endif
 
 ifeq ($(shell uname),Darwin)
-	RPATH_FLAGS=-Xlinker -rpath -Xlinker $(PWD)
+	RPATH_FLAGS=-install_name $(PWD)/$@
 	DEFINES+=-D HAS_RTLD_DEFAULT
 else
 	RPATH_FLAGS=-Wl,-rpath,$(PWD)
