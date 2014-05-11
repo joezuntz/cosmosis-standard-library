@@ -1,0 +1,41 @@
+diff -Nur camb_Nov13_orig/equations_ppf.f90 camb_Nov13/equations_ppf.f90
+--- camb_Nov13_orig/equations_ppf.f90	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/equations_ppf.f90	2014-05-10 19:39:39.000000000 -0500
+@@ -378,6 +378,11 @@
+         //'--- but most likely you''ve messed up the y array indexing; ' &
+         //'compiling with bounds checking may (or may not) help find the problem.',error_evolution)
+     end if
++
++    ! COSMOSIS - Additional error check
++    if (ind<0) then
++        call GlobalError('Dverk error - some kind of problem reaching tolerance',error_evolution)
++    endif
+     end subroutine GaugeInterface_ScalEv
+ 
+     function next_nu_nq(nq) result (next_nq)
+@@ -2116,8 +2121,10 @@
+     dgrho = dgrho+(clxc*grhoc + clxb*grhob)/a
+     grho =  grho+(grhoc+grhob)/a
+ 
+-    Arr(Transfer_tot) = dgrho/grho/k2
++    ! COSMOSIS - add density output
++    Arr(Transfer_rho_tot) = grho/a/a
+ 
++    Arr(Transfer_tot) = dgrho/grho/k2
+ 
+     end subroutine outtransf
+ 
+diff -Nur camb_Nov13_orig/modules.f90 camb_Nov13/modules.f90
+--- camb_Nov13_orig/modules.f90	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/modules.f90	2014-05-10 19:39:24.000000000 -0500
+@@ -1614,7 +1614,9 @@
+     public
+     integer, parameter :: Transfer_kh =1, Transfer_cdm=2,Transfer_b=3,Transfer_g=4, &
+     Transfer_r=5, Transfer_nu = 6,  & !massless and massive neutrino
+-    Transfer_tot=7
++    !Transfer_tot=7
++    ! COSMOSIS - add density output
++    Transfer_rho_tot=7, Transfer_tot=8
+ 
+     integer, parameter :: Transfer_max = Transfer_tot
+ 
