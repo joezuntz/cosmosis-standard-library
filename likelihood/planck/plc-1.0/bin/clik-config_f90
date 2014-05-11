@@ -1,0 +1,28 @@
+#! /usr/bin/env python
+# don't do much for now
+from optparse import OptionParser
+parser = OptionParser()
+
+parser.add_option("--cflags", action="store_true",
+                  help="only the cflags")
+parser.add_option("--libs", action="store_true",
+                  help="only libflags")
+
+(options, args) = parser.parse_args()
+
+
+res={}
+cflags = """-arch x86_64  -fPIC -D HAS_RTLD_DEFAULT -D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D 'CLIKSVNVERSION="5887 MAKEFILE"' -J /Users/drudd/Work/cosmosis/cosmosis/cosmosis-standard-library/likelihood/planck/plc-1.0/include"""
+libs = """-arch x86_64 -L/Users/drudd/Work/cosmosis/cosmosis/ups/cfitsio/v3_35_0/Darwin64bit+13-prof/lib -lcfitsio -lgfortran  -ldl -lm -lpthread -L/Users/drudd/Work/cosmosis/cosmosis/ups/cfitsio/v3_35_0/Darwin64bit+13-prof/lib -lcfitsio -lgfortran   -L/Users/drudd/Work/cosmosis/cosmosis/ups/lapack/v3_4_2/Darwin64bit+13-e5-prof/lib -llapack -lblas -L/Users/drudd/Work/cosmosis/cosmosis/cosmosis-standard-library/likelihood/planck/plc-1.0/lib -lclik -lclik_f90"""
+
+if (not options.libs) and (not options.cflags):
+  options.libs=True
+  options.cflags=True
+
+if options.cflags:
+  print cflags,
+if options.libs:
+  print libs,
+print
+
+

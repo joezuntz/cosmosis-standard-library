@@ -1,0 +1,55 @@
+diff -Nur plc-1.0-orig/Makefile plc-1.0/Makefile
+--- plc-1.0-orig/Makefile	2014-05-11 10:53:58.000000000 -0500
++++ plc-1.0/Makefile	2014-05-11 10:55:33.000000000 -0500
+@@ -18,15 +18,15 @@
+ PREFIX := $(shell pwd)
+ 
+ # set the path of the cfitsio lib. 
+-CFITSIOPATH := /usr/local
++#CFITSIOPATH := /usr/local
+ #CFITSIOPATH := /softs/cfitsio/3.24
+ # you have a CFITSIO lib in a weird location, also set those
+-CFITSIO_INCPATH := $(CFITSIOPATH)/include
+-CFITSIO_LIBPATH := $(CFITSIOPATH)/lib
++CFITSIO_INCPATH := $(CFITSIO_INC)
++CFITSIO_LIBPATH := $(CFITSIO_LIB)
+ 
+ #define your compilers and stuff
+ CC = gcc
+-FC = ifort
++FC = gfortran
+ 
+ # ifort
+ # if you are using ifort set here where its lib are installed
+@@ -43,8 +43,8 @@
+ # gfortran
+ # if you are using gfortran set here where the lib are installed
+ # and check the runtime libs
+-GFORTRANLIBPATH = /usr/lib
+-GFORTRANRUNTIME = -L$(GFORTRANLIBPATH) -lgfortran -lgomp
++GFORTRANLIBPATH = 
++GFORTRANRUNTIME = -lgfortran 
+ 
+ # if you are on linux and using mkl, you need to set this 
+ MKLROOT = 
+@@ -57,7 +57,7 @@
+ #LAPACKLIBPATHMKL = -L$(MKLROOT)/lib/em64t
+ 
+ #if you want to point to your own version of lapack set the following variables
+-#LAPACK = -L/some/path -lsomefortranlapack -lsomedependencyforyourlapack
++LAPACK = -L$(LAPACK_LIB) -llapack -lblas
+ #LAPACKLIBPATH = /some/path
+ 
+ 
+@@ -65,9 +65,9 @@
+ COLORS = 1
+ 
+ # what is the openmp option for your C compiler (leave empty to cmpile without openmp)
+-COPENMP = -fopenmp
++COPENMP = 
+ # what is the openmp option for your F90 compiler (leave empty to cmpile without openmp)
+-FOPENMP = -openmp
++FOPENMP = 
+ 
+ # what is the 32/64 bit option for your C compiler (leave empty if you don't want to know)
+ CM64 =
