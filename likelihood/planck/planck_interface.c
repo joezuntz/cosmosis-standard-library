@@ -1,6 +1,6 @@
 #include "clik.h"
 #include "cosmosis/datablock/c_datablock.h"
-
+#include <math.h>
 
 typedef struct configuration_data{
 	int ready;
