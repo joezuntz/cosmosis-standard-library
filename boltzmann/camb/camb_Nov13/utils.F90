@@ -189,11 +189,8 @@
         WantLog = .false.    
      end if
      
-     if (t_end <= t_start) then
-      write(*,*) "Ranges_Add_delta: end must be larger than start"
-      write(*,*) "You had start,end=", t_start, t_end
-       stop 'Ranges_Add_delta error'
-       endif
+     if (t_end <= t_start) & 
+       stop 'Ranges_Add_delta: end must be larger than start'
      if (t_approx_delta <=0) stop 'Ranges_Add_delta: delta must be > 0'
 
      if (WantLog) then
@@ -974,7 +971,6 @@
 
   INTERFACE CONCAT
     module procedure concat_s, concat_s_n
-    
   END INTERFACE
   
   INTERFACE RealToStr

@@ -2,7 +2,8 @@
 module Reionization
  use Precision
  use AMLutils
- use errors
+ ! COSMOSIS - access GlobalErrors
+ use Errors
  implicit none  
 
 !This module puts smooth tanh reionization of specified mid-point (z_{re}) and width
@@ -152,10 +153,11 @@ contains
   Type(ReionizationHistory), target :: ReionHist
   real(dl), intent(in) :: akthom, tau0, Yhe 
   integer, intent(in) :: FeedbackLevel
-  integer :: status
   real(dl) astart
+  ! COSMOSIS - error check in rombint
+  integer :: status
+  status = 0
 
-    status = 0
      ReionHist%akthom = akthom  
      ReionHist%fHe =  YHe/(mass_ratio_He_H*(1.d0-YHe))
  
@@ -196,13 +198,14 @@ contains
 
       !Get relevant times       
        astart=1.d0/(1.d0+Reion%redshift + Reion%delta_redshift*8)
-       ReionHist%tau_start = max(0.05_dl, rombint(dtauda,0._dl,astart,1d-3, status))
+       ! COSMOSIS - error check in rombint
+       ReionHist%tau_start = max(0.05_dl, rombint(dtauda,0._dl,astart,1d-3,status))
        if (status/=0) call GlobalError("tau_start dtauda integral failed to converge", error_reionization)
           !Time when a very small reionization fraction (assuming tanh fitting)
-        status=0
+
+       ! COSMOSIS - error check in rombint
        ReionHist%tau_complete = min(tau0, &
           ReionHist%tau_start+ rombint(dtauda,astart,1.d0/(1.d0+max(0.d0,Reion%redshift-Reion%delta_redshift*8)),1d-3,status))
-       
        if (status/=0) call GlobalError("tau_complete dtauda integral failed to converge", error_reionization)
 
     end if   
@@ -304,21 +307,19 @@ end function Reionization_GetOptDepth
                   try_b = Reion%redshift
        end if
        if (abs(try_b - try_t) < 2e-3/Reionization_AccuracyBoost) exit
-       if (i>100) then
-          write(*,*) "Reionization_zreFromOptDepth: failed to converge"
-          global_error_flag=error_reionization
-          exit
-         !call mpiStop('Reionization_zreFromOptDepth: failed to converge')        
-       endif
+       ! COSMOSIS - replace mpiStop error handler
+       !if (i>100) call mpiStop('Reionization_zreFromOptDepth: failed to converge')
+       if (i>100) call GlobalError("Reionization_zreFromOptDepth: failed to converge", error_reionization)
   end do
   
   
    if (abs(tau - Reion%optical_depth) > 0.002) then
     write (*,*) 'Reionization_zreFromOptDepth: Did not converge to optical depth'
-    write (*,*) 'tau =',tau, 'optical_depth = ', Reion%optical_depth, 'tries = ', try_t, try_b
-    !write (*,*) 
+    write (*,*) 'tau =',tau, 'optical_depth = ', Reion%optical_depth
+    write (*,*) try_t, try_b
+    ! COSMOSIS - replace mpiStop error handler
     !call mpiStop()
-    global_error_flag=error_reionization
+    call GlobalError("Reionization_zreFromOptDepth: Did not converge to optical depth", error_reionization)
   end if
     
  end subroutine Reionization_zreFromOptDepth 

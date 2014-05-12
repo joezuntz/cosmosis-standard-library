@@ -48,6 +48,11 @@ F90CRLINK += -L$(HYREC_PATH) -lhyrec
 endif
 
 
+default: camb
+
+all: camb $(CAMBLIB)
+
+
 subroutines.o: constants.o utils.o
 $(POWERSPECTRUM).o: subroutines.o  inifile.o
 $(RECOMBINATION).o: subroutines.o inifile.o
@@ -69,7 +74,6 @@ $(CAMBLIB): $(CAMBOBJ)
 
 camb_fits: writefits.f90 $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) -I$(HEALPIXDIR)/include $(CAMBOBJ) writefits.f90 $(DRIVER) $(HEALPIXLD) -DWRITE_FITS -o $@
-
 
 %.o: %.f90
 	$(F90C) $(F90FLAGS) -c $*.f90
