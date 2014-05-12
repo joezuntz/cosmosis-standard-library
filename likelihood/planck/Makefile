@@ -24,6 +24,7 @@ planck_interface.so: planck planck_interface.c
 
 clean:
 	rm -rf *.o *.so *.dSYM
+	cd $(PLANCK_DIR) && $(MAKE) clean
 
 test:
 	@echo Alas, planck has no tests
