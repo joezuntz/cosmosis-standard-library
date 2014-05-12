@@ -80,7 +80,8 @@ configuration_data * setup(c_datablock * options){
 		fprintf(stderr, "   t_high_file\n");
 		fprintf(stderr, "   p_low_file\n");
 		fprintf(stderr, "   lensing_file\n");
-		fprintf(stderr, "To the path to the planck files you can download from:\n");
+		fprintf(stderr, "The Planck data files are available via the cosmosis boostrap script with the -d option,\n");
+		fprintf(stderr, "or by downloading them manually at the following url:\n");
 		fprintf(stderr, "http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
 		exit(1);
 	}
