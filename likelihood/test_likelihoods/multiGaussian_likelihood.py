@@ -8,43 +8,47 @@ import numpy as np
 import os.path
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
+from cosmosis.datablock import BlockError
 
 
-cosmo = section_names.cosmological_parameters
+params= section_names.test_parameters
 likes = section_names.likelihoods
 
 
-class Multigaussian(object):
+class MultiGaussian(object):
+    NDIM = 10
 
-    def __init__(self, ndim, means=None, covariances=None):
-        self.ndim = ndim
+    def __init__(self, means=None, covariances=None):
         if means:
             self.means = np.loadtxt(means)
-            # print self.means
-            # print "loading saved means"
+            if len(self.means) != self.NDIM:
+                raise ValueError("The number of gaussian means in %s does "
+                                 "not match those in multiGaussian_likelihood.py")
         else:
-            self.means = np.random.rand(ndim)
-            np.savetxt('./demos/means10D.out', self.means)
+            self.means = np.random.rand(self.NDIM)
+            np.savetxt("demos/means%dD.out" % (self.NDIM,), self.means)
 
-        if covariances:
-            cov = np.loadtxt(covariances)
-            # print "loading saved covariance matrix"
-
-        else:
-            cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
+        if covariances.lower() == "identity":
+            cov = np.identity(self.NDIM)*0.1
+        elif covariances is None:
+            cov = 0.5 - np.random.rand(self.NDIM**2).reshape((self.NDIM, self.NDIM))
             cov = np.triu(cov)
             cov += cov.T - np.diag(cov.diagonal())
             cov = np.dot(cov, cov)
             np.savetxt('./demos/covariance10D.out', cov)
+        else:
+            cov = np.loadtxt(covariances)
+            if cov.shape != (self.NDIM, self.NDIM):
+                raise ValueError("The shape of the gaussian covariance file %s does "
+                                 "not match what was expected (%d, %d) vs (%d, %d)" %
+                                 (cov.shape[0], cov.shape[1], self.NDIM, self.NDIM))
 
         self.icov = np.linalg.inv(cov)
         self.det = np.linalg.det(cov)
-        self.norm = 0.5 * np.log((2.0 * np.pi) ** self.ndim * self.det)
+        self.norm = 0.5 * np.log((2.0 * np.pi)**self.NDIM * self.det)
 
     def lnprob(self, x):
-
         diff = x - self.means
-
         return -np.dot(diff, np.dot(self.icov, diff)) / 2.0 - self.norm
 
     def __call__(self, x):
@@ -52,51 +56,26 @@ class Multigaussian(object):
 
 
 def setup(options):
-
     try:
         means = options[option_section, "means_filename"]
         print "Existing means (%s) will be used" % means
-    except Exception, e:
+    except BlockError:
         means = None
         print "new means will be generated"
 
     try:
         covariances = options[option_section, "cov_filename"]
         print "Existing covariances (%s) will be used" % covariances
-    except Exception, e:
+    except BlockError:
         covariances = None
         print "new covariance matrix will be generated"
 
-    return means, covariances
+    return MultiGaussian(means, covariances)
 
-
-def execute(block, config):
-    x = []
-    x.append(block[cosmo, "MG1"])
-    x.append(block[cosmo, "MG2"])
-    x.append(block[cosmo, "MG3"])
-    x.append(block[cosmo, "MG4"])
-    x.append(block[cosmo, "MG5"])
-    x.append(block[cosmo, "MG6"])
-    x.append(block[cosmo, "MG7"])
-    x.append(block[cosmo, "MG8"])
-    x.append(block[cosmo, "MG9"])
-    x.append(block[cosmo, "MG10"])
-    mg = Multigaussian(len(x), config[0], config[1])
-    # compute likelihood
-    like = mg.lnprob(x)
-    block[likes, "MULTIGAUSSIAN_LIKE"] = like
-
-    # except KeyboardInterrupt:
-    # If the user presses Ctrl-C we respect that
-    #     raise KeyboardInterrupt
-    # except Exception as E:
-    # But any other kind of error is a problem
-    #     print "There was an error calculating the MultiGaussian likelihood: "
-    #     return 1
-
+def execute(block, mg):
+    x = [block[params, "MG%d" % (i,)] for i in range(1,mg.NDIM+1)]
+    block[likes, "MULTIGAUSSIAN_LIKE"] = mg.lnprob(x)
     return 0
-
 
 def cleanup(config):
 # nothing to do here!  We just include this
