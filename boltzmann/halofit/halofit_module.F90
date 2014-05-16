@@ -31,6 +31,11 @@ function load_matter_power(block, PK) result(status)
 	status = datablock_get_double_grid(block, matter_power_lin_section, &
 		"K_H", k, "Z", z, "P_K", P)
 
+	if (status .ne. 0) then
+		write(*,*) "Could not find K_H, Z, or P_K in block"
+		return
+	endif
+
 	!Fill in Halofit's data structure
 	PK%num_k = size(k)
 	PK%num_z = size(z)
