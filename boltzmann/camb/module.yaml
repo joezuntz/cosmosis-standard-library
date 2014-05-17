@@ -106,12 +106,12 @@ outputs:
 
     matter_power_lin:
         z: "1D real array, redshifts of samples"
-        k: "1D real array, k wavenumbers of samples in Mpc/h"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
         p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
 
     linear_cdm_transfer:
         z: "1D real array, redshifts of samples"
-        k: "1D real array, k wavenumbers of samples in Mpc/h"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
         delta_cdm: "2D real array, Linear CDM transfer function at samples"
 
     cmb_cl:
