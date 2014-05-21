@@ -168,7 +168,10 @@ int save_c_ell(c_datablock * block, const char * section,
 		if (lc->ylog) c_ell[i] = exp(c_ell[i]);
 	}
 
-	return c_datablock_put_double_array_1d(block, section, name, c_ell, n_ell);
+	int status = c_datablock_put_double_array_1d(block, section, name, c_ell, n_ell);
+	status |= c_datablock_put_metadata(block, section, name, "note", "no ell^2 prefactor");
+			return status;
+
 }
 
 int shear_shear_spectra(c_datablock * block, int nbin, 
