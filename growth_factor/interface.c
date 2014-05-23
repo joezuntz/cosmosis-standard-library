@@ -67,9 +67,9 @@ int execute(c_datablock * block)
 		zbins[i] = z;
 		z = z + 0.1;
 	}	
-	status |= c_datablock_put_double_array_1d(block,growthparameters, "growth_factor_z", dz, nzbins);
-	status |= c_datablock_put_double_array_1d(block,growthparameters, "growth_rate_z", fz, nzbins);
-	status |= c_datablock_put_double_array_1d(block,growthparameters, "growth_zbins", zbins, nzbins);
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "d_z", dz, nzbins);
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "f_z", fz, nzbins);
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "zbins", zbins, nzbins);
 	free(gf);
 	free(fz);
 	free(dz);
