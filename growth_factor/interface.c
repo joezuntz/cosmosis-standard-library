@@ -15,25 +15,28 @@
 const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
 const char * like = LIKELIHOODS_SECTION;
 const char * growthparameters = GROWTH_PARAMETERS_SECTION;
-double  redshift;
 
-void * setup(c_datablock * options)
+double * setup(c_datablock * options)
 {
 	int status = 0;
-	double z;
-	 status |= c_datablock_get_double(options, OPTION_SECTION, "redshift", &redshift);
+	double * config;
+	config = malloc(sizeof(double));
+	 status |= c_datablock_get_double(options, OPTION_SECTION, "redshift", config);
         if (status){
                 fprintf(stderr, "Please specify the redshift in the growth function module.\n");
                 exit(status);
         }
+	return config;
 
 } 
     
-int execute(c_datablock * block)
+int execute(c_datablock * block,double * config)
 {
 	int i,status=0,nzbins = 1000;
 	double w,wa,omega_m,z=0;
 	double *gf,*dz,*fz,*zbins;
+	double redshift = *config;
+	
 	//allocate memory for single D, f and arrays as function of z
 	gf = malloc(2*sizeof(double));
 	dz = malloc(nzbins*sizeof(double));
@@ -79,9 +82,12 @@ return status;
 }
 
 
-int cleanup(double redshift)
+int cleanup(double * config)
 {
 // Config is whatever you returned from setup above
 // Free it 	
+ 	double * redshift = config;
+	free(redshift);
+
 	return 0;
 }
