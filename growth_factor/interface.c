@@ -43,9 +43,9 @@ int execute(c_datablock * block,double * config)
 	fz = malloc(nzbins*sizeof(double));
 	zbins = malloc(nzbins*sizeof(double));
 	//read cosmological params from datablock
-        status |= c_datablock_get_double(block, cosmo, "w", &w);
+        status |= c_datablock_get_double_default(block, cosmo, "w", -1.0, &w);
+        status |= c_datablock_get_double_default(block, cosmo, "wa", 0.0, &wa);
         status |= c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
-        status |= c_datablock_get_double(block, cosmo, "wa", &wa);
 	if (status){
 		wa = 0.0;
 		status = 0.0;
