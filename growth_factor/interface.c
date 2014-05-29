@@ -54,8 +54,8 @@ int execute(c_datablock * block,double * config)
 	//returns linear growth factor and growth function for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa	
 	status = get_growthfactor(1.0/(1.0+redshift),omega_m,w,wa,gf);
 	//save to datablock
-	status |= c_datablock_put_double(block, growthparameters, "D_z", gf[0]);
-	status |= c_datablock_put_double(block, growthparameters, "f_z", gf[1]);
+	status |= c_datablock_put_double(block, growthparameters, "delta", gf[0]);
+	status |= c_datablock_put_double(block, growthparameters, "dln_delta_dlna", gf[1]);
 	status |= c_datablock_put_double(block, growthparameters, "growth_z", redshift);
 	// z=0
 	status = get_growthfactor(1.0,omega_m,w,wa,gf);
