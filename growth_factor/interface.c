@@ -59,7 +59,7 @@ int execute(c_datablock * block,double * config)
 	status |= c_datablock_put_double(block, growthparameters, "growth_z", redshift);
 	// z=0
 	status = get_growthfactor(1.0,omega_m,w,wa,gf);
-	status |= c_datablock_put_double(block, growthparameters, "D_z0", gf[0]);
+	status |= c_datablock_put_double(block, growthparameters, "delta_z0", gf[0]);
 
 	//output D and f over a range of z
 	for (i=0;i<nzbins;i++)
