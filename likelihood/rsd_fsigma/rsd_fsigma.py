@@ -25,9 +25,9 @@ def execute(block, config):
 	mean,sigma,norm,redshift,feedback = config
 
 	# Get parameters from sampler
-	Dz = block[growthparams, 'D_z']
-	Dz0 = block[growthparams, 'D_z0']
-	fz = block[growthparams, 'f_z']
+	Dz = block[growthparams, 'delta']
+	Dz0 = block[growthparams, 'delta_z0']
+	fz = block[growthparams, 'dln_delta_dlna']
 	z = block[growthparams, 'growth_z']
 	sig = block[cosmo, 'sigma_8']
 	if redshift != z:
