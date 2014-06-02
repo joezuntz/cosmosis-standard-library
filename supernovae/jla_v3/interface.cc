@@ -149,6 +149,8 @@ int execute(cosmosis::DataBlock * block, void * config){
 
 	// Save the likelihood
 	status = block->put_val(LIKELIHOODS_SECTION, "JLA_LIKE", like);
+	if (status!=DBS_SUCCESS) return status;
+	status = block->put_metadata(LIKELIHOODS_SECTION, "JLA_LIKE", "number_supernova", std::to_string(n_sn));
 
 	return status;
 
