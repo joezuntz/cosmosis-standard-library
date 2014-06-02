@@ -32,7 +32,7 @@ def execute(block, config):
 	except IndexError:
 		raise ValueError("You need to calculate f(z) and d(z) down to z=0 to use the RSD f*sigma8 likelihood")
 	sig = block[cosmo, 'sigma_8']
-	fsigma = (sig*(d_z/d_z[z0])**2)*f_z
+	fsigma = (sig*(d_z/d_z[z0]))*f_z
 	fsig = interp(redshift, z, fsigma)
 
 	# Get parameters from sampler
