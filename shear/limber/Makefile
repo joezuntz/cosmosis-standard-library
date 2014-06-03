@@ -4,12 +4,12 @@ ifeq ($(GSL_INC)$(GSL_LIB),)
 $(error To compile the limber code you you must activate the UPS package gsl or set the environment variables GSL_INC and GSL_LIB)
 endif
 
-USER_CFLAGS=-I ${GSL_INC}
-USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas
+USER_CFLAGS=-I ${GSL_INC} 
+USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas -lcosmosis
 
 AR = ar rc
 
-OBJS = limber.o interp2d.o
+OBJS = limber.o interp2d.o utils.o
 LIB = liblimber.a
 SHLIBNAME = interface.so
 EXEC=test_limber
