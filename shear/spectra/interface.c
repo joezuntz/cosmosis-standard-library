@@ -116,41 +116,6 @@ int intrinsic_intrinsic_config(c_datablock * block, limber_config * lc, shear_sp
 	return 0;
 }
 
-Interpolator2D * 
-load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline, 
-	const char * section,
-	const char * k_name, const char * z_name, const char * P_name)
-{
-	int nk, nz, nP;
-	double *k=NULL, *z=NULL;
-	double **P=NULL;
-	int status = 0;
-
-	status = c_datablock_get_double_grid(block, section, 
-		k_name, &nk, &k, 
-		z_name, &nz, &z, 
-		P_name, &P);
-
-	if (status){
-		fprintf(stderr, "Could not load interpolator for P(k).  Error %d\n",status);
-		return NULL;
-	}
-
-	// What we have now is P(k, z)
-	// What we need is P(k, chi)
-	// So we loop, lookup, and replace
-	for (int i=0; i<nz; i++){
-		double zi = z[i];
-		double chi_i = gsl_spline_eval(chi_of_z_spline, zi, NULL);
-		z[i] = chi_i;
-	}
-
-	if (status) return NULL;
-	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
-	deallocate_2d_double(&P, nk);
-	return interp;
-
-}
  
 
 static
