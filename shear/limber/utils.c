@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <assert.h>
+#include "stdio.h"
 
 gsl_spline * spline_from_arrays(int n, double * x, double *y)
 {
@@ -31,4 +32,67 @@ void reverse(double * x, int n)
 		x[i] = x[n-1-i];
 		x[n-1-i] = tmp;
 	}
+}
+
+
+Interpolator2D * 
+load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline, 
+	const char * section,
+	const char * k_name, const char * z_name, const char * P_name)
+{
+	int nk, nz, nP;
+	double *k=NULL, *z=NULL;
+	double **P=NULL;
+	int status = 0;
+
+	status = c_datablock_get_double_grid(block, section, 
+		k_name, &nk, &k, 
+		z_name, &nz, &z, 
+		P_name, &P);
+
+	if (status){
+		fprintf(stderr, "Could not load interpolator for P(k).  Error %d\n",status);
+		return NULL;
+	}
+
+	// What we have now is P(k, z)
+	// What we need is P(k, chi)
+	// So we loop, lookup, and replace
+	for (int i=0; i<nz; i++){
+		double zi = z[i];
+		double chi_i = gsl_spline_eval(chi_of_z_spline, zi, NULL);
+		z[i] = chi_i;
+	}
+
+	if (status) return NULL;
+	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
+	deallocate_2d_double(&P, nk);
+	return interp;
+}
+
+
+gsl_spline * load_spline(c_datablock * block, const char * section, 
+	const char * x_name, const char * y_name)
+{
+	int status = 0 ;
+	int nx, ny;
+	double *x, *y;
+	status |= c_datablock_get_double_array_1d(block, section, x_name, &x, &nx);
+	if (status) return NULL;
+	status |= c_datablock_get_double_array_1d(block, section, y_name, &y, &ny);
+	if (status){
+		free(x);
+		return NULL;
+	}
+
+	gsl_spline * output = NULL;
+
+	if (x[1]<x[0]) {reverse(x, nx); reverse(y, ny);}
+
+
+	if (nx==ny) output=spline_from_arrays(nx, x, y);
+	else {fprintf(stderr, "Non-matching array sizes %s=%d, %s=%d\n", x_name, nx, y_name, ny);}
+	free(x);
+	free(y);
+	return output;
 }
