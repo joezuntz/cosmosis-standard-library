@@ -553,6 +553,11 @@ module camb_interface_tools
 
 		status = status + datablock_put_int(block, dist, "NZ", nz)
 
+		!And finally save a
+		z = 1.0/(1+z)
+		status = status + datablock_put_double_array_1d(block, dist, "A", z)
+
+
 		if (status .ne. 0) then
 			write(*,*) "Failed to write redshift-distance column data in block section."
 		endif
