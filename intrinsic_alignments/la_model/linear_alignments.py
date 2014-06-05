@@ -46,8 +46,7 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	ksmall = np.argmin(k_lin)
 	for i in xrange(nz):
 		growth[:,i] = (P_lin[ksmall,i] / P_lin[ksmall,z0])**0.5
-	import pdb
-	pdb.set_trace()
+
 	P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 
 	return P_II, P_GI
