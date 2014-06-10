@@ -1,0 +1,46 @@
+#This is a template for module description files
+name: BOSS
+version: "1303.4486"
+purpose: Compute the likelihood of supplied fsigma8(z=0.57), H(z=0.57), D_a(z=0.57), omegamh2, bsigma8(z=0.57)         
+url: "http://www.sdss3.org"
+attribution: [SDSS-III BOSS Team]
+rules: ""
+cite: 
+        - "http://arxiv.org/abs/1303.4486"
+assumptions:
+    - "SDSS-III CMASS DR9 dataset"
+    - "When using mode = 1 CAMB must be run to output distance parameters and sigma8"
+
+explanation: >
+        "This module calculates the likelihood using the CMASS only results from 
+        Chuang et al. 2013 for fsigma8(z=0.57), H(z=0.57), D_a(z=0.57), omegamh2, bsigma8(z=0.57).
+        There are two modes: mode=0 give the fsigma8(z=0.57) likelihood only; mode=1 give the more general BOSS likelihood."
+
+            # List of parameters that can go in the params.ini file in the section for this module    
+parameters:
+        mode: "Integer, mode=0 for a fsigma8 likelihood only. mode=1 uses the full results(default = 0)"
+        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+        mean: "Real, fsigma8 (default  = 0.428)"
+        sigma: "Real, sigma (default  = 0.066)"
+        redshift: "Real, redshift (default  = 0.57)"
+
+                    #Inputs for a given choice of a parameter, from the values.ini or from other modules
+                    #If no such choices, just do one of these omitting mode=something part:
+inputs: 
+        growth_parameters:
+                d_z: "1D real array, linear growth factor D"
+                f_z: "1D real array, linear growth rate f"
+                z: "1D real array, redshift of samples "
+        cosmological_parameters:
+                omega_m:  "real, baryon + cdm density fraction today"
+                sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
+                bias:  "real, galaxy bias "
+                h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        distance_parameters:
+                z: "1D real array, redshifts of samples"
+                d_a: "1D real array, angular diameter distance in Mpc"
+                h:  "1D real array, hubble parameter with in units of Mpc"
+
+outputs:
+        likelihoods:
+                BOSS_LIKE: "real, likelihood of supplied fsigma8(z=0.57), H(z=0.57), D_a(z=0.57), omegamh2, bsigma8(z=0.57)"
