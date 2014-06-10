@@ -24,20 +24,21 @@ def execute(block, config):
 	p_lin = p_lin.reshape((z_lin.size, k_lin.size)).T
 	p_nl = p_nl.reshape((z_nl.size, k_nl.size)).T
 
+	# import pylab
+	# pylab.loglog(k_lin, p_lin[:,0])
+	# pylab.loglog(k_nl, p_nl[:,0])
+
 	omega_m = block[cosmo, "omega_m"]
 	A = block[ia, "A"]
 
 	#run f computation
 	P_II, P_GI = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
 
-	#save results
-	block[II, "k_h"] = k_lin
-	block[II, "z"] = z_lin
-	block[II, "p_k"] = P_II.T.flatten()
+#	pylab.loglog(k_lin, P_II[:,0])
+	pylab.show()
 
-	block[GI, "k_h"] = k_lin
-	block[GI, "z"] = z_lin
-	block[GI, "p_k"] = P_GI.T.flatten()
+	block.put_grid(II, "k_h", k_lin, "z", z_lin, "P_k", P_II)
+	block.put_grid(GI, "k_h", k_lin, "z", z_lin, "P_k", P_GI)
 
 	return 0
 

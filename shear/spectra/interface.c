@@ -36,6 +36,30 @@ void * setup(c_datablock * options){
 	return config;
 }
 
+gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z, 
+	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
+{
+	int status = 0;
+	double * N;
+	int n;
+	char name[20];
+	snprintf(name, 20, "bin_%d", bin);
+
+    status |= c_datablock_get_double_array_1d(block, wl_nz, name, &N, &n);
+    double Chi[n];
+
+    for (int i=0; i<n; i++){
+		double chi = gsl_spline_eval(chi_of_z, z[i], NULL);
+		double da_dchi = gsl_spline_eval_deriv(a_of_chi, chi, NULL);
+		Chi[i] = chi;
+		N[i] *= -(1+z[i])*(1+z[i])*da_dchi;
+    }
+
+	gsl_spline * n_of_chi = spline_from_arrays(n, Chi, N);
+	free(N);
+	return n_of_chi;
+
+}
 
 gsl_spline * get_w_spline(c_datablock * block, int bin, double * z, 
 	double chi_max, gsl_spline * a_of_chi_spline)
@@ -165,21 +189,22 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 
 
 int intrinsic_intrinsic_spectra(c_datablock * block, int nbin, 
-	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config)
+	gsl_spline * Nchi[nbin], Interpolator2D * PK, shear_spectrum_config * config)
 {
 
 	// Get the prefactor
-
+	const char * section = "IA_II_CL";
 	limber_config lc;
-	int status = shear_shear_config(block, &lc, config);
+	int status = intrinsic_intrinsic_config(block, &lc, config);
 	if (status) {free(lc.ell); return status;}
-	status |= c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
-	status |= c_datablock_put_int(block, SHEAR_CL_SECTION, "nbin", nbin);
+	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
+	status |= c_datablock_put_int(block, section, "nbin", nbin);
+	FILE * f = 
 
 	for (int bin1=1; bin1<=nbin; bin1++){
 		for (int bin2=1; bin2<=bin1; bin2++){
-			gsl_spline * c_ell = limber_integral(&lc, W[bin1-1], W[bin2-1], PK);
-			int status = save_c_ell(block, SHEAR_CL_SECTION, bin1, bin2,  c_ell, &lc);
+			gsl_spline * c_ell = limber_integral(&lc, Nchi[bin1-1], Nchi[bin2-1], PK);
+			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
 			gsl_spline_free(c_ell);
 			if (status) return status;
 		}
@@ -240,13 +265,26 @@ int execute(c_datablock * block, void * config_in)
 
 	// Make the W()
 	gsl_spline * W_splines[nbin];
+	gsl_spline * Nchi_splines[nbin];
 	for (int bin=1; bin<=nbin; bin++){
 		W_splines[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline);
+		Nchi_splines[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline);
 	}
+
 
 	// Get the P(k) we need
 	Interpolator2D * PK = load_interpolator(
 		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
+
+	Interpolator2D * PK_II = load_interpolator(
+		block, chi_of_z_spline, "intrinsic_alignment_ii", "k_h", "z", "P_k");
+
+	Interpolator2D * PK_GI = load_interpolator(
+		block, chi_of_z_spline, "intrinsic_alignment_gi", "k_h", "z", "P_k");
+
+
+
+	
 	// This is P(k,z)
 	// We need P(k, chi)
 	if (!PK) {
@@ -260,6 +298,9 @@ int execute(c_datablock * block, void * config_in)
 
 	// Make the C_ell and save them
 	status |= shear_shear_spectra(block, nbin, W_splines, PK, config);
+
+	status |= intrinsic_intrinsic_spectra(block, nbin, 
+		Nchi_splines, PK_II, config);
 
 
 

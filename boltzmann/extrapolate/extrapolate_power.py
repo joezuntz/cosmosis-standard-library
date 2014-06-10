@@ -38,7 +38,7 @@ def extrapolate(log_k, log_P, n=200, log_new_kmax=None):
 
 	#Extend the k array with logarithmically spaced entries
 	#and use the gradient we just found to extend P too.
-	more_log_k = dlog_k * np.arange(n*1.0)
+	more_log_k = dlog_k * (np.arange(n*1.0)+1)
 	more_log_P = more_log_k*gradient + log_P[-1]
 	more_log_k += log_k[-1]
 	#Combine the existing and extension arrays to get the
@@ -64,9 +64,11 @@ def extrapolate_section(block, section, kmax):
 	#extrapolate
 	logk, logp = extrapolate(np.log(k), np.log(P), log_new_kmax=np.log(kmax))
 	#save results
-	block[section, "k_h"] = np.exp(logk)
-	block[section, "P_k"] = np.exp(logp).T.flatten()
-	block[section, "nk"] = len(logk)
+	# block[section, "k_h"] = np.exp(logk)
+	# block[section, "P_k"] = np.exp(logp).T.flatten()
+	# block[section, "nk"] = len(logk)
+
+	block.replace_grid(section, "k_h", np.exp(logk), "z", z, "P_k", np.exp(logp))
 
 
 def setup(options):
