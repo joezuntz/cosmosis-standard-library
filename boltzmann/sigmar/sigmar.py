@@ -38,8 +38,8 @@ def execute(block, config):
 			
 	rbs = RectBivariateSpline(karray,zarray,powerarray)
 
-	kmin_overall = karray.min()
-	kmax_overall = karray.max()
+	kmin_overall = np.log(karray.min())
+	kmax_overall = np.log(karray.max())
 
 	sigma2r=np.zeros((np.size(R),np.size(z)))
 	for i, rloop in enumerate(R):
