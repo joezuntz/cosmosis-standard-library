@@ -17,6 +17,9 @@ def setup(options):
 	z = np.arange(zmin,zmax,dz)
 	R = np.arange(rmin,rmax,dr)
 	blockname = options[option_section, "matter_power"]
+	print "Sigmar(R,z) will be evaluated at:"
+	print "z = ", z
+	print "R = ", R
 	return (z, R, blockname)
 
 def powerspec(k,z, rbs):
@@ -46,7 +49,7 @@ def execute(block, config):
 		kmin=max(np.log(.01/rloop), kmin_overall)
 		kmax=min(np.log(100./rloop), kmax_overall)
 		for j, zloop in enumerate(z):
-			sigma2r[i,j]=scipy.integrate.quad(sigint,kmin,kmax,args=(rloop,zloop,rbs))[0]
+			sigma2r[i,j]=scipy.integrate.quad(sigint,kmin,kmax,args=(rloop,zloop,rbs),epsrel=1e-6)[0]
 	section = "sigmar"	
 
 	block.put_grid("sigma_r", "R", R, "z", z, "sigma2", sigma2r)
