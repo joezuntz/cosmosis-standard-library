@@ -61,13 +61,13 @@ function execute(block, config) result(status)
         allocate(m(n+1))
         allocate(k(n+1))
 
-        !save the z=0 output until I figure out how to save 2D array below
-       call compute_massfunction(PK%kh,PK%matpower(:,1),MassF,n+1)
-       status = datablock_put_double_array_1d(block, mass_function_section, "dndlnRh",MassF%dn_dlnRh)
-       status = datablock_put_double_array_1d(block, mass_function_section, "dndlnMh",MassF%dn_dlnMh)
-       status = datablock_put_double_array_1d(block, mass_function_section, "M_h",MassF%R_h)
-       status = datablock_put_double_array_1d(block, mass_function_section, "R_h",MassF%M_h)
-       call deallocate_mf(MassF)
+        !save the z=0 output 
+       !call compute_massfunction(PK%kh,PK%matpower(:,1),MassF,n+1)
+       !status = datablock_put_double_array_1d(block, mass_function_section, "dndlnRh",MassF%dn_dlnRh)
+       !status = datablock_put_double_array_1d(block, mass_function_section, "dndlnMh",MassF%dn_dlnMh)
+       !status = datablock_put_double_array_1d(block, mass_function_section, "M_h",MassF%R_h)
+       !status = datablock_put_double_array_1d(block, mass_function_section, "R_h",MassF%M_h)
+       !call deallocate_mf(MassF)
 
 
         ! dr and dm = mass functions at other redshifts
@@ -80,7 +80,8 @@ function execute(block, config) result(status)
 	        call deallocate_mf(MassF)
         end do
 
-       !status = datablock_put_double_grid(block, matter_power_lin_section,"R_H",k,"M_H",m, "dndlnRh",dr)
+        status = datablock_put_double_grid(block,mass_function_section,"R_H",k,"z",PK%redshifts, "dndlnRh",dr)
+       status = datablock_put_double_grid(block, mass_function_section,"M_H",m,"z_copy",PK%redshifts, "dndlnMh",dm)
 
         deallocate(dr)
         deallocate(dm)
