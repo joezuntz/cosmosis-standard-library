@@ -1,0 +1,31 @@
+#This is a template for module description files
+name: growth_factor
+version: 1
+purpose: returns linear growth factor and growth rate for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa
+url: ""
+attribution: [CosmoSIS Team]
+rules: "If you use a file from a particular survey you should cite that survey"
+cite: []
+
+assumptions:
+    - "linear growth factor and rate in flat cosmology"
+
+explanation: >
+        "This simple module calculates the linear growth factor D, and linear growth rate, f, for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa. 
+        Where D, f are defined by the growth of a
+        linear perturbation, delta, with scale factor a: delta(a') = delta(a)*(D(a')/D(a)) and f = dlnD/dlna"
+params:
+        zmin: "Real, min value to save f,D (default = 0.0)"
+        zmax: "Real, max value to save f,D (default = 3.0)"
+        dz: "Real, redshift binsize (default  = 0.01)"
+inputs: 
+        cosmological_parameters:
+                omega_m:  "real, baryon + cdm density fraction today"
+                w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
+                wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
+
+outputs:
+        growth_parameters:
+                d_z: "1D real array, linear growth factor D"
+                f_z: "1D real array, linear growth rate f"
+                z: "1D real array, redshift of samples "

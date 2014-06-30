@@ -49,7 +49,7 @@ def execute(block, config):
 	try:
 		z0 = where(z==0)[0][0]
 	except IndexError:
-		raise ValueError("You need to calculate f(z) and d(z) down to z=0 to use the RSD f*sigma8 likelihood")
+		raise ValueError("You need to calculate f(z) and d(z) down to z=0 to use the BOSS f*sigma8 likelihood")
 	sig = block[cosmo, 'sigma_8']
 	fsigma = (sig*(d_z/d_z[z0]))*f_z
 	fsig = interp(redshift, z, fsigma)
@@ -60,7 +60,7 @@ def execute(block, config):
 	if not mode:
 		#compute the likelihood - just a simple Gaussian
 		like = -(fsig-mean)**2/sigma**2/2.0 - norm
-		block[likes, 'RSD_FSIGMA_LIKE'] = like
+		block[likes, 'BOSS_LIKE'] = like
 		#signal that everything went fine
 		return 0
 	else:
@@ -90,7 +90,7 @@ def execute(block, config):
 
 		if feedback:
 			print ("[H(z=0.57),D_a(z=0.57),Omegamh2,b*sigma(z=0.57),fsigma8(z=0.57)] = [%lf,%lf,%lf,%lf,%lf]"%(h_z,da_z,omegam*h0**2,bias*s,fsig))
-		block[likes, 'RSD_FSIGMA_LIKE'] = chi2*(-0.5)
+		block[likes, 'BOSS_LIKE'] = chi2*(-0.5)
 		#signal that everything went fine
 		return 0
 

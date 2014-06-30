@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <assert.h>
 #include "stdio.h"
+#include "string.h"
 
 gsl_spline * spline_from_arrays(int n, double * x, double *y)
 {
@@ -17,9 +18,13 @@ DATABLOCK_STATUS save_spline(c_datablock * block, const char * section,
 {
 
 	DATABLOCK_STATUS status = 0;
-	status |= c_datablock_put_int(block, section, n_name, s->size);
-	status |= c_datablock_put_double_array_1d(block, section, x_name, 
-		s->x, s->size);
+	if (strlen(n_name)>0){
+		status |= c_datablock_put_int(block, section, n_name, s->size);
+	}
+	if (strlen(x_name)>0){
+		status |= c_datablock_put_double_array_1d(block, section, x_name, 
+			s->x, s->size);
+	}
 	status |= c_datablock_put_double_array_1d(block, section, y_name, 
 		s->y, s->size);
 	return status;
