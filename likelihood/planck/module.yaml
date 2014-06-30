@@ -1,0 +1,80 @@
+#This is a template for module description files
+name: planck
+version: 1.0
+purpose: Likelihood function of CMB from Planck
+url: ""
+attribution: [The Planck Collaboration]
+rules: >
+    "Likelihood released by Planck Collaboration and packaged by cosmosis team.  
+    Contact the latter with problems in the first instance.  Different papers should
+    be cited depending which data sets are used with this module.
+    "
+cite:
+    - ""
+    - ""
+
+assumptions:
+    - "Highly accurate CMB calculations are required"
+    - "In the high-ell regime models for the foregrounds and secondary anisotropies are assumed"
+
+explanation: >
+    "The Planck space telescope has provided the most powerful current
+     CMB data from quadrupole to sub-degree scales.
+
+     The Planck Collaboration released a likelihood code (the PLC) to which one passes
+     both a file containing the data to be used, the theory spectra to compare to that 
+     data, and a set of nuisance parameters that the code uses (somewhat opaquely) to 
+     model the effects of foreground components, secondary anisotropies, and Planck beams and 
+     gains.  For more details see the papers by the Planck collaboration and web documentation.
+
+     The low-ell polarization data currently use WMAP data rather than Planck (as of v1.0).
+
+     We do not describe the nuisance parameters in detail here; reasonable ranges and values
+     for them are given in the Planck papers; they should be marginalized over in full
+     analysis.  Different parameters are used for different data sets.
+
+     The cosmosis team wrote the wrapper which connects the PLC into
+     cosmosis.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    t_low_file: File path to low-ell temperature likelihood file released by Planck Collaboration.
+    p_low_file: File path to low-ell polarization likelihood file released by Planck Collaboration.
+    t_high_file: File path to high-ell temperature data likelihood file released by Planck Collaboration.
+    lensing_file: File path to lensing likelihood file released by Planck Collaboration.
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cmb_cl:
+        ell: Integer vector of angular frequencies for CMB spectra
+        tt: Double vector of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
+        ee: Double vector of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+        bb: Double vector of B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+        te: Double vector of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+        pp: Double vector of phi-phi spectra in l*(l+1) C_ell (if using lensing)
+    planck:
+        A_ps_100: Planck point source amplitude parameter at 100 GHz
+        A_ps_143: Planck point source amplitude parameter at 143 GHz
+        A_ps_217: Planck point source amplitude parameter at 217 GHz
+        A_cib_143: Planck Cosmic Infrared Background amplitude parameter at 143 GHz
+        A_cib_217: Planck Cosmic Infrared Background amplitude parameter at 217 GHz
+        A_sz: Planck Sunyaev-Zeldovich effect parameter
+        r_ps: Planck point source ratio parameter
+        r_cib: Planck Cosmic Infrared Background ratio parameter
+        n_Dl_cib: Planck Cosmic Infrared Background parameter
+        cal_100: Planck calibration parameter at 100GHz
+        cal_143: Planck calibration parameter at 143GHz
+        cal_217: Planck calibration parameter at 217GHz
+        xi_sz_cib: Planck Cosmic Infrared Background parameter
+        A_ksz: Planck kinetic Sunyaev-Zeldovich parameter
+        Bm_1_1: Planck beam parameter
+
+outputs:
+    likelihoods:
+        planck_tt_high_like: Log-likelihood from Planck TT high-ell data
+        planck_tt_lopw_like: Log-likelihood from Planck TT low-ell data
+        planck_p_low_like: Log-likelihood from Planck TT high-ell data
+        planck_lensing_like: Log-likelihood from Planck lensing data
+        planck_like: The total Planck log-likelihood; sum of the other values.
