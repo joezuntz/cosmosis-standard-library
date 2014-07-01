@@ -81,7 +81,8 @@ function execute(block, config) result(status)
         end do
 
         status = datablock_put_double_grid(block,mass_function_section,"R_H",k,"z",PK%redshifts, "dndlnRh",dr)
-       status = datablock_put_double_grid(block, mass_function_section,"M_H",m,"z_copy",PK%redshifts, "dndlnMh",dm)
+       !status = datablock_put_double_grid(block, mass_function_section,"M_H",m,"z_copy",PK%redshifts, "dndlnMh",dm)
+       status = datablock_put_double_array_2d(block, mass_function_section, "dndlnMh", dm)
 
         deallocate(dr)
         deallocate(dm)
