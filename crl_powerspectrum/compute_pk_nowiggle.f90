@@ -17,7 +17,8 @@ MODULE Compute_Pk_NoWiggle
   USE pk_EisensteinHu
   IMPLICIT none
 
-
+private
+public compute_pknowiggle
 
 contains
 
@@ -27,14 +28,14 @@ contains
 
     real(dl), INTENT(IN) :: k_ov_h,A_s,h0,om0,ob0,n_s
     real(dl),INTENT(INOUT) :: pk
-    DOUBLE PRECISION :: trans !! private?
+    DOUBLE PRECISION :: trans
     CALL eisensteinhu(k_ov_h*h0,om0*h0**2d0,ob0/om0,trans)
     ! Eq.(74) of Komatsu et al., ApJS, 180, 330 (2009) with kWMAP=0.002/Mpc
     ! Remember that ak is in units of h/Mpc whereas "k" in Eq.(74) is in units
     ! of 1/Mpc.
     pk=A_s*(2d0*k_ov_h**2d0*2998d0**2d0/5d0/om0)**2d0 &
          *trans**2d0*(k_ov_h*h0/0.05d0)**(n_s-1d0) &
-         *2d0*33.14159265359d0**2d0/k_ov_h**3d0
+         *2d0*3.14159265359d0**2d0/k_ov_h**3d0
 
     !  I commented growth_z0**2d0 so you have to put the z dependence by hands.
   end subroutine compute_pknowiggle

@@ -1,6 +1,10 @@
 MODULE interface_tools
   use cosmosis_modules
   IMPLICIT none
+
+
+
+
   integer, parameter :: dl=8
   type ini_settings
      real(dl):: zmin,zmax,kmin,kmax,dz,dk
@@ -14,6 +18,8 @@ MODULE interface_tools
      real(dl), dimension(:,:), allocatable :: ddmat
      integer num_z, num_k
   end type pk_settings
+
+
 
 contains
 
@@ -65,9 +71,17 @@ contains
     INTEGER :: jlo,dim
     dim=0
     dim=size(ya, dim=1)
-    x=z
+    x=z+0.00000000000000000001d0
     CALL hunt(xa,dim,x,jlo)
     hh=xa(jlo+1)-xa(jlo)
+    if ( hh .eq. 0) then
+      print*, jlo,hh,xa(jlo+1),xa(jlo)
+      stop "hh is zero in function hunt in interface_tools.f90"
+    endif
+    open(unit=10, file="test.txt")
+    write(unit=10, fmt=*) jlo,hh,xa(jlo+1),xa(jlo)
+    close(unit=10)
+
     a=(xa(jlo+1)-x)/hh
     b=(x-xa(jlo))/hh
     dz_growth=(a*ya(jlo)+b*ya(jlo+1)+((a**3-a)*ya2(jlo)+(b**3-b)*ya2(jlo+1))*(hh**2)/6.)

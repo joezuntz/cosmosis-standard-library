@@ -1,5 +1,7 @@
 MODULE pk_EisensteinHu
 
+private
+public EisensteinHu
 contains
 
 SUBROUTINE EisensteinHu(ak,omegamh2,fb,T)

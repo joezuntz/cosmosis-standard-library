@@ -20,14 +20,15 @@ function setup(options) result(result)
   settings%dz=(settings%zmax-settings%zmin)/(settings%nz_steps-1.0)
   settings%dk=(log(settings%kmax)-log(settings%kmin))/(settings%nk_steps-1.0)
 
-
+  print*,""
+  print*,"EH power spectrum options:"
   print*, "zmin",settings%zmin
   print*, "zmax",settings%zmax
   print*, "nz_steps",settings%nz_steps
   print*, "kmin",settings%kmin
   print*, "kmax",settings%kmax
   print*, "nk_steps",settings%nk_steps
-
+  print*,""
 
   if (status .ne. 0) then
      write(*,*) "Failed setup of CRL POWER SPECTRUM NO WIGGLE!", status
@@ -78,6 +79,7 @@ function execute(block, config) result(status)
   !    INTERPOLATE GROWTH
   allocate(dz_interpolated(n_growth))
   call spline(zbins,dz,n_growth,1d30,1d30,dz_interpolated)
+
 
   if ( zbins(1) .gt. settings%zmin .or. zbins(n_growth) .lt. settings%zmin ) then
 
@@ -143,8 +145,7 @@ function execute(block, config) result(status)
 
   call deallocate_matterpower(PK)
 
-
-
+  if (allocated(dz_interpolated)) deallocate(dz_interpolated)
 end function execute
 
 
