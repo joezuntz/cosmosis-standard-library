@@ -123,6 +123,39 @@ int shear_shear_config(c_datablock * block, limber_config * lc, shear_spectrum_c
 
 
 
+int shear_intrinsic_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
+
+	// Compute the prefactor, (1.5 Omega_M H0^2)^2
+	// The units of this need to be consistent with 
+	// what we 		
+	double omega_m;
+	int status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
+	// in (Mpc/h)^-2
+	// We leave the factor of h in because our P(k) 
+	// should have it in.  That's why there is a 100 in here.
+	const double c_kms = 299792.4580; //km/s
+	double scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m; 
+	// This scaling value is the bit that goes in front
+	// of the W(chi) kernel.  So we square it for the 
+	// shear-shear since that has two copies
+
+	// Set up the integration rules.
+	lc->xlog = false;
+	lc->ylog = false;
+	lc->n_ell = config->n_ell;
+	lc->prefactor = scaling;
+
+	// Log spaced target ell based on input
+	lc->ell = malloc(sizeof(double)*lc->n_ell);
+	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
+	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
+
+	return status;
+}
+
+
+
+
 int intrinsic_intrinsic_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
 	// Set up the integration rules.
 	// We can interpolate in the logs because
@@ -163,6 +196,32 @@ int save_c_ell(c_datablock * block, const char * section,
 
 }
 
+int shear_intrinsic_spectra(c_datablock * block, int nbin, 
+	gsl_spline * W[nbin], gsl_spline * Nchi[nbin], Interpolator2D * PK, shear_spectrum_config * config)
+{
+
+	// Get the prefactor
+	const char * section = "IA_GI_CL";
+
+	limber_config lc;
+	int status = shear_intrinsic_config(block, &lc, config);
+	if (status) {free(lc.ell); return status;}
+	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
+	status |= c_datablock_put_int(block, section, "nbin", nbin);
+
+	for (int bin1=1; bin1<=nbin; bin1++){
+		for (int bin2=1; bin2<=nbin; bin2++){
+			gsl_spline * c_ell = limber_integral(&lc, Nchi[bin1-1], W[bin2-1], PK);
+			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
+			gsl_spline_free(c_ell);
+			if (status) return status;
+		}
+	}
+	free(lc.ell);
+	return status;
+}	
+
+
 int shear_shear_spectra(c_datablock * block, int nbin, 
 	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config)
 {
@@ -199,7 +258,6 @@ int intrinsic_intrinsic_spectra(c_datablock * block, int nbin,
 	if (status) {free(lc.ell); return status;}
 	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
 	status |= c_datablock_put_int(block, section, "nbin", nbin);
-	FILE * f = 
 
 	for (int bin1=1; bin1<=nbin; bin1++){
 		for (int bin2=1; bin2<=bin1; bin2++){
@@ -277,10 +335,10 @@ int execute(c_datablock * block, void * config_in)
 		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
 
 	Interpolator2D * PK_II = load_interpolator(
-		block, chi_of_z_spline, "intrinsic_alignment_ii", "k_h", "z", "P_k");
+		block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_II");
 
 	Interpolator2D * PK_GI = load_interpolator(
-		block, chi_of_z_spline, "intrinsic_alignment_gi", "k_h", "z", "P_k");
+		block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_GI");
 
 
 
@@ -296,11 +354,14 @@ int execute(c_datablock * block, void * config_in)
 		return 1;
 	}
 
+
 	// Make the C_ell and save them
 	status |= shear_shear_spectra(block, nbin, W_splines, PK, config);
 
 	status |= intrinsic_intrinsic_spectra(block, nbin, 
 		Nchi_splines, PK_II, config);
+
+	status |= shear_intrinsic_spectra(block, nbin, W_splines, Nchi_splines, PK_GI, config);
 
 
 
