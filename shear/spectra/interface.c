@@ -201,7 +201,7 @@ int shear_intrinsic_spectra(c_datablock * block, int nbin,
 {
 
 	// Get the prefactor
-	const char * section = "IA_GI_CL";
+	const char * section = SHEAR_CL_GI_SECTION;
 
 	limber_config lc;
 	int status = shear_intrinsic_config(block, &lc, config);
@@ -223,7 +223,7 @@ int shear_intrinsic_spectra(c_datablock * block, int nbin,
 
 
 int shear_shear_spectra(c_datablock * block, int nbin, 
-	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config)
+	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config, const char * section)
 {
 
 	// Get the prefactor
@@ -231,13 +231,13 @@ int shear_shear_spectra(c_datablock * block, int nbin,
 	limber_config lc;
 	int status = shear_shear_config(block, &lc, config);
 	if (status) {free(lc.ell); return status;}
-	status |= c_datablock_put_double_array_1d(block, SHEAR_CL_SECTION, "ell", lc.ell, lc.n_ell);
-	status |= c_datablock_put_int(block, SHEAR_CL_SECTION, "nbin", nbin);
+	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
+	status |= c_datablock_put_int(block, section, "nbin", nbin);
 
 	for (int bin1=1; bin1<=nbin; bin1++){
 		for (int bin2=1; bin2<=bin1; bin2++){
 			gsl_spline * c_ell = limber_integral(&lc, W[bin1-1], W[bin2-1], PK);
-			int status = save_c_ell(block, SHEAR_CL_SECTION, bin1, bin2,  c_ell, &lc);
+			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
 			gsl_spline_free(c_ell);
 			if (status) return status;
 		}
@@ -252,7 +252,7 @@ int intrinsic_intrinsic_spectra(c_datablock * block, int nbin,
 {
 
 	// Get the prefactor
-	const char * section = "IA_II_CL";
+	const char * section = SHEAR_CL_II_SECTION;
 	limber_config lc;
 	int status = intrinsic_intrinsic_config(block, &lc, config);
 	if (status) {free(lc.ell); return status;}
@@ -354,9 +354,18 @@ int execute(c_datablock * block, void * config_in)
 		return 1;
 	}
 
+	bool do_intrinsics = true;
 
 	// Make the C_ell and save them
-	status |= shear_shear_spectra(block, nbin, W_splines, PK, config);
+	const char * section;
+	if (do_intrinsics){
+		section = SHEAR_CL_GG_SECTION;
+	}
+	else{
+		section=SHEAR_CL_SECTION;
+	}
+	
+	status |= shear_shear_spectra(block, nbin, W_splines, PK, config, section);
 
 	status |= intrinsic_intrinsic_spectra(block, nbin, 
 		Nchi_splines, PK_II, config);
