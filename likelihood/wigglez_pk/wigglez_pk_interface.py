@@ -30,9 +30,9 @@ def execute(block, config):
 		z1 = z1[::-1]
 		d_v = d_v[::-1]
 
-	k = block[names.matter_power_lin, "k_h"]
-	z = block[names.matter_power_lin, "z"]
-	p = block[names.matter_power_lin, "p_k"]
+	k = block["matter_power_gal", "k_h"]
+	z = block["matter_power_gal", "z"]
+	p = block["matter_power_gal", "p_k"]
 
 	H0 = block[names.cosmological_parameters, "h0"]*100
 
