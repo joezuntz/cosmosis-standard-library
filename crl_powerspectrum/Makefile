@@ -9,5 +9,5 @@ clean:
 	rm -f nowiggle_module.so *.o *.mod
 	rm -rf nowiggle_module.so.dSYM/
 
-nowiggle_module.so: cosmo.f90  spline.f hunt.f interface_tools.f90 compute_pk_nowiggle.f90 eisensteinhu.f90 nowiggle_module.F90 ${COSMOSIS_SRC_DIR}/cosmosis/datablock/libcosmosis_fortran.so
+nowiggle_module.so: cosmo.f90 growth.f90 dverk.f spline.f hunt.f interface_tools.f90 eisensteinhu.f90 compute_pk_nowiggle.f90  nowiggle_module.F90 ${COSMOSIS_SRC_DIR}/cosmosis/datablock/libcosmosis_fortran.so
 	$(FC) $(FFLAGS) -shared -o $@ $+

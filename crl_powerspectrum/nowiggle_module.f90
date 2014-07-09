@@ -52,7 +52,7 @@ function execute(block, config) result(status)
   type(ini_settings), pointer :: settings
   type(pk_settings) :: PK
   real(8) :: omega_baryon,omega_matter,w_de,omega_de,h0,n_s,n_run,A_s
-  real(8) :: k, z
+  real(8) :: k, z,D_0
   real(8), allocatable, dimension(:,:) :: P
   real(8), allocatable, dimension(:) :: dz,zbins,dz_interpolated
 
@@ -67,10 +67,10 @@ function execute(block, config) result(status)
 
   status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
   status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_M", omega_matter)
-  status = status + datablock_get_double(block, cosmological_parameters_section, "W", w_de)
+  status = status + datablock_get_double_default(block, cosmological_parameters_section, "W",-1.0d0, w_de)
   status = status + datablock_get_double(block, cosmological_parameters_section, "h0", h0)
   status = status + datablock_get_double(block, cosmological_parameters_section, "n_s", n_s)
-  status = status + datablock_get_double(block, cosmological_parameters_section, "n_run", n_run)
+  status = status + datablock_get_double_default(block, cosmological_parameters_section, "n_run", 0.0d0, n_run)
   status = status + datablock_get_double(block, cosmological_parameters_section, "A_s", A_s)
   n_growth= datablock_get_array_length(block, GROWTH_PARAMETERS_SECTION, "d_z")
   status = status+ datablock_get_double_array_1d(block, GROWTH_PARAMETERS_SECTION, "d_z", dz,n_growth);
@@ -129,15 +129,17 @@ function execute(block, config) result(status)
   end do
   ! cycle over z just applying the growth
 
-  do i = 1, PK%num_z, 1
+  D_0=dz_growth(PK%redshifts(1),zbins,dz,dz_interpolated)
+  PK%matpower(:,1)=PK%matpower(:,1)*(D_0)**2
+  do i = 2, PK%num_z, 1
      z=PK%redshifts(i)
-     PK%matpower(:,i)=PK%matpower(:,1)*dz_growth(z,zbins,dz,dz_interpolated)**2
+     PK%matpower(:,i)=PK%matpower(:,1)*(dz_growth(z,zbins,dz,dz_interpolated)/D_0)**2
   end do
 
 
   ! save in datablock
 
-  status = datablock_put_double_grid(block, "matter_power_EH", &
+  status = datablock_put_double_grid(block, "matter_power_no_bao", &
        "k_h", PK%kh, "z", PK%redshifts, "P_k", PK%matpower)
 
 

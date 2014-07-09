@@ -1,5 +1,5 @@
 MODULE pk_EisensteinHu
-
+implicit none
 private
 public EisensteinHu
 contains
