@@ -482,9 +482,9 @@ module camb_interface_tools
 		if (density) allocate(rho(nz))
 
 		do i=1,nz
-			z(i) = params%transfer%redshifts(i)
-			distance(i) = AngularDiameterDistance(z(i))
-			if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
+			z(nz-i+1) = params%transfer%redshifts(i)
+			distance(nz-i+1) = AngularDiameterDistance(z(nz-i+1))
+			if (density) rho(nz-i+1) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
 		enddo
 		
 
