@@ -1,0 +1,67 @@
+#This is a template for module description files
+name: clerkin
+version: 1
+purpose: "Compute galaxy bias as function of k, z for 3-parameter Clerkin et al 2014 model"
+url: ""
+attribution: ["L. Clerkin"]
+rules:
+    "Please cite the relevant papers if you use this module."
+cite:
+    - "arXiv:1405.5521 "
+
+assumptions:
+    - "3-parameter bias model from Clerkin et al l 2014"
+
+explanation: >
+    "The GTD bias model provides a benchmark expression for 
+    the redshift evolution of galaxy bias on large scales. 
+    This is crucial for rigorous comparison or combination 
+    of results. Choice of biasing model has a significant 
+    impact on cosmological parameter constraints, and an 
+    incorrect bias model will cause a shift in measured 
+    values of cosmological parameters. The three parameter 
+    GTD model, which encompasses several common bias models, 
+    has been shown to outperform the popular approach of a 
+    binned constant bias in obtaining unbiased estimates of 
+    cosmological parameters.
+
+    The GTD model is:
+    b(z) = c + (b_0 - c) / D(z)^alpha
+
+    where D(z) is the growth factor.
+
+    The Q model is:
+    b(k) = (1+Q k^2) / (a+A k)
+     
+    This module creates bias fields and/or scales power spectra, 
+    depending on the chosen  options
+
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    mode: "'power', 'bias' or 'both' to either scale input power and save that, just save bias, or do both"
+    model: "'gtd', 'q', or 'q-gtd' to use the GTD three-parameter model (z evolution only), the 2-parameter Q model (k scale only) or both"
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    bias_parameters:
+        b0:  real scalar. bias at z=0 if GTD model used§
+        c:  real scalar. bias parameter for GTD model
+        alpha:  real scalar. power law index for growth in GTD model
+        Q:  real scalar. parameter of Q model
+        A:  real scalar.  parameter of Q model
+    matter_power_nl:
+        k_h: "1D real vector, wavenumber in h/Mpc only if mode=power or both"
+        z: "1D real vector, redshift only if mode=power or both"
+        P_k: "2D real vector, nonlinear matter power only if mode=power or both"
+
+outputs:
+    matter_power_gal:
+        k_h: "1D real vector, wavenumber in h/Mpc only if mode=power or both"
+        z: "1D real vector, redshift only if mode=power or both"
+        P_k: "2D real vector, galaxy power only if mode=power or both"
+    bias_field:
+        k_h: "1D real vector, wavenumber in h/Mpc only if mode=bias or both"
+        z: "1D real vector, redshift only if mode=bias or both"
+        b: "2D real vector, galaxy power only if mode=bias or both"
