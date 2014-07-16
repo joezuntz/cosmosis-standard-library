@@ -12,7 +12,6 @@
 
 
 MODULE Compute_Pk_NoWiggle
-  USE growth
   USE interface_tools
   USE pk_EisensteinHu
   IMPLICIT none

@@ -17,10 +17,10 @@ explanation: >
 params:
         zmin: "Real, min value of redshift to save P(k,z) (default = 0.0)"
         zmax: "Real, max value of redshift to save P(k,z) (default = 5.0)"
-        nz_steps: "Integer, number of steps used between zmin-zmax"
+        nz_steps: "Integer, number of steps used between zmin-zmax (default = 800)"
         kmin: "Real, min value of k_h (Mpc/h) to save P(k,z) (default = 1.0*10^-5)"
         kmax: "Real, min value of k_h (Mpc/h) to save P(k,z) (default = 10.0)"
-        nk_steps: "Integer, number of steps used between kmin-kmax"
+        nk_steps: "Integer, number of steps used between kmin-kmax (default = 800)"
 
 
 inputs:
@@ -30,7 +30,7 @@ inputs:
                 z: "1D real array, redshift of samples "
 
 outputs:
-        matter_power_EH:
+        matter_power_no_bao:
                 z: "1D real array, redshifts of samples"
                 k_h: "1D real array, k wavenumbers of samples in Mpc/h"
                 p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
