@@ -239,9 +239,19 @@ int execute(c_datablock * block, void * config_in)
 	gsl_spline * a_of_chi_spline = spline_from_arrays(nz2, chi, a);
 
 	// Make the W()
+	int error_status=0;
 	gsl_spline * W_splines[nbin];
 	for (int bin=1; bin<=nbin; bin++){
 		W_splines[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline);
+		if (W_splines[bin-1]==NULL) error_status=1;
+	}
+	if (error_status){
+		free(chi);
+		free(a);
+		free(z);
+		gsl_spline_free(a_of_chi_spline);
+		gsl_spline_free(chi_of_z_spline);
+		return 1;		
 	}
 
 	// Get the P(k) we need
