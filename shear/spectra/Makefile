@@ -5,8 +5,8 @@ USER_LDFLAGS= -L../limber -llimber -lcosmosis -L ${GSL_LIB} -lgsl -lgslcblas
 
 all: interface.so
 
-interface.so: utils.c shear_shear.c interface.c ../limber/liblimber.a
-	$(CC) $(CFLAGS)  -shared -o interface.so utils.c shear_shear.c interface.c $(LDFLAGS)
+interface.so: shear_shear.c interface.c ../limber/liblimber.a
+	$(CC) $(CFLAGS)  -shared -o interface.so shear_shear.c interface.c $(LDFLAGS)
 
 clean:
 	rm -rf interface.so interface.so.dSYM

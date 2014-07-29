@@ -1,5 +1,5 @@
-import cosmosis_py.section_names
-from cosmosis_py.block import option_section
+from cosmosis import option_section
+from cosmosis import names
 import numpy as np
 import scipy.integrate
 
@@ -10,23 +10,23 @@ ZMAX = 3.0
 def setup(options):
 	z = options[option_section, "z"]
 	sigma = options[option_section, "sigma"]
+	section = options.get_string(option_section, "output_section", names.wl_number_density)
 	#in case just one bin, convert to arrays:
 	if np.isscalar(z): z = [z]
 	if np.isscalar(sigma): sigma = [sigma]
 	assert len(z) == len(sigma), "sigma and z had different sizes in the ini file section for gaussian_window"
 
-	return (z, sigma)
+	return (z, sigma, section)
 
 def gaussian(x, mu, sigma):
 	norm = np.sqrt(2*np.pi) * sigma
 	return np.exp(-0.5*(x-mu)**2 / sigma**2) / norm
 
 def execute(block, config):
-	(mu, sigma) = config
+	(mu, sigma, section) = config
 	nbin = len(mu)
 	#Set up z array.  Make sure ZMAX is inclusive
 	z = np.arange(0,ZMAX+DZ,DZ)
-	section = cosmosis_py.section_names.wl_number_density	
 
 	# Save Z array and count info
 	block[section,"Z"] = z

@@ -495,12 +495,15 @@ module camb_interface_tools
 		if (thermal) then
 			status = status + datablock_put_double(block, dist, &
 				"AGE", ThermoDerivedParams( derived_Age ))
+			status = status + datablock_put_metadata(block, dist, "AGE", "unit", "Gyr")
 
 			status = status + datablock_put_double(block, dist, &
 				"RS_ZDRAG", ThermoDerivedParams( derived_rdrag ))
 
+			!There is an 
 			status = status + datablock_put_double(block, dist, &
-				"THETA", ThermoDerivedParams( derived_thetastar ))
+				"THETASTAR", ThermoDerivedParams( derived_thetastar ))
+			status = status + datablock_put_metadata(block, dist, "THETASTAR", "unit", "100 radian")
 
 			status = status + datablock_put_double(block, dist, &
 				"ZDRAG", ThermoDerivedParams( derived_zdrag ))
@@ -510,20 +513,25 @@ module camb_interface_tools
 
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
+			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Gyr")
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))
+			status = status + datablock_put_metadata(block, dist, "AGE", "unit", "Gyr")
 		endif
 
 
 		status = status + datablock_put_double_array_1d(block, dist, "Z", z)
 		status = status + datablock_put_double_array_1d(block, dist, "D_A", distance)
+		status = status + datablock_put_metadata(block, dist, "D_A", "unit", "Mpc")
 
 		distance = distance * (1+z) !Convert to D_M
 		status = status + datablock_put_double_array_1d(block, dist, "D_M", distance)
+		status = status + datablock_put_metadata(block, dist, "D_M", "unit", "Mpc")
 
 		distance = distance * (1+z) !Convert to D_L
 		status = status + datablock_put_double_array_1d(block, dist, "D_L", distance)
+		status = status + datablock_put_metadata(block, dist, "D_L", "unit", "Mpc")
 
 		distance = 5*log10(distance)+25 !Convert to distance modulus
 		! The distance is already the dimensionful one, so we do not
@@ -535,11 +543,20 @@ module camb_interface_tools
 			distance(i) = HofZ(z(i))
 		enddo
 		status = status + datablock_put_double_array_1d(block, dist, "H", distance)
+		status = status + datablock_put_metadata(block, dist, "H", "unit", "Mpc/c")
 
-		if (density) status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)
+		if (density) then
+			status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)
+			status = status + datablock_put_metadata(block, dist, "RHO", "unit", "KG/M^3")
+		endif
 
 
 		status = status + datablock_put_int(block, dist, "NZ", nz)
+
+		!And finally save a
+		z = 1.0/(1+z)
+		status = status + datablock_put_double_array_1d(block, dist, "A", z)
+
 
 		if (status .ne. 0) then
 			write(*,*) "Failed to write redshift-distance column data in block section."

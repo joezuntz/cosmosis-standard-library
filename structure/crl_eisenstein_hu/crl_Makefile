@@ -1,0 +1,16 @@
+FC	= gfortran
+FFLAGS	= -O3 -fmax-errors=3
+OBJS	= cosmo.o  spline.o hunt.o qromb.o  growth.o dverk.o compute_pk_nowiggle.o
+.SUFFIXES: .f90
+.f90.o:
+	$(FC) $(FFLAGS) -c $<
+default:  sample compute_pk_nowiggle
+compute_pk_nowiggle: $(OBJS) compute_pk_nowiggle.f90
+	$(FC) $(FFLAGS) -o $@ $(OBJS) $@.o $(LDFLAGS)
+sample: $(OBJS) sample.f90
+	$(FC) $(FFLAGS) -o $@ $(OBJS) $@.o $(LDFLAGS)
+clean:
+	-rm -f *.o *.mod
+tidy: clean
+	-rm -f sample
+
