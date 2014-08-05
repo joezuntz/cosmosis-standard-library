@@ -27,6 +27,7 @@ module camb_interface_tools
 	real(dl), parameter :: default_nrun = 0.0
 	real(dl), parameter :: default_w = -1.0
 	real(dl), parameter :: default_wa = 0.0
+	real(dl), parameter :: default_pivot_scalar = 0.05
 	integer,  parameter :: default_massive_nu = 0
 	integer,  parameter :: default_sterile_neutrinos = 0
 
@@ -95,9 +96,9 @@ module camb_interface_tools
 			else if (trim(mode_name) == "cmb") then
 				mode=CAMB_MODE_CMB
 			else if (trim(mode_name) == "all") then
-				mode=CAMB_MODE_ALL				
+				mode=CAMB_MODE_ALL
 			else if (trim(mode_name) == "thermal") then
-				mode=CAMB_MODE_THERMAL				
+				mode=CAMB_MODE_THERMAL
 			else
 				write(*,*) "You need to specify a mode to use the camb module you chose."
 				write(*,*) "In the camb section of your ini file, please specify one of:"
@@ -193,6 +194,7 @@ module camb_interface_tools
 
 		if (perturbations) then
 			status = status + datablock_get_double(block, cosmo, "n_s",     params%initpower%an(1))
+            status = status + datablock_get_double_default(block, cosmo, "k_s", default_pivot_scalar, params%initpower%k_0_scalar)
 			status = status + datablock_get_double(block, cosmo, "A_s",     params%initpower%ScalarPowerAmp(1))
 			status = status + datablock_get_double(block, cosmo, "tau", params%Reion%optical_depth)
 			status = status + datablock_get_double_default(block, cosmo, "R_T", default_r, params%initpower%rat(1))
@@ -381,7 +383,7 @@ module camb_interface_tools
 		real(8) :: sigma8
 		real(8), parameter :: radius8 = 8.0_8
 		integer nz
-		
+
 		!Ask camb for sigma8
 		status = 0
 		sigma8=0.0
