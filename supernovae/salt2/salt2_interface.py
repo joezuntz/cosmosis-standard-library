@@ -1,12 +1,13 @@
 import sys,os
 import numpy as np
 import cosmosis_py
+from cosmosis.datablock import names, option_section
 import cosmosis_py.section_names
 
-sn_params = cosmosis_py.section_names.supernova_params
-distances = cosmosis_py.section_names.distances
-likes = cosmosis_py.section_names.likelihoods
-options = cosmosis_py.block.option_section
+sn_params = names.supernova_params
+distances = names.distances
+likes = names.likelihoods
+options = option_section
 
 
 run_dir=os.path.split(__file__)[0] #detect path of this directory
