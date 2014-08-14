@@ -1,4 +1,4 @@
-from cosmosis import names, option_section
+from cosmosis.datablock import names, option_section
 # sigma8 * omega_m ** 0.3 = 
 
 cosmo = names.cosmological_parameters

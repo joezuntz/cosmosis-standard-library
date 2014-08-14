@@ -1,6 +1,7 @@
 #include "shear_shear.h"
 #include "gsl/gsl_integration.h"
 #include "utils.h"
+#include "gsl/gsl_errno.h"
 
 #define NGLT 2048
 
@@ -47,6 +48,8 @@ static double w_of_chi_integrand(double chis, void *p)
 gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z, 
 	gsl_spline * a_of_chi)
 {
+
+
 	// Integrand data
 	w_integrand_data data;
 	data.n_of_z = n_of_z;
@@ -80,6 +83,8 @@ gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z,
 	double delta_chi = (chi_max-chi_min)/ (n_chi - 1);
 	F.function = &w_of_chi_integrand;
 
+	gsl_error_handler_t * old_error_handler = gsl_set_error_handler_off();
+	int error_status=0;
 	// Loop through samples to be evenly spaced in chi
 	for(int i=0; i<n_chi; i++)
 	{
@@ -89,13 +94,18 @@ gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z,
 		// We need it during the integration, so save.
 		data.chi = chi;
 		// ingredient for the prefactor chi/a
-		double a = gsl_spline_eval(a_of_chi, chi, data.acc_chi);
+		double a;
+		int err = gsl_spline_eval_e(a_of_chi, chi, data.acc_chi, &a);
+		if (err) {error_status=1; break;} 
 		// and calculate the integral
 		W[i] = norm * (chi/a) * gsl_integration_glfixed(&F, chi, chi_max, table);
 	}
+	gsl_set_error_handler(old_error_handler);
 
 	// Convert the static vectors into a spline and return
-	gsl_spline * output = spline_from_arrays(n_chi, Chi, W);
+	gsl_spline * output;
+	if (error_status) output = NULL;
+	else output = spline_from_arrays(n_chi, Chi, W);
 
 	// Tidy up
 	gsl_integration_glfixed_table_free(table);
