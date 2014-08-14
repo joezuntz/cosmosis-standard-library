@@ -12,6 +12,29 @@ C_ell = \int X_1(chi) X_2(chi) / chi^2 P_12(k=ell/chi,chi) d chi
 C1_BASELINE = 0.014
 #in units of rho_crit0
 
+
+def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
+	#extrapolate our linear power out to high redshift
+	z0 = np.where(z_nl==0)[0][0]
+	nz = len(z_nl)
+
+	# P_II is actually fixed across redshifts
+	f = - Omega_m * A * C1_BASELINE
+
+	# intrinsic-intrinsic term
+	P_II = np.zeros_like(P_nl)
+	for i in xrange(nz):
+		P_II[:,i] = f**2 * P_nl[:,z0]
+
+	growth = np.zeros_like(z_nl)
+	ksmall = np.argmin(k_nl)
+	P_GI = np.zeros_like(P_nl)
+	for i in xrange(nz):
+		growth = (P_nl[ksmall,i] / P_nl[ksmall,z0])**0.5
+		P_GI[:,i] = f * P_nl[:,i] / growth
+
+	return P_II, P_GI
+
 def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omega_m):
 	""" 
 	The Kirk, Rassat, Host, Bridle (2011) Linear Alignment model.

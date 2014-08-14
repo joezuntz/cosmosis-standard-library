@@ -353,8 +353,10 @@ int execute(c_datablock * block, void * config_in)
 		block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_GI");
 
 
+	if (PK==NULL) return 1;
+	if (PK_II==NULL) return 2;
+	if (PK_GI==NULL) return 3;
 
-	
 	// This is P(k,z)
 	// We need P(k, chi)
 	if (!PK) {
