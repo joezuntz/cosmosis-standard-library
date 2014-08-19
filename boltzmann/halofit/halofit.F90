@@ -114,8 +114,6 @@ module halofit1
       real(dl) sig,rknl,rneff,rncur,d1,d2
       real(dl) diff,xlogr1,xlogr2,rmid
       integer i
-      integer k
-      integer, parameter :: max_k = 1000
 
        !!BR09 putting neutrinos into the matter as well, not sure if this is correct, but at least one will get a consisent omk.
        omm0 = omega_matter
@@ -134,7 +132,7 @@ module halofit1
 
       xlogr1=-2.0
       xlogr2=3.5
-      do k=1,max_k
+      do
           rmid=(xlogr2+xlogr1)/2.0
           rmid=10**rmid
           call wint(CAMB_Pk,itf,rmid,sig,d1,d2)
@@ -154,12 +152,6 @@ module halofit1
                goto 101
          end if
       end do
-
-      !JAZ deal with this not converging by returning nan
-      if (k .ge. max_k) then
-        !We have to trick fortran into returning NaN
-        nonlin_ratio(i,itf) = sqrt(-nonlin_ratio(i,itf))
-      endif
 
 ! now calculate power spectra for a logarithmic range of wavenumbers (rk)
 
@@ -185,12 +177,6 @@ module halofit1
       enddo
 
 101   continue
-      !JAZ deal with this not converging by returning nan
-      if (k .ge. max_k) then
-        !We have to trick fortran into returning NaN
-        nonlin_ratio(i,itf) = sqrt(-nonlin_ratio(i,itf))
-      endif
-
       end do
             
       end subroutine NonLinear_GetNonLinRatios

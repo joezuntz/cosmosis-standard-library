@@ -161,12 +161,6 @@ function execute(block, config) result(status)
 	status = datablock_put_double_grid(block, matter_power_nl_section, &
 		"K_H", k, "Z", PK_NL%redshifts, "P_K", p)
 
-	!And add another check for any errors in halofit
-	if (.not. all(nonlin_ratio .ge. 0)) then
-		write(*,'(A)') "Halofit error.  Probably extreme parameters"
-		status = 1
-	endif
-
 
 	deallocate(k)
 	deallocate(nonlin_ratio)
