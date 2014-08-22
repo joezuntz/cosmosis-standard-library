@@ -54,6 +54,12 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
 	("ombh2", "ommh2*baryon_fraction"),
 	("ommh2", "ombh2/baryon_fraction"),
 	("omega_m", "omega_b+omega_c"),
+	("h0", "(ommh2/omega_m)**0.5"),
+	("h0", "(ombh2/omega_b)**0.5"),
+	("h0", "(omch2/omega_c)**0.5"),
+	#Had to leave this one out as it causes ZeroDivisionError.
+	#Could catch this somewhere?
+	# ("h0", "(omnuh2/omega_nu)**0.5"),
 	("h0","hubble/100"),
 	("hubble", "h0*100"),
 	("omega_lambda", "1-omega_m-omega_k-omega_nu"),
