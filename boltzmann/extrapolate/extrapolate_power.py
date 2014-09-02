@@ -3,7 +3,7 @@ This module takes linear and non-linear P(k) and extrapolates
 them linearly in log-space out to a specified high k_max
 
 """
-from cosmosis import option_section, names
+from cosmosis.datablock import option_section, names
 import numpy as np
 def extrapolate(log_k, log_P, n=200, log_new_kmax=None):
 	""" 
