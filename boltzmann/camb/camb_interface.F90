@@ -9,6 +9,10 @@ module camb_interface_tools
 	integer, parameter :: CAMB_MODE_BG  = 3
 	integer, parameter :: CAMB_MODE_THERMAL  = 4
 
+	integer, parameter :: CAMB_PARAM_OMEGAM   = 1
+	integer, parameter :: CAMB_PARAM_OMEGACH2 = 2
+	integer :: parameterization = 1
+
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
 	integer :: linear_nz = 401
 
@@ -17,7 +21,7 @@ module camb_interface_tools
 	integer :: sterile_neutrino = 0
 	real(dl) :: delta_neff = 0.0
 	real(dl) :: sterile_mass_fraction = 0.0
-	real(dl) :: cmb_output_scale = 7.4311e12
+!	real(dl) :: cmb_output_scale = 7.4311e12
 
 	real(dl), parameter :: default_yhe = 0.24
 	real(dl), parameter :: default_cs2de = 1.0
@@ -76,6 +80,7 @@ module camb_interface_tools
 		integer(c_size_t) :: block
 		integer status
 		character(64) :: mode_name=""
+		character(64) :: param_name=""
 		integer :: mode
 		integer, optional :: fixed_mode
 		integer::  use_tabulated_w_int
@@ -114,12 +119,24 @@ module camb_interface_tools
 			endif
 		endif
 
+        status = datablock_get_string(block, option_section, "parameterization",param_name)
+        if ((status .ne. 0) .or. trim(param_name) == "omegam") then
+            parameterization=CAMB_PARAM_OMEGAM
+        else if (trim(param_name) == "omegach2") then
+			write(*,*) "Parameterization set to omegach2"
+            parameterization=CAMB_PARAM_OMEGACH2
+        else
+            write(*,*) "Unknown parameterization ",parameterization,"found in the CAMB section of the ini file"
+        endif
+
+		status = 0
+
 		!We do not use the CMB lmax if only using the background mode
 		if (mode .ne. CAMB_MODE_BG) then
 			status = status + datablock_get_int_default(block, option_section, "lmax", default_lmax, standard_lmax)
 			status = status + datablock_get_int_default(block, option_section, "k_eta_max_scalar", 2*standard_lmax, k_eta_max_scalar)
-
 		endif
+
 		!We can always set an optional feedback level,
 		!which defaults to zero (silent)
 		status = status + datablock_get_int_default(block, option_section, "feedback", 0, FeedbackLevel)
@@ -178,7 +195,7 @@ module camb_interface_tools
 		logical, optional :: background_only
 		logical :: perturbations
 		type(CambParams) :: params
-		real(8) :: omegam
+		real(8) :: omegam, omegach2, omegabh2
 		integer :: sterile_neutrino
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
@@ -188,9 +205,35 @@ module camb_interface_tools
 	
 		call CAMB_SetDefParams(params)
 		status = 0
-		status = status + datablock_get_double(block, cosmo, "Omega_b", params%omegab)
-		status = status + datablock_get_double(block, cosmo, "Omega_m", omegam)
-		status = status + datablock_get_double(block, cosmo, "h0", params%h0)
+
+        status = status + datablock_get_double_default(block, cosmo, "omega_nu", default_omeganu, params%omegan)
+        status = status + datablock_get_double_default(block, cosmo, "Omega_K", default_omegak, params%omegak)
+
+		if ( parameterization .eq. CAMB_PARAM_OMEGAM ) then
+			status = status + datablock_get_double(block, cosmo, "Omega_b", params%omegab)
+			status = status + datablock_get_double(block, cosmo, "Omega_m", omegam)
+			status = status + datablock_get_double(block, cosmo, "h0", params%h0)
+
+			params%omegav = 1.0-omegam-params%omegak
+			params%omegac = omegam-params%omegab-params%omegan
+		else if ( parameterization .eq. CAMB_PARAM_OMEGACH2 ) then
+			status = status + datablock_get_double(block, cosmo, "Omega_bh2", omegabh2)
+			status = status + datablock_get_double(block, cosmo, "Omega_ch2", omegach2)
+			status = status + datablock_get_double(block, cosmo, "Omega_L", params%omegav)
+
+			! compute h assuming flatness
+			params%h0 = sqrt((omegabh2+omegach2) / (1.0-params%omegak-params%omegav-params%omegan))
+			params%omegac = omegach2 / params%h0**2
+			params%omegab = omegabh2 / params%h0**2
+
+			! set h0, omega_b and omega_m to match default parameterization
+			status = status + datablock_put_double(block, cosmo, "h0", params%h0)
+			status = status + datablock_put_double(block, cosmo, "Omega_b", params%omegab)
+			omegam = params%omegac+params%omegab+params%omegan
+			status = status + datablock_put_double(block, cosmo, "Omega_m", omegam)
+		else
+			write(*,*) 'no parameterization set!'
+		endif
 
 		if (perturbations) then
 			status = status + datablock_get_double(block, cosmo, "n_s",     params%initpower%an(1))
@@ -208,9 +251,6 @@ module camb_interface_tools
 		!Neutrinos
 
 		status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
-		status = status + datablock_get_double_default(block, cosmo, "omega_nu", default_omeganu, params%omegan)
-
-		status = status + datablock_get_double_default(block, cosmo, "Omega_K", default_omegak, params%omegak)
 		status = status + datablock_get_double_default(block, cosmo, "cs2_de", default_cs2de, cs2_lam)
 		status = status + datablock_get_double_default(block, cosmo, "yhe", default_yhe, params%yhe)
 		status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
@@ -290,13 +330,13 @@ module camb_interface_tools
 
 	
 	
-		!Some extras and modifications - assume flatness.
-		params%omegac = omegam-params%omegab-params%omegan
-		params%omegav = 1-omegam-params%omegak
+		!Some extras and modifications 
 		params%H0 = params%H0*100
 		params%want_zdrag = .true.
 		params%want_zstar = .true.
 		params%reion%use_optical_depth = .true.
+		params%reion%delta_redshift = 0.5
+
 		use_spline_template=params%DoLensing
 		params%AccurateReionization = .true.
         params%Transfer%PK_num_redshifts = 1
