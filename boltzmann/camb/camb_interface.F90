@@ -177,7 +177,6 @@ module camb_interface_tools
 		logical, optional :: background_only
 		logical :: perturbations
 		type(CambParams) :: params
-		real(8) :: omegam, omegach2, omegabh2
 		integer :: sterile_neutrino
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
@@ -212,8 +211,6 @@ module camb_interface_tools
 
 		status = status + datablock_get_double_default(block, cosmo, "cs2_de", default_cs2de, cs2_lam)
 		status = status + datablock_get_double_default(block, cosmo, "yhe", default_yhe, params%yhe)
-		status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
-
 
 		if (params%omegan .ne. 0) then
 			status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
