@@ -1,3 +1,4 @@
+#coding: utf-8
 import scipy.interpolate
 import numpy as np
 """
@@ -9,8 +10,26 @@ C_ell = \int X_1(chi) X_2(chi) / chi^2 P_12(k=ell/chi,chi) d chi
 
 
 """
-C1_BASELINE = 0.014
+
+
+def compute_c1_baseline():
+	C1_M_sun = 5e-14 # h^-2 M_S^-1 Mpc^3
+	M_sun = 1.9891e30 # kg
+	Mpc_in_m = 3.0857e22 # meters
+	C1_SI = C1_M_sun / M_sun * (Mpc_in_m)**3  # h^-2 kg^-1 m^3
+	#rho_crit_0 = 3 H^2 / 8 pi G
+	G = 6.67384e-11 #m^3 kg^-1 s^-2
+	H = 100 # h km s^-1 Mpc^-1
+	H_SI = H * 1000.0 / Mpc_in_m  # h s^-1
+	rho_crit_0 = 3 * H_SI**2 / (8*np.pi*G)  #  h^2 kg m^-3
+	f = C1_SI * rho_crit_0
+	return f
+
+
+
 #in units of rho_crit0
+C1_RHOCRIT = compute_c1_baseline()
+print "C1_RHOCRIT = ", C1_RHOCRIT
 
 
 def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
@@ -19,7 +38,7 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 	nz = len(z_nl)
 
 	# P_II is actually fixed across redshifts
-	f = - Omega_m * A * C1_BASELINE
+	f = - A * Omega_m * C1_RHOCRIT
 
 	# intrinsic-intrinsic term
 	P_II = np.zeros_like(P_nl)
@@ -34,6 +53,30 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 		P_GI[:,i] = f * P_nl[:,i] / growth
 
 	return P_II, P_GI
+
+def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
+	# What was used in CFHTLens and Maccrann et al.
+	#extrapolate our linear power out to high redshift
+	z0 = np.where(z_nl==0)[0][0]
+	nz = len(z_nl)
+
+	ksmall = np.argmin(k_nl)
+	growth = (P_nl[ksmall,:] / P_nl[ksmall,z0])**0.5
+
+	F = - A * C1_RHOCRIT * Omega_m / growth
+
+	# intrinsic-intrinsic term
+	P_II = np.zeros_like(P_nl)
+
+	for i in xrange(nz):
+		P_II[:,i] = F[i]**2 * P_nl[:,i] 
+
+	P_GI = np.zeros_like(P_nl)
+	for i in xrange(nz):
+		P_GI[:,i] = F[i] * P_nl[:,i]
+
+	return P_II, P_GI
+
 
 def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omega_m):
 	""" 
@@ -52,7 +95,7 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	nz = len(z_lin)
 
 	# P_II is actually fixed across redshifts
-	f = - Omega_m * A * C1_BASELINE
+	f = - Omega_m * A * C1_RHOCRIT
 
 	# intrinsic-intrinsic term
 	P_II = np.zeros_like(P_lin)

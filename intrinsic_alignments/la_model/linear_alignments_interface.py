@@ -1,10 +1,11 @@
 from cosmosis.datablock import names, option_section
 from linear_alignments import kirk_rassat_host_bridle_power
 from linear_alignments import bridle_king
+from linear_alignments import bridle_king_corrected
 
 def setup(options):
 	method = options[option_section, "method"].lower()
-	if method not in ["krhb", "bk"]:
+	if method not in ["krhb", "bk", "bk_corrected"]:
 		raise ValueError('The method in the linear alignment module must'
 			'be either "KRHB" (for Kirk, Rassat, Host, Bridle) or BK for '
 			'Bridle & King')
@@ -40,6 +41,10 @@ def execute(block, config):
 		block.put_grid(ia, "z", z_lin, "k_h", k_lin, "P_II", P_II.T)
 	elif method=='bk':
 		P_II, P_GI = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_GI", P_GI.T)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_II", P_II.T)
+	elif method=='bk_corrected':
+		P_II, P_GI = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
 		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_GI", P_GI.T)
 		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_II", P_II.T)
 
