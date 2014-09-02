@@ -9,10 +9,6 @@ module camb_interface_tools
 	integer, parameter :: CAMB_MODE_BG  = 3
 	integer, parameter :: CAMB_MODE_THERMAL  = 4
 
-	integer, parameter :: CAMB_PARAM_OMEGAM   = 1
-	integer, parameter :: CAMB_PARAM_OMEGACH2 = 2
-	integer :: parameterization = 1
-
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
 	integer :: linear_nz = 401
 
@@ -21,12 +17,10 @@ module camb_interface_tools
 	integer :: sterile_neutrino = 0
 	real(dl) :: delta_neff = 0.0
 	real(dl) :: sterile_mass_fraction = 0.0
-!	real(dl) :: cmb_output_scale = 7.4311e12
+	real(dl) :: cmb_output_scale = 7.4311e12
 
 	real(dl), parameter :: default_yhe = 0.24
 	real(dl), parameter :: default_cs2de = 1.0
-	real(dl), parameter :: default_omegak = 0.0D0
-	real(dl), parameter :: default_omeganu = 0.0D0
 	real(dl), parameter :: default_r = 0.0
 	real(dl), parameter :: default_nrun = 0.0
 	real(dl), parameter :: default_w = -1.0
@@ -36,9 +30,8 @@ module camb_interface_tools
 	integer,  parameter :: default_sterile_neutrinos = 0
 
 
-
-
 	contains
+
 
 	function camb_comoving_sound_horizon() result(rsdrag)
 		use ModelParams
@@ -80,7 +73,6 @@ module camb_interface_tools
 		integer(c_size_t) :: block
 		integer status
 		character(64) :: mode_name=""
-		character(64) :: param_name=""
 		integer :: mode
 		integer, optional :: fixed_mode
 		integer::  use_tabulated_w_int
@@ -118,16 +110,6 @@ module camb_interface_tools
 				stop 1
 			endif
 		endif
-
-        status = datablock_get_string(block, option_section, "parameterization",param_name)
-        if ((status .ne. 0) .or. trim(param_name) == "omegam") then
-            parameterization=CAMB_PARAM_OMEGAM
-        else if (trim(param_name) == "omegach2") then
-			write(*,*) "Parameterization set to omegach2"
-            parameterization=CAMB_PARAM_OMEGACH2
-        else
-            write(*,*) "Unknown parameterization ",parameterization,"found in the CAMB section of the ini file"
-        endif
 
 		status = 0
 
@@ -206,35 +188,13 @@ module camb_interface_tools
 		call CAMB_SetDefParams(params)
 		status = 0
 
-        status = status + datablock_get_double_default(block, cosmo, "omega_nu", default_omeganu, params%omegan)
-        status = status + datablock_get_double_default(block, cosmo, "Omega_K", default_omegak, params%omegak)
-
-		if ( parameterization .eq. CAMB_PARAM_OMEGAM ) then
-			status = status + datablock_get_double(block, cosmo, "Omega_b", params%omegab)
-			status = status + datablock_get_double(block, cosmo, "Omega_m", omegam)
-			status = status + datablock_get_double(block, cosmo, "h0", params%h0)
-
-			params%omegav = 1.0-omegam-params%omegak
-			params%omegac = omegam-params%omegab-params%omegan
-		else if ( parameterization .eq. CAMB_PARAM_OMEGACH2 ) then
-			status = status + datablock_get_double(block, cosmo, "Omega_bh2", omegabh2)
-			status = status + datablock_get_double(block, cosmo, "Omega_ch2", omegach2)
-			status = status + datablock_get_double(block, cosmo, "Omega_L", params%omegav)
-
-			! compute h assuming flatness
-			params%h0 = sqrt((omegabh2+omegach2) / (1.0-params%omegak-params%omegav-params%omegan))
-			params%omegac = omegach2 / params%h0**2
-			params%omegab = omegabh2 / params%h0**2
-
-			! set h0, omega_b and omega_m to match default parameterization
-			status = status + datablock_put_double(block, cosmo, "h0", params%h0)
-			status = status + datablock_put_double(block, cosmo, "Omega_b", params%omegab)
-			omegam = params%omegac+params%omegab+params%omegan
-			status = status + datablock_put_double(block, cosmo, "Omega_m", omegam)
-		else
-			write(*,*) 'no parameterization set!'
-		endif
-
+        status = status + datablock_get_double(block, cosmo, "omega_b", params%omegab)
+        status = status + datablock_get_double(block, cosmo, "omega_c", params%omegac)
+        status = status + datablock_get_double(block, cosmo, "omega_lambda", params%omegav)
+        status = status + datablock_get_double(block, cosmo, "omega_nu", params%omegan)
+		status = status + datablock_get_double(block, cosmo, "omega_k", params%omegak)
+		status = status + datablock_get_double(block, cosmo, "hubble", params%H0)
+		
 		if (perturbations) then
 			status = status + datablock_get_double(block, cosmo, "n_s",     params%initpower%an(1))
             status = status + datablock_get_double_default(block, cosmo, "k_s", default_pivot_scalar, params%initpower%k_0_scalar)
@@ -250,19 +210,20 @@ module camb_interface_tools
 
 		!Neutrinos
 
-		status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 		status = status + datablock_get_double_default(block, cosmo, "cs2_de", default_cs2de, cs2_lam)
 		status = status + datablock_get_double_default(block, cosmo, "yhe", default_yhe, params%yhe)
 		status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
 
 
 		if (params%omegan .ne. 0) then
+			status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
+			status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 			status = status + datablock_get_int_default(block, cosmo, "massive_nu", default_massive_nu, params%Num_Nu_massive)
 
 			!  We have coded for two massive neturino scenarios so far:
 			!  sterile neutrinos, and a single massive neutrino.
 			if (sterile_neutrino > 0) then
-				status = status + datablock_get_double(block, cosmo, "DELTA_NEFF", delta_neff)
+				status = status + datablock_get_double(block, cosmo, "delta_neff", delta_neff)
 				status = status + datablock_get_double(block, cosmo, "sterile_mass_fraction", sterile_mass_fraction)
 				params%share_delta_neff = .false.
 				params%Num_Nu_massless = 2.0307
@@ -291,8 +252,8 @@ module camb_interface_tools
 
 		! tabulated dark energy EoS
 		if (use_tabulated_w) then
-			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "W", w_array, nw_ppf)
-			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "A", a_array, nw_ppf)
+			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "w", w_array, nw_ppf)
+			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "a", a_array, nw_ppf)
 			if (nw_ppf .gt. nwmax) then
 				write(*,*) "The size of the w(a) table was too large ", nw_ppf, nwmax
 				status=nw_ppf
@@ -304,8 +265,8 @@ module camb_interface_tools
 			call setddwa()
 			call interpolrde()
 		else
-			status = status + datablock_get_double_default(block, cosmo, "W", -1.0D0, w_lam)
-			status = status + datablock_get_double_default(block, cosmo, "WA",  0.0D0, wa_ppf)
+			status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w_lam)
+			status = status + datablock_get_double_default(block, cosmo, "wa",  0.0D0, wa_ppf)
 			if (w_lam+wa_ppf .gt. 0) then
 				write(*,*) "Unphysical w_0 + w_a = ", w_lam, " + ", wa_ppf, " = ", w_lam+wa_ppf, " > 0"
 				status = 1
@@ -331,7 +292,6 @@ module camb_interface_tools
 	
 	
 		!Some extras and modifications 
-		params%H0 = params%H0*100
 		params%want_zdrag = .true.
 		params%want_zstar = .true.
 		params%reion%use_optical_depth = .true.
@@ -341,8 +301,6 @@ module camb_interface_tools
 		params%AccurateReionization = .true.
         params%Transfer%PK_num_redshifts = 1
         params%Transfer%PK_redshifts = 0
-
-
 
 	end function
 	
@@ -396,7 +354,7 @@ module camb_interface_tools
 		enddo
 
 		if (do_lensing) then
-		    do l=2,standard_lmax		
+		    do l=2,standard_lmax
 				cls_phi(l) = Cl_scalar(l, input_set,  C_phi) * (l+1.0) / ((l*1.0)**3 * twopi)
 			enddo
 		endif

@@ -59,26 +59,30 @@ params:
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
     cosmological_parameters:
+        # If these parameters are not those you would like to sample over (say omega_m or
+        # omegaa_ch2 are preferable), please use the consistency module.
         omega_b:  "real, baryon density fraction today"
-        omega_m:  "real, baryon + cdm density fraction today"
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        omega_c:  "real, cdm density fraction today"
+        omega_k:  "real, curvature density fraction today (default 0.0)"
+        omega_lambda:  "real, dark energy density fraction today"
+        hubble:  "real, hubble parameter H0 (km/s/Mpc)"
         tau:  "real, optical depth to last-scattering (ignored in background mode)"
         n_s:  "real, scalar spectral index (ignored in background/thermal mode)"
         A_s:  "real, scalar spectrum primordial amplitude (ignored in background/thermal mode)"
-        #There rest of these are always optional
+        k_s:  "real, Power spectrum pivot scale (default 0.05/Mpc)"
+        #There rest of these are always optional, CAMB will set defaults as appropriate
         r_t:  "real, tensor to scalar ratio (default 0.0)"
         n_run:  "real, running of scalar spectrum d n_s / d log_k (default 0.0)"
         n_t:  "real, tensor spectral index (default 0.0)"
+        omega_nu:  "real, neutrino density fraction today (default 0.0)"
         massless_nu:  "real, effective number of massless neutrinos (default 3.046)"
         massive_nu:  "integer, number of massive neutrinos (default 0)"
         sterile_neutrino:  "integer, number of sterile neutrinos (default 0)"
         delta_neff:  "real, contribution to N_eff by sterile neutrino (default 0)"
         sterile_mass_fraction:  "real, fraction of omega_nu in sterile neutrino"
-        omega_nu:  "real, neutrino density fraction today (default 0.0)"
         yhe:  "real, helium fraction (default 0.24)"
         w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
         wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
-        omega_k:  "real, curvature density fraction today (default 0.0)"
         cs2_de:  "real, dark energy sound speed/c (default 1.0)"
 
 
