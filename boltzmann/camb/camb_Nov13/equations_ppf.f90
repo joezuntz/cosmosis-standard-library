@@ -193,15 +193,15 @@
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-
+	! Cosmosis sets params%omegak
     !Return OmegaK - modify this if you add extra fluid components
-    function GetOmegak()
-    use precision
-    use ModelParams
-    real(dl)  GetOmegak
-    GetOmegak = 1 - (CP%omegab+CP%omegac+CP%omegav+CP%omegan)
-
-    end function GetOmegak
+    !function GetOmegak()
+    !use precision
+    !use ModelParams
+    !real(dl)  GetOmegak
+    !GetOmegak = 1 - (CP%omegab+CP%omegac+CP%omegav+CP%omegan)
+	!
+    !end function GetOmegak
 
 
     subroutine init_background
