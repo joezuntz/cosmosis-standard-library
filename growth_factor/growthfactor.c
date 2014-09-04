@@ -17,6 +17,8 @@ double linear_f;
 double w0,wa;
 double omega_m,omega_lambda;
 
+#define LIMIT_SIZE 1000
+
 int get_growthfactor(double a,double om, double w, double w2, double *gf)
 {
 	w0 = w;
@@ -40,18 +42,25 @@ double w_int(double z, void *param)
 }
 
 
-double Xde_int (double a )
+double Xde_int (double a,void *params )
 {
     if (a == 0.) a = 1e-3;
-    return w(a)/a;
+    double Xde_int = w(a)/a;
+    return Xde_int;
 }
 
 double Xde (double a)
 {
-	double integral;
+    gsl_integration_workspace * worksp  = gsl_integration_workspace_alloc (LIMIT_SIZE);
+    gsl_function F;
+    F.function = &Xde_int;
+    F.params =0;
+    double integral,error;
     if (a == 0.) 
 		a = 1e-3;
-    integral = qromb( Xde_int, a, 1.0);
+    gsl_integration_qags (&F, a, 1,  1.0e-20, 1.0e-10, LIMIT_SIZE,worksp, &integral, &error); 
+    gsl_integration_workspace_free (worksp);
+	
     return omega_m/(1.-omega_m)*exp(-3.*integral);
 }
 
