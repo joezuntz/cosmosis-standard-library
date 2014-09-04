@@ -11,7 +11,7 @@ function setup(options) result(result)
 
   status = 0
   status = status + datablock_get_double_default(options, option_section, "zmin", 0.0D-04, settings%zmin)
-  status = status + datablock_get_double_default(options, option_section, "zmax", 5.0D+00, settings%zmax)
+  status = status + datablock_get_double_default(options, option_section, "zmax", 3.0D+00, settings%zmax)
   status = status + datablock_get_int_default(options, option_section, "nz_steps", 800, settings%nz_steps)
   status = status + datablock_get_double_default(options, option_section, "kmin", 1.0D-05, settings%kmin)
   status = status + datablock_get_double_default(options, option_section, "kmax", 10D+00, settings%kmax)
@@ -52,7 +52,7 @@ function execute(block, config) result(status)
   type(ini_settings), pointer :: settings
   type(pk_settings) :: PK
   real(8) :: omega_baryon,omega_matter,w_de,omega_de,h0,n_s,n_run,A_s
-  real(8) :: k, z,D_0
+  real(8) :: k, z,D_0,yval, ypval, yppval
   real(8), allocatable, dimension(:,:) :: P
   real(8), allocatable, dimension(:) :: dz,zbins,dz_interpolated
 
@@ -78,10 +78,10 @@ function execute(block, config) result(status)
 
   !    INTERPOLATE GROWTH
   allocate(dz_interpolated(n_growth))
-  call spline(zbins,dz,n_growth,1d30,1d30,dz_interpolated)
 
+  call spline_cubic_set ( n_growth, zbins , dz, 2, 0.0, 2, 0.0, dz_interpolated )
 
-  if ( zbins(1) .gt. settings%zmin .or. zbins(n_growth) .lt. settings%zmin ) then
+  if ( (abs(zbins(1) - settings%zmin) .gt. 0.1d0) .or. abs(zbins(n_growth)- settings%zmax).gt. 0.1d0 ) then
 
      print*, "======================="
      print*,  " the chosen bounds of the growth module does not cover the entire redshift range requested for the power spectrum"
@@ -90,6 +90,7 @@ function execute(block, config) result(status)
 
      print*, "======================="
   end if
+
 
 
   ! create an array for P(k,z)
@@ -148,6 +149,7 @@ function execute(block, config) result(status)
   call deallocate_matterpower(PK)
 
   if (allocated(dz_interpolated)) deallocate(dz_interpolated)
+
 end function execute
 
 

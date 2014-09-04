@@ -8,7 +8,7 @@ cite:
         - "http://www.mpa-garching.mpg.de/~komatsu/crl/"
         - " Eisenstein and Hu, ApJ, 496, 605 (1998)"
 assumptions:
-    - "You need to run the growth module before this one."
+    - "DEPENDENCIES: You need to run the growth module before this one."
 
 explanation: >
         "This module uses Eiichiro Komatsu's CRL code to calculate the power spectrum

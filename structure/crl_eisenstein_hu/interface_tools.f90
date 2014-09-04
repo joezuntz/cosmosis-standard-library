@@ -60,27 +60,20 @@ contains
   end function load_matter_power
 
 
-  DOUBLE PRECISION FUNCTION dz_growth(z,xa,ya,ya2) ! growth function fitting
+
+    DOUBLE PRECISION FUNCTION dz_growth(z,xa,ya,ya2) ! growth function fitting
     IMPLICIT none
     DOUBLE PRECISION, intent(IN) :: z
     DOUBLE PRECISION, allocatable, dimension(:) , intent(IN) :: xa,ya,ya2
-    DOUBLE PRECISION :: a,b,hh,x
+    DOUBLE PRECISION :: a,b,hh,x, ypval, yppval
     INTEGER :: jlo,dim
     dim=0
     dim=size(ya, dim=1)
     x=z+0.00000000000000000001d0
-    CALL hunt(xa,dim,x,jlo)
-    hh=xa(jlo+1)-xa(jlo)
-    if ( hh .eq. 0) then
-      print*, jlo,hh,xa(jlo+1),xa(jlo)
-      stop "hh is zero in function hunt in interface_tools.f90"
-    endif
-
-    a=(xa(jlo+1)-x)/hh
-    b=(x-xa(jlo))/hh
-    dz_growth=(a*ya(jlo)+b*ya(jlo+1)+((a**3-a)*ya2(jlo)+(b**3-b)*ya2(jlo+1))*(hh**2)/6.)
+    call spline_cubic_val( dim, xa, ya, ya2, z, dz_growth, ypval, yppval)
     return
   END FUNCTION dz_growth
+
 
 
   subroutine allocate_matterpower(PK)
