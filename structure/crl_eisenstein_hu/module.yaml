@@ -8,11 +8,16 @@ cite:
         - "http://www.mpa-garching.mpg.de/~komatsu/crl/"
         - " Eisenstein and Hu, ApJ, 496, 605 (1998)"
 assumptions:
-    - "DEPENDENCIES: You need to run the growth module before this one."
+    - "DEPENDENCIES: You need to run a module to compute the growth rate before this one."
 
 explanation: >
         "This module uses Eiichiro Komatsu's CRL code to calculate the power spectrum
-        without BAO in it following Eisenstein and Hu, ApJ, 496, 605 (1998). This is faster but less accurate than a Boltzmann code like CAMB"
+        without BAO in it following Eisenstein and Hu, ApJ, 496, 605 (1998). 
+        This is faster but less accurate than a Boltzmann code like CAMB.
+
+        The CosmoSIS seam modified this slightly to remove some copyrighted 
+        N*merical R*cipes code.
+        "
 
 params:
         zmin: "Real, min value of redshift to save P(k,z) (default = 0.0)"
@@ -25,9 +30,17 @@ params:
 
 inputs:
         growth_parameters:
-                d_z: "1D real array, linear growth factor D"
-                f_z: "1D real array, linear growth rate f"
-                z: "1D real array, redshift of samples "
+            d_z: "1D real array, linear growth factor D"
+            f_z: "1D real array, linear growth rate f"
+            z: "1D real array, redshift of samples "
+        cosmological_parameters:
+            omega_b: "real scalar, baryon content"
+            omega_m: "real scalar, matter content"
+            w: "real scalar, dark energy EoS.  Optional; default=-1"
+            h0: "real scalar, Hubble/100km/s/Mpc"
+            n_s: "real scalar, scalar spectral index"
+            n_run: "real scalar, scalar spectral index running. Options; default=-1"
+            a_s: "real scalar, primordial amplitude"
 
 outputs:
         matter_power_no_bao:
