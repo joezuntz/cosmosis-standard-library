@@ -193,7 +193,9 @@
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-	! Cosmosis sets params%omegak
+	! Cosmosis sets params%omegak, if you add extra fluid components 
+    ! make sure to set them as additional parameters or computable 
+    ! quantities in the consistecy module
     !Return OmegaK - modify this if you add extra fluid components
     !function GetOmegak()
     !use precision
