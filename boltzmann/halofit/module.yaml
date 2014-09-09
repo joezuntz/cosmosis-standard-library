@@ -27,7 +27,7 @@ params:
 inputs:
     cosmological_parameters:
         omega_m:  "real, Total matter density fraction today"
-        omega_b:  "real, Baryon density fraction today"
+        omega_lambda: "real, Dark energy density fraction today"
         omega_nu:  "real, Neutrino density fraction today (default 0.0)"
         w:  "real, Dark energy equation of state (default -1)"
     matter_power_lin:
