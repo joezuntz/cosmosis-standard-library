@@ -1,5 +1,6 @@
 
 module Reionization
+ use Errors
  use Precision
  use AMLutils
  implicit none  
@@ -298,16 +299,23 @@ end function Reionization_GetOptDepth
                   try_b = Reion%redshift
        end if
        if (abs(try_b - try_t) < 2e-3/Reionization_AccuracyBoost) exit
-       if (i>100) call mpiStop('Reionization_zreFromOptDepth: failed to converge')        
+       !JD Modified so that bad TGR parameters won't kill CosmoMC
+       if (i>100) then
+           call GlobalError('Reionization_zreFromOptDepth: failed to converge',error_reionization)
+           return
+           !call mpiStop('Reionization_zreFromOptDepth: failed to converge') 
+       end if
+       
   end do
   
-  
+   !JD Modified so that bad TGR parameters won't kill CosmoMC
    if (abs(tau - Reion%optical_depth) > 0.002) then
-    write (*,*) 'Reionization_zreFromOptDepth: Did not converge to optical depth'
-    write (*,*) 'tau =',tau, 'optical_depth = ', Reion%optical_depth
-    write (*,*) try_t, try_b
-    call mpiStop()
-  end if
+    !write (*,*) 'Reionization_zreFromOptDepth: Did not converge to optical depth'
+    !write (*,*) 'tau =',tau, 'optical_depth = ', Reion%optical_depth
+    !write (*,*) try_t, try_b
+    !call mpiStop()
+    call GlobalError('Reionization_zreFromOptDepth: Did not converge to optical depth',error_reionization)
+   end if
     
  end subroutine Reionization_zreFromOptDepth 
 

@@ -215,7 +215,9 @@
          if (do_bispectrum .and. global_error_flag==0) call GetBispectrum(CTransScal) 
 
         end if
-
+        if (global_error_flag/=0) then  !JD added it justin in case error comes from lensCLs
+         if (present(error)) error =global_error_flag
+        end if
         end subroutine CAMB_GetResults
 
 

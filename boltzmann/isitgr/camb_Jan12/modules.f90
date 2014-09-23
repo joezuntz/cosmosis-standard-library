@@ -547,6 +547,31 @@
     !       print *,'z* = ',zstar, 'r_s = ',rs, 'DA = ',DA, rs/DA
 
        end function CosmomcTheta
+       
+        !Added by JD for WL
+      
+       function rofChi_real(Chi) !sinh(chi) for open, sin(chi) for closed.
+        real Chi,rofChi_real
+
+            if (CP%closed) then
+                rofChi_real=sin(chi)
+            else if (CP%open) then
+                rofChi_real=sinh(chi)
+            else
+                rofChi_real=chi
+            endif
+            
+        end function rofChi_real
+      
+      
+      
+       function f_K_real(x)
+        real :: f_K_real
+        real, intent(in) :: x
+        
+            f_K_real = CP%r*rofChi(x/CP%r)
+          
+       end function f_K_real
 
    end module ModelParams
 
@@ -1536,9 +1561,10 @@
         public
         integer, parameter :: Transfer_kh =1, Transfer_cdm=2,Transfer_b=3,Transfer_g=4, &
                               Transfer_r=5, Transfer_nu = 6,  & !massless and massive neutrino
-                              Transfer_tot=7
+                              Transfer_tot=7, &
+                              Transfer_lens = 8, Transfer_ISW = 9 !JD for ISW and lensing power spectra
        
-        integer, parameter :: Transfer_max = Transfer_tot
+        integer, parameter :: Transfer_max = Transfer_ISW
 
         logical :: transfer_interp_matterpower  = .true. !output regular grid in log k
          !set to false to output calculated values for later interpolation
@@ -1784,7 +1810,9 @@
            call Transfer_GetMatterPowerData(MTrans, PK, in, itf)
            call NonLinear_GetRatios(PK)
           end if
-           
+          
+          if (global_error_flag/=0) return
+          
           h = CP%H0/100
           logmink = log(minkh)
           do ik=1,MTrans%num_q_trans
@@ -1844,6 +1872,122 @@
           if (CP%NonLinear/=NonLinear_None) call MatterPowerdata_Free(PK)
 
         end subroutine Transfer_GetMatterPower
+
+        !JD for calculating arbitrary power spectra with given transfer functions
+        subroutine Transfer_GetPowerSpec(MTrans,outpower, itf, in, minkh, dlnkh, npoints,trans1,trans2)  !JD For getting ISW and Lenssing power spectra
+          !Allows for non-smooth priordial spectra
+          !if CP%Nonlinear/ = NonLinear_none includes non-linear evolution
+          !Get total matter power spectrum at logarithmically equal intervals dlnkh of k/h starting at minkh
+          !in units of (h Mpc^{-1})^3.   
+          !Here there definition is < Delta^2(x) > = 1/(2 pi)^3 int d^3k P_k(k)
+          !We are assuming that Cls are generated so any baryonic wiggles are well sampled and that matter power
+          !sepctrum is generated to beyond the CMB k_max
+          Type(MatterTransferData), intent(in) :: MTrans
+          Type(MatterPowerData) :: PK
+          
+          
+          integer, optional ::trans1,trans2 !JD specifies which transfer functions you want to use.
+          integer t1, t2
+          
+          integer, intent(in) :: itf, in, npoints
+          real, intent(out) :: outpower(npoints)
+          real, intent(in) :: minkh, dlnkh
+          real(dl), parameter :: cllo=1.e30_dl,clhi=1.e30_dl
+          integer ik, llo,il,lhi,lastix
+          real(dl) matpower(MTrans%num_q_trans), kh, kvals(MTrans%num_q_trans), ddmat(MTrans%num_q_trans)
+          real(dl) atransfer1,xi, a0, b0, ho, logmink,k, h,atransfer2
+          
+            !JD added below
+            if(.not. present(trans1))then
+                t1 =transfer_power_var
+                t2 =transfer_power_var
+            else
+                t1 = trans1
+                t2 = trans2
+            end if
+            
+            
+            if (npoints < 2) stop 'Need at least 2 points in Transfer_GetPowerSpec'
+            
+            !         if (minkh < MTrans%TransferData(Transfer_kh,1,itf)) then
+            !            stop 'Transfer_GetMatterPower: kh out of computed region'
+            !          end if
+            if (minkh*exp((npoints-1)*dlnkh) > MTrans%TransferData(Transfer_kh,MTrans%num_q_trans,itf) &
+                .and. FeedbackLevel > 0 ) &
+                write(*,*) 'Warning: extrapolating matter power in Transfer_GetPowerSpec'
+            
+            
+            if (CP%NonLinear/=NonLinear_None) then
+                call Transfer_GetMatterPowerData(MTrans, PK, in, itf)
+                call NonLinear_GetRatios(PK)
+            end if
+            
+            if (global_error_flag/=0) return
+            
+            !JD changed splines below to non-log to allow for negative transfer funcitons (isw-gal for example) 
+            h = CP%H0/100
+            logmink = log(minkh)
+            do ik=1,MTrans%num_q_trans
+                kh = MTrans%TransferData(Transfer_kh,ik,itf)
+                k = kh*h
+                kvals(ik) = kh
+                atransfer1=MTrans%TransferData(t1,ik,itf)
+                atransfer2=MTrans%TransferData(t2,ik,itf)
+                if(CP%NonLinear/=NonLinear_None)then
+                    atransfer1 = atransfer1* PK%nonlin_ratio(ik,1) !only one element, this itf
+                    atransfer2 = atransfer2* PK%nonlin_ratio(ik,1) !only one element, this itf
+                end if
+                matpower(ik) = atransfer1*atransfer2*k*pi*twopi*h**3
+                !Put in power spectrum later: transfer functions should be smooth, initial power may not be                
+            end do
+            
+            call spline(kvals,matpower,MTrans%num_q_trans,cllo,clhi,ddmat)
+            
+            llo=1
+            lastix = npoints + 1
+            do il=1, npoints
+                xi=exp(logmink + dlnkh*(il-1))
+                if (xi < kvals(1)) then
+                    outpower(il)=0.
+                    cycle
+                end if
+                do while ((xi > kvals(llo+1)).and.(llo < MTrans%num_q_trans))
+                    llo=llo+1
+                    if (llo >= MTrans%num_q_trans) exit
+                end do
+                if (llo == MTrans%num_q_trans) then
+                    lastix = il
+                    exit
+                end if
+                lhi=llo+1
+                ho=kvals(lhi)-kvals(llo) 
+                a0=(kvals(lhi)-xi)/ho
+                b0=(xi-kvals(llo))/ho
+                
+                outpower(il) = a0*matpower(llo)+ b0*matpower(lhi)+((a0**3-a0)* ddmat(llo) &
+                +(b0**3-b0)*ddmat(lhi))*ho**2/6
+    
+            end do
+            
+            do while (lastix <= npoints)
+            !Do linear extrapolation in the log
+            !Obviouly inaccurate, non-linear etc, but OK if only using in tails of window functions
+                outpower(lastix) = outpower(lastix-1)&
+                                +(exp(logmink + dlnkh*(lastix-1))-exp(logmink + dlnkh*(lastix-2)))&
+                                /(exp(logmink + dlnkh*(lastix-2))-exp(logmink + dlnkh*(lastix-3)))&
+                                *(outpower(lastix-1) - outpower(lastix-2))
+                lastix = lastix+1
+            end do
+            
+            do il = 1, npoints
+                k = exp(logmink + dlnkh*(il-1))*h
+                outpower(il) = outpower(il) * ScalarPower(k,in)
+                if (global_error_flag /= 0) exit 
+            end do
+            
+            if (CP%NonLinear/=NonLinear_None) call MatterPowerdata_Free(PK)
+
+        end subroutine Transfer_GetPowerSpec
      
         subroutine Transfer_Get_sigma8(MTrans, sigr8)
           use MassiveNu

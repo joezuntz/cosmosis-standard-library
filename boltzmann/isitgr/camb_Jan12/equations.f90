@@ -15,16 +15,28 @@
 !            merged fderivs and derivs so flat and non-flat use same equations; more precomputed arrays
 !            optimized neutrino sampling, and reorganised neutrino integration functions
 
+! Oct 2011 JD added changes to allow for Testing of General relativity (TGR) as described in arXiv: 1109.4583
+! This version uses functional form of TGR parameters introduced by arXiv:1002.4197
+
+! May 2012 JD added changes for the Testing of General relativity (TGR) including curved models as described in 
+! arXiv:1205.2422  
+
        module LambdaGeneral
-         use precision
-         implicit none
+        use precision
+        implicit none
           
-         real(dl)  :: w_lam = -1 !p/rho for the dark energy (assumed constant) 
-         real(dl) :: cs2_lam = 1_dl 
+        real(dl)  :: w_lam = -1 !p/rho for the dark energy (assumed constant) 
+        real(dl) :: cs2_lam = 1_dl 
           !comoving sound speed. Always exactly 1 for quintessence 
           !(otherwise assumed constant, though this is almost certainly unrealistic)
 
-         logical :: w_perturb = .true.
+        logical :: w_perturb = .true.
+        !JD The parameters below are for Testing General Relativity (TGR)
+        real(dl) :: TGR_Q(2), TGR_DR(2)  !!! Q_0 = TGR_Q(1), Q_\inf = TGR_Q(2), D/R_0 = TGR_DR(1), D/R_\inf = TGR_DR(2)
+        real(dl) :: TGR_scales(2)  !!!k_c is (1); s is (2)
+        logical :: t_dep = .true.
+        logical :: R_func = .false.
+
 
        end module LambdaGeneral
 
@@ -45,6 +57,7 @@
          !It is called before first call to dtauda, but after
          !massive neutrinos are initialized and after GetOmegak
        end  subroutine init_background
+
 
 
 !Background evolution
@@ -1185,10 +1198,15 @@
         real(dl) clxq, vq, diff_rhopi, octg, octgprime
         real(dl) sources(CTransScal%NumSources)
         real(dl) ISW
+        !TGR terms
+        real(dl) TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot,TGR_DR_T, TGR_DR_T_dot
+        real(dl) etakdot, Hdot, dgrhoGI,dgrhoGI_dot,TGR_F_1,phipluspsi,sigmadot
+        
         
         yprime = 0
-        call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)        
         
+        call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
+                
         if (EV%TightCoupling .or. EV%no_phot_multpoles) then
          pol=0
          polprime=0
@@ -1205,6 +1223,7 @@
         a   =y(1)
         a2  =a*a
         etak=y(2)
+        etakdot=yprime(2)
         clxc=y(3)
         clxb=y(4)
         vb  =y(5)
@@ -1243,13 +1262,16 @@
          
         end if
         
-        adotoa=sqrt((grho+grhok)/3)
+        adotoa=sqrt((grho+grhok)/3.d0)
+        Hdot = -(grho+3.d0*gpres)/6.d0
 
         if (EV%no_nu_multpoles) then
-             z=(0.5_dl*dgrho/k + etak)/adotoa 
-             dz= -adotoa*z - 0.5_dl*dgrho/k
-             clxr=-4*dz/k
-             qr=-4._dl/3*z
+             !z=(0.5_dl*dgrho/k + etak)/adotoa 
+             !dz= -adotoa*z - 0.5_dl*dgrho/k
+             !clxr=-4*dz/k
+             !qr=-4._dl/3*z
+             clxr=2*(grhoc_t*clxc+grhob_t*clxb)/3/k**2
+             qr= clxr*k/sqrt((grhoc_t+grhob_t)/3)*(2/3._dl)
              pir=0
              pirdot=0
         else
@@ -1260,15 +1282,18 @@
         end if
 
         if (EV%no_phot_multpoles) then
-             z=(0.5_dl*dgrho/k + etak)/adotoa 
-             dz= -adotoa*z - 0.5_dl*dgrho/k
-             clxg=-4*dz/k -4/k*opac(j)*(vb+z)
-             qg=-4._dl/3*z
+             !z=(0.5_dl*dgrho/k + etak)/adotoa 
+             !dz= -adotoa*z - 0.5_dl*dgrho/k
+             !clxg=-4*dz/k -4/k*opac(j)*(vb+z)
+             !qg=-4._dl/3*z
+             clxg=2*(grhoc_t*clxc+grhob_t*clxb)/3/k**2
+             qg= clxg*k/sqrt((grhoc_t+grhob_t)/3)*(2/3._dl)
              pig=0
              pigdot=0
              octg=0
              octgprime=0
-             qgdot = -4*dz/k
+             !qgdot = -4*dz/k
+             qgdot=k/3*clxg
         else
             if (EV%TightCoupling) then
              pig = EV%pig
@@ -1297,11 +1322,43 @@
        dgq   = dgq   + grhog_t*qg+grhor_t*qr
        dgpi  = dgpi  + grhor_t*pir + grhog_t*pig
 
+!JD  Stuff for testing GR      
+        if(t_dep) then
+            TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+            TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
+            TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+            TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
+        else
+            TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
+            TGR_Q_T_dot=0.
+            TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
+            TGR_DR_T_dot=0.
+        end if
+        
+        if(R_func)then
+            TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
+            TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
+        else
+            TGR_D_T = TGR_DR_T
+            TGR_D_T_dot = TGR_DR_T_dot
+        end if
+            
+       
 
-!  Get sigma (shear) and z from the constraints
-!  have to get z from eta for numerical stability       
-        z=(0.5_dl*dgrho/k + etak)/adotoa 
-        sigma=(z+1.5_dl*dgq/k2)/EV%Kf(1)
+     
+        dgrhoGI = dgrho+3.d0*adotoa*dgq/k !\sum_i rho_i \Delta_i
+        
+        TGR_f_1 = k**2.d0+3.d0*(adotoa**2.d0-Hdot)
+            
+        !kalpha
+        sigma=(etak+TGR_Q_T*dgrhoGI/(2.d0*k*EV%kf(1)))/adotoa
+        !k*alphadot from \psi = alphadot + H alpha
+        sigmadot = -((2.d0*TGR_D_T-TGR_Q_T)*dgrhoGI/(2.d0*EV%Kf(1))+TGR_Q_T*dgpi)/k-adotoa*sigma
+        
+        !get z from etakdot and sigma
+        z= sigma-3.d0*etakdot/k2
+        
+!End JD
          
         polter = 0.1_dl*pig+9._dl/15._dl*ypol(2)
 
@@ -1327,25 +1384,49 @@
 
         pidot_sum =  pidot_sum + grhog_t*pigdot + grhor_t*pirdot
         diff_rhopi = pidot_sum - (4*dgpi+ dgpi_diff )*adotoa
+     
+!JD
+    
+    !d/dtau(sum_i \rho_i\Delta_i)
+        dgrhoGI_dot = (grho+gpres)*(3.d0*etakdot/k-k*sigma)-adotoa*dgrhoGI &
+                      -TGR_F_1*dgq/k-2.d0*adotoa*dgpi
+    
+    !(\phi' + \psi' in Newtonian gauge)
+        ISW = (-((TGR_D_T_dot*dgrhoGI+TGR_D_T*dgrhoGI_dot)/EV%Kf(1)+(TGR_Q_T_dot-2.d0*adotoa*TGR_Q_T)*dgpi &
+                +TGR_Q_T*pidot_sum)/k2)*expmmu(j)
 
+
+    !JD adjusting for Testing GR used lineofsight.map from Anthony Lewis's 
+    !Camb page to get result in terms of sigmadot
+    !The rest, note y(9)->octg, yprime(9)->octgprime (octopoles)
+        sources(1)= ISW + vis(j)*pig/16+(3.D0/8.D0*ypol(2)+clxg/4)*vis(j)+(11.D0/10.D0*dvis(j) &
+        *sigma+(-3.D0/8.D0*EV%Kf(2)*ypol(3)-9.D0/80.D0*EV%Kf(2)*octg+3.D0/40.D0*qg+vb) &
+        *dvis(j)+(3.D0/40.D0*qgdot+21.D0/10.D0*sigmadot+vbdot-9.D0/80.D0*EV%Kf(2) &
+        *octgprime-3.D0/8.D0*EV%Kf(2)*ypolprime(3))*vis(j))/k+((3.D0/16.D0*ddvis(j) &
+        -9.D0/160.D0*vis(j)*dopac(j)-9.D0/160.D0*dvis(j)*opac(j))*pig+(9.D0/8.D0 &
+        *ypolprime(2)+3.D0/16.D0*pigdot-27.D0/80.D0*opac(j)*ypol(2))*dvis(j) &
+        +((-9.D0/160.D0*pigdot-27.D0/80.D0*ypolprime(2))*opac(j)-27.D0/80.D0 &
+        *dopac(j)*ypol(2))*vis(j)+9.D0/8.D0*ddvis(j)*ypol(2))/k**2    
+
+!JD Original terms in equations.f90
 !Maple's fortran output - see scal_eqs.map
 !2phi' term (\phi' + \psi' in Newtonian gauge)
-        ISW = (4.D0/3.D0*k*EV%Kf(1)*sigma+(-2.D0/3.D0*sigma-2.D0/3.D0*etak/adotoa)*k &
-              -diff_rhopi/k**2-1.D0/adotoa*dgrho/3.D0+(3.D0*gpres+5.D0*grho)*sigma/k/3.D0 &
-              -2.D0/k*adotoa/EV%Kf(1)*etak)*expmmu(j)
+!ISW = (4.D0/3.D0*k*EV%Kf(1)*sigma+(-2.D0/3.D0*sigma-2.D0/3.D0*etak/adotoa)*k &
+!      -diff_rhopi/k**2-1.D0/adotoa*dgrho/3.D0+(3.D0*gpres+5.D0*grho)*sigma/k/3.D0 &
+!      -2.D0/k*adotoa/EV%Kf(1)*etak)*expmmu(j)
 
 !e.g. to get only late-time ISW
 !  if (1/a-1 < 30) ISW=0
 
 !The rest, note y(9)->octg, yprime(9)->octgprime (octopoles)
-    sources(1)= ISW +  ((-9.D0/160.D0*pig-27.D0/80.D0*ypol(2))/k**2*opac(j)+(11.D0/10.D0*sigma- &
-    3.D0/8.D0*EV%Kf(2)*ypol(3)+vb-9.D0/80.D0*EV%Kf(2)*octg+3.D0/40.D0*qg)/k-(- &
-    180.D0*ypolprime(2)-30.D0*pigdot)/k**2/160.D0)*dvis(j)+(-(9.D0*pigdot+ &
-    54.D0*ypolprime(2))/k**2*opac(j)/160.D0+pig/16.D0+clxg/4.D0+3.D0/8.D0*ypol(2)+(- &
-    21.D0/5.D0*adotoa*sigma-3.D0/8.D0*EV%Kf(2)*ypolprime(3)+vbdot+3.D0/40.D0*qgdot- &
-    9.D0/80.D0*EV%Kf(2)*octgprime)/k+(-9.D0/160.D0*dopac(j)*pig-21.D0/10.D0*dgpi-27.D0/ &
-    80.D0*dopac(j)*ypol(2))/k**2)*vis(j)+(3.D0/16.D0*ddvis(j)*pig+9.D0/ &
-    8.D0*ddvis(j)*ypol(2))/k**2+21.D0/10.D0/k/EV%Kf(1)*vis(j)*etak   
+!     sources(1) = ISW + ((-9.D0/160.D0*pig-27.D0/80.D0*ypol(2))/k**2*opac(j)+(11.D0/10.D0*sigma- &
+!    3.D0/8.D0*EV%Kf(2)*ypol(3)+vb-9.D0/80.D0*EV%Kf(2)*octg+3.D0/40.D0*qg)/k-(- &
+!    180.D0*ypolprime(2)-30.D0*pigdot)/k**2/160.D0)*dvis(j)+(-(9.D0*pigdot+ &
+!    54.D0*ypolprime(2))/k**2*opac(j)/160.D0+pig/16.D0+clxg/4.D0+3.D0/8.D0*ypol(2)+(- &
+!    21.D0/5.D0*adotoa*sigma-3.D0/8.D0*EV%Kf(2)*ypolprime(3)+vbdot+3.D0/40.D0*qgdot- &
+!    9.D0/80.D0*EV%Kf(2)*octgprime)/k+(-9.D0/160.D0*dopac(j)*pig-21.D0/10.D0*dgpi-27.D0/ &
+!    80.D0*dopac(j)*ypol(2))/k**2)*vis(j)+(3.D0/16.D0*ddvis(j)*pig+9.D0/ &
+!    8.D0*ddvis(j)*ypol(2))/k**2+21.D0/10.D0/k/EV%Kf(1)*vis(j)*etak
 
 
 ! Doppler term
@@ -1383,10 +1464,13 @@
          
          !phi_lens = Phi - 1/2 kappa (a/k)^2 sum_i rho_i pi_i
          !Neglect pi contributions because not accurate at late time anyway
-         phi = -(dgrho +3*dgq*adotoa/k)/(k2*EV%Kf(1)*2) 
-            ! - (grhor_t*pir + grhog_t*pig+ pinu*gpnu_t)/k2
+        !phi = -(dgrho +3*dgq*adotoa/k)/(k2*EV%Kf(1)*2) 
+         ! - (grhor_t*pir + grhog_t*pig+ pinu*gpnu_t)/k2
+         phipluspsi = -(TGR_D_T*dgrhoGI)/(k2*EV%Kf(1)) !JD the correct potential testing GR still ignoring pi_i
          
-         sources(3) = -2*phi*f_K(tau-tau_maxvis)/(f_K(CP%tau0-tau_maxvis)*f_K(CP%tau0-tau))
+         
+         sources(3) = -phipluspsi*f_K(tau-tau_maxvis)/(f_K(CP%tau0-tau_maxvis)*f_K(CP%tau0-tau))
+         !sources(3) = -2*phi*f_K(tau-tau_maxvis)/(f_K(CP%tau0-tau_maxvis)*f_K(CP%tau0-tau))
 !         sources(3) = -2*phi*(tau-tau_maxvis)/((CP%tau0-tau_maxvis)*(CP%tau0-tau))
           !We include the lensing factor of two here
        else
@@ -1899,7 +1983,7 @@
         end subroutine initialv
 
 
-      subroutine outtransf(EV, y, Arr)
+      subroutine outtransf(EV, y, Arr,tau)
  !write out clxc, clxb, clxg, clxn
         use Transfer
         implicit none
@@ -1909,10 +1993,22 @@
         real(dl) grho,gpres,dgrho,dgq,a
         real Arr(Transfer_max)
         real(dl) y(EV%nvar)
-
+        !JD added below for Lensing and ISW power spectra
+        real(dl), target :: yprime(EV%nvar)
+        real(dl) tau, dgrhodot,clxbdot,clxcdot,adotoa
+        real(dl) TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot,TGR_DR_T, TGR_DR_T_dot
+        
+        yprime = 0.
+        call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
+        clxcdot = yprime(3)
+        clxbdot = yprime(4)
+        dgrhodot = 0        
+        !End JD additions
+        
         a    = y(1)
         clxc = y(3)
         clxb = y(4)
+        adotoa = yprime(1)/a  !JD
         if (EV%no_nu_multpoles) then
          clxr=0
         else
@@ -1955,9 +2051,34 @@
          grho =  grho+(grhoc+grhob)/a
         
         Arr(Transfer_tot) = dgrho/grho/k2 
-             
-    
-     end subroutine outtransf
+        
+        !JD Added below for lensing and ISW powerspectra
+        if(t_dep) then
+            TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+            TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
+            TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+            TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
+        else
+            TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
+            TGR_Q_T_dot=0.
+            TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
+            TGR_DR_T_dot=0.
+        end if
+        
+        if(R_func)then
+            TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
+            TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
+        else
+            TGR_D_T = TGR_DR_T
+            TGR_D_T_dot = TGR_DR_T_dot
+        end if
+        
+        dgrhodot = (clxcdot*grhoc + clxbdot*grhob)/a-adotoa*dgrho
+                
+        Arr(Transfer_lens) = TGR_D_T*dgrho/k2/EV%Kf(1)/2._dl
+        Arr(Transfer_ISW) = -(TGR_D_T_Dot*dgrho+TGR_D_T*dgrhodot)/k2/EV%Kf(1)
+        
+        end subroutine outtransf
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         subroutine derivs(EV,n,tau,ay,ayprime)
@@ -1989,6 +2110,9 @@
         real(dl) dgs,sigmadot,dz !, ddz
         !non-flat vars
         real(dl) cothxor !1/tau in flat case
+        !For TGR
+        real(dl) TGR_f_q, TGR_f_1, TGR_D_T, TGR_D_T_dot,TGR_Q_T,TGR_Q_T_dot,TGR_DR_T, TGR_DR_T_dot
+        real(dl) dgrhoGI, etakdot, Hdot,dgpi
         
        
         k=EV%k_buf
@@ -2013,19 +2137,20 @@
         grhor_t=grhornomass/a2
         grhog_t=grhog/a2
         if (w_lam==-1._dl) then
-         grhov_t=grhov*a2
-         else
-         grhov_t=grhov*a**(-1-3*w_lam)
+            grhov_t=grhov*a2
+        else
+            grhov_t=grhov*a**(-1-3*w_lam)
         end if
 
 !  Get sound speed and ionisation fraction.
         if (EV%TightCoupling) then
-          call thermo(tau,cs2,opacity,dopacity)
-         else
-          call thermo(tau,cs2,opacity)        
+            call thermo(tau,cs2,opacity,dopacity)
+        else
+            call thermo(tau,cs2,opacity)        
         end if
 
-        gpres=0
+        gpres=(grhog_t+grhor_t)/3 +grhov_t*w_lam
+        
         grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
 
 !total perturbations: matter terms first, then add massive nu, de and radiation 
@@ -2035,56 +2160,47 @@
         dgq=grhob_t*vb
                 
         if (CP%Num_Nu_Massive > 0) then
-           call MassiveNuVars(EV,ay,a,grho,gpres,dgrho,dgq, wnu_arr)
+               call MassiveNuVars(EV,ay,a,grho,gpres,dgrho,dgq, wnu_arr)
         end if
         
         if (CP%flat) then
-         adotoa=sqrt(grho/3)
-         cothxor=1._dl/tau
+            adotoa=sqrt(grho/3)
+            cothxor=1._dl/tau
         else
-         adotoa=sqrt((grho+grhok)/3._dl)
-         cothxor=1._dl/tanfunc(tau/CP%r)/CP%r
+            adotoa=sqrt((grho+grhok)/3._dl)
+            cothxor=1._dl/tanfunc(tau/CP%r)/CP%r
         end if
+        Hdot = -(grho+3.d0*gpres)/6.d0  !JD
+        
          
         if (w_lam /= -1 .and. w_Perturb) then
-           clxq=ay(EV%w_ix) 
-           vq=ay(EV%w_ix+1) 
-           dgrho=dgrho + clxq*grhov_t
-           dgq = dgq + vq*grhov_t*(1+w_lam)
-       end if
+            clxq=ay(EV%w_ix) 
+            vq=ay(EV%w_ix+1) 
+            dgrho=dgrho + clxq*grhov_t
+            dgq = dgq + vq*grhov_t*(1+w_lam)
+        end if
 
-       if (EV%no_nu_multpoles) then
-        !RSA approximation of arXiv:1104.2933, dropping opactity terms in the velocity
-        !Approximate total density variables with just matter terms
-        z=(0.5_dl*dgrho/k + etak)/adotoa 
-        dz= -adotoa*z - 0.5_dl*dgrho/k
-        clxr=-4*dz/k
-        qr=-4._dl/3*z
-        pir=0
-       else
+        if (EV%no_nu_multpoles) then !JD old definitions here for TGR
+            clxr=2*(grhoc_t*clxc+grhob_t*clxb)/3/k**2   !JD
+            qr= clxr*k/sqrt((grhoc_t+grhob_t)/3)*(2/3._dl)
+            pir=0
+        else
 !  Massless neutrinos
-        clxr=ay(EV%r_ix)
-        qr  =ay(EV%r_ix+1)
-        pir =ay(EV%r_ix+2)
-       endif
+            clxr=ay(EV%r_ix)
+            qr  =ay(EV%r_ix+1)
+            pir =ay(EV%r_ix+2)
+           endif
         
-       if (EV%no_phot_multpoles) then
-         if (.not. EV%no_nu_multpoles) then
-          z=(0.5_dl*dgrho/k + etak)/adotoa 
-          dz= -adotoa*z - 0.5_dl*dgrho/k
-          clxg=-4*dz/k-4/k*opacity*(vb+z)
-          qg=-4._dl/3*z
-         else
-          clxg=clxr-4/k*opacity*(vb+z)
-          qg=qr          
-         end if
-         pig=0    
-       else
+        if (EV%no_phot_multpoles) then
+            clxg=2*(grhoc_t*clxc+grhob_t*clxb)/3/k**2
+            qg= clxg*k/sqrt((grhoc_t+grhob_t)/3)*(2/3._dl)
+            pig=0    
+        else
 !  Photons
-        clxg=ay(EV%g_ix)
-        qg=ay(EV%g_ix+1)
-        if (.not. EV%TightCoupling) pig=ay(EV%g_ix+2)
-       end if
+            clxg=ay(EV%g_ix)
+            qg=ay(EV%g_ix+1)
+            if (.not. EV%TightCoupling) pig=ay(EV%g_ix+2)
+        end if
 
 !  8*pi*a*a*SUM[rho_i*clx_i] - radiation terms
         dgrho=dgrho + grhog_t*clxg+grhor_t*clxr 
@@ -2099,18 +2215,54 @@
         
         ayprime(1)=adotoa*a
 
-
-!  Get sigma (shear) and z from the constraints
-! have to get z from eta for numerical stability
-        z=(0.5_dl*dgrho/k + etak)/adotoa 
-        if (CP%flat) then
- !eta*k equation
-         sigma=(z+1.5_dl*dgq/k2)
-         ayprime(2)=0.5_dl*dgq
+!JD  Stuff for testing GR        
+        if(t_dep) then
+            TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+            TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
+            TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+            TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
         else
-         sigma=(z+1.5_dl*dgq/k2)/EV%Kf(1)
-         ayprime(2)=0.5_dl*dgq + CP%curv*z
+            TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
+            TGR_Q_T_dot=0.
+            TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
+            TGR_DR_T_dot=0.
         end if
+        
+        if(R_func)then
+            TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
+            TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
+        else
+            TGR_D_T = TGR_DR_T
+            TGR_D_T_dot = TGR_DR_T_dot
+        end if
+        
+        dgrhoGI = dgrho+3.d0*adotoa*dgq/k
+        
+        TGR_f_q = k**2.d0+3.d0/2.d0*TGR_Q_T*(grho+gpres)/EV%Kf(1)
+        TGR_f_1 = k**2.d0+3.d0*(adotoa**2.d0-Hdot)
+        
+        !kalpha
+        sigma=(etak+TGR_Q_T*dgrhoGI/(2.d0*k*EV%kf(1)))/adotoa
+        
+        if(EV%TightCoupling)then
+            pig = 32._dl/45/opacity*k*(sigma+vb)
+        end if
+        dgpi  = grhor_t*pir + grhog_t*pig
+        !Define shear derivative to first order
+        sigmadot = -((2.d0*TGR_D_T-TGR_Q_T)*dgrhoGI/(2.d0*EV%Kf(1))+TGR_Q_T*dgpi)/k-adotoa*sigma
+        
+        
+        !eta*k equation
+        etakdot = -k/(2.d0*EV%Kf(1)*TGR_f_q)*((TGR_Q_T_dot+2.d0*adotoa*(TGR_D_T-TGR_Q_T))*dgrhoGI &
+                  -TGR_Q_T*TGR_f_1*dgq/k-(TGR_Q_T*(grho+gpres)-2.d0*EV%Kf(1)*(adotoa**2.d0-Hdot))*k*sigma &
+                  +2.d0*adotoa*TGR_Q_T*dgpi*(EV%Kf(1)-1.d0))
+    
+        ayprime(2) = etakdot
+        
+        !JD get z from etakdot and sigma
+        z= sigma-3.d0*etakdot/k2
+!End JD            
+
         
         if (w_lam /= -1 .and. w_Perturb) then
 
@@ -2139,25 +2291,18 @@
          if (EV%TightCoupling) then
    
            !  ddota/a
-            gpres=gpres+ (grhog_t+grhor_t)/3 +grhov_t*w_lam
             adotdota=(adotoa*adotoa-gpres)/2
 
-            pig = 32._dl/45/opacity*k*(sigma+vb)
 
     !  First-order approximation to baryon-photon splip
              slip = - (2*adotoa/(1+pb43) + dopacity/opacity)* (vb-3._dl/4*qg) &
              +(-adotdota*vb-k/2*adotoa*clxg +k*(cs2*clxbdot-clxgdot/4))/(opacity*(1+pb43))
-            
+              
             if (second_order_tightcoupling) then
             ! by Francis-Yan Cyr-Racine simplified (inconsistently) by AL assuming flat
             !AL: First order slip seems to be fine here to 2e-4
 
-             !  8*pi*G*a*a*SUM[rho_i*sigma_i]
-             dgs = grhog_t*pig+grhor_t*pir
-
-             ! Define shear derivative to first order
-             sigmadot = -2*adotoa*sigma-dgs/k+etak
-
+             
              !Once know slip, recompute qgdot, pig, pigdot
              qgdot = k*(clxg/4._dl-pig/2._dl) +opacity*slip 
 

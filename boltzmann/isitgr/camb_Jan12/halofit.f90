@@ -17,6 +17,7 @@
       use ModelParams
       use transfer
       use LambdaGeneral
+      use Errors !JD for timing failsafe
       implicit none 
       private
        
@@ -32,6 +33,7 @@
      !for each redshift and wavenumber
      !This implementation uses Halofit
       type(MatterPowerData) :: CAMB_Pk
+      integer tin,time  !JD for timing failsafe
       integer itf
       real(dl) a,plin,pq,ph,pnl,rk
       real(dl) sig,rknl,rneff,rncur,d1,d2
@@ -56,7 +58,12 @@
 
       xlogr1=-2.0
       xlogr2=3.5
+      tin = time() !JD failsafe in case of bad TGR parameters
       do
+          if(time()-tin>20)then !JD failsafe
+                call GlobalError()
+                return     !JD failsafe
+          end if
           rmid=(xlogr2+xlogr1)/2.0
           rmid=10**rmid
           call wint(CAMB_Pk,itf,rmid,sig,d1,d2)
