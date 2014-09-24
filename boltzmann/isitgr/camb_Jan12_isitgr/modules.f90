@@ -56,7 +56,7 @@
          !Nu_best: automatically use mixture which is fastest and most accurate
 
         integer, parameter :: max_Nu = 5 !Maximum number of neutrino species    
-        integer, parameter :: max_transfer_redshifts = 50    
+        integer, parameter :: max_transfer_redshifts = 1000    
         integer, parameter :: fileio_unit = 13 !Any number not used elsewhere will do       
         integer, parameter :: outCOBE=0, outNone=1
     
@@ -938,7 +938,7 @@
 
         subroutine Init_Cls
       
-        call CheckLoadedHighLTemplate 
+        if (use_spline_template) call CheckLoadedHighLTemplate 
         if (CP%WantScalars) then
          if (allocated(Cl_scalar)) deallocate(Cl_scalar)
          allocate(Cl_scalar(lmin:CP%Max_l, CP%InitPower%nn, C_Temp:C_last))
