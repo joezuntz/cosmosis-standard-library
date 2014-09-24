@@ -1,0 +1,144 @@
+name: isitgr-camb
+version: "1.1"
+purpose: "Modified version of CAMB to implement phenomenological modified gravity models"
+url: http://www.utdallas.edu/~jdossett/isitgr
+attribution: [Jason Dossett, Mustapha Ishak, Jacob Moldenhauer, Antony Lewis, Anthony Challinor]
+rules:
+    "Since isitgr is derived from CAMB, please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"
+cite:
+    - "http://arxiv.org/abs/1109.4583"
+    - "Phys. Rev. D86, 103008, 2012"
+
+assumptions:
+    - The modified gravity phenomenological model described in the referenced papers
+
+explanation: >
+    ISiTGR, the Integrated Software in Testing General Relativity, is
+    a set of modifications to CAMB and CosmoMC which implement a set of modified
+    gravity models where the perturbed metric quantities phi and psi are
+    modified by some fitting functions as a general, phenomenological model
+    of some unknown new physics.
+
+    There are a number of possible ways to describe such functions; this 
+    code uses the variables in equations 8 and 10 of http://arxiv.org/pdf/1109.4583v3.pdf
+    and the functional form ansatz in equation 11:
+
+    For X as Q, D, or R we use:
+        X(k,a) = [X_0 exp(-k/k_c) + X_inf (1-exp(-k/k_c)) - 1] a^s + 1
+
+    Most of the parameters in this code are the same as those in camb; see
+    the camb module information for more details.
+
+    Anthony Lewis has kindly given permission for CAMB to be packaged
+    with CosmoSIS.
+
+    The CosmoSIS team packaged this module into cosmosis form so any issues
+    running it here please ask us first.
+
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    scale_dependent: "logical. Use scale dependent parameterized functions.  If False, k_c is ignored." 
+    use_r_function: "logical.  Give R scale and time dependence instead of Q."
+    mode:
+        String, choose from Background, thermal, cmb, or all.
+
+        In background mode only the expansion history is calculated.
+        In thermal mode the recombination history is computed and rs_zdrag and related quantities also.
+        In cmb mode the CMB power spectra are also calculated.
+        In all mode the matter power spectrum at low redshift and sigma8 are also calculated.
+    lmax:  "Integer, only if mode!=background, default 1200 - the max ell to use for cmb calculation"
+    feedback: "Integer, amount of output to print.  0 for no feedback.  1 for basic, 2 for extended, maybe higher?"
+    use_tabulated_w: "Logical, set to true to load w(z) from previous module (default F)"
+    k_eta_max_scalar: "Integer, maximum value of (k eta) to evolve for scalars. (default 2*lmax)"
+    do_tensors: "Include tensor modes (default F) "
+    zmin: "Min value to save P(k,z) (default 0)"
+    zmax: "Max value to save P(k,z) (default 4)"
+    nz: "Number of z values to save P(k,z) (default 401, so that dz=0.01)"
+    do_nonlinear: "Apply non-linear halofit corrections to matter-power.  Relevant only for lensing right now (default F)"
+    do_lensing: "Include lensing of CMB, and save C_ell phi-phi (default F)"
+    high_ell_template: "Required for lensing - set to the file included in the camb dir (no default)"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs: 
+    modified_gravity:
+        d_0: "real, poisson equation modification at k<<k_c and z=0"
+        d_inf: "real, poisson equation modification at k>>k_c and z=0"
+        q_0: "real, gravitational slip modification at k<<k_c and z=0"
+        q_inf: "real, gravitational slip modification at k>>k_c and z=0"
+        s: "real, index of variation of effects with scale factor"
+        k_c: "real, transition scale between small and large k."
+    cosmological_parameters:
+        # If these parameters are not those you would like to sample over (say omega_m or
+        # omegaa_ch2 are preferable), please use the consistency module.
+        omega_b:  "real, baryon density fraction today"
+        omega_c:  "real, cdm density fraction today"
+        omega_k:  "real, curvature density fraction today (default 0.0)"
+        omega_lambda:  "real, dark energy density fraction today"
+        hubble:  "real, hubble parameter H0 (km/s/Mpc)"
+        tau:  "real, optical depth to last-scattering (ignored in background mode)"
+        n_s:  "real, scalar spectral index (ignored in background/thermal mode)"
+        A_s:  "real, scalar spectrum primordial amplitude (ignored in background/thermal mode)"
+        k_s:  "real, Power spectrum pivot scale (default 0.05/Mpc)"
+        #There rest of these are always optional, CAMB will set defaults as appropriate
+        r_t:  "real, tensor to scalar ratio (default 0.0)"
+        n_run:  "real, running of scalar spectrum d n_s / d log_k (default 0.0)"
+        n_t:  "real, tensor spectral index (default 0.0)"
+        omega_nu:  "real, neutrino density fraction today (default 0.0)"
+        massless_nu:  "real, effective number of massless neutrinos (default 3.046)"
+        massive_nu:  "integer, number of massive neutrinos (default 0)"
+        sterile_neutrino:  "integer, number of sterile neutrinos (default 0)"
+        delta_neff:  "real, contribution to N_eff by sterile neutrino (default 0)"
+        sterile_mass_fraction:  "real, fraction of omega_nu in sterile neutrino"
+        yhe:  "real, helium fraction (default 0.24)"
+        w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
+        wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
+        cs2_de:  "real, dark energy sound speed/c (default 1.0)"
+
+
+
+outputs:
+    modified_gravity:
+        v_0: "real, 2*d_0 - q_0"
+        v_inf: "real, 2*d_inf - q_inf"
+        r_0: "real, 2*d_0/q_0 - 1"
+        r_inf: "real,2*d_inf/q_inf - 1 "
+
+    cosmological_parameters:
+        sigma_8: "real, only of mode=all. Amplitude of linear matter power at 8/h Mpc at z=0."
+
+    distances:
+        nz: "integer, number of z samples"
+        z: "1D real array, redshifts of samples"
+        d_a: "1D real array, angular diameter distance in Mpc"
+        d_m: "1D real array, co-moving distance in Mpc"
+        d_l: "1D real array, luminosity distance in Mpc"
+        mu:  "1D real array, distance modulus"
+        h:  "1D real array, hubble parameter with in units of Mpc"
+        # rho: "1D real array, matter density "
+        # Scalars:
+        age: "real, age of universe in GYr"
+        # zdrag: "real, redshift where baryons no longer dragged by photons"
+        # rs_zdrag: "real, sound horizon size at zdrag"
+        # zstar: "real, redshift of unity optical depth"
+        # theta: "real, angular size of sound horizon at zstar"
+        # chistar: "real, comoving distance to zstar"
+
+    matter_power_lin:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
+
+    linear_cdm_transfer:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
+        delta_cdm: "2D real array, Linear CDM transfer function at samples"
+
+    cmb_cl:
+        ell: "1D integer array, angular frequencies"
+        tt:  "1D real array, ell * (ell+1) C_ell^TT / 2 pi in mu K^2"
+        ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2"
+        bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2"
+        te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2"
+        PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi"
