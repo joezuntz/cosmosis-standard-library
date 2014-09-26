@@ -8,7 +8,7 @@ def setup(options):
 	if method not in ["krhb", "bk", "bk_corrected"]:
 		raise ValueError('The method in the linear alignment module must'
 			'be either "KRHB" (for Kirk, Rassat, Host, Bridle) or BK for '
-			'Bridle & King')
+			'Bridle & King or "BK_corrected" for the corrected version of that')
 	return method
 
 def execute(block, config):
