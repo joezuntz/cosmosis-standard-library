@@ -17,6 +17,7 @@ typedef struct shear_spectrum_config {
 	int n_ell;
 	double ell_min;
 	double ell_max;
+	bool intrinsic_alignments;
 } shear_spectrum_config;
 
 
@@ -27,6 +28,7 @@ void * setup(c_datablock * options){
 	status |= c_datablock_get_int(options, OPTION_SECTION, "n_ell", &(config->n_ell));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_min", &(config->ell_min));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_max", &(config->ell_max));
+	status |= c_datablock_get_bool(options, OPTION_SECTION, "intrinsic_alignments", &(config->intrinsic_alignments));
 
 	if (status){
 		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
@@ -346,16 +348,23 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK = load_interpolator(
 		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
 
-	Interpolator2D * PK_II = load_interpolator(
-		block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_II");
-
-	Interpolator2D * PK_GI = load_interpolator(
-		block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_GI");
-
-
 	if (PK==NULL) return 1;
-	if (PK_II==NULL) return 2;
-	if (PK_GI==NULL) return 3;
+
+	Interpolator2D * PK_GI = NULL;
+	Interpolator2D * PK_II = NULL;
+	if (config->intrinsic_alignments){
+		PK_II = load_interpolator(
+			block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_II");
+
+		PK_GI = load_interpolator(
+			block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_GI");
+		
+		if (PK_II==NULL) return 2;
+		if (PK_GI==NULL) return 3;
+
+	}
+
+
 
 	// This is P(k,z)
 	// We need P(k, chi)
@@ -368,11 +377,9 @@ int execute(c_datablock * block, void * config_in)
 		return 1;
 	}
 
-	bool do_intrinsics = true;
-
 	// Make the C_ell and save them
 	const char * section;
-	if (do_intrinsics){
+	if (config->intrinsic_alignments){
 		section = SHEAR_CL_GG_SECTION;
 	}
 	else{
@@ -381,11 +388,13 @@ int execute(c_datablock * block, void * config_in)
 	
 	status |= shear_shear_spectra(block, nbin, W_splines, PK, config, section);
 
-	status |= intrinsic_intrinsic_spectra(block, nbin, 
-		Nchi_splines, PK_II, config);
+	if (config->intrinsic_alignments){
+		status |= intrinsic_intrinsic_spectra(block, nbin, 
+			Nchi_splines, PK_II, config);
 
-	status |= shear_intrinsic_spectra(block, nbin, W_splines, Nchi_splines, PK_GI, config);
-
+		status |= shear_intrinsic_spectra(block, nbin, 
+			W_splines, Nchi_splines, PK_GI, config);
+	}
 
 
 	// tidy up global data
