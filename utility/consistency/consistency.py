@@ -91,8 +91,16 @@ class Consistency(object):
 		self.possible_defaults = possible_defaults
 		self.verbose=verbose
 		self.reset()
+		self.cached_defaults = None
 
 	def __call__(self, parameters):
+		if self.cached_defaults is None:
+			return self.first_call(parameters)
+		else:
+			return self.subsequent_calls(parameters)
+
+
+	def first_call(self, parameters):
 		#First we try specifiying as little as possible,
 		#without using any of the default values.
 		#Then we gradually start using more of the defaults
@@ -107,6 +115,7 @@ class Consistency(object):
 				q = self.run_with_defaults(parameters, defaults)
 				if self.verbose:
 					print "Model okay"
+				self.cached_defaults = self.possible_defaults[:i]
 				return q
 			except UnderSpecifiedModel:
 				#It is possible that this model will not
@@ -122,9 +131,27 @@ class Consistency(object):
 			print
 			print "Trying assumptions: ", text
 		q = self.run_with_defaults(parameters, self.possible_defaults)
+		self.cached_defaults = self.possible_defaults[:]
 		if self.verbose:
 			print "Model okay."
 		return q
+
+	def subsequent_calls(self, parameters):
+		p = parameters.copy()
+		if self.verbose:
+			text = ", ".join(["%s=%g"%d for d in self.cached_defaults])
+			print
+			print "Using cached assumptions: ", text
+			for (name, function) in self.cached_relations:
+				print "Using cached relation %s = %s" % (name, function)
+
+		for name,value in self.cached_defaults:
+			p[name] = value
+		for (name, function) in self.cached_relations:
+			value = eval(function, None, p)
+			p[name] = value
+		return p
+
 
 	def run_with_defaults(self, parameters, defaults):
 		#Set initially know parameters
@@ -132,6 +159,8 @@ class Consistency(object):
 		self.parameters.update(parameters)
 		for name,value in defaults:
 			self.parameters[name] = value
+
+		self.cached_relations = []
 
 		#Loop repeatedly through the model
 		#checking for parameters we can compute.
@@ -150,6 +179,8 @@ class Consistency(object):
 		else:
 			#This happens if we never break from the loop.
 			#In that case we must never have fully specified the model
+			#Invalidate the cache - it did not work
+			self.cached_relations = []
 			raise UnderSpecifiedModel("Model under-specified - I could not compute"
 				"these values: %r"%unspecified)
 		#output results
@@ -177,12 +208,18 @@ class Consistency(object):
 			#This parameter has not yet been computed.
 			#so we now have it and can fill it in.
 			self.parameters[name] = value
+			#Record that this was a useful relation
+			#so that next time we do not need to run the others
+			self.cached_relations.append(relation)
+			#print a little message
 			if self.verbose:
 				print "Calculated %s = %g from %s" % (name, value, function)
 		else:
 			#This parameter has already been calculated or specified.
 			#So we check for consistency
 			if not allclose(current_value, value):
+				#Invalidate the cache so that next time things still go wrong
+				self.cached_relations = []
 				raise OverSpecifiedModel("Model over-specified and consistency relations failed"
 					"for parameter %s (values %g and %g)"%(name,current_value,value))
 

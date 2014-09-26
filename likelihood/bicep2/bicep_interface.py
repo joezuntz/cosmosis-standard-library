@@ -59,7 +59,7 @@ def setup(options):
 		print "If using camb for your spectra you need do_nonlinear = T, k_eta_max_scalar = 14000 to get"
 		print "accurate enough lensing B-modes for good results.  There will be equivalents for other codes too."
 		print
-		print "If you're running demo 3 then don't worry, we took care of this for you."
+		print "If you're running a demo then don't worry, we took care of this for you."
 		print
 	return C_l, C_l_hat, N_l, C_fl, M_inv, bpwf_l, bpwf_Cs_l, ell1, inpmodLCDM_Cs_l, expvLCDM, BB_Cs_l, ell
 
