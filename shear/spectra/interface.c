@@ -32,6 +32,7 @@ void * setup(c_datablock * options){
 
 	if (status){
 		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
+		fprintf(stderr, "And set intrinsic_alignments=T or F\n");
 		exit(status);
 	}
 
