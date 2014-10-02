@@ -1,4 +1,4 @@
-from cosmosis import names, option_section
+from cosmosis.datablock import names, option_section
 import os
 import numpy as np
 
@@ -43,5 +43,5 @@ def execute(block, config):
 
 
 
-def cleanup():
+def cleanup(config):
 	pass

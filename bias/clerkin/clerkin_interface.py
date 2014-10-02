@@ -1,4 +1,4 @@
-from cosmosis import option_section, names
+from cosmosis.datablock import option_section, names
 import clerkin
 import numpy as np
 
