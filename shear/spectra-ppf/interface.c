@@ -351,6 +351,12 @@ int execute(c_datablock * block, void * config_in)
 
 	if (PK==NULL) return 1;
 
+
+	Interpolator2D * MG_D = load_interpolator(
+		block, chi_of_z_spline, "MODIFIED_GRAVITY_SECTION", "k_h", "z", "D");
+
+
+
 	Interpolator2D * PK_GI = NULL;
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
