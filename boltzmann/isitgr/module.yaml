@@ -29,6 +29,8 @@ explanation: >
     Most of the parameters in this code are the same as those in camb; see
     the camb module information for more details.
 
+    ISiTGR is pronounced "Is it GR?" not "Easy, Tiger".
+
     Anthony Lewis has kindly given permission for CAMB to be packaged
     with CosmoSIS.
 

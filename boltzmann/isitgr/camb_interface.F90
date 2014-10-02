@@ -3,6 +3,8 @@ module camb_interface_tools
 	use cosmosis_modules
 	implicit none
 
+	character(*), parameter :: modified_gravity_section = "modified_gravity"
+
 	integer :: standard_lmax = 1200
 	integer, parameter :: CAMB_MODE_ALL = 1
 	integer, parameter :: CAMB_MODE_CMB = 2
@@ -294,7 +296,6 @@ module camb_interface_tools
 		integer(cosmosis_status) ::  status
 		integer(cosmosis_block) :: block
 		real(dl) :: d_0, d_inf, r_0, r_inf, q_0, q_inf, v_0, v_inf
-		character(*), parameter :: modified_gravity_section = "modified_gravity"
 		
 		status = 0 
 		R_func = (TGR_Rfunc==1)
@@ -460,8 +461,13 @@ module camb_interface_tools
 		integer (cosmosis_status) :: status
 		Type(MatterPowerData) :: PK
 		integer nz, nk, iz, ik
+		external dtauda
+		real(8) dtauda
 		real(8), allocatable, dimension(:) :: k, z
 		real(8), allocatable, dimension(:,:) :: P, T
+		real(8), allocatable, dimension(:,:) :: ModifiedGravity_D, ModifiedGravity_D_dot
+		real(8), allocatable, dimension(:,:) :: ModifiedGravity_Q, ModifiedGravity_Q_dot
+		real(8) a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot
 
 		call Transfer_GetMatterPowerData(MT, PK, 1)
 
@@ -471,6 +477,10 @@ module camb_interface_tools
 		allocate(k(nk))
 		allocate(z(nz))
 		allocate(P(nk,nz))
+		allocate(ModifiedGravity_D(nk,nz))
+		allocate(ModifiedGravity_Q(nk,nz))
+		allocate(ModifiedGravity_D_dot(nk,nz))
+		allocate(ModifiedGravity_Q_dot(nk,nz))
 		allocate(T(nk,nz))
 
 		do ik=1,nk
@@ -485,6 +495,14 @@ module camb_interface_tools
 			do iz=1,nz
 				P(ik,iz) = MatterPowerData_k(PK, k(ik), nz-iz+1)
 				T(ik,iz) = MT%TransferData(Transfer_cdm,ik,nz-iz+1)
+				!Modifications for IsItGR
+				a = 1.0/(1+z(iz))
+				adotoa = 1/(a*dtauda(a))
+				call get_tgr_quantities(k(ik), a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot)
+				ModifiedGravity_D(ik,iz) = TGR_D_T
+				ModifiedGravity_Q(ik,iz) = TGR_Q_T
+				ModifiedGravity_D_dot(ik,iz) = TGR_D_T_dot
+				ModifiedGravity_Q_dot(ik,iz) = TGR_Q_T_dot
 			enddo
 		enddo
 
@@ -492,15 +510,26 @@ module camb_interface_tools
         	"k_h", k, "z", z, "P_k", P)
 
 		if (status .ne. 0) then
-			write(*,*) "Failed to save transfer function in CAMB."
-		endif
-
-		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
-        	"k_h", k, "z", z, "delta_cdm", P)
-
-		if (status .ne. 0) then
 			write(*,*) "Failed to save matter power in CAMB."
 		endif
+
+
+		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
+        	"k_h", k, "z", z, "delta_cdm", T)
+
+		if (status .ne. 0) then
+			write(*,*) "Failed to transfer functions in CAMB."
+		endif
+
+
+		status = datablock_put_double_grids(block, modified_gravity_section, &
+        	"k_h", k, "z", z, "D", ModifiedGravity_D, "Q", ModifiedGravity_Q, &
+        	"D_dot", ModifiedGravity_D_dot, "Q_dot", ModifiedGravity_Q_dot)
+
+		if (status .ne. 0) then
+			write(*,*) "Failed to save modified gravity functions in CAMB."
+		endif
+
 
 		deallocate(k, z, P, T)
 	end function

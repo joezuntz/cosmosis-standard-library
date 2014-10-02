@@ -37,6 +37,39 @@
         logical :: t_dep = .true.
         logical :: R_func = .false.
 
+        contains
+
+        subroutine get_tgr_quantities(k, a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot)
+            real(dl), intent(in) :: k, a, adotoa
+            !outputs, though we use their values after assigning them so
+            !strictly we can't declare them intent(out)
+            real(dl) :: TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot
+            
+            real(dl) :: TGR_DR_T, TGR_DR_T_dot
+
+
+            if(t_dep) then
+                TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+                TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
+                TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
+                TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
+            else
+                TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
+                TGR_Q_T_dot=0.
+                TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
+                TGR_DR_T_dot=0.
+            end if
+
+            if(R_func)then
+                TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
+                TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
+            else
+                TGR_D_T = TGR_DR_T
+                TGR_D_T_dot = TGR_DR_T_dot
+            end if
+
+        end subroutine get_tgr_quantities
+
 
        end module LambdaGeneral
 
@@ -1199,7 +1232,7 @@
         real(dl) sources(CTransScal%NumSources)
         real(dl) ISW
         !TGR terms
-        real(dl) TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot,TGR_DR_T, TGR_DR_T_dot
+        real(dl) TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot
         real(dl) etakdot, Hdot, dgrhoGI,dgrhoGI_dot,TGR_F_1,phipluspsi,sigmadot
         
         
@@ -1322,28 +1355,10 @@
        dgq   = dgq   + grhog_t*qg+grhor_t*qr
        dgpi  = dgpi  + grhor_t*pir + grhog_t*pig
 
-!JD  Stuff for testing GR      
-        if(t_dep) then
-            TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
-            TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
-            TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
-            TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
-        else
-            TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
-            TGR_Q_T_dot=0.
-            TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
-            TGR_DR_T_dot=0.
-        end if
-        
-        if(R_func)then
-            TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
-            TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
-        else
-            TGR_D_T = TGR_DR_T
-            TGR_D_T_dot = TGR_DR_T_dot
-        end if
-            
-       
+!JD  Stuff for testing GR
+!JAZ Moved main part of this to a subroutine
+!so we can call it from the interface too
+        call get_tgr_quantities(k, a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot)      
 
      
         dgrhoGI = dgrho+3.d0*adotoa*dgq/k !\sum_i rho_i \Delta_i
@@ -1996,7 +2011,7 @@
         !JD added below for Lensing and ISW power spectra
         real(dl), target :: yprime(EV%nvar)
         real(dl) tau, dgrhodot,clxbdot,clxcdot,adotoa
-        real(dl) TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot,TGR_DR_T, TGR_DR_T_dot
+        real(dl) TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot
         
         yprime = 0.
         call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
@@ -2053,26 +2068,10 @@
         Arr(Transfer_tot) = dgrho/grho/k2 
         
         !JD Added below for lensing and ISW powerspectra
-        if(t_dep) then
-            TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
-            TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
-            TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
-            TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
-        else
-            TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
-            TGR_Q_T_dot=0.
-            TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
-            TGR_DR_T_dot=0.
-        end if
-        
-        if(R_func)then
-            TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
-            TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
-        else
-            TGR_D_T = TGR_DR_T
-            TGR_D_T_dot = TGR_DR_T_dot
-        end if
-        
+        !JAZ moved part to subroutine
+        call get_tgr_quantities(k, a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot)      
+
+
         dgrhodot = (clxcdot*grhoc + clxbdot*grhob)/a-adotoa*dgrho
                 
         Arr(Transfer_lens) = TGR_D_T*dgrho/k2/EV%Kf(1)/2._dl
@@ -2215,26 +2214,9 @@
         
         ayprime(1)=adotoa*a
 
-!JD  Stuff for testing GR        
-        if(t_dep) then
-            TGR_Q_T=(TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
-            TGR_Q_T_dot=(TGR_Q_T-1.d0)*TGR_scales(2)*adotoa
-            TGR_DR_T=(TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))-1.d0)*a**TGR_scales(2)+1.d0
-            TGR_DR_T_dot=(TGR_DR_T-1.d0)*TGR_scales(2)*adotoa
-        else
-            TGR_Q_T=TGR_Q(1)*dexp(-k/TGR_scales(1)) + TGR_Q(2)*(1.d0-dexp(-k/TGR_scales(1)))
-            TGR_Q_T_dot=0.
-            TGR_DR_T=TGR_DR(1)*dexp(-k/TGR_scales(1)) + TGR_DR(2)*(1.d0-dexp(-k/TGR_scales(1)))
-            TGR_DR_T_dot=0.
-        end if
-        
-        if(R_func)then
-            TGR_D_T = TGR_Q_T*(1.d0+TGR_DR_T)/2.d0
-            TGR_D_T_dot = TGR_Q_T_dot*(1.d0+TGR_DR_T)/2.d0+ TGR_Q_T*TGR_DR_T_dot/2.d0
-        else
-            TGR_D_T = TGR_DR_T
-            TGR_D_T_dot = TGR_DR_T_dot
-        end if
+!JD  Stuff for testing GR       
+!JAZ Moved to subroutine
+        call get_tgr_quantities(k, a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot)      
         
         dgrhoGI = dgrho+3.d0*adotoa*dgq/k
         
