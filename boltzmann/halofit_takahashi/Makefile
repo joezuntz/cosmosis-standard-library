@@ -14,3 +14,6 @@ halofit_interface.so: camb_params_stub.f90 matter_power_stub.f90 nonlinear.f90 h
 
 clean:
 	rm -rf *.o *~ *.flc smith2demo fsmith2  halofit_interface.so halofit_interface.so.dSYM *.mod
+
+test:
+	@echo "Alas, halofit_takahashi has no tests"
