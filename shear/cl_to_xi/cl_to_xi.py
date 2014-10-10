@@ -14,20 +14,15 @@ def theta_range_for_ell(ell):
 
 	return theta_min, theta_max
 
-
-def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas):
+def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas, epsilon=1e-5, verbosity=0):
 	# Make inputs into arrays and find limits we will work with
-	#ell = np.array(ell)
-	#c_ell = np.array(c_ell)
 	lmin = ell_min#ell.min()
 	lmax = ell_max#ell.max()
-	#theta_min , theta_max = theta_range_for_ell(ell)
 
 	# a few constant numbers.  We just increased these until things looked nice
-	nzero = 20000
+	nzero = 50000
 	# Set minimum number of points between zeros of integrand (will scale this number later)
-	min_points_per_zero = 100
-	#nell = ell.size
+	min_points_per_zero = 200
 
 	# Zeros of the Bessel functions, with added 0 at the start as numpy does not 
 	# We never actually use the full nzero range, we just keep going until 
@@ -40,7 +35,6 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 	Theta = thetas #np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta)
 	Xi_plus = np.zeros_like(Theta)
 	Xi_minus = np.zeros_like(Theta)
-
 	#Do the integral separately for each theta value
 	for theta_index, theta in enumerate(Theta):
 		#zeros in ell
@@ -56,9 +50,9 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 		#bessel function
 		#Integrate xi_plus and xi_minus seperately as tey have different zeros
 		#So first xi_plus:
-		#Save integrand samples for debugging
-		integrand_samples_debug=[]
 		ells_debug=[]
+		integrand_samples_debug=[]
+		termination_reached=False
 		for i in xrange(nzero-1):
 			ell_sample_min = ell_j0_zeros[i]
 			ell_sample_max = ell_j0_zeros[i+1]
@@ -68,9 +62,8 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 			#if there will never be any more then we are done
 			#if ell_sample_max<lmin:
 			#   continue
-			if ell_sample_min>lmax:
-				break
 			if ell_sample_max>lmax:
+				break
 				#This will be the last zero because next time
 				#ell_sample_min will be the current ell_sample_max
 				#so we should cut down the ell_sample_max to lmax.
@@ -81,10 +74,7 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 				ell_sample_max = lmax
 
 			# sample points
-			#print min_points_per_zero*(cl_interp(np.log10(0.5*(ell_sample_max+ell_sample_min))))/(-10)
-			#points_per_zero=max(min_points_per_zero,min_points_per_zero*(cl_interp(np.log10(0.5*(ell_sample_max+ell_sample_min))))/(-10))
-			ell_samples = ell_samples = np.linspace(ell_sample_min, ell_sample_max, min_points_per_zero)
-			#print len(ell_samples)
+			ell_samples = np.linspace(ell_sample_min, ell_sample_max, min_points_per_zero)
 			ells_debug+=list(ell_samples)
 			#convert to x=ell*theta
 			x_samples = ell_samples * theta
@@ -103,7 +93,7 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 			j0_samples = scipy.special.j0(x_samples)
 			#Overall integrand
 			integrand_samples = ell_samples * cl_samples * j0_samples
-			integrand_samples_debug+=list(integrand_samples)
+			integrand_samples_debug += list(integrand_samples)
 			#sample spacing
 			dl = ell_samples[1] - ell_samples[0]
 			# import pylab
@@ -113,32 +103,26 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 			delta = scipy.integrate.trapz(integrand_samples, dx=dl)
 			#Add to cumulative total
 			xi_plus_theta += delta
-			#print delta
-		#print ells_debug[:10]
-		#print integrand_samples_debug[:10]
-		#import pylab
-		#pylab.plot(ells_debug,integrand_samples_debug,label='theta='+str(theta*(180./np.pi)*60))
-		#pylab.legend()
-		#pylab.xlabel('l')
-		#pylab.ylabel('integrand')
-		#pylab.show()
-		#exit()
-		#if theta_index==1:
-		#       pylab.show()
-		#   exit()
-		integrand_samples_debug=[]
+			#Decide whether to stop integrating
+			if i>5:
+				if abs((delta+delta_last)/xi_plus_theta)<epsilon:
+					termination_reached=True
+					break
+			delta_last=delta
+		if (not termination_reached) and verbosity>0:
+			print ('Warning: xi_p(%f) integral termination criterium NOT reached'%(theta*(180./np.pi)*60))
+
 		ells_debug=[]
+		integrand_samples_debug=[]
+		termination_reached=False
 		for i in xrange(nzero-1):
 			ell_sample_min = ell_j4_zeros[i]
 			ell_sample_max = ell_j4_zeros[i+1]
 			# print ell_sample_min, ell_sample_max, lmin, lmax
 			#if there are no C_ell at this range then skip it.
 			#if there will never be any more then we are done
-			#if ell_sample_max<lmin:
-			#   continue
-			if ell_sample_min>lmax:
-				break
 			if ell_sample_max>lmax:
+				break
 				#This will be the last zero because next time
 				#ell_sample_min will be the current ell_sample_max
 				#so we should cut down the ell_sample_max to lmax.
@@ -166,6 +150,9 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 			j4_samples = scipy.special.jn(4,x_samples)
 			#Overall integrand
 			integrand_samples = ell_samples * cl_samples * j4_samples
+			integrand_samples_debug += list(integrand_samples)
+			ell_samples = np.linspace(ell_sample_min, ell_sample_max, min_points_per_zero)
+			ells_debug+=list(ell_samples)
 			#sample spacing
 			dl = ell_samples[1] - ell_samples[0]
 			# import pylab
@@ -175,31 +162,31 @@ def cl_to_xi_plus_and_minus(cl_interp,  cl_interp_type, ell_min, ell_max, thetas
 			delta = scipy.integrate.trapz(integrand_samples, dx=dl)
 			#Add to cumulative total
 			xi_minus_theta += delta
+			#Decide whether to stop integrating
+			if i>5:
+				if abs((delta+delta_last)/xi_minus_theta)<epsilon:
+					termination_reached=True
+					break
+			delta_last=delta
 
-		# pylab.show()
-		# x=raw_input()
-		# if x.strip():
-		#   sys.exit(0)
+		if (not termination_reached) and verbosity>0:
+			print ('Warning: xi_m(%f) integral termination criterium NOT reached'%(theta*(180./np.pi)*60))
+
 		#Summed value, with factor 2pi
 		Xi_plus[theta_index] = xi_plus_theta / (2*np.pi)
 		Xi_minus[theta_index] = xi_minus_theta / (2*np.pi)
+
 	return np.array(Xi_plus), np.array(Xi_minus)
 
 def cl_to_xi_plus_and_minus_extended_apodized(ell, c_ell, thetas):
-	ell_min,ell_max=0.01,10000
-
+	ell_min,ell_max=ell.min(),ell.max()
 	cl_interp,interp_type=get_cl_interp_function(ell,c_ell)
-	
-	#ell_sample=np.logspace(np.log10(ell_min),np.log10(ell_max),100)
-	#pylab.loglog(ell_sample,10**cl_interp(np.log10(ell_sample)))
-	#pylab.show()
-	#exit()
-	
-	xi_plus, xi_minus = cl_to_xi_plus_and_minus(cl_interp, interp_type, ell_min, ell_max, thetas)
+
+	xi_plus, xi_minus= cl_to_xi_plus_and_minus(cl_interp, interp_type, ell_min, ell_max, thetas, verbosity=0)
 	return xi_plus, xi_minus
 
 def get_cl_interp_function(ell,c_ell):
-	"Get a interpolation function to use for cl"
+	"Get an interpolation function to use for cl"
 	"if possible interpolate in loglog space"
 	#print c_ell.min(),c_ell.max()
 	if (c_ell>0).all():
@@ -215,25 +202,27 @@ def get_cl_interp_function(ell,c_ell):
 		cl_interp = scipy.interpolate.interp1d(np.log10(ell),c_ell,bounds_error=False,fill_value=0.)
 	return cl_interp,interp_type    
 
-def extend_and_apodize(ell, cl_bin, ell_min=0.01 , ell_max=10000, n_ell=100):
-	"Extend a c_ell beyond its valid regime by fitting a 4-poly and apodize the extended bit"
-	p_u=np.polyfit(np.log10(ell[-20:]), np.log10(cl_bin[-20:]), 2)
-	p_l=np.polyfit(np.log10(ell[:10]), np.log10(cl_bin[:10]), 1)
-	ell_sample = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
-	cl_poly=np.zeros_like(ell_sample)
-	#pylab.loglog(ell_sample,10**cl_poly)
-	cl_poly[(ell_sample>=ell.min()) & (ell_sample<=ell.max())]=scipy.interpolate.interp1d(np.log10(ell),np.log10(cl_bin))(np.log10(ell_sample[(ell_sample>ell.min()) & (ell_sample<ell.max())]))
-	cl_poly[ell_sample<ell.min()] = np.log10(cl_bin[0])#np.polyval(p_l, np.log10(ell_sample[ell_sample<ell.min()]))
-	cl_poly[ell_sample>ell.max()] = np.polyval(p_u, np.log10(ell_sample[ell_sample>ell.max()]))
-	cl_interp=scipy.interpolate.interp1d(np.log10(ell_sample),cl_poly,bounds_error=False,fill_value=0.)
-	return cl_interp
 
+def extend_and_apodize(ell, cl_bin, ell_min=0.01 ,  dlogell=0.05):
+	"Extend a c_ell beyond its valid regime by fitting 2d-poly at lower end"
+	#import pylab
+	#pylab.semilogx(ell,np.log10(cl_bin))
+	p_l=np.polyfit(np.log10(ell[:10]), np.log10(cl_bin[:10]), 2)
+        n_ell = (np.log10(ell.max())-np.log10(ell_min))/dlogell
+        ell_sample = np.logspace(np.log10(ell_min), np.log10(ell.max()), n_ell)
+	cl_poly=np.zeros_like(ell_sample)
+	cl_poly[(ell_sample>=ell.min())]=scipy.interpolate.interp1d(np.log10(ell),np.log10(cl_bin))(np.log10(ell_sample[(ell_sample>=ell.min())]))
+	cl_poly[ell_sample<ell.min()] = np.polyval(p_l, np.log10(ell_sample[ell_sample<ell.min()]))
+	#pylab.semilogx(ell_sample,cl_poly)
+	#pylab.show()
+	cl_interp=scipy.interpolate.interp1d(np.log10(ell_sample),cl_poly,bounds_error=True)
+	return cl_interp
 
 def radians_to_arcmin(r):
 	return np.degrees(r)*60
 
 def arcmin_to_radians(a):
-	return np.radians(a/60)
+	return np.radians(a/60.)
 
 def test():
 	import pyfits
