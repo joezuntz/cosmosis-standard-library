@@ -1,16 +1,19 @@
 from numpy import log, pi
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
-cosmo = section_names.cosmological_parameters_section
-likes = section_names.likelihoods_section
+
+#The names of sections to read things from
+cosmo = section_names.cosmological_parameters
+likes = section_names.likelihoods
+
 
 #Particle Data Group 2013
 BBN_OMBH2_MEAN = 0.023
 BBN_OMBH2_SIGMA = 0.002
 
 def setup(options):
-	mean = options.get_float(section, "mean", default=BBN_OMBH2_MEAN)
-	sigma = options.get_float(section, "sigma", default=BBN_OMBH2_MEAN)
+	mean = options.get_double(option_section, "mean", default=BBN_OMBH2_MEAN)
+	sigma = options.get_double(option_section, "sigma", default=BBN_OMBH2_MEAN)
 	norm = 0.5*log(2*pi*sigma**2)
 	return (mean, sigma, norm)
 
@@ -18,6 +21,7 @@ def setup(options):
 def execute(block, config):
 	# Configuration data, read from ini file above
 	mean,sigma,norm = config
+
 
 	# Get parameters from sampler
 	h0 = block[cosmo, 'h0']
