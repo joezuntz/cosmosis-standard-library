@@ -1,0 +1,55 @@
+--- camb/equations_ppf.f90	2014-09-09 13:18:59.912049072 -0500
++++ camb_Nov13/equations_ppf.f90	2014-09-09 12:32:20.932105129 -0500
+@@ -193,15 +193,17 @@
+ 
+     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ 
+-
++	! Cosmosis sets params%omegak, if you add extra fluid components 
++    ! make sure to set them as additional parameters or computable 
++    ! quantities in the consistecy module
+     !Return OmegaK - modify this if you add extra fluid components
+-    function GetOmegak()
+-    use precision
+-    use ModelParams
+-    real(dl)  GetOmegak
+-    GetOmegak = 1 - (CP%omegab+CP%omegac+CP%omegav+CP%omegan)
+-
+-    end function GetOmegak
++    !function GetOmegak()
++    !use precision
++    !use ModelParams
++    !real(dl)  GetOmegak
++    !GetOmegak = 1 - (CP%omegab+CP%omegac+CP%omegav+CP%omegan)
++	!
++    !end function GetOmegak
+ 
+ 
+     subroutine init_background
+--- camb_Nov13_orig/modules.f90	2014-09-09 13:28:01.471271072 -0500
++++ camb_Nov13/modules.f90	2014-09-02 15:18:13.500906553 -0500
+@@ -251,13 +251,13 @@
+     subroutine CAMBParams_Set(P, error, DoReion)
+     use constants
+     type(CAMBparams), intent(in) :: P
+-    real(dl) GetOmegak, fractional_number, conv
++    real(dl) fractional_number, conv
+     integer, optional :: error !Zero if OK
+     logical, optional :: DoReion
+     logical WantReion
+     integer nu_i,actual_massless
+     real(dl) nu_massless_degeneracy, neff_i
+-    external GetOmegak
++    !external GetOmegak
+     real(dl), save :: last_tau0
+     !Constants in SI units
+ 
+@@ -327,7 +327,7 @@
+         CP%MassiveNuMethod = Nu_trunc
+     end if
+ 
+-    CP%omegak = GetOmegak()
++    !CP%omegak = GetOmegak()
+ 
+     CP%flat = (abs(CP%omegak) <= OmegaKFlat)
+     CP%closed = CP%omegak < -OmegaKFlat

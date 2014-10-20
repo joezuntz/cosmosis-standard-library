@@ -68,9 +68,16 @@ configuration_data * setup(c_datablock * options){
 	}
 
 	if (isError(err)){
-		fprintf(stderr,"There was an error initializating the Planck likelihoods.  See below.\n");
-		fprintf(stderr,"The error below may be hard to understand.  It probably means that one of the files that you specified (printed above) was not found.\n\n");
-		quitOnError(err,__LINE__,stderr);
+		fprintf(stderr,"There was an error initializating the Planck likelihoods.\n");
+		fprintf(stderr,"Here is the error message:\n");
+		printError(stderr,err);
+		fprintf(stderr,"\nThis probably means that a likelihood file was not found.\n\n");
+		fprintf(stderr,"If you are running demo two or demo four then it just means that you\n");
+		fprintf(stderr,"did not download the Planck likelihood when installing.\n");
+		fprintf(stderr,"You can either get it manually from:\n");
+		fprintf(stderr,"     http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
+		fprintf(stderr,"and edit demos/demo2.ini, or just skip demos two and four for now.\n\n");
+		exit(1);
 	}
 
 	if (config->T_low_data==NULL && config->P_low_data==NULL && config->T_high_data==NULL && config->lensing_data==NULL){

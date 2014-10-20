@@ -1,5 +1,5 @@
-from cosmosis import names
-from cosmosis import option_section
+from cosmosis.datablock import names
+from cosmosis.datablock import option_section
 import numpy as np
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline

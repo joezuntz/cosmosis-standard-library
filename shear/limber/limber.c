@@ -15,7 +15,8 @@ typedef struct IntegrandData{
 	gsl_spline * WX;
 	gsl_spline * WY;
 	Interpolator2D * P;
-	gsl_interp_accel * accelerator;
+	gsl_interp_accel * accelerator_x;
+	gsl_interp_accel * accelerator_y;
 } IntegrandData;
 
 // These two convenience functions
@@ -31,6 +32,7 @@ static double inline limber_gsl_spline_max_x(gsl_spline * s)
 	return s->x[s->size-1];
 }
 
+
 // the integrand W_X(chi) * W_Y(chi) * P(ell/chi, chi) / chi^2
 static double integrand(double chi, void * data_void)
 {
@@ -40,20 +42,20 @@ static double integrand(double chi, void * data_void)
 	if(chi < data->chimin || chi > data->chimax) return 0.0;
 
 	// Get W^X(chi) and W^Y(chi)
-	double wx = gsl_spline_eval(data->WX,chi,data->accelerator);
+	double wx = gsl_spline_eval(data->WX,chi,data->accelerator_x);
 	double wy;
 	// A short-cut - if the two splines are the same we do not need to 
 	// do the interpolation twice
 	if (data->WX==data->WY) wy = wx;
-	else wy = gsl_spline_eval(data->WY,chi,data->accelerator);
+	else wy = gsl_spline_eval(data->WY,chi,data->accelerator_y);
 	if (wx==0 || wy==0) return 0.0;
 
 	// Get P(k,z) using k=ell/chi.
 	// The interp_2d interpolator returns 0 if either 
 	// parameter is outside its range
-	double k = data->ell / chi;
+	double k = (data->ell+0.5) / chi;
 	double p = interp_2d(k, chi, data->P);
-
+	// printf("p, wx, wy = %le  %le  %le\n", p, wx, wy);
 	// Integrand result.
 	double result = wx * wy * p / chi / chi;
 	return result;
@@ -86,7 +88,8 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	data.WX = WX;
 	data.WY = WY;
 	data.P = P;
-	data.accelerator = gsl_interp_accel_alloc();
+	data.accelerator_x = gsl_interp_accel_alloc();
+	data.accelerator_y = gsl_interp_accel_alloc();
 
 	// Set up the workspace and inputs to the integrator.
 	// Not entirely sure what the table is.
@@ -109,7 +112,6 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// This particular function is used because that's what Matt Becker 
 		// found to work best.
 		double c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
-
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
 
@@ -128,7 +130,8 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_spline_init(output, ell_vector, c_ell_vector, (size_t) config->n_ell);
 
 	// Tidy up
-	gsl_interp_accel_free(data.accelerator);
+	gsl_interp_accel_free(data.accelerator_x);
+	gsl_interp_accel_free(data.accelerator_y);
 	gsl_integration_glfixed_table_free(table);	
 
 	// And that's it

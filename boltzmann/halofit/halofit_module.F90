@@ -92,7 +92,7 @@ function execute(block, config) result(status)
 	real(dl), dimension(:,:), allocatable :: nonlin_ratio, p
 	integer ik, nk
 	real(dl) :: kmin, kmax, zmin, zmax, log_kmin, log_kmax
-	real(dl) :: omega_baryon
+	real(dl) :: omega_lambda, omega_k
 	real(dl), allocatable, dimension(:) :: k
 	integer iz
 
@@ -101,16 +101,22 @@ function execute(block, config) result(status)
 
 	
 	!Set Halofit internal numbers
-	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
 	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_M", omega_matter)
-	status = status + datablock_get_double_default(block, cosmological_parameters_section, "OMEGA_NU", 0.0D0, omega_nu)
+	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_LAMBDA", omegav)
+	status = status + datablock_get_double_default(block,cosmological_parameters_section, "OMEGA_NU", 0.0D0, omega_nu)
+	status = status + datablock_get_double_default(block, cosmological_parameters_section, "OMEGA_K", 0.0D0, omega_k)
 	status = status + datablock_get_double_default(block, cosmological_parameters_section, "W", -1.0D0, w_lam)
-	omegav = 1 - omega_matter
 
     if (status .ne. 0) then
 		write(*,*) "Required parameters not found in halofit."
 		return
 	endif
+
+	if (omega_k .ne. 0.0) then
+		write(*,*) "Halofit assumes a flat universe with Omega_K = 0."
+		status = 1
+		return
+    endif
 
 	!Load suggested output numbers or just use defaults
 	kmin = settings%kmin
@@ -160,6 +166,12 @@ function execute(block, config) result(status)
 	!Finally we save results
 	status = datablock_put_double_grid(block, matter_power_nl_section, &
 		"K_H", k, "Z", PK_NL%redshifts, "P_K", p)
+
+	!And add another check for any errors in halofit
+	if (.not. all(nonlin_ratio .ge. 0)) then
+		write(*,'(A)') "Halofit error.  Probably extreme parameters"
+		status = 1
+	endif
 
 
 	deallocate(k)

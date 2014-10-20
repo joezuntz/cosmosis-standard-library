@@ -251,13 +251,13 @@
     subroutine CAMBParams_Set(P, error, DoReion)
     use constants
     type(CAMBparams), intent(in) :: P
-    real(dl) GetOmegak, fractional_number, conv
+    real(dl) fractional_number, conv
     integer, optional :: error !Zero if OK
     logical, optional :: DoReion
     logical WantReion
     integer nu_i,actual_massless
     real(dl) nu_massless_degeneracy, neff_i
-    external GetOmegak
+    !external GetOmegak
     real(dl), save :: last_tau0
     !Constants in SI units
 
@@ -327,7 +327,7 @@
         CP%MassiveNuMethod = Nu_trunc
     end if
 
-    CP%omegak = GetOmegak()
+    !CP%omegak = GetOmegak()
 
     CP%flat = (abs(CP%omegak) <= OmegaKFlat)
     CP%closed = CP%omegak < -OmegaKFlat

@@ -10,8 +10,10 @@ rules: >
     be cited depending which data sets are used with this module.
     "
 cite:
-    - ""
-    - ""
+    - "Planck collaboration, arXiv:1303.5075"
+    - "Hinshaw et al, ApJS, 208, 2, 19, 25 (If low-ell polarization from WMAP used)"
+    - "Dunkley et al, JCAP, 07, 025 (If ACT data used)"
+    - "Hou et al, 2014 ApJ, 782, 74 (If SPT data used)"
 
 assumptions:
     - "Highly accurate CMB calculations are required"

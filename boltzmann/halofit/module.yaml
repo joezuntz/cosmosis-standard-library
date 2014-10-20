@@ -27,16 +27,16 @@ params:
 inputs:
     cosmological_parameters:
         omega_m:  "real, Total matter density fraction today"
-        omega_b:  "real, Baryon density fraction today"
+        omega_lambda: "real, Dark energy density fraction today"
         omega_nu:  "real, Neutrino density fraction today (default 0.0)"
         w:  "real, Dark energy equation of state (default -1)"
     matter_power_lin:
-        k: "real 1D array, sample values of linear spectrum in Mpc/h"
+        k_h: "real 1D array, sample values of linear spectrum in Mpc/h"
         z: "real 1D array, redshift of linear spectrum samples"
-        P: "real 2D array, linear spectrum in (Mpc/h)^{-3}"
+        P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}"
 
 outputs:
     matter_power_nl:
-        k: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
         z: "real 1D array, redshift of nonlinear spectrum samples"
-        P: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"

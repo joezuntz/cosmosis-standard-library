@@ -1,5 +1,5 @@
-from cosmosis import option_section
-from cosmosis import names
+from cosmosis.datablock import option_section
+from cosmosis.datablock import names
 import numpy as np
 import scipy.integrate
 
