@@ -89,7 +89,7 @@ inputs:
 
 outputs:
     cosmological_parameters:
-        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
+        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0.  Only calculated if mode=all"
 
     distances:
         nz: "integer, number of z samples"
@@ -99,29 +99,29 @@ outputs:
         d_l: "1D real array, luminosity distance in Mpc"
         mu:  "1D real array, distance modulus"
         h:  "1D real array, hubble parameter with in units of Mpc"
-        rho: "1D real array, matter density "
+        rho: "1D real array, matter density.  Only if mode=all"
         # Scalars:
         age: "real, age of universe in GYr"
-        zdrag: "real, redshift where baryons no longer dragged by photons"
-        rs_zdrag: "real, sound horizon size at zdrag"
-        zstar: "real, redshift of unity optical depth"
-        theta: "real, angular size of sound horizon at zstar"
-        chistar: "real, comoving distance to zstar"
+        zdrag: "real, redshift where baryons no longer dragged by photons. Only if mode!=background"
+        rs_zdrag: "real, sound horizon size at zdrag. Only if mode!=background"
+        zstar: "real, redshift of unity optical depth.  Only if mode!=background"
+        theta: "real, angular size of sound horizon at zstar. Only if mode!=background"
+        chistar: "real, comoving distance to zstar. Only if mode!=background"
 
     matter_power_lin:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
+        z: "1D real array, redshifts of samples. Only if mode=all"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h. Only if mode=all"
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3. Only if mode=all"
 
     linear_cdm_transfer:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
-        delta_cdm: "2D real array, Linear CDM transfer function at samples"
+        z: "1D real array, redshifts of samples. Only if mode=all"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h. Only if mode=all"
+        delta_cdm: "2D real array, Linear CDM transfer function at samples. Only if mode=all"
 
     cmb_cl:
-        ell: "1D integer array, angular frequencies"
-        tt:  "1D real array, ell * (ell+1) C_ell^TT / 2 pi in mu K^2"
-        ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2"
-        bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2"
-        te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2"
-        PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi"
+        ell: "1D integer array, angular frequencies. Only if mode=cmb or all"
+        tt:  "1D real array, ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or all"
+        ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or all"
+        bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or all"
+        te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or all"
+        PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi. Only if mode=cmb or all"
