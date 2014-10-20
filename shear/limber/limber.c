@@ -53,7 +53,7 @@ static double integrand(double chi, void * data_void)
 	// Get P(k,z) using k=ell/chi.
 	// The interp_2d interpolator returns 0 if either 
 	// parameter is outside its range
-	double k = data->ell / chi;
+	double k = (data->ell+0.5) / chi;
 	double p = interp_2d(k, chi, data->P);
 	// printf("p, wx, wy = %le  %le  %le\n", p, wx, wy);
 	// Integrand result.
