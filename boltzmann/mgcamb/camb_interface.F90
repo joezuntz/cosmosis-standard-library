@@ -301,44 +301,45 @@ module camb_interface_tools
 		integer(cosmosis_status) ::  status
 		integer(cosmosis_block) :: block
 		type(CambParams) :: P
+		character(*), parameter :: modgrav = "modified_gravity"
 
 		status = 0 
 
 		if (model .ne. 0) then
 			status = status + datablock_get_double(block, &
-				option_section, "gr_trans", GRtrans)
+				modgrav, "gr_trans", GRtrans)
 		endif
 		if (model==0) then
 		!Read the parameters for the corresponding model
 		elseif (model ==1) then
 			status = status + datablock_get_double(block, &
-				option_section, "b1", B1)
+				modgrav, "b1", B1)
 			status = status + datablock_get_double(block, &
-				option_section, "b2", B2)
+				modgrav, "b2", B2)
 			status = status + datablock_get_double(block, &
-				option_section, "lambda1_2", lambda1_2)
+				modgrav, "lambda1_2", lambda1_2)
 			status = status + datablock_get_double(block, &
-				option_section, "lambda2_2", lambda2_2)
+				modgrav, "lambda2_2", lambda2_2)
 			status = status + datablock_get_double(block, &
-				option_section, "ss", ss)
+				modgrav, "ss", ss)
 
 		else if (model ==2) then
 			status = status + datablock_get_double(block, &
-				option_section, "MGQfix", MGQfix)
+				modgrav, "MGQfix", MGQfix)
 			status = status + datablock_get_double(block, &
-				option_section, "MGRfix", MGRfix)
+				modgrav, "MGRfix", MGRfix)
 
 		else if (model ==3 ) then
 			status = status + datablock_get_double(block, &
-				option_section, "Qnot", Qnot)
+				modgrav, "Qnot", Qnot)
 			status = status + datablock_get_double(block, &
-				option_section, "Rnot", Rnot)
+				modgrav, "Rnot", Rnot)
 			status = status + datablock_get_double(block, &
-				option_section, "sss", sss)
+				modgrav, "sss", sss)
 		else if (model ==4) then
 			B1 = 4.d0/3.d0
 			status = status + datablock_get_double(block, &
-				option_section, "b0", lambda1_2)
+				modgrav, "b0", lambda1_2)
 			lambda1_2 = (lambda1_2*(299792458.d-3)**2)/(2.d0*p%H0**2)
 			B2 = 0.5d0
 			lambda2_2 = B1* lambda1_2
@@ -346,18 +347,18 @@ module camb_interface_tools
 
 		else if (model ==5) then
 			status = status + datablock_get_double(block, &
-				option_section, "beta1", b1)
+				modgrav, "beta1", b1)
 			status = status + datablock_get_double(block, &
-				option_section, "b0", lambda1_2)
+				modgrav, "b0", lambda1_2)
 			lambda1_2 = (lambda1_2*(299792458.d-3)**2)/(2.d0*p%H0**2)
 			B2 = 2.d0/B1 -1.d0
 			lambda2_2 = B1* lambda1_2
 			status = status + datablock_get_double(block, &
-				option_section, "s", ss)
+				modgrav, "s", ss)
 
 		else if (model ==6) then
 			status = status + datablock_get_double(block, &
-				option_section, "linder_gamma", Linder_gamma)
+				modgrav, "linder_gamma", Linder_gamma)
 		else 
 			write(*,*) "Unknown MGCAMB model"
 			status = 1
@@ -473,8 +474,9 @@ module camb_interface_tools
 		k2 = k*k
 
 
-		!General Relativity
-		if (model==0) then
+
+		!General Relativity or before the MG switch on
+		if (a.lt. grtrans .or. model==0) then
 			R = 1.0
 			Q = 1.0
 
