@@ -16,7 +16,7 @@ int main(){
 	const int NK = 500;
 
 	gsl_spline * n_of_chi = load_nchi("n_of_chi.txt");
-	Interpolator2D * P = load_interp_2d("p_k_chi.txt", NK, NCHI);
+	Interpolator2D * P = load_interp_2d_file("p_k_chi.txt", NK, NCHI);
 
 	limber_config config;
 	config.xlog = true;

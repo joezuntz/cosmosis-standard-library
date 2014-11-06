@@ -26,7 +26,7 @@ Interpolator2D * init_interp_2d_akima_grid(double *x1, double *x2, double **y, i
 
 void destroy_interp_2d(Interpolator2D * interp2d);
 double interp_2d(double x1, double x2, Interpolator2D * interp2d);
-Interpolator2D * load_interp_2d(const char * filename, int N1, int N2);
+Interpolator2D * load_interp_2d_file(const char * filename, int N1, int N2);
 
 
 #endif

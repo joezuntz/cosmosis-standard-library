@@ -41,7 +41,7 @@ void reverse(double * x, int n)
 
 
 Interpolator2D * 
-load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline, 
+load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z_spline, 
 	const char * section,
 	const char * k_name, const char * z_name, const char * P_name)
 {
@@ -60,21 +60,30 @@ load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline,
 		return NULL;
 	}
 
-	// What we have now is P(k, z)
-	// What we need is P(k, chi)
-	// So we loop, lookup, and replace
-	for (int i=0; i<nz; i++){
-		double zi = z[i];
-		double chi_i = gsl_spline_eval(chi_of_z_spline, zi, NULL);
-		z[i] = chi_i;
+	// What we have now is P(k, z).
+	// We can optionally convert to P(k, chi)
+	// If so we loop, lookup, and replace
+	if (chi_of_z_spline){
+		for (int i=0; i<nz; i++){
+			double zi = z[i];
+			double chi_i = gsl_spline_eval(chi_of_z_spline, zi, NULL);
+			z[i] = chi_i;
+		}
 	}
-
 	if (status) return NULL;
 	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
 	deallocate_2d_double(&P, nk);
 	return interp;
 }
 
+
+Interpolator2D * 
+load_interpolator(c_datablock * block, 
+	const char * section,
+	const char * k_name, const char * z_name, const char * P_name)
+{
+	return load_interpolator_chi(block, NULL, section, k_name, z_name, P_name);
+}
 
 gsl_spline * load_spline(c_datablock * block, const char * section, 
 	const char * x_name, const char * y_name)

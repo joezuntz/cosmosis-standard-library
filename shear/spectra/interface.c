@@ -346,7 +346,7 @@ int execute(c_datablock * block, void * config_in)
 
 
 	// Get the P(k) we need
-	Interpolator2D * PK = load_interpolator(
+	Interpolator2D * PK = load_interpolator_chi(
 		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
 
 	if (PK==NULL) return 1;
@@ -354,10 +354,10 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_GI = NULL;
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
-		PK_II = load_interpolator(
+		PK_II = load_interpolator_chi(
 			block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_II");
 
-		PK_GI = load_interpolator(
+		PK_GI = load_interpolator_chi(
 			block, chi_of_z_spline, "intrinsic_alignment_parameters", "k_h", "z", "P_GI");
 		
 		if (PK_II==NULL) return 2;
