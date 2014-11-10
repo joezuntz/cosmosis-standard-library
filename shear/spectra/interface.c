@@ -396,8 +396,6 @@ int execute(c_datablock * block, void * config_in)
 
 	}
 
-	// This is P(k,z)
-	// We need P(k, chi)
 	if (!PK) {
 		free(chi);
 		free(a);
@@ -420,10 +418,10 @@ int execute(c_datablock * block, void * config_in)
 	if (config->intrinsic_alignments){
 
 		status |= compute_spectra(block, nbin, intrinsic_intrinsic,
-			W_splines, Nchi_splines, PK, config);
+			W_splines, Nchi_splines, PK_II, config);
 
 		status |= compute_spectra(block, nbin, shear_intrinsic,
-			W_splines, Nchi_splines, PK, config);
+			W_splines, Nchi_splines, PK_GI, config);
 	}
 
 
