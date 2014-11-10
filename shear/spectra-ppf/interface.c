@@ -353,8 +353,9 @@ int execute(c_datablock * block, void * config_in)
 
 
 	Interpolator2D * MG_D = load_interpolator_chi(
-		block, chi_of_z_spline, "MODIFIED_GRAVITY_SECTION", "k_h", "z", "D");
+		block, chi_of_z_spline, "MODIFIED_GRAVITY", "k_h", "z", "D");
 
+	if (MG_D==NULL) return 2;
 
 
 	Interpolator2D * PK_GI = NULL;
