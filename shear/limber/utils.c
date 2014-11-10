@@ -41,7 +41,7 @@ void reverse(double * x, int n)
 
 
 Interpolator2D * 
-load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z_spline, 
+load_interpolator_chi_scale(c_datablock * block, Interpolator2D * scaling, gsl_spline * chi_of_z_spline, 
 	const char * section,
 	const char * k_name, const char * z_name, const char * P_name)
 {
@@ -70,6 +70,15 @@ load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z_spline,
 			z[i] = chi_i;
 		}
 	}
+
+	if (scaling){
+		for (int j=0; j<nk; j++){
+			for (int i=0; i<nz; i++){
+				P[j][i] *= interp_2d(k[i], z[j], scaling);
+			}
+		}
+
+	}
 	if (status) return NULL;
 	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
 	deallocate_2d_double(&P, nk);
@@ -78,11 +87,22 @@ load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z_spline,
 
 
 Interpolator2D * 
+load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z_spline, 
+	const char * section,
+	const char * k_name, const char * z_name, const char * P_name)
+{
+
+	return load_interpolator_chi_scale(block, NULL, chi_of_z_spline, section, k_name, z_name, P_name);
+}
+
+
+
+Interpolator2D * 
 load_interpolator(c_datablock * block, 
 	const char * section,
 	const char * k_name, const char * z_name, const char * P_name)
 {
-	return load_interpolator_chi(block, NULL, section, k_name, z_name, P_name);
+	return load_interpolator_chi_scale(block, NULL, NULL, section, k_name, z_name, P_name);
 }
 
 gsl_spline * load_spline(c_datablock * block, const char * section, 
