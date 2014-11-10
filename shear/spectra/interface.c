@@ -13,11 +13,20 @@ const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 const char * dist = DISTANCES_SECTION;
 const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
 
+
+typedef enum spectrum_type_t {
+	shear_shear,
+	shear_intrinsic,
+	intrinsic_intrinsic,
+	matter_matter
+} spectrum_type_t;
+
 typedef struct shear_spectrum_config {
 	int n_ell;
 	double ell_min;
 	double ell_max;
 	bool intrinsic_alignments;
+	bool matter_spectra;
 } shear_spectrum_config;
 
 
@@ -28,7 +37,10 @@ void * setup(c_datablock * options){
 	status |= c_datablock_get_int(options, OPTION_SECTION, "n_ell", &(config->n_ell));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_min", &(config->ell_min));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_max", &(config->ell_max));
-	status |= c_datablock_get_bool(options, OPTION_SECTION, "intrinsic_alignments", &(config->intrinsic_alignments));
+	status |= c_datablock_get_bool(options, OPTION_SECTION, "intrinsic_alignments", 
+		&(config->intrinsic_alignments));
+	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "matter_spectra", 
+		false, &(config->matter_spectra));
 
 	if (status){
 		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
@@ -91,93 +103,6 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 }
 
 
-
-int shear_shear_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
-
-	// Compute the prefactor, (1.5 Omega_M H0^2)^2
-	// The units of this need to be consistent with 
-	// what we 		
-	double omega_m;
-	int status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
-	// in (Mpc/h)^-2
-	// We leave the factor of h in because our P(k) 
-	// should have it in.  That's why there is a 100 in here.
-	const double c_kms = 299792.4580; //km/s
-	double scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m; 
-	// This scaling value is the bit that goes in front
-	// of the W(chi) kernel.  So we square it for the 
-	// shear-shear since that has two copies
-
-	// Set up the integration rules.
-	// We can interpolate in the logs because
-	// everything should be positive
-	lc->xlog = true;
-	lc->ylog = true;
-	lc->n_ell = config->n_ell;
-	lc->prefactor = scaling*scaling;
-
-	// Log spaced target ell based on input
-	lc->ell = malloc(sizeof(double)*lc->n_ell);
-	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
-	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
-
-	return status;
-}
-
-
-
-int shear_intrinsic_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
-
-	// Compute the prefactor, (1.5 Omega_M H0^2)^2
-	// The units of this need to be consistent with 
-	// what we 		
-	double omega_m;
-	int status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
-	// in (Mpc/h)^-2
-	// We leave the factor of h in because our P(k) 
-	// should have it in.  That's why there is a 100 in here.
-	const double c_kms = 299792.4580; //km/s
-	double scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m; 
-	// This scaling value is the bit that goes in front
-	// of the W(chi) kernel.  So we square it for the 
-	// shear-shear since that has two copies
-
-	// Set up the integration rules.
-	lc->xlog = false;
-	lc->ylog = false;
-	lc->n_ell = config->n_ell;
-	lc->prefactor = scaling;
-
-	// Log spaced target ell based on input
-	lc->ell = malloc(sizeof(double)*lc->n_ell);
-	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
-	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
-
-	return status;
-}
-
-
-
-
-int intrinsic_intrinsic_config(c_datablock * block, limber_config * lc, shear_spectrum_config * config){
-	// Set up the integration rules.
-	// We can interpolate in the logs because
-	// everything should be positive, just as in shear-shear
-	lc->xlog = true;
-	lc->ylog = true;
-	lc->n_ell = config->n_ell;
-	lc->prefactor = 1.0;
-
-	// Log spaced target ell based on input
-	lc->ell = malloc(sizeof(double)*lc->n_ell);
-	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
-	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
-
-	return 0;
-}
-
- 
-
 static
 int save_c_ell(c_datablock * block, const char * section, 
 	int bin1, int bin2, gsl_spline * s, limber_config * lc)
@@ -199,22 +124,178 @@ int save_c_ell(c_datablock * block, const char * section,
 
 }
 
-int shear_intrinsic_spectra(c_datablock * block, int nbin, 
-	gsl_spline * W[nbin], gsl_spline * Nchi[nbin], Interpolator2D * PK, shear_spectrum_config * config)
+const char * choose_output_section(spectrum_type_t spectrum_type, 
+	shear_spectrum_config * config)
+{
+	switch(spectrum_type){
+		case matter_matter:
+			return "matter_cl";
+			break;
+		case shear_intrinsic:
+			return 	SHEAR_CL_GI_SECTION;
+			break;
+		case intrinsic_intrinsic:
+			return SHEAR_CL_II_SECTION;
+			break;
+		case shear_shear:
+			return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
+			break;
+		default:
+			return NULL;
+	}
+}
+
+
+int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type, 
+	limber_config * lc, shear_spectrum_config * config)
 {
 
-	// Get the prefactor
-	const char * section = SHEAR_CL_GI_SECTION;
+	// First we need to decide whether to use logs in the splines.
+	// This is more accurate, but we cannot use it for cross-spectra
+	// since they can go negative.
 
-	limber_config lc;
-	int status = shear_intrinsic_config(block, &lc, config);
-	if (status) {free(lc.ell); return status;}
+	if (spectrum_type==shear_shear || spectrum_type==matter_matter || 
+		spectrum_type==intrinsic_intrinsic){
+		lc->xlog=true;
+		lc->ylog=true;
+	}
+	else{
+		lc->xlog=false;
+		lc->ylog=false;
+	}
+
+
+	// Now we need to set up the ell range we wish to compute.
+	// We need the number of ell values and the ell min and max.
+	lc->n_ell = config->n_ell;
+
+	// We log space the actual ell values
+	lc->ell = malloc(sizeof(double)*lc->n_ell);
+	double alpha = (log(config->ell_max) - log(config->ell_min)) / (config->n_ell - 1);
+	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
+
+
+	//Scalings
+
+	// This scaling value is the bit that goes in front
+	// of the kernels. For n(chi) this is 1.0 and for 
+	// shear W(chi) it's this more complex number.
+
+	// shear-shear picks up two copies of this scaling,
+	// shear-intrinsic picks up one, 
+	// and the other spectra just have a unity prefactor.
+
+	double omega_m;
+	int status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
+	// in (Mpc/h)^-2
+	// We leave the factor of h in because our P(k) 
+	// should have it in.  That's why there is a 100 in here.
+	const double c_kms = 299792.4580; //km/s
+	double shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m; 
+
+	switch(spectrum_type){
+		case matter_matter:
+			lc->prefactor = 1.0;
+			break;
+		case shear_intrinsic:
+			lc->prefactor = shear_scaling;
+			break;
+		case intrinsic_intrinsic:
+			lc->prefactor = 1.0;
+			break;
+		case shear_shear:
+			lc->prefactor = shear_scaling*shear_scaling;
+			break;
+		default:
+			lc->prefactor = 1.0/0.0;
+			return 1;
+	}
+	return 0;
+}
+
+
+
+int choose_kernels(spectrum_type_t spectrum_type, int nbin, gsl_spline * W[nbin], 
+	gsl_spline * Nchi[nbin], gsl_spline ** K1, gsl_spline ** K2)
+{
+	// The different spectra use different kernels to integrate over:
+	// Here we choose which to use (we do it like this so we can use
+	// the same code for the different spectra)
+
+	switch(spectrum_type){
+		case matter_matter:
+			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = Nchi[b];};
+			break;
+		case shear_intrinsic:
+			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = W[b];};
+			break;
+		case intrinsic_intrinsic:
+			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = Nchi[b];};
+			break;
+		case shear_shear:
+			for(int b=0; b<nbin; b++) {K1[b] = W[b]; K2[b] = W[b];};
+			break;
+		default:
+			return 1;
+	}
+	return 0;
+
+}
+
+int choose_bin2_max(spectrum_type_t spectrum_type, int nbin, int bin1)
+{
+	if (spectrum_type==shear_shear || spectrum_type==matter_matter || 
+		spectrum_type==intrinsic_intrinsic){
+		return bin1;
+	}
+	else{
+		return nbin;
+	}
+
+}
+
+
+
+int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type,
+	gsl_spline * W[nbin], gsl_spline * Nchi[nbin], Interpolator2D * PK, 
+	shear_spectrum_config * config)
+{
+	// This is a unified interface for generating different 
+	// spectra.
+
+	// We need:
+	//  - to choose a section to save the output into
+	//  - to configure the ell ranges and other options
+	//  - to choose the W/N kernels to integrate over.
+
+	limber_config lc; 
+	lc.ell = NULL;
+	gsl_spline * K1[nbin];
+	gsl_spline * K2[nbin];
+
+	const char * section = choose_output_section(spectrum_type, config);
+	int status = choose_configuration(block, spectrum_type, &lc, config);
+	status |= choose_kernels(spectrum_type, nbin, W, Nchi, &K1[0], &K2[0]);
+
+	// If any of these have gone wrong we quit
+	// after cleaning up any allocated memory
+	if (section==NULL) status = 1;
+	if (status) {
+		free(lc.ell);
+		return status;
+	}
+
+	// First save the ell values and number of bins
 	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
 	status |= c_datablock_put_int(block, section, "nbin", nbin);
 
 	for (int bin1=1; bin1<=nbin; bin1++){
-		for (int bin2=1; bin2<=nbin; bin2++){
-			gsl_spline * c_ell = limber_integral(&lc, Nchi[bin1-1], W[bin2-1], PK);
+		// We also need to choose the max value of bin 2. 
+		// For auto-spectra we don't compute both bin_i_j and bin_j_i,
+		// whereas for cross-spectra we do
+		int bin2_max = choose_bin2_max(spectrum_type, nbin, bin1);
+		for (int bin2=1; bin2<=bin2_max; bin2++){
+			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
 			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
 			gsl_spline_free(c_ell);
 			if (status) return status;
@@ -222,57 +303,7 @@ int shear_intrinsic_spectra(c_datablock * block, int nbin,
 	}
 	free(lc.ell);
 	return status;
-}	
-
-
-int shear_shear_spectra(c_datablock * block, int nbin, 
-	gsl_spline * W[nbin], Interpolator2D * PK, shear_spectrum_config * config, const char * section)
-{
-
-	// Get the prefactor
-
-	limber_config lc;
-	int status = shear_shear_config(block, &lc, config);
-	if (status) {free(lc.ell); return status;}
-	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
-	status |= c_datablock_put_int(block, section, "nbin", nbin);
-
-	for (int bin1=1; bin1<=nbin; bin1++){
-		for (int bin2=1; bin2<=bin1; bin2++){
-			gsl_spline * c_ell = limber_integral(&lc, W[bin1-1], W[bin2-1], PK);
-			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
-			gsl_spline_free(c_ell);
-			if (status) return status;
-		}
-	}
-	free(lc.ell);
-	return status;
-}	
-
-
-int intrinsic_intrinsic_spectra(c_datablock * block, int nbin, 
-	gsl_spline * Nchi[nbin], Interpolator2D * PK, shear_spectrum_config * config)
-{
-
-	// Get the prefactor
-	const char * section = SHEAR_CL_II_SECTION;
-	limber_config lc;
-	int status = intrinsic_intrinsic_config(block, &lc, config);
-	if (status) {free(lc.ell); return status;}
-	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
-	status |= c_datablock_put_int(block, section, "nbin", nbin);
-
-	for (int bin1=1; bin1<=nbin; bin1++){
-		for (int bin2=1; bin2<=bin1; bin2++){
-			gsl_spline * c_ell = limber_integral(&lc, Nchi[bin1-1], Nchi[bin2-1], PK);
-			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
-			gsl_spline_free(c_ell);
-			if (status) return status;
-		}
-	}
-	free(lc.ell);
-	return status;
-}	
+}
 
 
 
@@ -365,8 +396,6 @@ int execute(c_datablock * block, void * config_in)
 
 	}
 
-
-
 	// This is P(k,z)
 	// We need P(k, chi)
 	if (!PK) {
@@ -378,23 +407,23 @@ int execute(c_datablock * block, void * config_in)
 		return 1;
 	}
 
-	// Make the C_ell and save them
-	const char * section;
-	if (config->intrinsic_alignments){
-		section = SHEAR_CL_GG_SECTION;
-	}
-	else{
-		section=SHEAR_CL_SECTION;
-	}
+
+	status |= compute_spectra(block, nbin, shear_shear,
+		W_splines, Nchi_splines, PK, config);
 	
-	status |= shear_shear_spectra(block, nbin, W_splines, PK, config, section);
+
+	if (config->matter_spectra){
+		status |= compute_spectra(block, nbin, matter_matter,
+			W_splines, Nchi_splines, PK, config);
+	}
 
 	if (config->intrinsic_alignments){
-		status |= intrinsic_intrinsic_spectra(block, nbin, 
-			Nchi_splines, PK_II, config);
 
-		status |= shear_intrinsic_spectra(block, nbin, 
-			W_splines, Nchi_splines, PK_GI, config);
+		status |= compute_spectra(block, nbin, intrinsic_intrinsic,
+			W_splines, Nchi_splines, PK, config);
+
+		status |= compute_spectra(block, nbin, shear_intrinsic,
+			W_splines, Nchi_splines, PK, config);
 	}
 
 
