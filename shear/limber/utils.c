@@ -39,11 +39,20 @@ void reverse(double * x, int n)
 	}
 }
 
+static 
+double identity_function(double x, double y, double z, void * a)
+{
+  return z;
+}
+
+
 
 Interpolator2D * 
-load_interpolator_chi_scale(c_datablock * block, Interpolator2D * scaling, gsl_spline * chi_of_z_spline, 
+load_interpolator_chi_function(c_datablock * block, gsl_spline * chi_of_z_spline, 
 	const char * section,
-	const char * k_name, const char * z_name, const char * P_name)
+	const char * k_name, const char * z_name, const char * P_name,
+	interp2d_modifier_function function, void * args
+	)
 {
 	int nk, nz, nP;
 	double *k=NULL, *z=NULL;
@@ -60,6 +69,13 @@ load_interpolator_chi_scale(c_datablock * block, Interpolator2D * scaling, gsl_s
 		return NULL;
 	}
 
+	for (int j=0; j<nk; j++){
+		for (int i=0; i<nz; i++){
+			P[j][i] = function(k[i], z[j], P[j][i], args);
+		}
+	}
+
+
 	// What we have now is P(k, z).
 	// We can optionally convert to P(k, chi)
 	// If so we loop, lookup, and replace
@@ -71,14 +87,6 @@ load_interpolator_chi_scale(c_datablock * block, Interpolator2D * scaling, gsl_s
 		}
 	}
 
-	if (scaling){
-		for (int j=0; j<nk; j++){
-			for (int i=0; i<nz; i++){
-				P[j][i] *= interp_2d(k[i], z[j], scaling);
-			}
-		}
-
-	}
 	if (status) return NULL;
 	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
 	deallocate_2d_double(&P, nk);
@@ -92,9 +100,20 @@ load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z_spline,
 	const char * k_name, const char * z_name, const char * P_name)
 {
 
-	return load_interpolator_chi_scale(block, NULL, chi_of_z_spline, section, k_name, z_name, P_name);
+	return load_interpolator_chi_function(block, chi_of_z_spline, section, k_name, z_name, P_name, identity_function, NULL);
 }
 
+
+Interpolator2D * 
+load_interpolator_function(c_datablock * block, 
+	const char * section,
+	const char * k_name, const char * z_name, const char * P_name,
+	interp2d_modifier_function function, void * args
+	)
+{
+	return load_interpolator_chi_function(block, NULL, section, k_name, z_name, P_name, function, args);
+
+}
 
 
 Interpolator2D * 
@@ -102,7 +121,7 @@ load_interpolator(c_datablock * block,
 	const char * section,
 	const char * k_name, const char * z_name, const char * P_name)
 {
-	return load_interpolator_chi_scale(block, NULL, NULL, section, k_name, z_name, P_name);
+	return load_interpolator_chi_function(block, NULL, section, k_name, z_name, P_name, identity_function, NULL);
 }
 
 gsl_spline * load_spline(c_datablock * block, const char * section, 
