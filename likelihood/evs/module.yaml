@@ -1,0 +1,43 @@
+name: "Extreme Value Statistics"
+purpose: "{PDF of the maximum mass given cosmological parameters"
+url: ""
+attribution: [Harrison & Coles 2012, CosmoSIS team (code)]
+rules: "None."
+cite:
+    - "Harrison and Coles, MNRAS 421 2012"
+assumptions:
+    - "FRW cosmological model"
+explanation: >
+    "This small module was written for CosmoSIS. The PDF for the maximum mass of a cluster at a given redshift, z, is output.
+     CAMB module should be run first to output Pk over the redshift range [z - 0.02, z + 0.02]. The mass function module should be run with redshift_zero = 0 to generate dndlnm. If run in test mode the PDF at z will be output over the range [Mmin, Mmax]
+        "
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+        feedback: "verbose = 1"
+        redshift: "float, output z of cluster where integration limits:zmin =z - 0.02,zmax =z + 0.02"
+        output_pdf: "int, 1:output PDF for range of masses, only recommended for test runs (default = 0)"
+        frac: "float, fraction of the sky between zmin and zmax (default = 1.0)"
+        Mmin: "float, minimum mass for PDF in M_sun/h (default = 1.E14)"
+        Mmax: "float, maximum mass for PDF in M_sun/h (default = 5.E15)"
+        dm: "float, width of mass bins for PDF (default = 5.E12)"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+        cosmological_parameters:
+                h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+                omega_m:  "real, Omega matter"
+        distances:
+                z:  "real 1D array, redshifts"
+                d_a:  "real, angular diameter distance as a function of z"
+        mass_function:
+                z:  "real 1D array, redshifts"
+                r_h:  "real 1D array, radii (Mpc/h)"
+                dndlnmh:  "real 1D array, mass function (h^3 Mpc^-3)"
+ 
+
+outputs:        
+        evs:
+                m: "real 1D array, mass (M_sun/h)"
+                logphi: "real 1D array, log of PDF"
+
