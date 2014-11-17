@@ -320,6 +320,10 @@ double shear_shear_mg_scaling(double k,double z,double P, void* args)
 {
 	Interpolator2D * D = (Interpolator2D*) args;
 	double d_kz = interp_2d(k, z, D);
+	// If we are outside the range where d_kz is defined then
+	// this function will return zero.
+	// in this case just revert to the unmodified P(k,z)
+	if (d_kz==0) return P;
 	return P*d_kz*d_kz;
 }
 
