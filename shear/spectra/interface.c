@@ -422,6 +422,9 @@ int execute(c_datablock * block, void * config_in)
 
 		status |= compute_spectra(block, nbin, shear_intrinsic,
 			W_splines, Nchi_splines, PK_GI, config);
+	
+		destroy_interp_2d(PK_GI);
+		destroy_interp_2d(PK_II);
 	}
 
 

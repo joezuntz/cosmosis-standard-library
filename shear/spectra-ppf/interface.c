@@ -409,6 +409,8 @@ int execute(c_datablock * block, void * config_in)
 		shear_shear_mg_scaling, (void*) MG_D
 		);
 
+	destroy_interp_2d(MG_D);
+
 	if (PK==NULL) return 1;
 
 	Interpolator2D * PK_GI = NULL;
@@ -451,6 +453,9 @@ int execute(c_datablock * block, void * config_in)
 
 		status |= compute_spectra(block, nbin, shear_intrinsic,
 			W_splines, Nchi_splines, PK_GI, config);
+	
+		destroy_interp_2d(PK_II);
+		destroy_interp_2d(PK_GI);
 	}
 
 
