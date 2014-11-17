@@ -71,7 +71,7 @@ load_interpolator_chi_function(c_datablock * block, gsl_spline * chi_of_z_spline
 
 	for (int j=0; j<nk; j++){
 		for (int i=0; i<nz; i++){
-			P[j][i] = function(k[i], z[j], P[j][i], args);
+			P[j][i] = function(k[j], z[i], P[j][i], args);
 		}
 	}
 
