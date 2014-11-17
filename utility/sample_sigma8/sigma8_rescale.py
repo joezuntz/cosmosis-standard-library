@@ -34,14 +34,14 @@ def execute(block, config):
 	P_k *= r
 
 	# Save back to block
-	block[cosmo, 'A_s']
+	block[cosmo, 'A_s'] = A_s
 	block[cmb, 'TT'] = TT
 	block[cmb, 'EE'] = EE
 	block[cmb, 'BB'] = BB
 	block[cmb, 'TE'] = TE
 	block[matter_powspec,'P_k'] = P_k
 
-	block[cosmo, 'sigma8'] = sigma8_input
+	block[cosmo, 'sigma_8'] = sigma8_input
 	
 
 	#signal that everything went fine
