@@ -12,7 +12,7 @@
 const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 const char * dist = DISTANCES_SECTION;
 const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
-
+const char * ppf_section = POST_FRIEDMANN_PARAMETERS_SECTION;
 
 typedef enum spectrum_type_t {
 	shear_shear,
@@ -398,7 +398,7 @@ int execute(c_datablock * block, void * config_in)
 
 	// Get the P(k) we need
 	Interpolator2D * MG_D = load_interpolator_chi(
-		block, chi_of_z_spline, "modified_gravity", "k_h", "z", "D");
+		block, chi_of_z_spline, ppf_section, "k_h", "z", "D");
 
 	if (MG_D==NULL) return 1;
 
