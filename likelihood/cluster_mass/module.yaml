@@ -2,10 +2,11 @@ name: "Cluster mass"
 version: ""
 purpose: "Likelihood of z=1.59 Cluster mass from Santos et al. 2011"
 url: ""
-attribution: [Santos et al. 2011 (measurement), CosmoSIS team (code)]
+attribution: [Santos et al. 2011 (measurement), Harrison & Coles 2012, CosmoSIS team (code)]
 rules: "None."
 cite:
     - "Santos et al. 2011 "
+     - "Harrison & Coles 2012 "
 assumptions:
 explanation: >
     "This small module was written for CosmoSIS.
@@ -20,8 +21,8 @@ params:
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
-    cosmological_parameters:
-        maxmass:  "real, mass (M_sun/h)"
+    clusters:
+        M_max:  "real, mass (M_sun/h)"
 
 outputs:
     likelihoods:
