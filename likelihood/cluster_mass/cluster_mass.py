@@ -2,7 +2,7 @@ from numpy import log, pi
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
 
-cosmo = section_names.cosmological_parameters
+clusters = section_names.clusters
 likes = section_names.likelihoods
 
 MASS_MEAN = 4.02E14 # Santos et al. 2011
@@ -21,7 +21,7 @@ def execute(block, config):
 	mean,sigma,norm = config
 
 	# Get parameters from sampler
-	maxmass = block[cosmo, 'maxmass']
+	maxmass = block[clusters, 'M_max']
 
 	#compute the likelihood - just a simple Gaussian
 	like = -(maxmass - mean)**2/sigma**2/2.0 - norm
