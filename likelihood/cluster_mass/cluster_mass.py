@@ -5,8 +5,8 @@ from cosmosis.datablock import option_section
 clusters = section_names.clusters
 likes = section_names.likelihoods
 
-MASS_MEAN = 4.02E14 # Santos et al. 2011
-MASS_SIGMA = 0.88E14
+MASS_MEAN = 2.8E14 # Santos et al. 2011, Table 1 of Harrison & Coles 2011 (converted to M_sun/h using h=0.7)
+MASS_SIGMA = 6.16E13
 
 def setup(options):
 	section = option_section

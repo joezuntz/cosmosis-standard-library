@@ -15,11 +15,12 @@ explanation: >
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    mean: "float "
-    sigma: "float"
+    mean: "float, mass in M_sun/h"
+    sigma: "float, error in M_sun/h "
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
+
 inputs:
     clusters:
         M_max:  "real, mass (M_sun/h)"
