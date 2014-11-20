@@ -5,7 +5,7 @@ url: ""
 attribution: [Santos et al. 2011 (measurement), Harrison & Coles 2012, CosmoSIS team (code)]
 rules: "None."
 cite:
-    - "Santos et al. 2011 "
+     - "Santos et al. 2011 "
      - "Harrison & Coles 2012 "
 assumptions:
 explanation: >
