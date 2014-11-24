@@ -1,0 +1,30 @@
+#This is a template for module description files
+name: Press Schechter MF
+version: "1"
+purpose: Code to compute the PressSchechter mass function given Pk from CAMB, based on Komatsu's CRL
+url: "http://www.mpa-garching.mpg.de/~komatsu/crl/"
+attribution: []
+rules: ""
+cite: 
+        - "http://www.mpa-garching.mpg.de/~komatsu/crl/"
+assumptions:
+    - "CAMB must be run to output linear matter Pk"
+
+explanation: >
+        "This module calculates the Press Schecter mass function given the linear matter power spectrum."
+        
+params:
+        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+        redshift_zero: "Integer. 1 outputs only z=0 mf. 0 outputs mass functions for each Pk in datablock"
+inputs: 
+        matter_power_lin:
+                k: "real 1D array, sample values of linear spectrum in Mpc/h"
+                z: "real 1D array, redshift of linear spectrum samples"
+                P: "real 2D array, linear spectrum in (Mpc/h)^{-3} "
+
+outputs:
+        mass_function:
+                r_h: "real 1D array, R in (h^-1 Mpc) "
+                m_h: "real 1D array, mass in (omega_matter h^-1 M_solar)"
+                dndlnrh: "real 2D array,  dn/dlnRh (h^3 Mpc^-3)"
+                dndlnmh: "real 2D array, dn/dlnMh (h^3 Mpc^-3) "
