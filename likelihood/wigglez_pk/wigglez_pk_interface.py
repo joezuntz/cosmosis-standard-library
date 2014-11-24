@@ -9,6 +9,7 @@ DEFAULT_DATA_DIRNAME=os.path.join(SCRIPT_DIRNAME, "data")
 
 
 def setup(options):
+	raise ValueError("The WiggleZ code is not yet complete due to the NL power handling")
 	data_dir = options.get_string(option_section, "data_dir", default=DEFAULT_DATA_DIRNAME)
 	root_dir = options.get_string(option_section, "root_dir", default=SCRIPT_DIRNAME)
 	common = os.path.join(data_dir, "wigglez_nov11_common.dataset")
