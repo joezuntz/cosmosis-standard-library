@@ -1,4 +1,4 @@
-from cosmosis import option_section
+from cosmosis.datablock import option_section
 
 def setup(options):
 	source = str(options[option_section, "source"])
