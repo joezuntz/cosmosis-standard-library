@@ -47,7 +47,7 @@ def dvdzdndmint(zz,Mmin,Mmax,omega_matter,h0,interp_da,rbs):
 def dVcdz(z,omega_matter,h0,interp_da):
 	c_light = 3.e5 #km/s
 	da_z= interp_da(z)
-	return c_light/(h0*100.0)*(da_z**2)*(1.0+z)**2/(np.sqrt(omega_matter*(1.0+z)**3 + (1.0 - omega_matter)))*(h0**3) # (Mpc/h)^3
+	return 4.0*np.pi*c_light/(h0*100.0)*(da_z**2)*(1.0+z)**2/(np.sqrt(omega_matter*(1.0+z)**3 + (1.0 - omega_matter)))*(h0**3) # (Mpc/h)^3
 
 def execute(block, config):
 	# Configuration data, read from ini file above
