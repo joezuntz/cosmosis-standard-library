@@ -87,11 +87,11 @@ def execute(block, config):
 	#specified maximum mass
 	if output_pdf:
 		for i,mm in enumerate(minput):
-			FFm = frac/ntot*scipy.integrate.quad(
+			FFm = 1.0/ntot*scipy.integrate.quad(
 				dvdzdndmint, zmin, zmax,
 				args=(Mmin,mm,omega_matter,h0,interp_da,rbs),
 				epsrel=1e-6, epsabs=0)[0]
-			fm = frac/ntot*(scipy.integrate.quad(
+			fm = 1.0/ntot*(scipy.integrate.quad(
 				dvdm_zint, zmin, zmax,
 				args=(mm,omega_matter,h0,interp_da,rbs),
 				epsrel=1e-6, epsabs=0)[0])
@@ -102,9 +102,9 @@ def execute(block, config):
 		block[evs, 'm'] = minput
 
 	#Always genereate the log-likelihood of M_max
-	FFm = frac/ntot*scipy.integrate.quad(dvdzdndmint,zmin,zmax,args=(Mmin,maxmass,omega_matter,h0,interp_da,rbs),epsrel=1e-6,epsabs = 0)[0]
+	FFm = 1.0/ntot*scipy.integrate.quad(dvdzdndmint,zmin,zmax,args=(Mmin,maxmass,omega_matter,h0,interp_da,rbs),epsrel=1e-6,epsabs = 0)[0]
 
-	fm = frac/ntot*(scipy.integrate.quad(dvdm_zint,zmin,zmax,args=(maxmass,omega_matter,h0,interp_da,rbs),epsrel=1e-6,epsabs = 0)[0])
+	fm = 1.0/ntot*(scipy.integrate.quad(dvdm_zint,zmin,zmax,args=(maxmass,omega_matter,h0,interp_da,rbs),epsrel=1e-6,epsabs = 0)[0])
 	
 	LogLike = np.log(NUM*fm) + (NUM-1)*np.log(FFm)
 
