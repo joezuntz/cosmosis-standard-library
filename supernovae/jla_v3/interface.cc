@@ -137,7 +137,9 @@ int execute(cosmosis::DataBlock * block, void * config){
 
 	// Evaluate our theory mu(z) for each supernova
 	for (int i=0; i<n_sn; i++){
-		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL);
+		double z_helio = calculator->lcpars[i].zhel;
+		double helio_correction = 5*(log10(1+z_helio) - log10(1+z_sn[i]));
+		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL) + helio_correction;
 	}
 
 	gsl_spline_free(mu_of_z);

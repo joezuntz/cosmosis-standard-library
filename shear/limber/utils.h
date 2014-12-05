@@ -18,6 +18,25 @@ void reverse(double * x, int n);
 
 
 Interpolator2D * 
-load_interpolator(c_datablock * block, gsl_spline * chi_of_z_spline, 
+load_interpolator(c_datablock * block,
 	const char * section,
 	const char * k_name, const char * z_name, const char * P_name);
+
+
+Interpolator2D * 
+load_interpolator_chi(c_datablock * block, gsl_spline * chi_of_z,
+	const char * section,
+	const char * k_name, const char * z_name, const char * P_name);
+
+Interpolator2D * 
+load_interpolator_function(c_datablock * block, 
+	const char * section,
+	const char * k_name, const char * z_name, const char * P_name,
+	interp2d_modifier_function function, void * args);
+
+Interpolator2D * 
+load_interpolator_chi_function(c_datablock * block, 
+	gsl_spline * chi_of_z_spline,
+	const char * section, 
+	const char * k_name, const char * z_name, const char * P_name,
+	interp2d_modifier_function function, void * args);

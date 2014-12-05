@@ -1,0 +1,5 @@
+The modules in this section do not do science, or compute results - they are
+utility modules for managing more complex pipelines and shuffling data around.
+
+More straightforward pipelines should not have to use them.
+
