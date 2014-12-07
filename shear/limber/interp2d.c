@@ -4,7 +4,7 @@
 
 
 
-Interpolator2D * load_interp_2d(const char * filename, int N1, int N2)
+Interpolator2D * load_interp_2d_file(const char * filename, int N1, int N2)
 {
   FILE * infile = fopen(filename,"r");
 

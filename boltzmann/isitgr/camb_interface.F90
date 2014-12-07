@@ -3,7 +3,7 @@ module camb_interface_tools
 	use cosmosis_modules
 	implicit none
 
-	character(*), parameter :: modified_gravity_section = "modified_gravity"
+	character(*), parameter :: modified_gravity_section = post_friedmann_parameters_section
 
 	integer :: standard_lmax = 1200
 	integer, parameter :: CAMB_MODE_ALL = 1
