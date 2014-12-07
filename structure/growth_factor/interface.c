@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../../cosmosis/datablock/c_datablock.h"
-#include "../../cosmosis/datablock/section_names.h"
+#include "cosmosis/datablock/c_datablock.h"
+#include "cosmosis/datablock/section_names.h"
 #include "growthfactor.h"
 
 

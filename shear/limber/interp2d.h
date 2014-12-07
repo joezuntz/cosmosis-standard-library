@@ -24,6 +24,16 @@ Interpolator2D * init_interp_2d_akima(double *x1, double *x2, double *y, int N1,
 Interpolator2D * init_interp_2d_grid(double *x1, double *x2, double **y, int N1, int N2, const gsl_interp_type *T);
 Interpolator2D * init_interp_2d_akima_grid(double *x1, double *x2, double **y, int N1, int N2);
 
+Interpolator2D * init_interp_2d_function(double *x1, double *x2, double *y, 
+  int N1, int N2, const gsl_interp_type *T, interp2d_modifier_function function, void * args);
+Interpolator2D * init_interp_2d_akima_function(double *x1, double *x2, double *y, 
+  int N1, int N2, interp2d_modifier_function function, void * args);
+Interpolator2D * init_interp_2d_grid_function(double *x1, double *x2, double **y, 
+  int N1, int N2, const gsl_interp_type *T, interp2d_modifier_function function, void * args);
+Interpolator2D * init_interp_2d_akima_grid_function(double *x1, double *x2, 
+  double **y, int N1, int N2, interp2d_modifier_function function, void * args);
+
+
 void destroy_interp_2d(Interpolator2D * interp2d);
 double interp_2d(double x1, double x2, Interpolator2D * interp2d);
 Interpolator2D * load_interp_2d_file(const char * filename, int N1, int N2);
