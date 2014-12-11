@@ -342,7 +342,7 @@ module camb_interface_tools
 				modgrav, "b0", lambda1_2)
 			lambda1_2 = (lambda1_2*(299792458.d-3)**2)/(2.d0*p%H0**2)
 			B2 = 0.5d0
-			lambda2_2 = B1* lambda1_2
+			lambda2_2 = B1 * lambda1_2
 			ss = 4.d0
 
 		else if (model ==5) then
@@ -581,7 +581,7 @@ module camb_interface_tools
 		endif
 
 
-		status = datablock_put_double_grids(block, modified_gravity_section, &
+		status = datablock_put_double_grids(block, post_friedmann_parameters_section, &
         	"k_h", k, "z", z, "D", ModifiedGravity_D, "Q", ModifiedGravity_Q)
 
 		if (status .ne. 0) then
