@@ -8,7 +8,6 @@ Uses function tpstat_via_hankel from Martin Kilbinger's nicaea 2.5
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 
 const char * shear_xi = SHEAR_XI_SECTION;
