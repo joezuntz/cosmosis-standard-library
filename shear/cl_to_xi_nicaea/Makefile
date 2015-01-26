@@ -5,6 +5,8 @@ USER_CFLAGS=-I${GSL_INC} -Wno-deprecated-declarations -I${FFTW_INCLUDE_DIR}
 
 OBJS = io.c errorlist.c maths.c cl_to_xi_interface.c
 
+all: nicaea_interface.so
+
 nicaea_interface.so: $(OBJS)
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
