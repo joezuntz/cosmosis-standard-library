@@ -5,7 +5,7 @@ struct cosmo{
   double wa;
   double wm;
   double wb;
-} mycosmo;
+};
 
 
 double hubble(struct cosmo mycosmo, double a);

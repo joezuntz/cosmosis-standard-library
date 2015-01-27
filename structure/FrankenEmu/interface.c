@@ -55,7 +55,7 @@ void* setup(c_datablock * options){
     status |= c_datablock_get_double_default(options, OPTION_SECTION, "dz", 0.01, &(config->dz));
 
     if (status){
-        fprintf(stderr,"Please set an integer nz and double jz in FrankenEmu.\n");
+        fprintf(stderr,"Please set an integer nz and double dz in FrankenEmu.\n");
         exit(1);
     }
     config->output_type=default_output_type;
