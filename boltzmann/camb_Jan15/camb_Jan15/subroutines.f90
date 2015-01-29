@@ -49,7 +49,7 @@
 
 
  !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        function rombint2(f,a,b,tol, maxit, minsteps)
+        function rombint2(f,a,b,tol, maxit, minsteps, status)
         use precision
 !  Rombint returns the integral from a to b of using Romberg integration.
 !  The method converges provided that f(x) is continuous in (a,b).
@@ -69,6 +69,7 @@
      
         integer :: nint, i, k, jmax, j
         real(dl) :: h, gmax, error, g, g0, g1, fourj
+        integer, optional :: status
       
         h=0.5d0*(b-a)
         gmax=h*(f(a)+f(b))
@@ -109,12 +110,13 @@
         if (i > maxit .and. abs(error) > tol)  then
           write(*,*) 'Warning: Rombint2 failed to converge; '
           write (*,*)'integral, error, tol:', rombint2,error, tol
+          if (present(status)) status=1
         end if
         
         end function rombint2
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        function rombint(f,a,b,tol)
+        function rombint(f,a,b,tol,status)
         use Precision
 !  Rombint returns the integral from a to b of using Romberg integration.
 !  The method converges provided that f(x) is continuous in (a,b).
@@ -131,6 +133,7 @@
         real(dl), intent(in) :: a,b,tol
         integer :: nint, i, k, jmax, j
         real(dl) :: h, gmax, error, g, g0, g1, fourj
+        integer, optional :: status
 !
 
         h=0.5d0*(b-a)
@@ -171,6 +174,7 @@
         if (i.gt.MAXITER.and.abs(error).gt.tol)  then
           write(*,*) 'Warning: Rombint failed to converge; '
           write (*,*)'integral, error, tol:', rombint,error, tol
+          if (present(status)) status=1
         end if
         
         end function rombint
@@ -367,6 +371,7 @@
 !This version is modified to pass an object parameter to the function on each call
 !Fortunately Fortran doesn't do type checking on functions, so we can pretend the
 !passed object parameter (EV) is any type we like. In reality it is just a pointer.
+
       subroutine dverk (EV,n, fcn, x, y, xend, tol, ind, c, nw, w)
       use Precision
       use AMLUtils
@@ -1120,8 +1125,10 @@
   500 continue
 !
 
-      write (*,*) 'Error in dverk, x =',x, 'xend=', xend
-      call MpiStop()
+      write (*,*) 'Error in dverk, x =',x, 'xend=', xend, " ind = ", ind
+      if (ind>0) ind=-6
+      return
+!      call MpiStop()
 !
 !  end abort action
 !

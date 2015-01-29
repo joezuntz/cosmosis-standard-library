@@ -1,0 +1,14 @@
+diff -Nur camb_Nov13_orig/modules.f90 camb_Nov13/modules.f90
+--- camb_Nov13_orig/modules.f90	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/modules.f90	2014-05-10 19:49:54.000000000 -0500
+@@ -1085,7 +1085,9 @@
+ 
+     subroutine Init_Cls
+ 
+-    call CheckLoadedHighLTemplate
++    ! COSMOSIS - only call CheckLoadedHighLTemplate when use_spline_template true
++    !call CheckLoadedHighLTemplate
++    if (use_spline_template) call CheckLoadedHighLTemplate
+     if (CP%WantScalars) then
+         if (allocated(Cl_scalar)) deallocate(Cl_scalar)
+         allocate(Cl_scalar(lmin:CP%Max_l, CP%InitPower%nn, C_Temp:C_last))

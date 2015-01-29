@@ -58,7 +58,7 @@
     !Nu_best: automatically use mixture which is fastest and most accurate
 
     integer, parameter :: max_Nu = 5 !Maximum number of neutrino species
-    integer, parameter :: max_transfer_redshifts = 150
+    integer, parameter :: max_transfer_redshifts = 500 ! COSMOSIS - alter number of transfer redshifts
     integer, parameter :: fileio_unit = 13 !Any number not used elsewhere will do
     integer, parameter :: outNone=1
 
@@ -252,13 +252,13 @@
     subroutine CAMBParams_Set(P, error, DoReion)
     use constants
     type(CAMBparams), intent(in) :: P
-    real(dl) GetOmegak, fractional_number, conv
+    real(dl) fractional_number, conv
     integer, optional :: error !Zero if OK
     logical, optional :: DoReion
     logical WantReion
     integer nu_i,actual_massless
     real(dl) nu_massless_degeneracy, neff_i
-    external GetOmegak
+    !external GetOmegak
     real(dl), save :: last_tau0
     !Constants in SI units
 
@@ -328,7 +328,7 @@
         CP%MassiveNuMethod = Nu_trunc
     end if
 
-    CP%omegak = GetOmegak()
+    !CP%omegak = GetOmegak()
 
     CP%flat = (abs(CP%omegak) <= OmegaKFlat)
     CP%closed = CP%omegak < -OmegaKFlat
@@ -391,6 +391,12 @@
             ! print *, 'chi = ',  (CP%tau0 - TimeOfz(0.15_dl)) * CP%h0/100
             last_tau0=CP%tau0
             if (WantReion) call Reionization_Init(CP%Reion,CP%ReionHist, CP%YHe, akthom, CP%tau0, FeedbackLevel)
+
+            ! COSMOSIS - add global error check
+            if (global_error_flag/=0) then
+                if (present(error)) error = global_error_flag
+                return
+            end if
         end if
     else
         CP%tau0=last_tau0
@@ -517,13 +523,20 @@
     real(dl), optional, intent(in) :: in_tol
     real(dl) dtauda, rombint !diff of tau w.CP%r.t a and integration
     external dtauda, rombint
+    ! COSMOSIS - add status return to rombint
+    integer status
 
     if (present(in_tol)) then
         atol = in_tol
     else
         atol = tol/1000/exp(AccuracyBoost-1)
     end if
-    DeltaTime=rombint(dtauda,a1,a2,atol)
+    !DeltaTime=rombint(dtauda,a1,a2,atol)
+
+    ! COSMOSIS - add status return to rombint
+    status=0
+    DeltaTime=rombint(dtauda,a1,a2,atol, status)
+    if (status/=0) call GlobalError(" DeltaTime failed to do the time integral (bad parameters?)", error_evolution)
 
     end function DeltaTime
 
@@ -1097,7 +1110,9 @@
 
     subroutine Init_Cls
 
-    call CheckLoadedHighLTemplate
+    ! COSMOSIS - only call CheckLoadedHighLTemplate when use_spline_template true
+    !call CheckLoadedHighLTemplate
+    if (use_spline_template) call CheckLoadedHighLTemplate
     if (CP%WantScalars) then
         if (allocated(Cl_scalar)) deallocate(Cl_scalar)
         allocate(Cl_scalar(lmin:CP%Max_l, CP%InitPower%nn, C_Temp:C_last))
