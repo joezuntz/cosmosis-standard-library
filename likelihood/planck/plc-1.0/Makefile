@@ -265,7 +265,7 @@ CLIKLKL_F90:= $(ACTSPTLKL) $(CAMSPECLKL) $(GIBBSLKL) $(LOWLIKELKL)
 CLIKLIB := $(TOOLS) $(CLIKMAIN) $(CLIKLKL) $(CLIKLKL_F90) $(LENSLKL) $(LAPACKDEP)
 
 
-all: $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO) $(BDIR)/clik_example_C $(BDIR)/clik_example_f90
+all: $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO)
 
 install_dir: 
 	@mkdir -p $(PREFIX)/bin
