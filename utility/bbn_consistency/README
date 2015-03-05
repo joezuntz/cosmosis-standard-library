@@ -1,0 +1,12 @@
+Sets the helium mass fraction (YHe) from the mean baryon density (ombh2)
+and number of neutrinos (delta_neff), based on a table interpolation.
+
+This module should go into the pipeline after consistency and
+before any physics modules. It's effectively an optional consistency module.
+
+These are the ini file settings:
+
+[bbn_consistency]
+file = cosmosis-standard-library/utility/bbn_consistency/bbn_consistency.py
+data = cosmosis-standard-library/utility/bbn_consistency/helium.dat
+
