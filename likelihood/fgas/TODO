@@ -1,0 +1,7 @@
+Angular diameter distance between 2 redshifts. Needs to be implemented in COSMOSIS.
+
+Eliminate constants in favor of setting them consistently with the rest of COSMOSIS. (Pass them to the fgas library code also.)
+
+Eliminate own implementation of rho_crit(z).
+
+Eliminate own interpolation of d(z), H(z).
