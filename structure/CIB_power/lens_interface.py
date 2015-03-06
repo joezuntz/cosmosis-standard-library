@@ -25,7 +25,7 @@ def setup(options):
     llmax = options.get_double(option_section, "llmax", default=3.5)
     dlnl = options.get_double(option_section, "dlnl", default=.1)
     print 'setup point'
-    blockname = options.get_string(option_section, "matter_power", default="matter_power_lin")
+    blockname = options.get_string(option_section, "matter_power", default="matter_power_nl")
     lbins = np.arange(llmin, llmax, dlnl)
     lbins = 10. ** lbins
     return (lbins, blockname)
@@ -71,7 +71,7 @@ def execute(block, config):
 
     lkern = lens_kern.kern(zdist, omega_m, h0, xlss)
 
-    zmax = 30.
+    zmax = 6.
     zmin = 0.
     cl = np.zeros(np.size(lbins))
     for i, l in enumerate(lbins):
