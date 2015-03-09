@@ -7,8 +7,6 @@ You want to return a spline which is what is needed for limber.
 
 
 '''
-import numpy as np
-import scipy
 
 
 class kern():
@@ -35,3 +33,15 @@ class kern():
         wa = dndz[0, :] * b
         # Think about the H(z)/c factor which is a dchi/dz
         was = interp1d(zdndz, wa)
+
+
+import numpy as np
+import scipy
+
+
+def chiint(z, omegam, h0):
+    chiint = 3000. / np.sqrt(omegam * (1. + z) ** 3 + (1. - omegam))
+    return chiint
+
+
+class kern():

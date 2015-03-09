@@ -21,12 +21,8 @@ class kern():
         wb = np.zeros(np.size(zdist))
         # use the z's from the P(k,z) array
         zmax = zdist[np.size(zdist) - 1]
-        zcmb = 1089.
         # set the last scattering comoving distance
-        # chicmb = xlss*h0/100. #convert in Mpc h^-1 units
-        # print chicmb
-        chicmb = scipy.integrate.quad(chiint, 0., zcmb, args=(omm, h0))[0]
-        # print chicmb
+        chicmb = xlss #convert in Mpc h^-1 units
         # built the kernel
         for i, z in enumerate(zdist):
             z = z + .001
