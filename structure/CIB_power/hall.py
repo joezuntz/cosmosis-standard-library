@@ -50,15 +50,20 @@ class ssed_kern():
         self.zmax = zmax
         self.nu = nu
         self.b = b
+        self.h0 = h0
         self.jbar_kwargs = jbar_kwargs
         self.ssed_kwargs = ssed_kwargs
+        self.chispline=chispline
 
         for i, z in enumerate(zdist):
             wb[i] = 1. / (1. + z) * self.b * jbar(self.nu, z, chispline(z),
                                                   ssed_kwargs=self.ssed_kwargs, **self.jbar_kwargs) / h0 ** 3
-
         self.w = wb
         self.w_interp = scipy.interpolate.interp1d(zdist, wb)
+
+    def w_lxz(self, l, x, z):
+        return 1. / (1. + z) * self.b * jbar(self.nu, z, self.chispline(z),
+                                             ssed_kwargs=self.ssed_kwargs, **self.jbar_kwargs) / self.h0 ** 3
 
     # Ref: Hall et. al. Eq. 5. Cl = int dz 1/H(z)/chi(z)^2 (ab j(\nu, z))^2 P_lin(l/chi,z)
     #     return 1./(1.+z) * self.b * jbar(self.nu, z, x, ssed_kwargs=self.ssed_kwargs, **self.jbar_kwargs)
