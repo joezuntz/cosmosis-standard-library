@@ -33,14 +33,11 @@ class kern():
         self.zmax = zmax
         self.dzispline = dzispline
 
-        # for i, z in enumerate(zdist):
-        #     wa[i] = 3. * omm / 3000. ** 2 * util.tcmb * 1.e6 * \
-        #         (dzispline.derivative(1)(z) * (1. + z) / dzispline(z) + 1.)
 
-        # # Think about the H(z)/c factor which is a dchi/dz
-        # self.w_interp = scipy.interpolate.interp1d(zdist, wa)
 
     def w_lxz(self, l, x, z):
+
+        print l,x,z,(self.dzispline.derivative(1)(z)) / self.dzispline(z)
         return 3. * (1. + z) * self.omm / (3000. ** 2) * (x / (l+0.5)) ** 2 * \
             (self.dzispline.derivative(1)(z)) / self.dzispline(z)
 

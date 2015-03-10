@@ -22,38 +22,34 @@ cosmo = names.cosmological_parameters
 distances = names.distances
 
 
-
-def cl_limber_x(z_chi,p_kz, l, k1, k2=None, xmin=0.0, xmax=13000. ):
+def cl_limber_x(z_chi, p_kz, l, k1, k2=None, xmin=0.0, xmax=13000.):
     """ calculate the cross-spectrum at multipole l between kernels k1 and k2 in the limber approximation.
     the distance integral is performed from conformal distance xmin to xmax (both in Mpc). """
-    if k2 == None: k2 = k1
+    if k2 == None:
+        k2 = k1
 
     def integrand(x):
         z = z_chi(x)
-        return 1./x**2 * k1.w_lxz(l,x,z) * k2.w_lxz(l,x,z) * self.p_kz(l/x, z)
+        return 1. / x ** 2 * k1.w_lxz(l, x, z) * k2.w_lxz(l, x, z) * self.p_kz(l / x, z)
 
-    return scipy.integrate.quad( integrand, xmin, xmax, limit=100 )[0]
+    return scipy.integrate.quad(integrand, xmin, xmax, limit=100)[0]
 
-def cl_limber_z( chi_z, hspline ,rbs, l, k1, k2=None, zmin=0.0, zmax=1100. ):
+
+def cl_limber_z(chi_z, hspline, rbs, l, k1, k2=None, zmin=0.0, zmax=1100.):
     """ calculate the cross-spectrum at multipole l between kernels k1 and k2 in the limber approximation.
     the distance integral is performed from redshifts zmin to zmax. """
 
     #  TODO check the H factor.
 
-    if k2 == None: k2 = k1
+    if k2 == None:
+        k2 = k1
 
     def integrand(z):
-
         x = chi_z(z)
-        return 1./x**2 / hspline(z) * k1.w_lxz(l,x,z) * k2.w_lxz(l,x,z) * rbs.ev((l+0.5)/x, z)
+        # print 'hspline',hspline(z)
+        return 1. / x ** 2 * hspline(z) * k1.w_lxz(l, x, z) * k2.w_lxz(l, x, z) * rbs.ev((l + 0.5) / x, z)
 
-
-    return scipy.integrate.quad( integrand, zmin, zmax, limit=100 )[0]
-
-
-
-
-
+    return scipy.integrate.quad(integrand, zmin, zmax, limit=100)[0]
 
 
 def powerspec(k, z, rbs):
@@ -62,7 +58,7 @@ def powerspec(k, z, rbs):
 
 def clint(z, l, hspline, chispline, wa, wb, rbs):
 
-    k = (l+0.5) / chispline(z)
+    k = (l + 0.5) / chispline(z)
     tmp = wa(z) * wb(z) * powerspec(k, z, rbs) / chispline(z) ** 2. / hspline(z)
     return tmp
 
@@ -121,7 +117,7 @@ def execute(block, config):
     d_z = block['growth_parameters', "d_z"]
     f_z = block['growth_parameters', "f_z"]
     z_growth = block['growth_parameters', "z"]
-    dzispline = InterpolatedUnivariateSpline(z_growth , d_z * (1.+ z_growth), k=5)
+    dzispline = InterpolatedUnivariateSpline(z_growth, d_z * (1. + z_growth), k=5)
     fzispline = InterpolatedUnivariateSpline(z_growth, f_z, k=5)
     # =======================
 
@@ -161,7 +157,7 @@ def execute(block, config):
 
     for i, l in enumerate(lbins):
 
-        cl[i] = cl_limber_z( chispline, hspline ,rbs, l, k1=ikern, k2=ikern, zmin=0., zmax=10. )
+        cl[i] = cl_limber_z(chispline, hspline, rbs, l, k1=ikern, k2=ikern, zmin=0., zmax=10.)
     # =======================
     # SAVE IN DATABLOCK
 
