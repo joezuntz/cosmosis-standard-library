@@ -128,21 +128,24 @@ def execute(block, config):
     # now in units of h^{-1} Mpc or the inverse
     chispline = interp1d(zdist, d_m)
     hspline = interp1d(zdist, h)
-    # =======================
-    # DEFINE KERNEL
-    lkern = cib_hall.ssed_kern(h0, zdist, chispline, nu, jbar_kwargs={'zc': 2.0})
 
+    kern = cib_hall.ssed_kern(h0, zdist, chispline, nu, jbar_kwargs={'zc': 2.0})
     cl = np.zeros(np.size(lbins))
 
     # COMPUTE CLs
     # =======================
 
-    for i, l in enumerate(lbins):
-        # cl[i] = scipy.integrate.quad(
-        #     clint, zmin, zmax, limit=100,  args=(l, hspline, chispline, lkern.w_interp, lkern.w_interp, rbs))[0]
+    # for i, l in enumerate(lbins):
+    #     cl[i] = scipy.integrate.quad(
+    #         clint, zmin, zmax, limit=100,  args=(l, hspline, chispline, kern.w_interp, kern.w_interp, rbs))[0]
+    #     print cl[i]
+    #     cl[i] = cl_limber_z( chispline, hspline ,rbs, l, kern, k2=None, zmin=0.1, zmax=10. )
+    #     print cl[i]
+    #     print ""
 
-        cl[i] = cl_limber_z( chispline, hspline ,rbs, l, lkern, k2=None, zmin=0.1, zmax=10. )
+    # print cl
 
+    cl = [cl_limber_z( chispline, hspline ,rbs, l, kern, k2=None, zmin=0.1, zmax=10. ) for l in lbins]
 
     # =======================
     # SAVE IN DATABLOCK
