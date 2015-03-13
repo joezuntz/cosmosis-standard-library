@@ -13,24 +13,7 @@ EVERYTHING IS IN h UNITS
 '''
 
 
-class kern():
 
-    '''
-     Galaxies KERNEL (h units):
-
-    Args:
-
-        zdndz: galaxies redshift distribution
-        dndz: chi(z) spline comiving distance as a function redshift
-        omm: Omega matter
-        h0: Hubble constant
-
-    Return:
-
-        kern().w_lxz: kernel for limber integral
-
-
-   '''
 
 
 class kern():
@@ -70,8 +53,6 @@ class kern():
 
     def w_lxz(self, l, x, z):
         '''
-        KAPPA CMB KERNEL (h units):
-
         Galaxies KERNEL (h units):
 
         w = dN/dz * b(z)
