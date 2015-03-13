@@ -2,8 +2,6 @@
 
 Compute CIB cl, using Hall model, the single-spectra-energy-distribution (SSED) model of the  from Hall et. al. 2010 (arxiv:0912.4315)
 
-
-
 '''
 
 
@@ -120,8 +118,8 @@ def execute(block, config):
     tmp = d_m[::-1]
     d_m = tmp
     # =======================
+    lbins = np.arange(10,2000,100)
 
-    lbins = np.arange(1000, 6000, 500)
     # These have dimensions of Mpc; change to h^{-1} Mpc
     d_m *= h0
     h /= h0
@@ -143,10 +141,12 @@ def execute(block, config):
     #     print cl[i]
     #     print ""
 
-    # print cl
 
     cl = [cl_limber_z( chispline, hspline ,rbs, l, kern, k2=None, zmin=0.1, zmax=10. ) for l in lbins]
 
+
+
+    print cl
     # =======================
     # SAVE IN DATABLOCK
 

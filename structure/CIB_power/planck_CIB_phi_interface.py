@@ -1,9 +1,11 @@
 from cosmosis.datablock import names, option_section
 import numpy as np
-import kappa_cmb_kern
+import lensing_cmb_kernel as lens
+import hall as cib_hall
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline, interp1d
 import sys
+# import pylab as plt
 # We have a collection of commonly used pre-defined block section names.
 # If none of the names here is relevant for your calculation you can use any
 # string you want instead.
@@ -13,8 +15,7 @@ distances = names.distances
 # TODO
 
 
-
-def cl_limber_x(z_chi, p_kz, l, k1, k2=None, xmin=0.0, xmax=13000.):
+def cl_limber_x(z_chi, hspline ,rbs, l, k1, k2=None, xmin=0.0, xmax=13000.):
     """ calculate the cross-spectrum at multipole l between kernels k1 and k2 in the limber approximation.
     the distance integral is performed from conformal distance xmin to xmax (both in Mpc). """
     if k2 == None:
@@ -51,23 +52,30 @@ def setup(options):
     dlnl = options.get_double(option_section, "dlnl", default=.1)
     zmin = options.get_double(option_section, "zmin", default=1e-2)
     zmax = options.get_double(option_section, "zmax",
-                              default=10.)
+                              default=15.)
 
     # Frequency of the CIB
     # you can pass an array but they have to be separated by commas  " , "
 
-    nu= options[option_section, "nu"]
-    nu=np.fromstring(nu, dtype=float, sep=',')
+    nu = options[option_section, "nu"]
+    # nu = np.fromstring(nu, dtype=float, sep=',')
     zc = options.get_double(option_section, "zc", default=2.)
     zs = options.get_double(option_section, "zs", default=2.)
     b = options.get_double(option_section, "b", default=1.)
-    sys.exit()
 
-    blockname = options.get_string(option_section, "matter_power", default="matter_power_nl")
+    blockname = options.get_string(option_section, "matter_power", default="matter_power_lin")
     # blockname = options.get_string(option_section, "matter_power", default="matter_power_nl")
     # maybe the suffix for saving the spectra
     # zmax (or take it from CAMB)
     # maybe choose between kappa and others
+
+    print 'llmin = ', llmin
+    print 'llmax = ', llmax
+    print 'dlnl = ', dlnl
+    print 'nu = ', nu
+    print 'matter_power = ', blockname
+    print ' '
+
     lbins = np.arange(llmin, llmax, dlnl)
     lbins = 10. ** lbins
     return (lbins, blockname, zmin, zmax, nu, zc, zs, b)
@@ -76,7 +84,6 @@ def setup(options):
 def execute(block, config):
     # Just a simple rename for clarity.
     lbins, blockname, zmin, zmax, nu, zc, zs, b = config
-
 
     # LOAD POWER
     # =======================
@@ -117,34 +124,30 @@ def execute(block, config):
     xlss *= h0
     # now in units of h^{-1} Mpc or the inverse
     chispline = interp1d(zdist, d_m)
+    z_chi_spline = interp1d(d_m, zdist)
     hspline = interp1d(zdist, h)
 
     # =======================
     # DEFINE KERNEL
-    chs   = [ ('857',     '350',    1.e-6/np.sqrt(4.99),   'orange', 1.),
-          ('545',     '550',    1.e-6/np.sqrt(3391.5), 'blue', 10**3),
-          ('353',     '850',    1.e-6/np.sqrt(83135.), 'magenta', 10**5),
-          ('217',    '1380',    1.e-6/np.sqrt(231483), 'green') , 2*10**6]#
+    chs = [('857',     '350',    1.e-6 / np.sqrt(4.99),   'orange', 1.),
+           ('545',     '550',    1.e-6 / np.sqrt(3391.5), 'blue', 10 ** 3),
+           ('353',     '850',    1.e-6 / np.sqrt(83135.), 'magenta', 10 ** 5),
+           ('217',    '1380',    1.e-6 / np.sqrt(231483), 'green'), 2 * 10 ** 6]
 
-    lkern = kappa_cmb_kern.kern(zdist, omega_m, h0, xlss)
+    lbins = np.arange(10, 2000, 100)
 
+    lkern = lens.kern(zdist, omega_m, h0, xlss)
+    j2k = 1.e-6 / np.sqrt(4.99)
     cl = np.zeros(np.size(lbins))
+    print nu
+    cl = [0.1 * 1e6 * l ** 3 * j2k * b * cl_limber_x(z_chi_spline, hspline, rbs, l, cib_hall.ssed_kern(
+        h0, zdist, chispline, nu, jbar_kwargs={'zc': 2.0, 'sigmaz': zs}), lkern, xmax=chispline(zmax)) / np.sqrt(2.4) for l in lbins]
 
-
-
-
-    for i, l in enumerate(lbins):
-        cl[i] = cl_limber_z(chispline, hspline, rbs, l, cib_hall.ssed_kern(h0, zdist, chispline, nu, jbar_kwargs={'zc': 2.0, 'sigmaz': zs}), lkern, zmin=zmin, zmax=zmax)
-        print cl[i]
-        print ""
-
-
-    cl = [cl_limber_z(chispline, hspline, rbs, l, cib_hall.ssed_kern(h0, zdist, chispline, nu, jbar_kwargs={'zc': 2.0, 'sigmaz': zs}), lkern, zmin=zmin, zmax=zmax) for l in lbins]
     # =======================
     # SAVE INTO DATABLOCK
-
+    print cl
     section = "limber_spectra"
-    block[section, "cl_kappa"] = cl
-    block[section, "l_kappa"] = lbins
+    block[section, "cl_PHI_CIB_857"] = cl
+    block[section, "ells"] = lbins
 
     return 0

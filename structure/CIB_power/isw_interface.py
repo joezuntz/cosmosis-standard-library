@@ -1,6 +1,6 @@
 '''
 
-Compute CIB cl, using Hall model, the single-spectra-energy-distribution (SSED) model of the  from Hall et. al. 2010 (arxiv:0912.4315)
+Compute ISW cl
 
 
 
@@ -69,23 +69,26 @@ def setup(options):
     llmin = options.get_double(option_section, "llmin", default=1.)
     llmax = options.get_double(option_section, "llmax", default=3.)
     dlnl = options.get_double(option_section, "dlnl", default=.1)
+    # redshift intervals integrals
     zmin = options.get_double(option_section, "zmin", default=1e-2)
     zmax = options.get_double(option_section, "zmax", default=10.)
-    # Frequency of the CIB
+
     # What matter power spectrum to use, linear Halofit etc
     blockname = options.get_string(option_section, "matter_power", default="matter_power_lin")
 
     print 'llmin = ', llmin
     print 'llmax = ', llmax
     print 'dlnl = ', dlnl
+    print 'zmin ', zmin
+    print 'zmax = ', zmax
+
     print 'matter_power = ', blockname
     print ' '
-
- #  the cib has a lot of parameter for the spectra ssed etc we can get them optionally here
 
     # maybe the suffix for saving the spectra
     # zmax (or take it from CAMB)
     # maybe choose between kappa and others
+
     lbins = np.arange(llmin, llmax, dlnl)
     lbins = 10. ** lbins
     return (lbins, blockname, zmin, zmax)
@@ -95,10 +98,8 @@ def execute(block, config):
     # Just a simple rename for clarity.
     lbins, blockname, zmin, zmax = config
 
-    # lbins = np.array([
-    #                820, 840, 860, 880])
-
     # LOAD POWER
+
 
     zpower = block[blockname, "z"]
     kpower = block[blockname, "k_h"]
@@ -155,11 +156,11 @@ def execute(block, config):
     # COMPUTE CLs
     # =======================
 
-    for i, l in enumerate(lbins):
-
-        cl[i] = cl_limber_z(chispline, hspline, rbs, l, k1=ikern, k2=ikern, zmin=0., zmax=10.)
+    cl = [cl_limber_z(chispline, hspline, rbs, l, k1=ikern, k2=ikern, zmin=0., zmax=10.) for l in lbins]
     # =======================
     # SAVE IN DATABLOCK
+
+    print cl
 
     section = "limber_spectra"
     block[section, "cl_cib"] = cl

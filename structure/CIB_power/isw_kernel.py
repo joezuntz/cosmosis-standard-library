@@ -38,8 +38,12 @@ class kern():
     def w_lxz(self, l, x, z):
 
         print l,x,z,(self.dzispline.derivative(1)(z)) / self.dzispline(z)
+        # yhe 1/ho**3 is coming as in CIB_kernel hall.py to compensate for the h factor.
+        # TODO recheck and be sure or, formulate the code to be h independent (no division by h and check hspline the is maybe alrady divided)
         return 3. * (1. + z) * self.omm / (3000. ** 2) * (x / (l+0.5)) ** 2 * \
-            (self.dzispline.derivative(1)(z)) / self.dzispline(z)
+            (self.dzispline.derivative(1)(z)) / self.dzispline(z)/ self.h0 ** 3
+
+
 
 # ============================================================
 # ============================================================

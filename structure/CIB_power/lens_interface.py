@@ -1,6 +1,7 @@
 from cosmosis.datablock import names, option_section
 import numpy as np
-import kappa_cmb_kern
+# import kappa_cmb_kern as lens
+import lensing_cmb_kernel as lens
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline, interp1d
 
@@ -107,20 +108,17 @@ def execute(block, config):
     chispline = interp1d(zdist, d_m)
     hspline = interp1d(zdist, h)
 
-    lkern = kappa_cmb_kern.kern(zdist, omega_m, h0, xlss)
+    lkern = lens.kern(zdist, omega_m, h0, xlss)
 
-    zmax = 6.
+    zmax = 15.
     zmin = 0.
+    lbins = [  10,  110,  210,  310,  410,  510,  610,  710,  810,  910, 1010,
+       1110, 1210, 1310, 1410, 1510, 1610, 1710, 1810, 1910]
     cl = np.zeros(np.size(lbins))
-    for i, l in enumerate(lbins):
-        # cl[i] = scipy.integrate.quad(
-        #     clint, zmin, zmax, args=(l, hspline, chispline, lkern.w_interp, lkern.w_interp, rbs))[0]
-        # print cl[i]
-        cl[i] = cl_limber_z(chispline, hspline, rbs, l, lkern, k2=None, zmin=zmin, zmax=zmax)
-        print cl[i]
-        print ""
 
+    cl = [cl_limber_z(chispline, hspline, rbs, l, lkern, k2=None, zmin=zmin, zmax=zmax)for l in lbins]
 
+    print cl
     # =======================
     # SAVE INTO DATABLOCK
 
