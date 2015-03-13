@@ -1,5 +1,18 @@
 '''
+
+CIB Hall
+
+Part of a series of external utils that creates kernels for Limber integrals. This one is for CIB.
+
  Implementation of the single-spectra-energy-distribution (SSED) model of the  from Hall et. al. 2010 (arxiv:0912.4315)
+
+
+You want to return a spline function W(l,chi,z) with l multipole chi comiving distance z redsfhit which is what is needed for limber.
+
+EVERYTHING IS IN h UNITS
+
+
+
 '''
 
 import numpy as np

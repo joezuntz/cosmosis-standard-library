@@ -10,7 +10,7 @@ Compute ISW cl
 from cosmosis.datablock import names, option_section
 import numpy as np
 import isw_kernel
-import lens_kern
+import llensing_cmb_kernel
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline, interp1d, InterpolatedUnivariateSpline
 

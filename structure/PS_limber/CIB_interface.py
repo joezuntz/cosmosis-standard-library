@@ -7,7 +7,7 @@ Compute CIB cl, using Hall model, the single-spectra-energy-distribution (SSED) 
 
 from cosmosis.datablock import names, option_section
 import numpy as np
-import hall as cib_hall
+import hall_CIB_kernel as cib_hall
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline, interp1d
 import time
