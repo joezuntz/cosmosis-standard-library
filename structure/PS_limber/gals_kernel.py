@@ -4,7 +4,7 @@ Galaxies PS
 
 Use it as a template for specific galaxies
 
-Part of a series of external utils that creates kernels for Limber integrals. This one is for Galaxies in general.\
+Part of a series of external utils that creates kernels for Limber integrals. This one is for Galaxies in general.
 
 You want to return a spline function W(l,chi,z) with l multipole chi comiving distance z redsfhit which is what is needed for limber.
 
@@ -12,13 +12,15 @@ EVERYTHING IS IN h UNITS
 
 '''
 
-
+import numpy as np
+import scipy
 
 
 
 class kern():
 
     def __init__(self, zdist, dndzfun, omm, h0, b=1.):
+
         '''
         Galaxies KERNEL (h units):
 
