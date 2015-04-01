@@ -76,6 +76,9 @@ def setup(options):
 	#stack and build KDE
 	data = np.hstack(data)
 	kde = gaussian_kde(data)
+	print
+	print "The Planck 2015 chain KDE code has not been tested at all." 
+	print
 	return {'kde':kde, 'cols':cols}
 
 
