@@ -70,7 +70,7 @@ int execute(c_datablock * block, void * config_in)
 	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
 	// Load the number of redshift bins
-	status |= c_datablock_get_int(block, wl_nz, "nbin", &num_z_bin);
+	status |= c_datablock_get_int(block, shear_cl, "nbin", &num_z_bin);
 	//Also load ell array
 	double * ell;
 	
