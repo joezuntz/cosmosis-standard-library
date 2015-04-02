@@ -227,6 +227,7 @@ int choose_kernels(spectrum_type_t spectrum_type, int nbin, gsl_spline * W[nbin]
 			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = Nchi[b];};
 			break;
 		case shear_intrinsic:
+			// This is actually IG rather than GI
 			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = W[b];};
 			break;
 		case intrinsic_intrinsic:
