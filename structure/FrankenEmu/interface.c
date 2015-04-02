@@ -98,14 +98,14 @@ int execute(c_datablock * block, emu_options * config) {
     // Convert to the form used in the distance calculator
     struct cosmo mycosmo={ h0, xstar[4], 0.0, xstar[1], xstar[0]};
 
-
+    double h3 = h0*h0*h0;
     // Run once for each redshift we want
     for (i=0; i<config->nz; i++){
         xstar[6] = z[i];
         a[i] = 1.0/(1.0+z[i]);
         // Run the emulator to get P(k,z)
         status |= emu(xstar, ystar, &(config->output_type));
-        for (j=0; j<nk; j++) PK[i][j] = ystar[nk+j];
+        for (j=0; j<nk; j++) PK[i][j] = ystar[nk+j]*h3;
 
         // Also useful to save comoving and angular diameter distances
         h_z[i] = hubble(mycosmo, a[i]) / c_kms; // Convert to (Mpc/c)^{-1}
