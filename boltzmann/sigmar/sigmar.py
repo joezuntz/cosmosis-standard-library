@@ -23,7 +23,8 @@ def setup(options):
 	return (z, R, blockname)
 
 def powerspec(k,z, rbs):
-	return rbs.ev(k,z)[0]
+	return rbs.ev(k,z)
+	#[0]
 		
 def sigint(lnk,r,z,rbs):
 	k=np.exp(lnk)
@@ -38,7 +39,7 @@ def execute(block, config):
 	zarray=block[blockname,"z"]
 	karray=block[blockname,"k_h"]
 	powerarray=block[blockname,"p_k"].reshape([np.size(zarray),np.size(karray)]).T
-			
+
 	rbs = RectBivariateSpline(karray,zarray,powerarray)
 
 	kmin_overall = np.log(karray.min())
