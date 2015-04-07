@@ -1,12 +1,14 @@
 from cosmosis.datablock import names, option_section
 import numpy as np
 from scipy import interpolate
+import os
 
 cosmo = names.cosmological_parameters
-
+dirname = os.path.split(__file__)[0]
 def setup(options):
+    default_datafile = os.path.join(dirname, "helium.dat")
     #File name for BBN data
-    datafile = options[option_section, "data"]
+    datafile = options.get_string(option_section, "data", default=default_datafile)
     #Load and spline data
     dat = np.genfromtxt(datafile, names=True, comments='#')
     spline = interpolate.bisplrep(dat['ombh2'], dat['DeltaN'], dat['Yp'])
