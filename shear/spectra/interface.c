@@ -153,11 +153,26 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 	// First we need to decide whether to use logs in the splines.
 	// This is more accurate, but we cannot use it for cross-spectra
 	// since they can go negative.
-
-	if (spectrum_type==shear_shear || spectrum_type==matter_matter || 
-		spectrum_type==intrinsic_intrinsic){
+        // Also, can't use for intrinsic_intrinsic if A=0 (i.e. zero signal)
+	if (spectrum_type==intrinsic_intrinsic) {
+	        double A;
+	        int status = c_datablock_get_double(block, "intrinsic_alignment_parameters", "A", &A);
+		double eps=1e-9;
+		if ( A>-1*eps && A<eps){
+		  lc->xlog=false;
+		  lc->ylog=false;
+		}
+		else {
+		  lc->xlog=true;
+		  lc->ylog=true;		  
+		}
+		    
+	}
+	
+	if (spectrum_type==shear_shear || spectrum_type==matter_matter){
 		lc->xlog=true;
 		lc->ylog=true;
+		
 	}
 	else{
 		lc->xlog=false;
