@@ -1,3 +1,6 @@
+#ifndef _H_LIMBER_UTILS
+#define _H_LIMBER_UTILS
+
 #include "gsl/gsl_spline.h"
 #include "cosmosis/datablock/c_datablock.h"
 #include "interp2d.h"
@@ -40,3 +43,5 @@ load_interpolator_chi_function(c_datablock * block,
 	const char * section, 
 	const char * k_name, const char * z_name, const char * P_name,
 	interp2d_modifier_function function, void * args);
+
+#endif

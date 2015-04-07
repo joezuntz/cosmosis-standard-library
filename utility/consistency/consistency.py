@@ -32,9 +32,18 @@ here. See the global variables for the structure.
 """
 
 from numpy import nan, isnan, allclose
+import re
 
-def cosmology_consistency(verbose=False):
-	return Consistency(COSMOLOGY_CONSISTENCY_RELATIONS, COSMOLOGY_POSSIBLE_DEFAULTS, verbose)
+def cosmology_consistency(verbose=False, relations_file=""):
+	if relations_file:
+		relation_lines = open(relations_file).readlines()
+		relations = [line.strip().split('=') for line in relation_lines if line.strip()]
+		for relation in relations:
+			relation[0] = re.sub(r'\.([^0-9])',r'___\1', relation[0])
+			relation[1] = re.sub(r'\.([^0-9])',r'___\1', relation[1])
+	else:
+		relations = COSMOLOGY_CONSISTENCY_RELATIONS
+	return Consistency(relations, COSMOLOGY_POSSIBLE_DEFAULTS, verbose)
 
 COSMOLOGY_CONSISTENCY_RELATIONS = [
 	("omega_m", "ommh2/h0/h0"),

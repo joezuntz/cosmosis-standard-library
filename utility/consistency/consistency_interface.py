@@ -3,7 +3,8 @@ import consistency
 
 def setup(options):
     verbose = options.get_bool(option_section, "verbose", default=False)
-    cons = consistency.cosmology_consistency(verbose)
+    relations_file = options.get_string(option_section, "relations_file", default="")
+    cons = consistency.cosmology_consistency(verbose, relations_file)
     return cons
 
 def execute(block, config):
@@ -13,8 +14,13 @@ def execute(block, config):
     #Create dict of all parameters that we have already
     known_parameters = {}
     for param in cons.parameters:
-        if block.has_value(cosmo, param):
-            known_parameters[param] = block[cosmo,param]
+        if '___' in param:
+            section, lookup_param = param.split('___')
+        else:
+            section = cosmo
+            lookup_param = param
+        if block.has_value(section, lookup_param):
+            known_parameters[param] = block[section,lookup_param]
 
     if cons.verbose:
         print "Consistency relation input parameters:", ', '.join(known_parameters.keys())
@@ -36,7 +42,11 @@ def execute(block, config):
 
     #Set or replace the new values
     for param, value in filled_parameters.items():
-        block[cosmo,param] = value
+        if '___' in param:
+            section, param = param.split('___')
+        else:
+            section = cosmo
+        block[section,param] = value
 
     return 0
 

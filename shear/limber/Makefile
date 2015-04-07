@@ -5,7 +5,7 @@ $(error To compile the limber code you you must activate the UPS package gsl or 
 endif
 
 USER_CFLAGS=-I ${GSL_INC} 
-USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas -lcosmosis
+USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas -lcosmosis -lm
 
 AR = ar rc
 
