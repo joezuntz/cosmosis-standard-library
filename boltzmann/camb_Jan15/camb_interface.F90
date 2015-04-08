@@ -496,6 +496,7 @@ module camb_interface_tools
 
 			status = status + datablock_put_double(block, dist, &
 				"RS_ZDRAG", ThermoDerivedParams( derived_rdrag ))
+			status = status + datablock_put_metadata(block, dist, "RS_ZDRAG", "unit", "Mpc")
 
 			!There is an 
 			status = status + datablock_put_double(block, dist, &
@@ -505,12 +506,45 @@ module camb_interface_tools
 			status = status + datablock_put_double(block, dist, &
 				"ZDRAG", ThermoDerivedParams( derived_zdrag ))
 
+
+			status = status + datablock_put_double(block, dist, &
+				"K_D", ThermoDerivedParams( derived_kD ))
+			status = status + datablock_put_metadata(block, dist, "K_D", "unit", "1/Mpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_D", ThermoDerivedParams( derived_thetaD ))
+			status = status + datablock_put_metadata(block, dist, "THETA_D", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"Z_EQUALITY", ThermoDerivedParams( derived_zEQ ))
+
+			status = status + datablock_put_double(block, dist, &
+				"K_EQUALITY", ThermoDerivedParams( derived_keq ))
+			status = status + datablock_put_metadata(block, dist, "K_EQUALITY", "unit", "1/Mpc")
+
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_EQUALITY", ThermoDerivedParams( derived_thetaEQ ))
+			status = status + datablock_put_metadata(block, dist, "THETA_EQUALITY", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_RS_EQUALITY", ThermoDerivedParams( derived_theta_rs_EQ ))
+			status = status + datablock_put_metadata(block, dist, "THETA_RS_EQUALITY", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"DA_STAR", ThermoDerivedParams( derived_DAstar ))
+			status = status + datablock_put_metadata(block, dist, "DA_STAR", "unit", "Gpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"R_STAR", ThermoDerivedParams( derived_rstar ))
+			status = status + datablock_put_metadata(block, dist, "R_STAR", "unit", "Mpc")
+
 			status = status + datablock_put_double(block, dist, &
 				"ZSTAR", ThermoDerivedParams( derived_zstar ))
 
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
-			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Gyr")
+			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Myr")
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))
