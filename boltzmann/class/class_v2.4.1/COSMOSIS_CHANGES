@@ -1,0 +1,13 @@
+I had to make a few changes to the code to generate what we needed for cosmosis:
+
+parser.h: 
+	increase _LINE_LENGTH_MAX_ and _ARGUMENT_LENGTH_MAX_ to 4096 so that we can specify a longer list of redshift values.
+
+
+output.h:
+	increase _Z_PK_NUM_MAX_ to 500 to allow more redshift values
+
+
+Makefile: 
+	general fiddles to use variables from the top-level Makefile.
+
