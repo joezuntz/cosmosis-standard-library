@@ -211,10 +211,10 @@ module camb_interface_tools
 
 		status = status + datablock_get_double_default(block, cosmo, "cs2_de", default_cs2de, cs2_lam)
 		status = status + datablock_get_double_default(block, cosmo, "yhe", default_yhe, params%yhe)
-		status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 
 		if (params%omegan .ne. 0) then
 			status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
+			status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 			status = status + datablock_get_int_default(block, cosmo, "massive_nu", default_massive_nu, params%Num_Nu_massive)
 
 			!  We have coded for two massive neturino scenarios so far:
@@ -476,12 +476,12 @@ module camb_interface_tools
 		nz = params%transfer%num_redshifts
 		allocate(distance(nz))
 		allocate(z(nz))
-		if (density) allocate(rho(nz))
+		!if (density) allocate(rho(nz))
 
 		do i=1,nz
 			z(i) = params%transfer%redshifts(i)
 			distance(i) = AngularDiameterDistance(z(i))
-			if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
+			!if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
 		enddo
 		
 
@@ -496,6 +496,7 @@ module camb_interface_tools
 
 			status = status + datablock_put_double(block, dist, &
 				"RS_ZDRAG", ThermoDerivedParams( derived_rdrag ))
+			status = status + datablock_put_metadata(block, dist, "RS_ZDRAG", "unit", "Mpc")
 
 			!There is an 
 			status = status + datablock_put_double(block, dist, &
@@ -505,12 +506,45 @@ module camb_interface_tools
 			status = status + datablock_put_double(block, dist, &
 				"ZDRAG", ThermoDerivedParams( derived_zdrag ))
 
+
+			status = status + datablock_put_double(block, dist, &
+				"K_D", ThermoDerivedParams( derived_kD ))
+			status = status + datablock_put_metadata(block, dist, "K_D", "unit", "1/Mpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_D", ThermoDerivedParams( derived_thetaD ))
+			status = status + datablock_put_metadata(block, dist, "THETA_D", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"Z_EQUALITY", ThermoDerivedParams( derived_zEQ ))
+
+			status = status + datablock_put_double(block, dist, &
+				"K_EQUALITY", ThermoDerivedParams( derived_keq ))
+			status = status + datablock_put_metadata(block, dist, "K_EQUALITY", "unit", "1/Mpc")
+
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_EQUALITY", ThermoDerivedParams( derived_thetaEQ ))
+			status = status + datablock_put_metadata(block, dist, "THETA_EQUALITY", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_RS_EQUALITY", ThermoDerivedParams( derived_theta_rs_EQ ))
+			status = status + datablock_put_metadata(block, dist, "THETA_RS_EQUALITY", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"DA_STAR", ThermoDerivedParams( derived_DAstar ))
+			status = status + datablock_put_metadata(block, dist, "DA_STAR", "unit", "Gpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"R_STAR", ThermoDerivedParams( derived_rstar ))
+			status = status + datablock_put_metadata(block, dist, "R_STAR", "unit", "Mpc")
+
 			status = status + datablock_put_double(block, dist, &
 				"ZSTAR", ThermoDerivedParams( derived_zstar ))
 
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
-			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Gyr")
+			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Myr")
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))
@@ -542,10 +576,10 @@ module camb_interface_tools
 		status = status + datablock_put_double_array_1d(block, dist, "H", distance)
 		status = status + datablock_put_metadata(block, dist, "H", "unit", "Mpc/c")
 
-		if (density) then
-			status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)
-			status = status + datablock_put_metadata(block, dist, "RHO", "unit", "KG/M^3")
-		endif
+		!if (density) then
+		!	status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)
+		!	status = status + datablock_put_metadata(block, dist, "RHO", "unit", "KG/M^3")
+		!endif
 
 
 		status = status + datablock_put_int(block, dist, "NZ", nz)
@@ -561,7 +595,7 @@ module camb_interface_tools
 		
 		deallocate(distance)
 		deallocate(z)
-		if (density) deallocate(rho)
+		!if (density) deallocate(rho)
 		
 	end function
 	

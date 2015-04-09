@@ -1,5 +1,5 @@
 name: camb
-version: Nov13
+version: Jan15
 purpose: "Boltzmann and background integrator for BG, CMB, and matter power"
 url: http://camb.info
 attribution: [Antony Lewis, Anthony Challinor]
@@ -124,4 +124,4 @@ outputs:
         ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or all"
         bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or all"
         te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or all"
-        PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi / 2 pi. Only if mode=cmb or all"
+        PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi. Only if mode=cmb or all"
