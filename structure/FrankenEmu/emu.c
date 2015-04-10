@@ -33,6 +33,11 @@
 #include "kemu.h"
 #include "ksim.h"
 
+// Some compiler versions do not declare this in math.h
+#ifndef M_PI
+#define M_PI           3.14159265358979323846
+#endif
+
 // Sizes of stuff and number of redshifts
 static int m=137, neta=5500, p=6, peta=9, rs=11, nsim=582;
 // Kriging basis computed by emuInit, sizes should be peta and m
