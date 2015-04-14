@@ -1,12 +1,14 @@
 import os
 from cosmosis.datablock import names, option_section
 import sys
+
 #add class directory to the path
 dirname = os.path.split(__file__)[0]
+#enable debugging from the same directory
 if not dirname.strip(): dirname='.'
 install_dir = dirname+"/class_v2.4.1/classy_install/lib/python2.7/site-packages/"
-print install_dir
 sys.path.insert(0, install_dir)
+
 import classy
 import numpy as np
 
