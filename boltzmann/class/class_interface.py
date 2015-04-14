@@ -3,6 +3,7 @@ from cosmosis.datablock import names, option_section
 import sys
 #add class directory to the path
 dirname = os.path.split(__file__)[0]
+if not dirname.strip(): dirname='.'
 install_dir = dirname+"/class_v2.4.1/classy_install/lib/python2.7/site-packages/"
 print install_dir
 sys.path.insert(0, install_dir)
@@ -19,7 +20,6 @@ def setup(options):
     #Read options from the ini file which are fixed across
     #the length of the chain
     config = {
-        'mode': options[option_section,'mode'],
         'lmax': options.get_int(option_section,'lmax', default=2000),
         'zmax': options.get_double(option_section,'zmax', default=4.0),
         'kmax': options.get_double(option_section,'kmax', default=50.0),
@@ -58,7 +58,7 @@ def get_class_outputs(block, c, config):
     ## Derived cosmological parameters
     ##
 
-    block[cosmo, 'sigma8'] = c.sigma8()
+    block[cosmo, 'sigma_8'] = c.sigma8()
     h0 = block[cosmo, 'h0']
 
     ##
@@ -84,7 +84,7 @@ def get_class_outputs(block, c, config):
             P[i,j] = c.pk(ki,zj)
 
     #Save matter power as a grid
-    block.put_grid("matter_power_lin", "k_h", k*h0, "z", z, "p_k", P)
+    block.put_grid("matter_power_lin", "k_h", k/h0, "z", z, "p_k", P*h0**3)
 
     ##
     ##Distances and related quantities
@@ -96,7 +96,9 @@ def get_class_outputs(block, c, config):
 
     #Save distance samples
     block[distances, 'd_l'] = np.array([c.luminosity_distance(zi) for zi in z])
-    block[distances, 'd_a'] = np.array([c.angular_distance(zi) for zi in z])
+    d_a = np.array([c.angular_distance(zi) for zi in z])
+    block[distances, 'd_a'] = d_a
+    block[distances, 'd_m'] = d_a * (1+z)
 
     #Save some auxiliary related parameters
     block[distances, 'age'] = c.age()
