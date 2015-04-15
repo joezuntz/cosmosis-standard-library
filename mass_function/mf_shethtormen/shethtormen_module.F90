@@ -84,7 +84,7 @@ function execute(block, config) result(status)
                         call deallocate_mf(MassF)
                 end do
                 status =datablock_put_double_grid(block,mass_function_section,"R_H",k,"z",PK%redshifts,"dndlnRh",dr)
-                !status = datablock_put_double_grid(block,mass_function_section,"M_H",m,"z_copy",PK%redshifts,"dndlnMh",dm)
+                status = datablock_put_double_array_1d(block, mass_function_section,"M_H",m)
                 status = datablock_put_double_array_2d(block,mass_function_section,"dndlnMh", dm)
         end if
 

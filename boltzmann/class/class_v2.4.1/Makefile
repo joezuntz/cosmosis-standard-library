@@ -179,7 +179,7 @@ tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(
 	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
 
 classy: libclass.a python/classy.pyx python/cclassy.pxd
-	cd python; $(PYTHON) setup.py install --user
+	cd python; $(PYTHON) setup.py install --prefix=$(MDIR)/classy_install
 
 clean: .base
 	rm -rf $(WRKDIR);
