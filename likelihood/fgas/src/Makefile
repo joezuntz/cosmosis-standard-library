@@ -27,7 +27,7 @@ xray.o: clusters.hpp util.hpp xray.hpp
 
 
 %.o: %.cpp
-	$(CXX) -o $@ -c $(CXXFLAGS) $(INCLUDE) $*.cpp
+	$(CXX) -o $@ -c $(CXXFLAGS) $*.cpp
 
 %.a:
 	rm -f $@; ar -r $@ $(OBJECTS)
