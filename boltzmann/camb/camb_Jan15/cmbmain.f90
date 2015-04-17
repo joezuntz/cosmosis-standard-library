@@ -701,6 +701,9 @@
         SourceNum=3
     end if
 
+    if (allocated(Src)) deallocate(Src)
+    if (allocated(ddSrc)) deallocate(ddSrc)
+
     allocate(Src(Evolve_q%npoints,SourceNum,TimeSteps%npoints))
     Src=0
     allocate(ddSrc(Evolve_q%npoints,SourceNum,TimeSteps%npoints))
