@@ -142,6 +142,8 @@ int execute(cosmosis::DataBlock * block, void * config){
 		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL) + helio_correction;
 	}
 
+	free(z_sn);
+
 	gsl_spline_free(mu_of_z);
 
 	//Get the chi^2 and convert to log-like
