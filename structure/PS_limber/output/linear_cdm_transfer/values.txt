@@ -1,1 +1,0 @@
-_cosmosis_order_delta_cdm = 'z_cosmosis_order_k_h'
