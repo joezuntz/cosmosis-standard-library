@@ -1,0 +1,47 @@
+#This is a template for module description files
+name: suyu_time_delay
+version: 1
+purpose: ""
+url: ""
+attribution: ["I. Balmes & P.S. Corasaniti"]
+rules:
+    ""
+cite:
+    - "http://arxiv.org/pdf/1306.4732v2.pdf and http://arxiv.org/pdf/0910.2773v2.pdf"
+
+assumptions:
+    - ""
+
+explanation: >
+    "
+
+     "
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+    lens_name: "String; dir for data files. "
+    z_d: ""
+    z_s: ""
+    lambda_d: ""
+    mu_d: ""
+    sigma_d: ""
+
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    distances:
+
+        z : "1D real array, redshifts of samples"
+        d_m : "1D real array, co-moving distance in Mpc"
+
+    cosmological_parameters:
+
+        omega_k: "real, curvature density fraction today (default 0.0)"
+        hubble:  "real, hubble parameter H0 (km/s/Mpc)"
+
+
+outputs:
+    likelihoods:
+        balmes_sl_like: "1D real vector, wavenumber in h/Mpc only if mode=power or both"
+

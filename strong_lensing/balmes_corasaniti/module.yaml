@@ -1,0 +1,34 @@
+#This is a template for module description files
+name: balmes
+version: 1
+purpose: ""
+url: ""
+attribution: ["I. Balmes & P.S. Corasaniti"]
+rules:
+    "Please cite the relevant papers if you use this module."
+cite:
+    - "arXiv:1206.5801 "
+
+assumptions:
+    - ""
+
+explanation: >
+    "
+
+     "
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+    data_file: "String; dir for data files. Data file containing 2 columns H0 and P. You should use the file taken from arXiv:1206.5801 and provided in CosmoSIS under the name balmes.txt unless you want to use a different dataset "
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cosmological_parameters:
+        h0:  ""
+
+
+outputs:
+    likelihoods:
+        balmes_sl_like: "1D real vector, wavenumber in h/Mpc only if mode=power or both"
+
