@@ -159,7 +159,7 @@ module camb_interface_tools
  				write(*,*) "high_ell_template = /path/to/cosmosis/src/standard-library/boltzmann/camb/HighLExtrapTemplate_lenspotentialCls.dat"
  			endif
  		endif
-
+ 		
 
 
 		!If noisy, report relevant params
@@ -183,7 +183,7 @@ module camb_interface_tools
 		perturbations = .true.
 		if (present(background_only)) perturbations = .not. background_only
 
-
+	
 		call CAMB_SetDefParams(params)
 		status = 0
 
@@ -193,7 +193,7 @@ module camb_interface_tools
         status = status + datablock_get_double(block, cosmo, "omega_nu", params%omegan)
 		status = status + datablock_get_double(block, cosmo, "omega_k", params%omegak)
 		status = status + datablock_get_double(block, cosmo, "hubble", params%H0)
-
+		
 		if (perturbations) then
 			status = status + datablock_get_double(block, cosmo, "n_s",     params%initpower%an(1))
             status = status + datablock_get_double_default(block, cosmo, "k_s", default_pivot_scalar, params%initpower%k_0_scalar)
@@ -211,10 +211,10 @@ module camb_interface_tools
 
 		status = status + datablock_get_double_default(block, cosmo, "cs2_de", default_cs2de, cs2_lam)
 		status = status + datablock_get_double_default(block, cosmo, "yhe", default_yhe, params%yhe)
-		status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 
 		if (params%omegan .ne. 0) then
 			status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
+			status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 			status = status + datablock_get_int_default(block, cosmo, "massive_nu", default_massive_nu, params%Num_Nu_massive)
 
 			!  We have coded for two massive neturino scenarios so far:
@@ -228,7 +228,7 @@ module camb_interface_tools
 				params%Num_Nu_massive = 2
 				params%nu_mass_degeneracies(1) = 1.0153
 				params%nu_mass_degeneracies(2) = delta_neff
-				params%nu_mass_fractions(1) = (1.0 - sterile_mass_fraction)
+				params%nu_mass_fractions(1) = (1.0 - sterile_mass_fraction) 
 				params%nu_mass_fractions(2) = sterile_mass_fraction
 			elseif (params%Num_Nu_massive == 1) then
 				params%Nu_mass_eigenstates = 1
@@ -268,7 +268,7 @@ module camb_interface_tools
 				write(*,*) "Unphysical w_0 + w_a = ", w_lam, " + ", wa_ppf, " = ", w_lam+wa_ppf, " > 0"
 				status = 1
 			endif
-		endif
+		endif	
 
 		params%wantTransfer = .true.
 		params%transfer%kmax = 50.0
@@ -286,9 +286,9 @@ module camb_interface_tools
 			params%NonLinear=0
 		endif
 
-
-
-		!Some extras and modifications
+	
+	
+		!Some extras and modifications 
 		params%want_zdrag = .true.
 		params%want_zstar = .true.
 		params%reion%use_optical_depth = .true.
@@ -300,7 +300,7 @@ module camb_interface_tools
         params%Transfer%PK_redshifts = 0
 
 	end function
-
+	
 	function camb_interface_setup_zrange(params) result(status)
 		integer(cosmosis_status) :: status
 		type(CambParams) :: params
@@ -319,7 +319,7 @@ module camb_interface_tools
 			write(*,*) "Requested too many redshifts for CAMB to handle: ", nz, " = (", zmax, " - ", zmin, ") / ", dz, " + 1"
 			status = 1
 		endif
-
+		
         do i=1,params%transfer%num_redshifts
 			params%transfer%redshifts(nz-i+1)  = zmin + dz*(i-1)
 	        params%transfer%pk_redshifts(nz-i+1)  = zmin + dz*(i-1)
@@ -333,16 +333,16 @@ module camb_interface_tools
 
 
 	function camb_interface_save_cls(block) result(status)
-
+	
 		integer (cosmosis_block) :: block
 		integer (cosmosis_status) :: status
-
+	
 		integer, parameter :: input_set = 1
 		real  :: cls(2:standard_lmax,1:4)
-		real(8)  :: cls_double(2:standard_lmax,1:4), cls_phi(2:standard_lmax),cls_tphi(2:standard_lmax),cls_ephi(2:standard_lmax)
+		real(8)  :: cls_double(2:standard_lmax,1:4), cls_phi(2:standard_lmax)
 		integer  :: ell(2:standard_lmax), l
-		logical, parameter :: switch_polarization_convention = .false.
-
+		logical, parameter :: switch_polarization_convention = .false.	
+	
 		status = 0
 		call CAMB_GetCls(cls, standard_lmax, input_set, switch_polarization_convention)
 		cls_double(:,1:4) = cls * 7.4311e12  !cmb output scale
@@ -352,12 +352,10 @@ module camb_interface_tools
 
 		if (do_lensing) then
 		    do l=2,standard_lmax
-				cls_phi(l) = Cl_scalar(l, input_set,  C_phi) !* (l* (l+1.0)) / ((l)**4 * twopi)
-				cls_tphi(l) = Cl_scalar(l, input_set,  C_PhiTemp)!* 2.7255e6!*(l* (l+1.0)) / ((l)**3 * twopi)
-				cls_ephi(l) = Cl_scalar(l, input_set,  C_PhiE) !* 2.7255e6 ! * (l* (l+1.0)) / ((l)**3 * twopi)
+				cls_phi(l) = Cl_scalar(l, input_set,  C_phi) * (l+1.0) / ((l*1.0)**3 * twopi)
 			enddo
 		endif
-
+	
 		status = status + datablock_put_int_array_1d(block, cmb_cl_section, "ELL", ell)
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "TT", cls_double(:,1))
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "EE", cls_double(:,2))
@@ -365,11 +363,8 @@ module camb_interface_tools
 		status = status + datablock_put_double_array_1d(block, cmb_cl_section, "TE", cls_double(:,4))
 		if (do_lensing) then
 			status = status + datablock_put_double_array_1d(block, cmb_cl_section, "PP", cls_phi)
-			status = status + datablock_put_double_array_1d(block, cmb_cl_section, "PT", cls_tphi)
-			status = status + datablock_put_double_array_1d(block, cmb_cl_section, "PE", cls_ephi)
-
 		endif
-
+	
 		if (status .ne. 0) then
 			write(*,*) "Failed to save cmb!."
 			return
@@ -388,7 +383,7 @@ module camb_interface_tools
 		status = 0
 		sigma8=0.0
 		call Transfer_Get_sigma8(MT,radius8)
-
+		
 		!It gives us the array sigma8(z).
 		!We want the entry for z=0
 		nz = CP%Transfer%num_redshifts
@@ -398,7 +393,7 @@ module camb_interface_tools
 		status = status + datablock_put_double(block, cosmological_parameters_section, "SIGMA_8", sigma8)
 		return
 	end function
-
+	
 	function camb_interface_save_transfer(block) result(status)
 		integer (cosmosis_block) :: block
 		integer (cosmosis_status) :: status
@@ -449,7 +444,7 @@ module camb_interface_tools
 		deallocate(k, z, P, T)
 	end function
 
-
+	
 	function camb_interface_save_da(params, block, save_density, save_thermal) result(status)
 		integer (cosmosis_block) :: block
 		type(CambParams) :: params
@@ -459,7 +454,7 @@ module camb_interface_tools
 		real(8), dimension(:), allocatable :: distance, z, rho
 		character(*), parameter :: dist = distances_section
 		integer nz, i
-
+		
 
 		! Rho as given by the code is actually 8 * pi * G * rho / c**2 , and it is measured in (Mpc)**-2
 		! There really isn't a sensible set of units to do this in, so let's just use kg/m**3
@@ -481,14 +476,14 @@ module camb_interface_tools
 		nz = params%transfer%num_redshifts
 		allocate(distance(nz))
 		allocate(z(nz))
-		if (density) allocate(rho(nz))
+		!if (density) allocate(rho(nz))
 
 		do i=1,nz
 			z(i) = params%transfer%redshifts(i)
 			distance(i) = AngularDiameterDistance(z(i))
-			if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
+			!if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
 		enddo
-
+		
 
 		shift = camb_shift_parameter(params)
 		status = status + datablock_put_double(block, dist, "CMBSHIFT", shift)
@@ -501,8 +496,9 @@ module camb_interface_tools
 
 			status = status + datablock_put_double(block, dist, &
 				"RS_ZDRAG", ThermoDerivedParams( derived_rdrag ))
+			status = status + datablock_put_metadata(block, dist, "RS_ZDRAG", "unit", "Mpc")
 
-			!There is an
+			!There is an 
 			status = status + datablock_put_double(block, dist, &
 				"THETASTAR", ThermoDerivedParams( derived_thetastar ))
 			status = status + datablock_put_metadata(block, dist, "THETASTAR", "unit", "100 radian")
@@ -510,12 +506,45 @@ module camb_interface_tools
 			status = status + datablock_put_double(block, dist, &
 				"ZDRAG", ThermoDerivedParams( derived_zdrag ))
 
+
+			status = status + datablock_put_double(block, dist, &
+				"K_D", ThermoDerivedParams( derived_kD ))
+			status = status + datablock_put_metadata(block, dist, "K_D", "unit", "1/Mpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_D", ThermoDerivedParams( derived_thetaD ))
+			status = status + datablock_put_metadata(block, dist, "THETA_D", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"Z_EQUALITY", ThermoDerivedParams( derived_zEQ ))
+
+			status = status + datablock_put_double(block, dist, &
+				"K_EQUALITY", ThermoDerivedParams( derived_keq ))
+			status = status + datablock_put_metadata(block, dist, "K_EQUALITY", "unit", "1/Mpc")
+
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_EQUALITY", ThermoDerivedParams( derived_thetaEQ ))
+			status = status + datablock_put_metadata(block, dist, "THETA_EQUALITY", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_RS_EQUALITY", ThermoDerivedParams( derived_theta_rs_EQ ))
+			status = status + datablock_put_metadata(block, dist, "THETA_RS_EQUALITY", "unit", "100 radian")
+
+			status = status + datablock_put_double(block, dist, &
+				"DA_STAR", ThermoDerivedParams( derived_DAstar ))
+			status = status + datablock_put_metadata(block, dist, "DA_STAR", "unit", "Gpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"R_STAR", ThermoDerivedParams( derived_rstar ))
+			status = status + datablock_put_metadata(block, dist, "R_STAR", "unit", "Mpc")
+
 			status = status + datablock_put_double(block, dist, &
 				"ZSTAR", ThermoDerivedParams( derived_zstar ))
 
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
-			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Gyr")
+			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Myr")
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))
@@ -547,10 +576,10 @@ module camb_interface_tools
 		status = status + datablock_put_double_array_1d(block, dist, "H", distance)
 		status = status + datablock_put_metadata(block, dist, "H", "unit", "Mpc/c")
 
-		if (density) then
-			status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)
-			status = status + datablock_put_metadata(block, dist, "RHO", "unit", "KG/M^3")
-		endif
+		!if (density) then
+		!	status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)
+		!	status = status + datablock_put_metadata(block, dist, "RHO", "unit", "KG/M^3")
+		!endif
 
 
 		status = status + datablock_put_int(block, dist, "NZ", nz)
@@ -563,13 +592,13 @@ module camb_interface_tools
 		if (status .ne. 0) then
 			write(*,*) "Failed to write redshift-distance column data in block section."
 		endif
-
+		
 		deallocate(distance)
 		deallocate(z)
-		if (density) deallocate(rho)
-
+		!if (density) deallocate(rho)
+		
 	end function
-
+	
 end module camb_interface_tools
 
 
