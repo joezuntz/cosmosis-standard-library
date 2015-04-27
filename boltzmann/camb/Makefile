@@ -8,7 +8,7 @@ export RECOMBINATION ?= recfast
 
 INTERFACE=camb.so
 CAMBLIB=libcamb_$(RECOMBINATION).a
-CAMBDIR=camb_Nov13
+CAMBDIR=camb_Jan15
 
 all: $(INTERFACE)
 

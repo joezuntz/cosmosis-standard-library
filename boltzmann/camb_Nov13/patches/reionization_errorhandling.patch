@@ -1,0 +1,172 @@
+diff -Nur camb_Nov13_orig/modules.f90 camb_Nov13/modules.f90
+--- camb_Nov13_orig/modules.f90	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/modules.f90	2014-05-10 23:23:10.000000000 -0500
+@@ -390,6 +390,12 @@
+             ! print *, 'chi = ',  (CP%tau0 - TimeOfz(0.15_dl)) * CP%h0/100
+             last_tau0=CP%tau0
+             if (WantReion) call Reionization_Init(CP%Reion,CP%ReionHist, CP%YHe, akthom, CP%tau0, FeedbackLevel)
++
++            ! COSMOSIS - add global error check
++            if (global_error_flag/=0) then
++                if (present(error)) error = global_error_flag
++                return
++            end if
+         end if
+     else
+         CP%tau0=last_tau0
+@@ -516,13 +522,20 @@
+     real(dl), optional, intent(in) :: in_tol
+     real(dl) dtauda, rombint !diff of tau w.CP%r.t a and integration
+     external dtauda, rombint
++    ! COSMOSIS - add status return to rombint
++    integer status
+ 
+     if (present(in_tol)) then
+         atol = in_tol
+     else
+         atol = tol/1000/exp(AccuracyBoost-1)
+     end if
+-    DeltaTime=rombint(dtauda,a1,a2,atol)
++    !DeltaTime=rombint(dtauda,a1,a2,atol)
++
++    ! COSMOSIS - add status return to rombint
++    status=0
++    DeltaTime=rombint(dtauda,a1,a2,atol, status)
++    if (status/=0) call GlobalError(" DeltaTime failed to do the time integral (bad parameters?)", error_evolution)
+ 
+     end function DeltaTime
+ 
+diff -Nur camb_Nov13_orig/reionization.f90 camb_Nov13/reionization.f90
+--- camb_Nov13_orig/reionization.f90	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/reionization.f90	2014-05-10 23:22:29.000000000 -0500
+@@ -2,6 +2,8 @@
+ module Reionization
+  use Precision
+  use AMLutils
++ ! COSMOSIS - access GlobalErrors
++ use Errors
+  implicit none  
+ 
+ !This module puts smooth tanh reionization of specified mid-point (z_{re}) and width
+@@ -152,6 +154,9 @@
+   real(dl), intent(in) :: akthom, tau0, Yhe 
+   integer, intent(in) :: FeedbackLevel
+   real(dl) astart
++  ! COSMOSIS - error check in rombint
++  integer :: status
++  status = 0
+ 
+      ReionHist%akthom = akthom  
+      ReionHist%fHe =  YHe/(mass_ratio_He_H*(1.d0-YHe))
+@@ -193,11 +198,15 @@
+ 
+       !Get relevant times       
+        astart=1.d0/(1.d0+Reion%redshift + Reion%delta_redshift*8)
+-       ReionHist%tau_start = max(0.05_dl, rombint(dtauda,0._dl,astart,1d-3))
++       ! COSMOSIS - error check in rombint
++       ReionHist%tau_start = max(0.05_dl, rombint(dtauda,0._dl,astart,1d-3,status))
++       if (status/=0) call GlobalError("tau_start dtauda integral failed to converge", error_reionization)
+           !Time when a very small reionization fraction (assuming tanh fitting)
+ 
++       ! COSMOSIS - error check in rombint
+        ReionHist%tau_complete = min(tau0, &
+-          ReionHist%tau_start+ rombint(dtauda,astart,1.d0/(1.d0+max(0.d0,Reion%redshift-Reion%delta_redshift*8)),1d-3))
++          ReionHist%tau_start+ rombint(dtauda,astart,1.d0/(1.d0+max(0.d0,Reion%redshift-Reion%delta_redshift*8)),1d-3,status))
++       if (status/=0) call GlobalError("tau_complete dtauda integral failed to converge", error_reionization)
+ 
+     end if   
+        
+@@ -298,7 +307,9 @@
+                   try_b = Reion%redshift
+        end if
+        if (abs(try_b - try_t) < 2e-3/Reionization_AccuracyBoost) exit
+-       if (i>100) call mpiStop('Reionization_zreFromOptDepth: failed to converge')
++       ! COSMOSIS - replace mpiStop error handler
++       !if (i>100) call mpiStop('Reionization_zreFromOptDepth: failed to converge')
++       if (i>100) call GlobalError("Reionization_zreFromOptDepth: failed to converge", error_reionization)
+   end do
+   
+   
+@@ -306,7 +317,9 @@
+     write (*,*) 'Reionization_zreFromOptDepth: Did not converge to optical depth'
+     write (*,*) 'tau =',tau, 'optical_depth = ', Reion%optical_depth
+     write (*,*) try_t, try_b
+-    call mpiStop()
++    ! COSMOSIS - replace mpiStop error handler
++    !call mpiStop()
++    call GlobalError("Reionization_zreFromOptDepth: Did not converge to optical depth", error_reionization)
+   end if
+     
+  end subroutine Reionization_zreFromOptDepth 
+diff -Nur camb_Nov13_orig/subroutines.f90 camb_Nov13/subroutines.f90
+--- camb_Nov13_orig/subroutines.f90	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/subroutines.f90	2014-05-10 23:22:10.000000000 -0500
+@@ -49,7 +49,7 @@
+ 
+ 
+  !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-        function rombint2(f,a,b,tol, maxit, minsteps)
++        function rombint2(f,a,b,tol, maxit, minsteps, status)
+         use precision
+ !  Rombint returns the integral from a to b of using Romberg integration.
+ !  The method converges provided that f(x) is continuous in (a,b).
+@@ -69,6 +69,7 @@
+      
+         integer :: nint, i, k, jmax, j
+         real(dl) :: h, gmax, error, g, g0, g1, fourj
++        integer, optional :: status
+       
+         h=0.5d0*(b-a)
+         gmax=h*(f(a)+f(b))
+@@ -109,12 +110,13 @@
+         if (i > maxit .and. abs(error) > tol)  then
+           write(*,*) 'Warning: Rombint2 failed to converge; '
+           write (*,*)'integral, error, tol:', rombint2,error, tol
++          if (present(status)) status=1
+         end if
+         
+         end function rombint2
+ 
+ !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-        function rombint(f,a,b,tol)
++        function rombint(f,a,b,tol,status)
+         use Precision
+ !  Rombint returns the integral from a to b of using Romberg integration.
+ !  The method converges provided that f(x) is continuous in (a,b).
+@@ -131,6 +133,7 @@
+         real(dl), intent(in) :: a,b,tol
+         integer :: nint, i, k, jmax, j
+         real(dl) :: h, gmax, error, g, g0, g1, fourj
++        integer, optional :: status
+ !
+ 
+         h=0.5d0*(b-a)
+@@ -171,6 +174,7 @@
+         if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+           write(*,*) 'Warning: Rombint failed to converge; '
+           write (*,*)'integral, error, tol:', rombint,error, tol
++          if (present(status)) status=1
+         end if
+         
+         end function rombint
+@@ -367,6 +371,7 @@
+ !This version is modified to pass an object parameter to the function on each call
+ !Fortunately Fortran doesn't do type checking on functions, so we can pretend the
+ !passed object parameter (EV) is any type we like. In reality it is just a pointer.
++
+       subroutine dverk (EV,n, fcn, x, y, xend, tol, ind, c, nw, w)
+       use Precision
+       use AMLUtils
+@@ -1120,8 +1125,10 @@
+   500 continue
+ !
+ 
+-      write (*,*) 'Error in dverk, x =',x, 'xend=', xend
+-      call MpiStop()
++      write (*,*) 'Error in dverk, x =',x, 'xend=', xend, " ind = ", ind
++      if (ind>0) ind=-6
++      return
++!      call MpiStop()
+ !
+ !  end abort action
+ !

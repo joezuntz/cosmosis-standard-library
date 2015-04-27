@@ -1,0 +1,7 @@
+I made a few changes to make FrankenEmu fit into cosmosis a little better:
+
+1. Changed the emu function so it returns an error code instead of quitting when a parameter is out of range.
+
+2. Changed emu function to print out value of parameter that is out of range as well as bounds.
+
+3. Added a hubble.h header with struct and declarations

@@ -18,38 +18,26 @@ class Eggbox(object):
 
     """Adapted from https://github.com/dfm/emcee/blob/master/examples/eggbox.py """
 
-    def __init__(self):
-        self.tmax = 10.0 * np.pi
-        self.constant = np.log(1.0 / (self.tmax * self.tmax))
-
-    def logprior(self, t):
-        if (t[0] > self.tmax or t[0] < -self.tmax or
-           t[1] > self.tmax or t[1] < -self.tmax):
-            return -np.inf
-        else:
-            return self.constant
+    def __init__(self, tmax=10.*np.pi):
+        self.tmax = tmax
 
     def loglhood(self, t):
-        return (2.0 + np.cos(t[0] / 2.0) * np.cos(t[1] / 2.0)) ** 5.0 + self.logprior(t)
+        return (2.0 + np.cos(t[0] / 2.0) * np.cos(t[1] / 2.0)) ** 5.0
 
     def __call__(self, t):
         return self.loglhood(t)
 
 
 def setup(options):
-    return 1
+    tmax = options.get_double(option_section, "tmax", default=10.*np.pi)
+    return Eggbox(tmax)
 
 
-def execute(block, config):
-    # Configuration data, read from ini file above
-    t1 = block[cosmo, 'T1']
-    t2 = block[cosmo, 'T2']
-    print t1, t2
-    t = [t1, t2]
-    eggbox = Eggbox()
-    # compute likelihood
-    like = eggbox.loglhood(t)
-    block[likes, 'EGGBOX_LIKE'] = like
+def execute(block, eggbox):
+    t = [block[cosmo, 'T1'],
+         block[cosmo, 'T2']]
+    block[likes, 'EGGBOX_LIKE'] = eggbox(t)
+    return 0
 
 
 def cleanup(config):

@@ -1,0 +1,6 @@
+# Taken from table 4 in 1301.0358v2. 
+# All numbers have been pre-multiplied by 10^-4
+# as required
+ 2.17898878e-4  -1.11633321e-4   0.46982851e-4
+-1.11633321e-4   1.70712004e-4  -0.71847155e-4
+ 0.46982851e-4  -0.71847155e-4   1.65283175e-4

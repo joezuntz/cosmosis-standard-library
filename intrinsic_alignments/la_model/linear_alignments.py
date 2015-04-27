@@ -43,14 +43,14 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 	# intrinsic-intrinsic term
 	P_II = np.zeros_like(P_nl)
 	for i in xrange(nz):
-		P_II[:,i] = f**2 * P_nl[:,z0]
+		P_II[i] = f**2 * P_nl[z0]
 
 	growth = np.zeros_like(z_nl)
 	ksmall = np.argmin(k_nl)
 	P_GI = np.zeros_like(P_nl)
 	for i in xrange(nz):
-		growth = (P_nl[ksmall,i] / P_nl[ksmall,z0])**0.5
-		P_GI[:,i] = f * P_nl[:,i] / growth
+		growth = (P_nl[i,ksmall] / P_nl[z0,ksmall])**0.5
+		P_GI[i] = f * P_nl[i] / growth
 
 	return P_II, P_GI
 
@@ -61,7 +61,8 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	nz = len(z_nl)
 
 	ksmall = np.argmin(k_nl)
-	growth = (P_nl[ksmall,:] / P_nl[ksmall,z0])**0.5
+	
+	growth = (P_nl[:,ksmall] / P_nl[z0,ksmall])**0.5
 
 	F = - A * C1_RHOCRIT * Omega_m / growth
 
@@ -69,11 +70,11 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	P_II = np.zeros_like(P_nl)
 
 	for i in xrange(nz):
-		P_II[:,i] = F[i]**2 * P_nl[:,i] 
+		P_II[i,:] = F[i]**2 * P_nl[i,:] 
 
 	P_GI = np.zeros_like(P_nl)
 	for i in xrange(nz):
-		P_GI[:,i] = F[i] * P_nl[:,i]
+		P_GI[i] = F[i] * P_nl[i]
 
 	return P_II, P_GI
 
@@ -100,18 +101,18 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	# intrinsic-intrinsic term
 	P_II = np.zeros_like(P_lin)
 	for i in xrange(nz):
-		P_II[:,i] = f**2 * P_lin[:,z0]
+		P_II[i] = f**2 * P_lin[z0]
 
 	#Get linear P(k) at the same sampling as non-linear
 	P_nl_resample = np.zeros_like(P_lin)
 	for i in xrange(nz):
-		log_P_resample = np.interp(np.log(k_lin), np.log(k_nl), np.log(P_nl[:,i]))
-		P_nl_resample[:,i] = np.exp(log_P_resample)
+		log_P_resample = np.interp(np.log(k_lin), np.log(k_nl), np.log(P_nl[i]))
+		P_nl_resample[i] = np.exp(log_P_resample)
 
 	growth = np.zeros_like(P_lin)
 	ksmall = np.argmin(k_lin)
 	for i in xrange(nz):
-		growth[:,i] = (P_lin[ksmall,i] / P_lin[ksmall,z0])**0.5
+		growth[i] = (P_lin[i,ksmall] / P_lin[z0,ksmall])**0.5
 
 	P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 

@@ -1,0 +1,61 @@
+diff -Nur camb_Nov13_orig/Makefile camb_Nov13/Makefile
+--- camb_Nov13_orig/Makefile	2014-05-10 17:59:12.000000000 -0500
++++ camb_Nov13/Makefile	2014-05-10 19:36:33.000000000 -0500
+@@ -1,7 +1,7 @@
+ #CAMB Makefile
+ 
+ #Set FISHER=Y to compile bispectrum fisher matrix code
+-FISHER=
++#FISHER=
+ 
+ #Edit for your compiler
+ #Note there are many old ifort versions, some of which behave oddly
+@@ -9,13 +9,13 @@
+ 
+ #Intel , -openmp toggles mutli-processor:
+ #note version 10.0 gives wrong result for lensed when compiled with -openmp [fixed in 10.1]
+-F90C     = ifort
+-FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
++#F90C     = ifort
++#FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
+ ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):
+-F90CRLINK = -cxxlib
+-ifneq ($(FISHER),)
+-FFLAGS += -mkl
+-endif
++#F90CRLINK = -cxxlib
++#ifneq ($(FISHER),)
++#FFLAGS += -mkl
++#endif
+ 
+ #Gfortran compiler:
+ #The options here work in v4.5, delete from RHS in earlier versions (15% slower)
+@@ -70,10 +70,25 @@
+ 
+ #Settings for building camb_fits
+ #Location of FITSIO and name of library
+-FITSDIR       ?= /home/cpac/cpac-tools/lib
+-FITSLIB       = cfitsio
++#FITSDIR       ?= /home/cpac/cpac-tools/lib
++#FITSLIB       = cfitsio
+ #Location of HEALPIX for building camb_fits
+-HEALPIXDIR    ?= /home/cpac/cpac-tools/healpix
++#HEALPIXDIR    ?= /home/cpac/cpac-tools/healpix
++
++#ifneq ($(FISHER),)
++#FFLAGS += -DFISHER
++#EXTCAMBFILES = Matrix_utils.o
++#else
++#EXTCAMBFILES =
++#endif
++
++include ${COSMOSIS_SRC_DIR}/config/compilers.mk
++
++USER_FFLAGS=-I.
++
++FISHER=
++F90C     = $(FC)
++FITSLIB       = cfitsio
+ 
+ ifneq ($(FISHER),)
+ FFLAGS += -DFISHER
