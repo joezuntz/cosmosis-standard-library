@@ -36,6 +36,8 @@ def execute(block, config):
 	ell = block[section, "ell"]
 	nbin = block[section, 'nbin']
 	block[output_section, "theta"] = thetas
+	block[output_section, 'nbin'] = nbin
+
 	block.put_metadata(output_section, "theta", "unit", "radians")
 
 	for i in xrange(1,nbin+1):

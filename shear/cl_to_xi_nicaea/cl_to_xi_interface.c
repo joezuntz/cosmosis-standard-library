@@ -181,6 +181,7 @@ int execute(c_datablock * block, void * config_in)
 				       tpstat, &P_projected_logl, i_bin, j_bin, &err);		  
 		}
 			//Now save to block
+		c_datablock_put_int(block, shear_xi, "nbin", num_z_bin);
 		c_datablock_put_double_array_1d(block, shear_xi, name_xip,
                   xi[0], N_thetaH);
 		c_datablock_put_double_array_1d(block, shear_xi, name_xim,
