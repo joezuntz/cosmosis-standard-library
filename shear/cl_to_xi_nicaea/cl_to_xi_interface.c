@@ -126,7 +126,6 @@ int execute(c_datablock * block, void * config_in)
 			    neg_vals += 1;
 			  }		  
     		}		
-      	       	printf("neg_vals=%d\n",neg_vals);
 
 		if (neg_vals == 0) {
 		    cl_table = init_interTable(n_ell, log_ell_min, log_ell_max, 
@@ -182,7 +181,6 @@ int execute(c_datablock * block, void * config_in)
 				       tpstat, &P_projected_logl, i_bin, j_bin, &err);		  
 		}
 			//Now save to block
-		printf("\n");
 		c_datablock_put_double_array_1d(block, shear_xi, name_xip,
                   xi[0], N_thetaH);
 		c_datablock_put_double_array_1d(block, shear_xi, name_xim,
