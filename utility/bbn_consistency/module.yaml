@@ -1,0 +1,39 @@
+#This is a template for module description files
+name: "BBN-Consistency"
+version: "0705.0290"
+purpose: "Compute consistent Helium fraction from baryon density given BBN"
+url: "http://parthenope.na.infn.it/"
+attribution: [CosmoSIS Team]
+rules: []
+cite: ["Comp.Phys.Commun.178:956-971,2008"]
+
+assumptions:
+    - "Standard Big Bang Nucleosynthesis"
+
+explanation: >
+    "
+    The Big Bang Nucleosynthesis model describes how the 
+    light elements were generated in the primordial universe.  For a given
+    value of Omega_b h**2 and number of neutrinos the theory can predict
+    the helium abundance.
+
+    This module sets the helium mass fraction (YHe) from the mean baryon density (ombh2)
+    and number of neutrinos (delta_neff), based on a table interpolation from those calculations.
+
+    This module should go into the pipeline after consistency and
+    before any physics modules. It's effectively an optional consistency module.
+
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    data: "string. Filename for ombh2,DeltaN,YHe data. (default=included file)"
+
+inputs:
+    cosmological_parameters:
+        ombh2: "real, physical matter density parameter"
+        delta_neff: "real, optional. Extra contribution to neutrino number density"
+
+outputs:
+    cosmological_parameters:
+        yhe: "real, cosmological helium fraction"
