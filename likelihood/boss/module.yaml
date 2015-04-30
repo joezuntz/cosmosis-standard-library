@@ -31,7 +31,7 @@ inputs:
                 sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
                 bias:  "real, galaxy bias "
                 h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
-        distance_parameters:
+        distances:
                 z: "1D real array, redshifts of samples"
                 d_a: "1D real array, angular diameter distance in Mpc"
                 h:  "1D real array, hubble parameter with in units of Mpc"
