@@ -1,0 +1,44 @@
+#This is a template for module description files
+name: cl_to_xi_nicaea
+version: "1.0"
+purpose: "Compute WL correlation functions xi+, xi- from C_ell"
+url: ""
+attribution: [Martin Kilbinger, Nicaea Team]
+rules: ""
+cite: []
+
+assumptions:
+    - "Input C_ell sufficiently well-sampled over standard pre-defined range"
+
+explanation: >
+    "
+    The correlation functions are related to the spectra via Bessel functions:
+    xi_{(+/-)}(theta) = \int_0^\infty C_\ell J_{(0,4)}(\ell \theta) \ell d\ell / 2\pi
+
+    In this module that integral is done via a Hankel Transform.
+
+    This module is a part of the Nicaea code, with the interface written by Niall
+    Maccrann.  It avoids the ringing problems of the alternative cl_to_xi code but
+    generates results only on a fixed range in theta .
+
+    The output theta values will always be from about 2.0e-07 to 1.0e+04 radians, but
+    only in part of that regime, from about 1 to a few hundred arcmin, will the results
+    be numerically valid.  The input ell must include the corresponding range, and
+    will be extrapolated linearlly before that and cubically after it.
+
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params: {}
+
+inputs:
+    shear_cl:
+        ell: "Sample ell values for output C_ell"
+        nbin: "Number of redshift bins used"
+        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only need j<=i."
+
+outputs:
+    shear_xi:
+        theta: "Sample theta values for output xi(theta)"
+        xiplus_i_j: "xi_plus(theta) (auto-correlation) bin i and j. Only stores j<=i."
+        ximinus_i_j: "xi_minus(theta) (auto-correlation) bin i and j. Only stores j<=i."
