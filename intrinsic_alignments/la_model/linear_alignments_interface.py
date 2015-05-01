@@ -32,7 +32,6 @@ def execute(block, config):
 	#p_nl = p_nl.reshape((z_nl.size, k_nl.size)).T
 	z_lin,k_lin,p_lin=block.get_grid(lin,"z","k_h","p_k")
 	z_nl,k_nl,p_nl=block.get_grid(nl,"z","k_h","p_k")
-	print z_lin.shape,k_lin.shape,p_lin.shape
 
 	omega_m = block[cosmo, "omega_m"]
 	A = block[ia, "A"]

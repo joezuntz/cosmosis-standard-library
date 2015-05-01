@@ -29,7 +29,7 @@ def compute_c1_baseline():
 
 #in units of rho_crit0
 C1_RHOCRIT = compute_c1_baseline()
-print "C1_RHOCRIT = ", C1_RHOCRIT
+#print "C1_RHOCRIT = ", C1_RHOCRIT
 
 
 def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):

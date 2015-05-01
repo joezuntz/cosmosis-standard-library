@@ -1,0 +1,68 @@
+#This is a template for module description files
+name: linear_alignments
+version: "1.0"
+purpose: "Compute the terms P_II and P_GI which go into intrinsic aligment calculations"
+url: ""
+attribution: [CosmoSIS team, Donnacha Kirk]
+rules: ""
+cite: ["MNRAS 424 3 1647 (2012)", "New J Phys 9 12 444 (2007)"]
+
+assumptions:
+    - "Uses one of three models for how matter power is turned into intrinsic alignments"
+
+explanation: >
+    "
+    Intrinsic alignment refers to the extent to which galaxies align in the sky,
+    before any alignment induced by gravitational lensing.  It is a systematic
+    error contribution to cosmic shear measurements and is predicted here in the form
+    of two power spectra, one for the alignments, P_II, and one for the alignment-shear
+    correlations, P_GI.
+
+    In the original Linear Alignment model it was assumed that alignments among
+    galaxies were laid down early in the evolution of structure, and then (on average)
+    did not vary since.  The amount of alignment on a given scale was then related
+    to the linear power spectrum at that scale.
+
+    The P_II and P_GI power is described in terms of a power spectrum, integrated over
+    with a Limber integral in a similar way to the shear power spectrum. This code
+    does not do that integral, it just calculates P_II and P_GI.
+
+    A number of variations to the LA model have been discussed since, and this module
+    implements three of them.  The history is a little convoluted as an error was found
+    in early work missing a factor of (1+z), so one of our models is a corrected version
+    of one of the other ones.  Our models are:
+        Bridle & King
+        Bridle & King (corrected)
+        Kirk, Rassat, Host, Bridle
+
+    See these papers for details of these models.
+
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    method: "string, choice of 'bk', 'bk_corrected', 'krhb', chooses which model to run"
+
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cosmological_parameters:
+        omega_m:  "Real; density fraction of all matter."
+    intrinsic_alignment_parameters:
+        A: "real; single parameter scaling power spectra"
+    matter_power_nl:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
+        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"
+    matter_power_lin:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
+        P_k: "real 2d array; nonlinear matter power spectrum at samples in (Mpc/h)^{-3}"
+
+outputs:
+    intrinsic_alignment_parameters:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
+        P_II: "real 2d array; spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}"
+        P_GI: "real 2d array; spectrum of shear-intrinsic power at samples in (Mpc/h)^{-3}"
