@@ -4,7 +4,9 @@ purpose: "Likelihood of galaxy cluster gas-mass fractions"
 url: "http://www.slac.stanford.edu/~amantz/work/fgas14/"
 attribution: [Adam Mantz]
 rules: "MIT license"
-cite: "Mantz et al., MNRAS, 440:2077 (2014); http://arxiv.org/abs/1402.6212"
+cite:
+    - "Mantz et al., MNRAS, 440:2077 (2014)"
+    - "http://arxiv.org/abs/1402.6212"
 assumptions: ""
 explanation: >
     Cluster gas mass fractions are a standard quantity whose value is related
@@ -27,24 +29,24 @@ params:
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
     cosmological_parameters:
-        baryon_fraction: real, cosmic baryon mass fraction
-        yhe:  real, primordial helium mass fraction
+        baryon_fraction: "real, cosmic baryon mass fraction"
+        yhe:  "real, primordial helium mass fraction"
     distances:
-        z: real array, redshift
-        D_A: real array, angular diameter distance
-        D_L: real array, luminosity distance
-        H: real array, Hubble parameter
+        z: "real 1D array, redshift"
+        D_A: "real 1D array, angular diameter distance"
+        D_L: "real 1D array, luminosity distance"
+        H: "real 1D array, Hubble parameter"
     fgas:
-        U_gas_0: real, redshift-zero value of fgas, normalized to the cosmic baryon fraction
-        U_gas_1: real, linear-with-redshift evolution of fgas
-        fgas_scatter: real, log-normal intrinsic scatter in fgas
-        fgas_rslope: real, power-law slope of the cluster fgas profile
-        cl_cal: real, calibration nuisance parameter
-        cl_calev: real, linear-in-redshift evolution of the calibration
-        cl_calscat: real, intrinsic scatter in the calibration (e.g. due to non-thermal pressure)
-        cl_lenssys: real, nuisance parameter for weak graviational lensing masses
-        cl_lnMwl_N with N=1,2,...,12: real, log masses for the clusters where we have gravitational lensing data
+        U_gas_0: "real, redshift-zero value of fgas, normalized to the cosmic baryon fraction"
+        U_gas_1: "real, linear-with-redshift evolution of fgas"
+        fgas_scatter: "real, log-normal intrinsic scatter in fgas"
+        fgas_rslope: "real, power-law slope of the cluster fgas profile"
+        cl_cal: "real, calibration nuisance parameter"
+        cl_calev: "real, linear-in-redshift evolution of the calibration"
+        cl_calscat: "real, intrinsic scatter in the calibration (e.g. due to non-thermal pressure)"
+        cl_lenssys: "real, nuisance parameter for weak graviational lensing masses"
+        cl_lnMwl_N: "real, with N=1,2,...,12 log masses for the clusters where we have gravitational lensing data"
 
 outputs:
     likelihoods:
-        FGAS_LIKE: real, likelihood of the galaxy cluster gas-mass fractions 
+        fgas_like: "real, likelihood of the galaxy cluster gas-mass fractions "
