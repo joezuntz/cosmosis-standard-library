@@ -198,8 +198,12 @@ int execute(c_datablock * block, void * config_in)
 	for (int i; i<N_thetaH; i++){
 		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
 	}
-	c_datablock_put_double_array_1d(block, shear_xi, "theta",
+
+	status |= c_datablock_put_double_array_1d(block, shear_xi, "theta",
                   theta_vals, N_thetaH);
+	//Include units
+	c_datablock_put_metadata(block, shear_xi, "theta", "unit", "radians");
+
 
 	//Clean up
 	
