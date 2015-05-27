@@ -22,7 +22,7 @@ planck: $(PLANCK_DIR)
 	cd $(PLANCK_DIR) && $(MAKE) install
 
 planck_interface.so: planck planck_interface.c
-	$(CC) -shared $(CFLAGS) -lclik -o $@ planck_interface.c $(LDFLAGS) 
+	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c  $(LDFLAGS) -lclik
 
 clean:
 	rm -rf *.o *.so *.dSYM
