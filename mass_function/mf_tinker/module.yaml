@@ -1,5 +1,5 @@
 #This is a template for module description files
-name: Tinker et al. MF
+name: Tinker_MF
 version: "1"
 purpose: Code to compute the Tinker et al. mass function given Pk from CAMB, based on Komatsu's CRL
 url: "http://www.mpa-garching.mpg.de/~komatsu/crl/"

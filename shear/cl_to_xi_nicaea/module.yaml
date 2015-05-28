@@ -5,7 +5,7 @@ purpose: "Compute WL correlation functions xi+, xi- from C_ell"
 url: ""
 attribution: [Martin Kilbinger, Nicaea Team]
 rules: ""
-cite: []
+cite: ["http://arxiv.org/abs/0810.5129"]
 
 assumptions:
     - "Input C_ell sufficiently well-sampled over standard pre-defined range"

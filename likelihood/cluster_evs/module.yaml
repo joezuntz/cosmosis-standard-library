@@ -1,4 +1,5 @@
-name: "Extreme Value Statistics"
+name: "Extreme_Value_Statistics"
+version: 1.0
 purpose: "PDF of the maximum cluster mass given cosmological parameters"
 url: ""
 attribution: [Harrison & Coles 2012, CosmoSIS team (code)]

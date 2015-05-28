@@ -1,0 +1,43 @@
+name: extrapolate
+version: 1.0
+purpose: "Simple log-linear extrapolation of P(k) to high k"
+url: https://bitbucket.org/joezuntz/cosmosis
+attribution: [CosmoSIS Team]
+rules: []
+cite: []
+
+assumptions:
+    - Linear extrapolation in log-space of P(k); this is not a great approximation
+
+explanation: >
+  It is sometimes useful to extend matter power spectra P(k) to high values
+  of k. These values are unphysical but are useful for numerical stability.
+
+  This module does a simple linear extrapolation in log-log space of P(k)
+  up to a specified kmax.
+
+  It tries both linear and non-linear spectra but does not complain if either or 
+  both are not present.
+
+params:
+    kmax:  "real, the max wavenumber k to extrapolate to"
+
+inputs:
+    matter_power_lin:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h."
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3."
+    matter_power_nl:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h."
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3."
+
+outputs:
+    matter_power_lin:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h, extended to kmax"
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, extended to kmax"
+    matter_power_nl:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h, extended to kmax"
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, extended to kmax"

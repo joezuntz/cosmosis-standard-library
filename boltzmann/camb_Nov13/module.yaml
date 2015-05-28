@@ -36,13 +36,7 @@ explanation: >
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    mode:
-        String, choose from Background, thermal, cmb, or all.
-
-        In background mode only the expansion history is calculated.
-        In thermal mode the recombination history is computed and rs_zdrag and related quantities also.
-        In cmb mode the CMB power spectra are also calculated.
-        In all mode the matter power spectrum at low redshift and sigma8 are also calculated.
+    mode: "String, choose from Background, thermal, cmb, or all. In background mode only the expansion history is calculated. In thermal mode the recombination history is computed and rs_zdrag and related quantities also. In cmb mode the CMB power spectra are also calculated. In all mode the matter power spectrum at low redshift and sigma8 are also calculated."
     lmax:  "Integer, only if mode!=background, default 1200 - the max ell to use for cmb calculation"
     feedback: "Integer, amount of output to print.  0 for no feedback.  1 for basic, 2 for extended, maybe higher?"
     use_tabulated_w: "Logical, set to true to load w(z) from previous module (default F)"

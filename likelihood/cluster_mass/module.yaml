@@ -1,13 +1,13 @@
-name: "Cluster mass"
-version: ""
+name: "Cluster_mass"
+version: "1.0"
 purpose: "Likelihood of z=1.59 Cluster mass from Santos et al. 2011"
 url: ""
 attribution: [Santos et al. 2011 (measurement), Harrison & Coles 2012, CosmoSIS team (code)]
-rules: "None."
+rules: []
 cite:
      - "Santos et al. 2011 "
      - "Harrison & Coles 2012 "
-assumptions:
+assumptions: []
 explanation: >
     "This small module was written for CosmoSIS.
         The Extreme Value statistics module (evs) should be run in the pipeline prior to this module.
