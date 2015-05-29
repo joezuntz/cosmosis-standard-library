@@ -1,0 +1,53 @@
+#This is a template for module description files
+name: "sigma8_rescale"
+version: "1.0"
+purpose: "Rescale structure measures to use a specified sigma_8"
+url: ""
+attribution: ["Susana Fernandez", "Jack Elvin-Poole"]
+rules: []
+cite: []
+assumptions:
+    - "Spectra scale quadratically with sigma_8"
+
+explanation: >
+    Boltzmann codes like CAMB and CLASS typically take a primordial power spectrum
+    amplitude A_s as an input parameter defining the amplitude of cosmic structure
+    fluctutations.
+
+    Late-time data sets more naturally measure a late-time amplitude, and the measure
+    sigma_8 is usually instead for these data.  If all other cosmological parameters
+    are fixed A_s ~ sigma_8^2, but when other parameters can vary they are not
+    perfectly equivalent.
+
+    This module enables you to sample over sigma_8 while still passing A_s into a
+    Boltzmann code.  It does this by using an input value sigma_8_input, which can
+    be sampled over, and a fixed fiducial A_s value.  After the Boltzmann code is run
+    and sigma_8 for the fiducial amplitude calculated, the CMB and matter power spectra
+    are scaled by (sigma8_input**2)/(sigma8_boltzmann**2), and sigma_8 is overwritten.
+
+
+params: {}
+
+inputs:
+    cosmological_parameters:
+        sigma_8:  "real, late time amplitude sigma_8 as output from CAMB or another Boltzmann code"
+        sigma_8_input:  "real, The desired sigma_8, usually from the sampler"
+        A_s:  "real, The fixed fiducial primordial amplitude"
+    cmb_cl:
+        TT: "real 1D array, CMB TT power spectrum"
+        EE: "real 1D array, CMB EE power spectrum"
+        BB: "real 1D array, CMB BB power spectrum"
+        TE: "real 1D array, CMB TE power spectrum"
+    matter_power_lin:
+        P_K: "real 1D or 2D array, matter power spectrum P(k,z)"
+outputs:
+    cosmological_parameters:
+        sigma_8:  "real, re-scaled sigma_8, set to sigma_8_input"
+        A_s:  "real, rescaled A_s"
+    cmb_cl:
+        TT: "real 1D array, rescaled CMB TT power spectrum"
+        EE: "real 1D array, rescaled CMB EE power spectrum"
+        BB: "real 1D array, rescaled CMB BB power spectrum"
+        TE: "real 1D array, rescaled CMB TE power spectrum"
+    matter_power_lin:
+        P_K: "real 1D or 2D array, rescaled matter power spectrum P(k,z)"
