@@ -46,7 +46,7 @@ params:
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
     bias_parameters:
-        b0:  real scalar. bias at z=0 if GTD model used§
+        b0:  real scalar. bias at z=0 if GTD model used
         c:  real scalar. bias parameter for GTD model
         alpha:  real scalar. power law index for growth in GTD model
         Q:  real scalar. parameter of Q model
