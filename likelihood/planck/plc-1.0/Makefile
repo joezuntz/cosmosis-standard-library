@@ -25,8 +25,9 @@ CFITSIO_INCPATH := $(CFITSIO_INC)
 CFITSIO_LIBPATH := $(CFITSIO_LIB)
 
 #define your compilers and stuff
-CC = gcc
-FC = gfortran
+#CC = gcc
+#FC = gfortran
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 # ifort
 # if you are using ifort set here where its lib are installed
@@ -305,19 +306,19 @@ $(CLIKLIB): | $(ODIR) $(ODIR)/.print_info $(ODIR)/.test_cfitsio
 
 $(BDIR)/libclik.$(SO): $(CLIKLIB) 
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	@$(LD)  $(SHARED)  $(LAPACK) $(LDFLAG) $^ -o $@
+	$(LD) -Wall $(SHARED) $^ $(LAPACK) $(LDFLAG) -o $@
 
 $(BDIR)/libclik_f90.$(SO): $(BDIR)/libclik.$(SO) $(addprefix $(ODIR)/,clik_fortran.o clik.f90.o)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	@$(LD) $(SHARED)  $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik $^ -o $@
+	@$(LD) $(SHARED) $^  $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik -o $@
 
 $(BDIR)/clik_example_C: $(ODIR)/clik_example_c.o $(BDIR)/libclik.$(SO)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	@$(CC) $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik $< -o $@
+	@$(CC) $< $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik -o $@
 
 $(BDIR)/clik_example_f90: $(ODIR)/clik_example_f90.f90.o $(BDIR)/libclik_f90.$(SO)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	@$(FC) $(LDFLAG) $(LAPACK)  -L$(BDIR) -lclik_f90 -lclik $< -o $@
+	@$(FC) $< $(LDFLAG) $(LAPACK)  -L$(BDIR) -lclik_f90 -lclik -o $@
 
 $(BDIR)/liblapack_clik.$(SO): |$(BDIR)
 ifndef MKL_LIB_FULLPATH
