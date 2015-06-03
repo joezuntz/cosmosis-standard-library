@@ -15,7 +15,7 @@ MODULE MHM
      INTEGER :: n
   END TYPE tables
 
-  INTEGER :: feedback !0 for no feedback, 1 for feedback
+  logical :: feedback !0 for no feedback, 1 for feedback
   REAL, PARAMETER :: pi=3.141592654
 
   CONTAINS
@@ -30,11 +30,11 @@ MODULE MHM
   INTEGER :: i, j, n, m, nk, nz
   TYPE(cosmology) :: cosi
   TYPE(tables) :: lut
-  REAL, ALLOCATABLE :: k(:), simpower(:), pmod(:), ztab(:), ptab(:,:)
+  REAL, ALLOCATABLE :: k(:), simpower(:), ztab(:), ptab(:,:)
   character(64) :: input
 
   !Set to 1 to make halomodel calculation verbose
-  feedback=1
+  feedback=.true.
 
   WRITE(*,*)
   WRITE(*,*) 'Welcome to Meadfit (must change name)'
@@ -308,13 +308,13 @@ MODULE MHM
     cosm%sig8=0.8
     cosm%n=0.97
 
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_m:', cosm%om_m
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_v:', cosm%om_v
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_b:', cosm%om_b
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'h:', cosm%h
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'w:', cosm%w
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'sig8:', cosm%sig8
-    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'n:', cosm%n   
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_m:', cosm%om_m
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_v:', cosm%om_v
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_b:', cosm%om_b
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'h:', cosm%h
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'w:', cosm%w
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'sig8:', cosm%sig8
+    IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'n:', cosm%n   
 
     IF(cosm%itk==4) THEN
 
@@ -344,7 +344,7 @@ MODULE MHM
 
     END IF
 
-    IF(feedback==1) WRITE(*,*)    
+    IF(feedback) WRITE(*,*)    
 
   END SUBROUTINE assign_cosmology
 
@@ -364,15 +364,15 @@ MODULE MHM
     IF(ALLOCATED(cosm%tktab)) DEALLOCATE(cosm%tktab)
     ALLOCATE(cosm%ktab(n),cosm%tktab(n))
 
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Reading in CAMB transfer function' 
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Length:', n
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: File name:', infile
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: Reading in CAMB transfer function' 
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: Length:', n
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: File name:', infile
     OPEN(7,file=infile)
     DO i=1,n
        READ(7,*) cosm%ktab(i), cosm%tktab(i)
     END DO
     CLOSE(7)
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Finished'
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: Finished'
 
     !Normalise so that T(k<<k_eq)=1
     cosm%tktab=cosm%tktab/cosm%tktab(1)
@@ -398,14 +398,14 @@ MODULE MHM
     IF(ALLOCATED(cosm%pktab)) DEALLOCATE(cosm%pktab)
     ALLOCATE(cosm%ktab(n),cosm%pktab(n))
 
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Reading in CAMB power spectrum, length:', n
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: File name:', infile
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: Reading in CAMB power spectrum, length:', n
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: File name:', infile
     OPEN(32,file=infile)
     DO i=1,n
        READ(32,*) cosm%ktab(i), cosm%pktab(i)
     END DO
     CLOSE(32)
-    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Finished'
+    IF(feedback) WRITE(*,*) 'COSMOLOGY: Finished'
 
     !Convert P(k) to \Delta^2(k)
     cosm%pktab=cosm%pktab*(cosm%ktab**3.)/(2.*(pi**2.))
@@ -432,7 +432,7 @@ MODULE MHM
     
     sigi=sigma(8.,cosm)
 
-    IF(feedback==1) THEN
+    IF(feedback) THEN
        WRITE(*,*) 'NORMALISATION: Initial sigma8:', sigi
     END IF
 
@@ -441,7 +441,7 @@ MODULE MHM
 
     sigi=sigma(8.,cosm)
 
-    IF(feedback==1) THEN
+    IF(feedback) THEN
        WRITE(*,*) 'NORMALISATION: Growth factor:', growz
        WRITE(*,*) 'NORMALISATION: Normalisation factor:', cosm%A
        WRITE(*,*) 'NORMALISATION: Target sigma8 at z=0:', cosm%sig8
@@ -517,9 +517,9 @@ MODULE MHM
 
     ALLOCATE(rg_up(n),rg_dn(n),nu_up(n),nu_dn(n),mg_up(n),mg_dn(n))
 
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: Filling look-up tables'
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: Tables being filled at redshift:', z       
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: sigv [Mpc/h]:', cosm%sigv
+    IF(feedback) WRITE(*,*) 'HALOMOD: Filling look-up tables'
+    IF(feedback) WRITE(*,*) 'HALOMOD: Tables being filled at redshift:', z       
+    IF(feedback) WRITE(*,*) 'HALOMOD: sigv [Mpc/h]:', cosm%sigv
 
     IF(ALLOCATED(lut%rr)) CALL deallocate_LUT(lut)
 
@@ -559,7 +559,7 @@ MODULE MHM
 
     lut%n=imin+imax
 
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: Entries in look up table:', lut%n
+    IF(feedback) WRITE(*,*) 'HALOMOD: Entries in look up table:', lut%n
 
     CALL allocate_LUT(lut)
 
@@ -577,7 +577,7 @@ MODULE MHM
 
     lut%sig=dc/lut%nu
 
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: m, r, nu tables filled'
+    IF(feedback) WRITE(*,*) 'HALOMOD: m, r, nu tables filled'
 
     !Fills up a table for sigma(fM) for Bullock c(m) relation
     !This is the f=0.01 parameter in the Bullock realtion sigma(fM,z)
@@ -585,19 +585,19 @@ MODULE MHM
     DO i=1,lut%n
        lut%sigf(i)=sigma(lut%rr(i)*f,cosm)
     END DO
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: sigf tables filled'  
+    IF(feedback) WRITE(*,*) 'HALOMOD: sigf tables filled'  
 
     !Fill virial radius table using real radius table
     Dv=Delta_v(z,cosm)
     lut%rv=lut%rr/(Dv**(1./3.))
 
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: rv tables filled'  
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: nu min:', lut%nu(1), 'target:', nu_min
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: nu max:', lut%nu(lut%n),'target:',  nu_max
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: R_v min [Mpc/h]:', lut%rv(1)
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: R_v max [Mpc/h]:', lut%rv(lut%n)
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: M min [Msun/h]:', lut%m(1)
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: M max [Msun/h]:', lut%m(lut%n)
+    IF(feedback) WRITE(*,*) 'HALOMOD: rv tables filled'  
+    IF(feedback) WRITE(*,*) 'HALOMOD: nu min:', lut%nu(1), 'target:', nu_min
+    IF(feedback) WRITE(*,*) 'HALOMOD: nu max:', lut%nu(lut%n),'target:',  nu_max
+    IF(feedback) WRITE(*,*) 'HALOMOD: R_v min [Mpc/h]:', lut%rv(1)
+    IF(feedback) WRITE(*,*) 'HALOMOD: R_v max [Mpc/h]:', lut%rv(lut%n)
+    IF(feedback) WRITE(*,*) 'HALOMOD: M min [Msun/h]:', lut%m(1)
+    IF(feedback) WRITE(*,*) 'HALOMOD: M max [Msun/h]:', lut%m(lut%n)
 
     !Find non-linear radius and scale
     cosm%rnl=r_nl(lut)
@@ -606,20 +606,20 @@ MODULE MHM
     !Numerical differentiation to find effective index at collapse
     cosm%neff=-3.-derivative_table(log(cosm%rnl),log(lut%rr),log(lut%sig**2.),3,3)
 
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: r_nl [Mpc/h]:', cosm%rnl
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: k_nl [h/Mpc]:', cosm%knl
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: n_eff:', cosm%neff
+    IF(feedback) WRITE(*,*) 'HALOMOD: r_nl [Mpc/h]:', cosm%rnl
+    IF(feedback) WRITE(*,*) 'HALOMOD: k_nl [h/Mpc]:', cosm%knl
+    IF(feedback) WRITE(*,*) 'HALOMOD: n_eff:', cosm%neff
 
     CALL conc_bull(z,cosm,lut)
 
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: c tables filled'
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: c min [Msun/h]:', lut%c(lut%n)
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: c max [Msun/h]:', lut%c(1)
-    IF(feedback==1) WRITE(*,*) 'HALOMOD: Done'
+    IF(feedback) WRITE(*,*) 'HALOMOD: c tables filled'
+    IF(feedback) WRITE(*,*) 'HALOMOD: c min [Msun/h]:', lut%c(lut%n)
+    IF(feedback) WRITE(*,*) 'HALOMOD: c max [Msun/h]:', lut%c(1)
+    IF(feedback) WRITE(*,*) 'HALOMOD: Done'
 
-    IF(feedback==1) WRITE(*,*)
+    IF(feedback) WRITE(*,*)
 
-    feedback=0
+    feedback=.false.
 
   END SUBROUTINE halomod_init
 
@@ -1025,7 +1025,7 @@ MODULE MHM
 
     p_1h=p_1h*(1.-fac)
 
-  END FUNCTION p_1h
+  end function p_1h
 
   SUBROUTINE fill_sigtab(cosm)
 
@@ -1055,10 +1055,10 @@ MODULE MHM
     rmax=1e3
     nsig=64
 
-    IF(feedback==1) WRITE(*,*) 'SIGTAB: Filling sigma interpolation table'
-    IF(feedback==1) WRITE(*,*) 'SIGTAB: Rmin:', rmin
-    IF(feedback==1) WRITE(*,*) 'SIGTAB: Rmax:', rmax
-    IF(feedback==1) WRITE(*,*) 'SIGTAB: Values:', nsig
+    IF(feedback) WRITE(*,*) 'SIGTAB: Filling sigma interpolation table'
+    IF(feedback) WRITE(*,*) 'SIGTAB: Rmin:', rmin
+    IF(feedback) WRITE(*,*) 'SIGTAB: Rmax:', rmax
+    IF(feedback) WRITE(*,*) 'SIGTAB: Values:', nsig
 
     rmin=log(rmin)
     rmax=log(rmax)
@@ -1086,8 +1086,8 @@ MODULE MHM
 
     DEALLOCATE(rtab,sigtab)
 
-    IF(feedback==1) WRITE(*,*) 'SIGTAB: Done'
-    IF(feedback==1) WRITE(*,*)
+    IF(feedback) WRITE(*,*) 'SIGTAB: Done'
+    IF(feedback) WRITE(*,*)
 
   END SUBROUTINE fill_sigtab
 
