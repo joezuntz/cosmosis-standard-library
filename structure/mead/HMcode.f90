@@ -1,4 +1,5 @@
-MODULE cosdef
+MODULE MHM
+
 
   TYPE cosmology
      REAL :: om_m, om_b, om_v, h, n, sig8, w, gamma
@@ -14,27 +15,26 @@ MODULE cosdef
      INTEGER :: n
   END TYPE tables
 
-END MODULE cosdef
+  INTEGER :: feedback !0 for no feedback, 1 for feedback
+  REAL, PARAMETER :: pi=3.141592654
 
-PROGRAM MHM
+  CONTAINS
 
-  USE cosdef
+  subroutine meadfit_main()
 
   IMPLICIT NONE
-  REAL :: a, z
   REAL :: p1h, p2h, pfull, plin
-  REAL, ALLOCATABLE :: k(:), simpower(:), pmod(:), ztab(:), ptab(:,:)
-  INTEGER :: i, j, n, m, nk, nz
-  INTEGER :: ihm
   REAL :: numin, numax, kmin, kmax, zmin, zmax
-  REAL, PARAMETER :: pi=3.141592654
+  CHARACTER(len=64) :: output
+  REAL :: a, z
+  INTEGER :: i, j, n, m, nk, nz
   TYPE(cosmology) :: cosi
   TYPE(tables) :: lut
-  LOGICAL :: lexist
-  CHARACTER(len=64) :: input, output
+  REAL, ALLOCATABLE :: k(:), simpower(:), pmod(:), ztab(:), ptab(:,:)
+  character(64) :: input
 
   !Set to 1 to make halomodel calculation verbose
-  ihm=1
+  feedback=1
 
   WRITE(*,*)
   WRITE(*,*) 'Welcome to Meadfit (must change name)'
@@ -70,7 +70,7 @@ PROGRAM MHM
   !Fill table for output power
   ALLOCATE(ptab(nz,nk))
 
-  CALL assign_cosmology(cosi)
+  CALL assign_cosmology(cosi, input)
 
   !Loop over redshifts
   DO j=1,nz
@@ -120,11 +120,11 @@ PROGRAM MHM
   WRITE(*,*) 'Done'
   WRITE(*,*)
 
-CONTAINS
+  end subroutine meadfit_main
+
 
   FUNCTION Delta_v(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL :: Delta_v
     REAL, INTENT(IN) :: z
@@ -137,7 +137,6 @@ CONTAINS
 
   FUNCTION delta_c(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL :: delta_c
     REAL, INTENT(IN) :: z
@@ -150,7 +149,6 @@ CONTAINS
 
   FUNCTION eta(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL :: eta
     REAL, INTENT(IN) :: z
@@ -163,7 +161,6 @@ CONTAINS
 
   FUNCTION kstar(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL :: kstar
     REAL, INTENT(IN) :: z
@@ -176,7 +173,6 @@ CONTAINS
 
   FUNCTION As(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL :: As
     REAL, INTENT(IN) :: z
@@ -189,7 +185,6 @@ CONTAINS
 
   FUNCTION fdamp(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL ::fdamp
     REAL, INTENT(IN) :: z
@@ -202,7 +197,6 @@ CONTAINS
 
   FUNCTION alpha(z,cosm)
 
-    USE cosdef
     IMPLICIT NONE
     REAL :: alpha
     REAL, INTENT(IN) :: z
@@ -215,7 +209,7 @@ CONTAINS
 
   FUNCTION r_nl(lut)
 
-    USE cosdef
+
     TYPE(tables), INTENT(IN) :: lut
     REAL :: r_nl
 
@@ -226,7 +220,7 @@ CONTAINS
 
   SUBROUTINE halomod(k,z,p1h,p2h,pfull,plin,lut,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL, INTENT(OUT) :: p1h, p2h, pfull
     REAL, INTENT(IN) :: plin, k, z
@@ -288,12 +282,15 @@ CONTAINS
 
   END SUBROUTINE fill_table
 
-  SUBROUTINE assign_cosmology(cosm)
+  SUBROUTINE assign_cosmology(cosm, input)
 
-    USE cosdef
+
     IMPLICIT NONE
     CHARACTER(len=64) :: tk_file
     TYPE(cosmology) :: cosm
+    LOGICAL :: lexist
+    CHARACTER(len=64) :: input
+
 
     !itk==1 => Power-law models (i.e. T(k)=1.) (doesn't work with speed-ups)
     !itk==2 => DEFW transfer function
@@ -311,13 +308,13 @@ CONTAINS
     cosm%sig8=0.8
     cosm%n=0.97
 
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_m:', cosm%om_m
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_v:', cosm%om_v
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_b:', cosm%om_b
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'h:', cosm%h
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'w:', cosm%w
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'sig8:', cosm%sig8
-    IF(ihm==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'n:', cosm%n   
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_m:', cosm%om_m
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_v:', cosm%om_v
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_b:', cosm%om_b
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'h:', cosm%h
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'w:', cosm%w
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'sig8:', cosm%sig8
+    IF(feedback==1) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'n:', cosm%n   
 
     IF(cosm%itk==4) THEN
 
@@ -325,12 +322,12 @@ CONTAINS
        !file. This must be speicifed when the program is run
        !(i.e. ./a.out input_tk.dat)
 
-       CALL get_command_argument(1,input)
+       !CALL get_command_argument(1,input)
        IF(input=='') STOP 'ERROR: Please specify input T(k) file'
        INQUIRE(FILE=input, EXIST=lexist)  
        IF(lexist .EQV. .FALSE.) STOP 'ERROR: Specified T(k) file does not exist'
 
-       CALL read_camb_tk(input,cosi)
+       CALL read_camb_tk(input,cosm)
 
     ELSE IF(cosm%itk==5) THEN
 
@@ -338,22 +335,22 @@ CONTAINS
        !file. This must be speicifed when the program is run
        !(i.e. ./a.out input_pk.dat)
 
-       CALL get_command_argument(1,input)
+       !CALL get_command_argument(1,input)
        IF(input=='') STOP 'ERROR: Please specify input P(k) file'
        INQUIRE(FILE=input, EXIST=lexist)  
        IF(lexist .EQV. .FALSE.) STOP 'ERROR: Specified P(k) file does not exist'
 
-       CALL read_camb_pk(input,cosi)
+       CALL read_camb_pk(input,cosm)
 
     END IF
 
-    IF(ihm==1) WRITE(*,*)    
+    IF(feedback==1) WRITE(*,*)    
 
   END SUBROUTINE assign_cosmology
 
   SUBROUTINE read_camb_tk(infile,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     INTEGER :: n, i
     CHARACTER(len=64) :: infile
@@ -367,15 +364,15 @@ CONTAINS
     IF(ALLOCATED(cosm%tktab)) DEALLOCATE(cosm%tktab)
     ALLOCATE(cosm%ktab(n),cosm%tktab(n))
 
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: Reading in CAMB transfer function' 
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: Length:', n
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: File name:', infile
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Reading in CAMB transfer function' 
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Length:', n
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: File name:', infile
     OPEN(7,file=infile)
     DO i=1,n
        READ(7,*) cosm%ktab(i), cosm%tktab(i)
     END DO
     CLOSE(7)
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: Finished'
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Finished'
 
     !Normalise so that T(k<<k_eq)=1
     cosm%tktab=cosm%tktab/cosm%tktab(1)
@@ -384,7 +381,7 @@ CONTAINS
 
   SUBROUTINE read_camb_pk(infile,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     INTEGER :: n, i
     REAL :: c
@@ -401,14 +398,14 @@ CONTAINS
     IF(ALLOCATED(cosm%pktab)) DEALLOCATE(cosm%pktab)
     ALLOCATE(cosm%ktab(n),cosm%pktab(n))
 
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: Reading in CAMB power spectrum, length:', n
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: File name:', infile
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Reading in CAMB power spectrum, length:', n
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: File name:', infile
     OPEN(32,file=infile)
     DO i=1,n
        READ(32,*) cosm%ktab(i), cosm%pktab(i)
     END DO
     CLOSE(32)
-    IF(ihm==1) WRITE(*,*) 'COSMOLOGY: Finished'
+    IF(feedback==1) WRITE(*,*) 'COSMOLOGY: Finished'
 
     !Convert P(k) to \Delta^2(k)
     cosm%pktab=cosm%pktab*(cosm%ktab**3.)/(2.*(pi**2.))
@@ -417,7 +414,7 @@ CONTAINS
 
   SUBROUTINE normalisation(z,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: sigi, growz
     REAL, INTENT(IN) :: z
@@ -435,7 +432,7 @@ CONTAINS
     
     sigi=sigma(8.,cosm)
 
-    IF(ihm==1) THEN
+    IF(feedback==1) THEN
        WRITE(*,*) 'NORMALISATION: Initial sigma8:', sigi
     END IF
 
@@ -444,7 +441,7 @@ CONTAINS
 
     sigi=sigma(8.,cosm)
 
-    IF(ihm==1) THEN
+    IF(feedback==1) THEN
        WRITE(*,*) 'NORMALISATION: Growth factor:', growz
        WRITE(*,*) 'NORMALISATION: Normalisation factor:', cosm%A
        WRITE(*,*) 'NORMALISATION: Target sigma8 at z=0:', cosm%sig8
@@ -457,7 +454,7 @@ CONTAINS
 
   SUBROUTINE allocate_LUT(lut)
 
-    USE cosdef
+
     TYPE(tables) :: lut
     INTEGER :: n
 
@@ -481,7 +478,7 @@ CONTAINS
 
   SUBROUTINE deallocate_LUT(lut)
 
-    USE cosdef
+
     TYPE(tables) :: lut
 
     !Deallocates look-up tables
@@ -492,7 +489,7 @@ CONTAINS
 
   SUBROUTINE halomod_init(z,nu_min,nu_max,lut,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL, INTENT(IN) :: z
     INTEGER :: i, imin, imax, n
@@ -520,9 +517,9 @@ CONTAINS
 
     ALLOCATE(rg_up(n),rg_dn(n),nu_up(n),nu_dn(n),mg_up(n),mg_dn(n))
 
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: Filling look-up tables'
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: Tables being filled at redshift:', z       
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: sigv [Mpc/h]:', cosm%sigv
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: Filling look-up tables'
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: Tables being filled at redshift:', z       
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: sigv [Mpc/h]:', cosm%sigv
 
     IF(ALLOCATED(lut%rr)) CALL deallocate_LUT(lut)
 
@@ -562,7 +559,7 @@ CONTAINS
 
     lut%n=imin+imax
 
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: Entries in look up table:', lut%n
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: Entries in look up table:', lut%n
 
     CALL allocate_LUT(lut)
 
@@ -580,7 +577,7 @@ CONTAINS
 
     lut%sig=dc/lut%nu
 
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: m, r, nu tables filled'
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: m, r, nu tables filled'
 
     !Fills up a table for sigma(fM) for Bullock c(m) relation
     !This is the f=0.01 parameter in the Bullock realtion sigma(fM,z)
@@ -588,19 +585,19 @@ CONTAINS
     DO i=1,lut%n
        lut%sigf(i)=sigma(lut%rr(i)*f,cosm)
     END DO
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: sigf tables filled'  
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: sigf tables filled'  
 
     !Fill virial radius table using real radius table
     Dv=Delta_v(z,cosm)
     lut%rv=lut%rr/(Dv**(1./3.))
 
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: rv tables filled'  
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: nu min:', lut%nu(1), 'target:', nu_min
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: nu max:', lut%nu(lut%n),'target:',  nu_max
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: R_v min [Mpc/h]:', lut%rv(1)
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: R_v max [Mpc/h]:', lut%rv(lut%n)
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: M min [Msun/h]:', lut%m(1)
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: M max [Msun/h]:', lut%m(lut%n)
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: rv tables filled'  
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: nu min:', lut%nu(1), 'target:', nu_min
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: nu max:', lut%nu(lut%n),'target:',  nu_max
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: R_v min [Mpc/h]:', lut%rv(1)
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: R_v max [Mpc/h]:', lut%rv(lut%n)
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: M min [Msun/h]:', lut%m(1)
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: M max [Msun/h]:', lut%m(lut%n)
 
     !Find non-linear radius and scale
     cosm%rnl=r_nl(lut)
@@ -609,32 +606,32 @@ CONTAINS
     !Numerical differentiation to find effective index at collapse
     cosm%neff=-3.-derivative_table(log(cosm%rnl),log(lut%rr),log(lut%sig**2.),3,3)
 
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: r_nl [Mpc/h]:', cosm%rnl
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: k_nl [h/Mpc]:', cosm%knl
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: n_eff:', cosm%neff
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: r_nl [Mpc/h]:', cosm%rnl
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: k_nl [h/Mpc]:', cosm%knl
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: n_eff:', cosm%neff
 
     CALL conc_bull(z,cosm,lut)
 
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: c tables filled'
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: c min [Msun/h]:', lut%c(lut%n)
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: c max [Msun/h]:', lut%c(1)
-    IF(ihm==1) WRITE(*,*) 'HALOMOD: Done'
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: c tables filled'
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: c min [Msun/h]:', lut%c(lut%n)
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: c max [Msun/h]:', lut%c(1)
+    IF(feedback==1) WRITE(*,*) 'HALOMOD: Done'
 
-    IF(ihm==1) WRITE(*,*)
+    IF(feedback==1) WRITE(*,*)
 
-    ihm=0
+    feedback=0
 
   END SUBROUTINE halomod_init
 
   SUBROUTINE conc_bull(z,cosm,lut)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL, INTENT(IN) :: z
     TYPE(cosmology) :: cosm
     TYPE(tables) :: lut
     REAL :: A, ch, be, zf, g_lcdm, g_wcdm, w
-
+    integer i
     !Calculates the Bullock et al. (2001) mass-concentration relation
 
     A=As(z,cosm)
@@ -670,7 +667,7 @@ CONTAINS
 
   SUBROUTINE zcoll_bull(z,cosm,lut)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL, INTENT(IN) :: z
     TYPE(cosmology) :: cosm
@@ -755,7 +752,7 @@ CONTAINS
 
   FUNCTION Tk(k,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: Tk, k
     TYPE(cosmology) :: cosm
@@ -776,7 +773,7 @@ CONTAINS
 
   FUNCTION find_tk(k,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: find_tk
     REAL :: kmin, kmax
@@ -805,7 +802,7 @@ CONTAINS
 
   FUNCTION find_pk(k,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: find_pk
     REAL :: kmax
@@ -833,7 +830,7 @@ CONTAINS
     ! the astonishing D.J. Eisenstein & W. Hu fitting formula (ApJ 496 605 [1998])
     ! remember I use k/h, whereas they use pure k, om_m is cdm + baryons
 
-    USE cosdef
+
     IMPLICIT NONE
 
     REAL :: Tk_eh
@@ -905,7 +902,7 @@ CONTAINS
 
   FUNCTION Tk_DEFW(rk,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: tk_DEFW, rk, gamma
     REAL :: rkeff, q, tk
@@ -928,7 +925,7 @@ CONTAINS
 
   FUNCTION p_lin(k,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: p_lin, k
     TYPE(cosmology) :: cosm
@@ -956,7 +953,7 @@ CONTAINS
 
   FUNCTION p_2h(k,z,lut,plin,cosm)
 
-    USE cosdef
+
     REAL :: p_2h
     REAL, INTENT(IN) :: k, plin, z
     REAL :: sigv, frac, q3, P13, P22, a, b, c, knl
@@ -977,7 +974,7 @@ CONTAINS
 
   FUNCTION p_1h(k,z,lut,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: p_1h
     REAL, INTENT(IN) :: k, z
@@ -1032,7 +1029,7 @@ CONTAINS
 
   SUBROUTINE fill_sigtab(cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: rmin, rmax
     REAL, ALLOCATABLE :: rtab(:), sigtab(:)
@@ -1058,10 +1055,10 @@ CONTAINS
     rmax=1e3
     nsig=64
 
-    IF(ihm==1) WRITE(*,*) 'SIGTAB: Filling sigma interpolation table'
-    IF(ihm==1) WRITE(*,*) 'SIGTAB: Rmin:', rmin
-    IF(ihm==1) WRITE(*,*) 'SIGTAB: Rmax:', rmax
-    IF(ihm==1) WRITE(*,*) 'SIGTAB: Values:', nsig
+    IF(feedback==1) WRITE(*,*) 'SIGTAB: Filling sigma interpolation table'
+    IF(feedback==1) WRITE(*,*) 'SIGTAB: Rmin:', rmin
+    IF(feedback==1) WRITE(*,*) 'SIGTAB: Rmax:', rmax
+    IF(feedback==1) WRITE(*,*) 'SIGTAB: Values:', nsig
 
     rmin=log(rmin)
     rmax=log(rmax)
@@ -1089,14 +1086,14 @@ CONTAINS
 
     DEALLOCATE(rtab,sigtab)
 
-    IF(ihm==1) WRITE(*,*) 'SIGTAB: Done'
-    IF(ihm==1) WRITE(*,*)
+    IF(feedback==1) WRITE(*,*) 'SIGTAB: Done'
+    IF(feedback==1) WRITE(*,*)
 
   END SUBROUTINE fill_sigtab
 
   FUNCTION sigma(r,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: sigma
     REAL, INTENT(IN) :: r
@@ -1268,7 +1265,7 @@ CONTAINS
 
   FUNCTION sigma_integrand(t,R,f,cosm)
 
-    USE cosdef
+
     REAL :: sigma_integrand
     REAL, INTENT(IN) :: t, R
     REAL :: k, y, w_hat
@@ -1594,7 +1591,7 @@ CONTAINS
     !This calculates the dimensionless squared hubble parameter at redshift z!
     !and it ignores contributions from radiation (not accurate at high z, but consistent with simulations)!
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: hubble2, z
     REAL :: om_m, om_v, w
@@ -1612,7 +1609,7 @@ CONTAINS
 
     !This calculates Omega_m variations with z!
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: omega_m, z
     REAL :: om_m
@@ -1628,7 +1625,7 @@ CONTAINS
 
     !This calculates Omega_v variations with z for any w
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: omega_v, z
     REAL :: om_v, w
@@ -1643,7 +1640,7 @@ CONTAINS
 
   FUNCTION grow(z,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: grow, z, a
     TYPE(cosmology) :: cosm
@@ -1661,7 +1658,7 @@ CONTAINS
 
   FUNCTION grow_int(a,b,acc,cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     INTEGER :: i, j, jmax
     REAL :: grow_int, a, b, acc, dx
@@ -1723,7 +1720,7 @@ CONTAINS
 
   FUNCTION dispint(cosm)
 
-    USE cosdef
+
     IMPLICIT NONE
     REAL :: dispint
     REAL*8 :: sum
@@ -2478,6 +2475,6 @@ CONTAINS
 
   END FUNCTION file_length
 
-END PROGRAM MHM
+END MODULE MHM
 
 
