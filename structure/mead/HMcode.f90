@@ -8,6 +8,9 @@ MODULE MHM
      INTEGER :: itk
      REAL, ALLOCATABLE :: rtab(:), sigtab(:)
      REAL, ALLOCATABLE :: ktab(:), tktab(:), pktab(:)
+
+     !The two fitting parameters in the code
+     real :: eta_0, As
   END TYPE cosmology
 
   TYPE tables
@@ -155,7 +158,8 @@ MODULE MHM
     TYPE(cosmology), INTENT(IN) :: cosm
 
     !The first parameter here is 'eta_0' in Mead et al. (2015)
-    eta=0.603-0.3*(sigma(8.,cosm))
+    !JAZ Moved this into the cosm type
+    eta=cosm%eta_0-0.3*(sigma(8.,cosm))
 
   END FUNCTION eta
 
@@ -179,7 +183,7 @@ MODULE MHM
     TYPE(cosmology), INTENT(IN) :: cosm
 
     !This is the 'A' halo-concentration parameter in Mead et al. (2015)
-    As=3.13
+    As=cosm%As
 
   END FUNCTION As
 
@@ -308,6 +312,9 @@ MODULE MHM
     cosm%w=-1
     cosm%sig8=0.8
     cosm%n=0.97
+
+    cosm%eta_0 = 0.603
+    cosm%As = 3.13
 
     IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_m:', cosm%om_m
     IF(feedback) WRITE(*,fmt='(A11,A10,F10.5)') 'COSMOLOGY:', 'Omega_v:', cosm%om_v

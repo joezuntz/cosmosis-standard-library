@@ -77,6 +77,7 @@ function execute(block,config) result(status)
 	integer, parameter :: LINEAR_SPACING = 0
 	integer, parameter :: LOG_SPACING = 1
 	character(*), parameter :: cosmo = cosmological_parameters_section
+	character(*), parameter :: halo = halo_model_parameters_section
 	character(*), parameter :: linear_power = matter_power_lin_section
 	character(*), parameter :: nl_power = matter_power_nl_section
 
@@ -89,6 +90,7 @@ function execute(block,config) result(status)
 	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s
 	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:)
 	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:)
+	real(8) :: Halo_as, halo_eta0
 
 	status = 0
 	call c_f_pointer(config, settings)
@@ -105,6 +107,10 @@ function execute(block,config) result(status)
 	status = status + datablock_get(block, cosmo, "n_s", n_s)
 	status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w)
 
+
+	status = status + datablock_get_double_default(block, halo, "A", 3.13D0, halo_as)
+	status = status + datablock_get_double_default(block, cosmo, "eta_0", 0.603D0, halo_eta0)
+
 	if (status .ne. 0 ) then
 		write(*,*) "Error reading parameters for Mead code"
 		return
@@ -117,6 +123,9 @@ function execute(block,config) result(status)
     cosi%w=w
     cosi%sig8=sig8
     cosi%n=n_s
+
+    cosi%eta_0 = halo_eta0
+    cosi%As = halo_as
 
     !And get the cosmo power spectrum, again as double precision
     !Also the P is 2D as we get z also
