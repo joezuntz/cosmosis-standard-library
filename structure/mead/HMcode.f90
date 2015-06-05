@@ -298,7 +298,7 @@ MODULE MHM
     !itk==4 => Input CAMB T(k)
     !itk==5 => Input CAMB P(k)
 
-    cosm%itk=3
+    cosm%itk=5
 
     cosm%om_m=0.3
     cosm%om_v=1.-cosm%om_m
@@ -322,7 +322,7 @@ MODULE MHM
        !file. This must be speicifed when the program is run
        !(i.e. ./a.out input_tk.dat)
 
-       !CALL get_command_argument(1,input)
+       CALL get_command_argument(1,input)
        IF(input=='') STOP 'ERROR: Please specify input T(k) file'
        INQUIRE(FILE=input, EXIST=lexist)  
        IF(lexist .EQV. .FALSE.) STOP 'ERROR: Specified T(k) file does not exist'
@@ -335,7 +335,7 @@ MODULE MHM
        !file. This must be speicifed when the program is run
        !(i.e. ./a.out input_pk.dat)
 
-       !CALL get_command_argument(1,input)
+       CALL get_command_argument(1,input)
        IF(input=='') STOP 'ERROR: Please specify input P(k) file'
        INQUIRE(FILE=input, EXIST=lexist)  
        IF(lexist .EQV. .FALSE.) STOP 'ERROR: Specified P(k) file does not exist'

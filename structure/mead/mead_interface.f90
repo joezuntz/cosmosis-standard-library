@@ -1,12 +1,12 @@
 module mead_settings_mod
 	type mead_settings
 		logical :: noisy
-		real(4) :: kmin, kmax
+		real(8) :: kmin, kmax
 		integer :: nk
 
-		real(4) :: numin, numax
+		real(8) :: numin, numax
 
-		real(4) :: zmin, zmax
+		real(8) :: zmin, zmax
 		integer :: nz
 
 		logical :: feedback
@@ -24,8 +24,28 @@ function setup(options) result(result)
 	integer(cosmosis_status) :: status
 	type(mead_settings), pointer :: settings
 	type(c_ptr) :: result
+	status = 0
 	
 	allocate(settings)
+
+	status = status + datablock_get(options, option_section, "zmin", settings%zmin)
+	status = status + datablock_get(options, option_section, "zmax", settings%zmax)
+	status = status + datablock_get(options, option_section, "nz", settings%nz)
+
+
+	status = status + datablock_get(options, option_section, "kmin", settings%kmin)
+	status = status + datablock_get(options, option_section, "kmax", settings%kmax)
+	status = status + datablock_get(options, option_section, "nk", settings%nk)
+
+	status = status + datablock_get_double_default(options, option_section, "numin", 0.1D0, settings%numin)
+	status = status + datablock_get_double_default(options, option_section, "numax", 5.0D0, settings%numax)
+
+	status = status + datablock_get_logical_default(options, option_section, "feedback", .false., settings%feedback)
+
+	if (status .ne. 0) then
+		write(*,*) "One or more parameters not found for hmcode"
+		stop
+	endif
 
 	WRITE(*,*) 'z min:', settings%zmin
 	WRITE(*,*) 'z max:', settings%zmax
@@ -68,6 +88,7 @@ function execute(block,config) result(status)
 	!CosmoSIS supplies double precision - need to convert
 	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s
 	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:)
+	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:)
 
 	status = 0
 	call c_f_pointer(config, settings)
@@ -126,8 +147,8 @@ function execute(block,config) result(status)
 
 
 	!Set the output ranges in k and z
-	CALL fill_table(settings%kmin,settings%kmax,k,settings%nk,LOG_SPACING)
-	CALL fill_table(settings%zmin,settings%zmax,ztab,settings%nz,LINEAR_SPACING)
+	CALL fill_table(real(settings%kmin),real(settings%kmax),k,settings%nk,LOG_SPACING)
+	CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz,LINEAR_SPACING)
 
 	!Fill table for output power
 	ALLOCATE(ptab(settings%nz,settings%nk))
@@ -142,13 +163,13 @@ function execute(block,config) result(status)
 		!Initiliasation for the halomodel calcualtion
 		!Also normalises power spectrum (via sigma_8)
 		!and fills sigma(R) tables
-		CALL halomod_init(z,settings%numin,settings%numax,lut,cosi)
+		CALL halomod_init(z,real(settings%numin),real(settings%numax),lut,cosi)
 
 		!Loop over k values
 		DO i=1,SIZE(k)
 			plin=p_lin(k(i),cosi)        
 			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi)
-			ptab(j,i)=pfull
+			ptab(j,i)=pfull * (k(i)/h)**3
 		END DO
 
 		IF(j==1) THEN
@@ -158,11 +179,16 @@ function execute(block,config) result(status)
 		 if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') j, ztab(j)
 	END DO
 
+	allocate(k_out(settings%nk))
+	allocate(z_out(settings%nz))
+	allocate(p_out(settings%nz,settings%nk))
+	k_out = k/h
+	z_out = ztab
+	p_out = ptab
 	!Convert k to k/h to match other modules
 	k = k/h
-
 	!Output results to cosmosis
-	status = datablock_put_double_grid(block,nl_power, "k_h", k, "z", ztab, "p_k", pfull)
+	status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p_k", p_out)
 
 	!Free memory
 	deallocate(k)
@@ -171,6 +197,9 @@ function execute(block,config) result(status)
 	deallocate(k_in)
 	deallocate(z_in)
 	deallocate(p_in)
+	deallocate(k_out)
+	deallocate(z_out)
+	deallocate(p_out)
 	call deallocate_LUT(lut)
     IF(ALLOCATED(cosi%rtab)) DEALLOCATE(cosi%rtab)
     IF(ALLOCATED(cosi%sigtab)) DEALLOCATE(cosi%sigtab)   
