@@ -57,7 +57,7 @@ MODULE MHM
   WRITE(*,*)
 
   !Set the number of redshifts
-  nz=100
+  nz=16
   zmin=0.
   zmax=4.
   CALL fill_table(zmin,zmax,ztab,nz,0)
