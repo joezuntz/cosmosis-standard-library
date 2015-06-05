@@ -82,7 +82,7 @@ function execute(block,config) result(status)
 
 	real(4) :: p1h, p2h,pfull, plin, z
 	integer :: i,j, z_index
-	REAL, ALLOCATABLE :: k(:),  pmod(:), ztab(:), ptab(:,:)
+	REAL, ALLOCATABLE :: k(:),  pmod(:), ztab(:)
 	TYPE(cosmology) :: cosi
 	TYPE(tables) :: lut
 	!CosmoSIS supplies double precision - need to convert
@@ -93,15 +93,17 @@ function execute(block,config) result(status)
 	status = 0
 	call c_f_pointer(config, settings)
 
+	feedback = settings%feedback
+
 	!Fill in the cosmology parameters. We need to convert from CosmoSIS 8-byte reals
 	!to HMcode 4-byte reals, hence the extra bit
 	status = status + datablock_get(block, cosmo, "omega_m", om_m)
 	status = status + datablock_get(block, cosmo, "omega_lambda", om_v)
 	status = status + datablock_get(block, cosmo, "omega_b", om_b)
-	status = status + datablock_get(block, cosmo, "h", h)
+	status = status + datablock_get(block, cosmo, "h0", h)
 	status = status + datablock_get(block, cosmo, "sigma_8", sig8)
 	status = status + datablock_get(block, cosmo, "n_s", n_s)
-	status = status + datablock_get_double_default(block, cosmo, "w", w, -1.0D0)
+	status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w)
 
 	if (status .ne. 0 ) then
 		write(*,*) "Error reading parameters for Mead code"
@@ -142,7 +144,7 @@ function execute(block,config) result(status)
 	endif
 	!Copy in P(k) from the right part of P(k,z)
 	allocate(cosi%pktab(size(k_in)))
-    cosi%pktab = p_in(:, z_index)
+    cosi%pktab = p_in(:, z_index) * (cosi%ktab**3.)/(2.*(pi**2.))
     cosi%itk = 5
 
 
@@ -151,7 +153,7 @@ function execute(block,config) result(status)
 	CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz,LINEAR_SPACING)
 
 	!Fill table for output power
-	ALLOCATE(ptab(settings%nz,settings%nk))
+	ALLOCATE(p_out(settings%nz,settings%nk))
 
 
 	!Loop over redshifts
@@ -169,7 +171,8 @@ function execute(block,config) result(status)
 		DO i=1,SIZE(k)
 			plin=p_lin(k(i),cosi)        
 			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi)
-			ptab(j,i)=pfull * (k(i)/h)**3
+			!This outputs k^3 P(k).  We convert back.
+			p_out(j,i)=pfull / (k(i)**3.0) * (2.*(pi**2.))
 		END DO
 
 		IF(j==1) THEN
@@ -179,27 +182,24 @@ function execute(block,config) result(status)
 		 if (settings%feedback) WRITE(*,fmt='(I5,F8.3)') j, ztab(j)
 	END DO
 
+	!convert to double precision
 	allocate(k_out(settings%nk))
 	allocate(z_out(settings%nz))
-	allocate(p_out(settings%nz,settings%nk))
-	k_out = k/h
+	k_out = k
 	z_out = ztab
-	p_out = ptab
 	!Convert k to k/h to match other modules
-	k = k/h
 	!Output results to cosmosis
 	status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p_k", p_out)
 
 	!Free memory
 	deallocate(k)
 	deallocate(ztab)
-	deallocate(ptab)
+	deallocate(p_out)
 	deallocate(k_in)
 	deallocate(z_in)
 	deallocate(p_in)
 	deallocate(k_out)
 	deallocate(z_out)
-	deallocate(p_out)
 	call deallocate_LUT(lut)
     IF(ALLOCATED(cosi%rtab)) DEALLOCATE(cosi%rtab)
     IF(ALLOCATED(cosi%sigtab)) DEALLOCATE(cosi%sigtab)   

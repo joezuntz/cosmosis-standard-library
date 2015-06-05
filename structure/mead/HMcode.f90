@@ -57,7 +57,7 @@ MODULE MHM
   WRITE(*,*)
 
   !Set the number of redshifts
-  nz=16
+  nz=100
   zmin=0.
   zmax=4.
   CALL fill_table(zmin,zmax,ztab,nz,0)
@@ -70,7 +70,7 @@ MODULE MHM
   !Fill table for output power
   ALLOCATE(ptab(nz,nk))
 
-  CALL assign_cosmology(cosi, input)
+  CALL assign_cosmology(cosi, input, 3)
 
   !Loop over redshifts
   DO j=1,nz
@@ -282,7 +282,7 @@ MODULE MHM
 
   END SUBROUTINE fill_table
 
-  SUBROUTINE assign_cosmology(cosm, input)
+  SUBROUTINE assign_cosmology(cosm, input, itk)
 
 
     IMPLICIT NONE
@@ -290,6 +290,7 @@ MODULE MHM
     TYPE(cosmology) :: cosm
     LOGICAL :: lexist
     CHARACTER(len=64) :: input
+    integer :: itk
 
 
     !itk==1 => Power-law models (i.e. T(k)=1.) (doesn't work with speed-ups)
@@ -298,7 +299,7 @@ MODULE MHM
     !itk==4 => Input CAMB T(k)
     !itk==5 => Input CAMB P(k)
 
-    cosm%itk=5
+    cosm%itk=itk
 
     cosm%om_m=0.3
     cosm%om_v=1.-cosm%om_m
