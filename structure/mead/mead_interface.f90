@@ -162,7 +162,7 @@ function execute(block,config) result(status)
 	CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz,LINEAR_SPACING)
 
 	!Fill table for output power
-	ALLOCATE(p_out(settings%nz,settings%nk))
+	ALLOCATE(p_out(settings%nk,settings%nz))
 
 
 	!Loop over redshifts
@@ -181,7 +181,7 @@ function execute(block,config) result(status)
 			plin=p_lin(k(i),cosi)        
 			CALL halomod(k(i),z,p1h,p2h,pfull,plin,lut,cosi)
 			!This outputs k^3 P(k).  We convert back.
-			p_out(j,i)=pfull / (k(i)**3.0) * (2.*(pi**2.))
+			p_out(i,j)=pfull / (k(i)**3.0) * (2.*(pi**2.))
 		END DO
 
 		IF(j==1) THEN
