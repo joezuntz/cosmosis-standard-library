@@ -46,7 +46,7 @@ def extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint):
 	k = exp(logk)
 	P_out = np.dstack(P_out).squeeze()
 
-	block.replace_grid(section, "k_h", k, "z", z, "P_k", P_out)
+	block.replace_grid(section, "z", z, "k_h", k, "P_k", P_out.T)
 
 
 def setup(options):
