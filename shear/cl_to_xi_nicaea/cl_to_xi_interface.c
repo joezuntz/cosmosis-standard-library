@@ -147,9 +147,14 @@ int execute(c_datablock * block, void * config_in)
 		
 		  
 		else {
-		  printf("Negative values in C(l). No interpolation in log(C(l)),\n");
-		  printf("and no power law extrapolation. So make sure range of input ell\n");
-		  printf("is sufficient for this not to matter. \n");
+			static int warned=0;
+		  if (warned==0){
+			  printf("Negative values in C(l). No interpolation in log(C(l)),\n");
+			  printf("and no power law extrapolation. So make sure range of input ell\n");
+			  printf("is sufficient for this not to matter. \n");
+			  printf("This warning will only appear once per process. \n");
+			  warned=1;
+		  }
 		    cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
 							 dlog_ell, 0., 0., &err); 		  
 		    for (int i=0; i<n_ell; i++){		        
