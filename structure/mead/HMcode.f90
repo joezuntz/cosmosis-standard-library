@@ -218,7 +218,7 @@ MODULE MHM
     REAL :: r_nl
 
     !Calculates k_nl as 1/R where nu(R)=1.
-    r_nl=find(1.,lut%nu,lut%rr,3,3)
+    r_nl=exp(find(1.,lut%nu,log(lut%rr),3,3))
 
   END FUNCTION r_nl
 
@@ -545,6 +545,7 @@ MODULE MHM
        mg_up(i)=mass_r(rg_up(i),cosm)
        nu_up(i)=dc/sigma(rg_up(i),cosm)
 
+       !Finishes once the numax value has been reached
        IF(nu_up(i)>nu_max) THEN
           imax=i
           EXIT
@@ -558,7 +559,8 @@ MODULE MHM
        mg_dn(i)=mass_r(rg_dn(i),cosm)
        nu_dn(i)=dc/sigma(rg_dn(i),cosm)
 
-       IF(nu_dn(i)<nu_min) THEN
+       !Finishes if numin is reached *or* of the halo mass is less than *1/h* Solar mass (!!)
+       IF(nu_dn(i)<nu_min .OR. mg_dn(i)<1.) THEN
           imin=i
           EXIT
        END IF
