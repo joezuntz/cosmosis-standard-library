@@ -435,7 +435,7 @@ module camb_interface_tools
 		endif
 
 		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
-        	"k_h", k, "z", z, "delta_cdm", P)
+        	"k_h", k, "z", z, "delta_cdm", T)
 
 		if (status .ne. 0) then
 			write(*,*) "Failed to save matter power in CAMB."
