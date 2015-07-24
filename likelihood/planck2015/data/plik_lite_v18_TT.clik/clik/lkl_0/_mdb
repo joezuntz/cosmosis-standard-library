@@ -1,0 +1,6 @@
+lkl_type str plik_cmbonly
+lmax int 2508
+cmbonly_version int 18
+external_dir str .
+lmin int 30
+unit int 1
