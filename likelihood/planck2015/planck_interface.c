@@ -49,7 +49,7 @@ configuration_data * setup(c_datablock * options){
 			param, "", &value);
 
 		if (strlen(value)>0){
-			printf("Looking for clik Planck likelihood file %d: %s", 
+			printf("Looking for clik Planck likelihood file %d: %s\n", 
 				config->ndata+1, value);
 			config->clik_data[config->ndata] = clik_init(value, &err);
 			config->ndata++;
@@ -66,7 +66,11 @@ configuration_data * setup(c_datablock * options){
 				fprintf(stderr,"     http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
 				fprintf(stderr,"and edit demos/demo2.ini, or just skip demos two and four for now.\n\n");
 				exit(1);
-			}			
+			}
+			else{
+			printf("%s successfully initialized.\n", value);
+
+			}
 
 		}		
 		else{
