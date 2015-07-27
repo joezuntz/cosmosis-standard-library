@@ -19,6 +19,8 @@ typedef struct cl_to_xi_config {
 	int n_theta_user;
 	double theta_min_user;
 	double theta_max_user;
+	char * input_section;
+	char * output_section;
 
 } cl_to_xi_config;
 
@@ -30,7 +32,8 @@ void * setup(c_datablock * options)
 	//status |= c_datablock_get_int(options, OPTION_SECTION, "n_theta", 10, &(config->n_theta_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_min", 0.0, &(config->theta_min_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_max", 0.0, &(config->theta_max_user));
-
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
 
 	if (status){
 		fprintf(stderr, "Please specify n_theta, theta_min, and theta_max in the cl_to_xi module.\n");
@@ -90,7 +93,7 @@ int execute(c_datablock * block, void * config_in)
 	double * ell;
 	
 	int n_ell;
-	status |= c_datablock_get_double_array_1d(block,shear_cl, "ell", &ell, &n_ell);
+	status |= c_datablock_get_double_array_1d(block, config->input_section, "ell", &ell, &n_ell);
 	double log_ell_min = log(ell[0]);
 	double log_ell_max = log(ell[n_ell-1]);
 	double dlog_ell=(log_ell_max-log_ell_min)/(n_ell-1);
@@ -116,8 +119,8 @@ int execute(c_datablock * block, void * config_in)
 				}
     		*/
 			//read in C(l)
-		double * C_ell;
-    		status |= c_datablock_get_double_array_1d(block,shear_cl, name_in, &C_ell, &n_ell);
+			double * C_ell;
+    		status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
     		//fill cl_table for P_projected
 		//need to check for negative values...if there are some, can't do loglog interpolation
 		int neg_vals=0;
@@ -186,10 +189,10 @@ int execute(c_datablock * block, void * config_in)
 				       tpstat, &P_projected_logl, i_bin, j_bin, &err);		  
 		}
 			//Now save to block
-		c_datablock_put_int(block, shear_xi, "nbin", num_z_bin);
-		c_datablock_put_double_array_1d(block, shear_xi, name_xip,
-                  xi[0], N_thetaH);
-		c_datablock_put_double_array_1d(block, shear_xi, name_xim,
+			c_datablock_put_int(block, shear_xi, "nbin", num_z_bin);
+			c_datablock_put_double_array_1d(block, config->output_section, name_xip,
+		                  xi[0], N_thetaH);
+			c_datablock_put_double_array_1d(block, config->output_section, name_xim,
                   xi[1], N_thetaH);
 		free(C_ell);
 			//fclose(f);
@@ -203,8 +206,7 @@ int execute(c_datablock * block, void * config_in)
 	for (int i; i<N_thetaH; i++){
 		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
 	}
-
-	status |= c_datablock_put_double_array_1d(block, shear_xi, "theta",
+	c_datablock_put_double_array_1d(block, config->output_section, "theta",
                   theta_vals, N_thetaH);
 	//Include units
 	c_datablock_put_metadata(block, shear_xi, "theta", "unit", "radians");
