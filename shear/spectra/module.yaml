@@ -38,7 +38,8 @@ params:
     matter_spectra: "Logical; compute matter power spectra? (Default: False)"
     ggl_spectra: "Logical; compute galaxy-galaxy lensing spectra? (Default: False)"
     gal_IA_cross_spectra: "Logical; compute cross-power between galaxy positions and alignments? (Default: False) - Not implemented"
-    magnification: "Logical; compute lensing magnification auto- and cross-spectra? (Default: False)"
+    mag_gal_cross_spectra: "Logical; compute lensing magnification cross-spectra? (Default: False)"
+    mag_mag: "Logical; compute lensing magnification auto-spectra? (Default: False)"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
@@ -60,7 +61,11 @@ inputs:
     matter_power_gal:
         z: "real vector; redshift values of P(k,z) samples"
         k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"      
+        P_k: "real 2d array; non-linear galaxy power spectrum at samples in (Mpc/h)^{-3}"
+    matter_power_gal_mass:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P_{gm}(k,z) samples in units of Mpc/h"
+        P_k: "real 2d array; non-linear galaxy-mass cross-power spectrum at samples in (Mpc/h)^{-3}"
 
 outputs:
     shear_cl:

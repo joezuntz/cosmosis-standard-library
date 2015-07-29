@@ -459,13 +459,19 @@ int execute(c_datablock * block, void * config_in)
 	if (config->matter_spectra) {
 		if (c_datablock_has_section(block, "matter_power_gal")) {
 			PK_gg = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal", "k_h", "z", "P_k");
-			if (PK_gg==NULL) PK_gg=PK;
-		} else {
-			PK_gg = PK;
 		}
+		if (PK_gg==NULL) PK_gg=PK;
 	}
-	// TODO: Get PK_gm with bias model if present in the data block and use
-	//       for the gal-mass cross-correlations.
+	// Get a galaxy-mass cross-power spectrum with a bias model that distinguishes
+	// from the matter power spectrum if present in the data block. Otherwise,
+	// just use the matter power spectrum for the 'galaxy-mass power spectrum'
+	Interpolator2D * PK_gm = NULL;
+	if (config->ggl_spectra | config->magnification_galaxy) {
+		if (c_datablock_has_section(block, "matter_power_gal_mass")) {
+			PK_gm = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_mass", "k_h", "z", "P_k");
+		}
+		if (PK_gm==NULL) PK_gm=PK;
+	}
 
 	if (PK==NULL) return 1;
 	if (!PK) {
