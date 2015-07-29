@@ -34,7 +34,8 @@ typedef struct shear_spectrum_config {
 	bool matter_spectra;
 	bool ggl_spectra;
 	bool gal_IA_cross_spectra;
-	bool magnification;
+	bool magnification_galaxy;
+	bool magnification_magnification;
 } shear_spectrum_config;
 
 
@@ -57,7 +58,9 @@ void * setup(c_datablock * options){
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "gal_IA_cross_spectra", false,
 		&(config->gal_IA_cross_spectra));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_gal_cross_spectra", false,
-		&(config->magnification));
+		&(config->magnification_galaxy));
+	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_mag", false,
+			&(config->magnification_magnification));
 
 	if (status){
 		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
@@ -157,28 +160,28 @@ const char * choose_output_section(spectrum_type_t spectrum_type,
 	shear_spectrum_config * config)
 {
 	switch(spectrum_type){
-		case matter_matter:
+		case matter_matter: // config->matter_spectra
 			return "matter_cl";
 			break;
-		case shear_intrinsic:
+		case shear_intrinsic: // config->intrinsic_alignments
 			return 	SHEAR_CL_GI_SECTION;
 			break;
-		case intrinsic_intrinsic:
+		case intrinsic_intrinsic: // config->intrinsic_alignments
 			return SHEAR_CL_II_SECTION;
 			break;
-		case shear_shear:
+		case shear_shear: // config->shear_shear
 			return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
 			break;
-		case matter_shear:
+		case matter_shear: // config->ggl_spectra
 			return "ggl_cl";
 			break;
-		case matter_intrinsic:
+		case matter_intrinsic: // config->gal_IA_cross_spectra
 			return "gal_IA_cross_cl";
 			break;
-		case matter_magnification:
+		case matter_magnification: // config->magnification_galaxy
 			return "magnification_galaxy_cl";
 			break;
-		case magnification_magnification:
+		case magnification_magnification: // config->magnification_magnification
 			return "magnification_magnification_cl";
 			break;
 		default:
@@ -192,14 +195,14 @@ const char * choose_output_section(spectrum_type_t spectrum_type,
 int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 	limber_config * lc, shear_spectrum_config * config)
 {
-
+	int status = 0;
 	// First we need to decide whether to use logs in the splines.
 	// This is more accurate, but we cannot use it for cross-spectra
 	// since they can go negative.
   // Also, can't use for intrinsic_intrinsic if A=0 (i.e. zero signal)
 	if (spectrum_type==intrinsic_intrinsic) {
 	        double A;
-	        int status = c_datablock_get_double(block, "intrinsic_alignment_parameters", "A", &A);
+	        status = c_datablock_get_double(block, "intrinsic_alignment_parameters", "A", &A);
 		double eps=1e-9;
 		if ( A>-1*eps && A<eps){
 		  lc->xlog=false;
@@ -243,7 +246,7 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 	// and the other spectra just have a unity prefactor.
 
 	double omega_m;
-	int status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
+	status = c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
 	// in (Mpc/h)^-2
 	// We leave the factor of h in because our P(k)
 	// should have it in.  That's why there is a 100 in here.
@@ -274,11 +277,12 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 			break;
 		case magnification_magnification:
 			lc->prefactor = 4.0 * shear_scaling*shear_scaling;
+			break;
 		default:
 			lc->prefactor = 1.0/0.0;
 			return 1;
 	}
-	return 0;
+	return status;
 }
 
 /*
@@ -448,12 +452,20 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK = load_interpolator_chi(
 		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
 
+	// Get a galaxy power spectrum with a bias model that distinguishes from the
+	// matter power spectrum if present in the data block. Otherwise, just use the
+	// matter power spectrum for the 'galaxy power spectrum'
 	Interpolator2D * PK_gg = NULL;
 	if (config->matter_spectra) {
-		PK_gg = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal", "k_h", "z", "P_k");
-		if (PK_gg==NULL) PK_gg=PK;
+		if (c_datablock_has_section(block, "matter_power_gal")) {
+			PK_gg = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal", "k_h", "z", "P_k");
+			if (PK_gg==NULL) PK_gg=PK;
+		} else {
+			PK_gg = PK;
+		}
 	}
-	// Get a galaxy power spectrum with a bias model that distinguishes from the matter power
+	// TODO: Get PK_gm with bias model if present in the data block and use
+	//       for the gal-mass cross-correlations.
 
 	if (PK==NULL) return 1;
 	if (!PK) {
@@ -508,11 +520,11 @@ int execute(c_datablock * block, void * config_in)
 		status |= compute_spectra(block, nbin, matter_intrinsic,
 			W_splines, Nchi_splines, PK_II, config); // TODO: allow for PK_gI spectrum here
 	}
-	if (config->magnification){
-
+	if (config->magnification_galaxy){
 		status |= compute_spectra(block, nbin, matter_magnification,
 			W_splines, Nchi_splines, PK, config);
-
+	}
+	if (config->magnification_magnification) {
 		status |= compute_spectra(block, nbin, magnification_magnification,
 			W_splines, Nchi_splines, PK, config);
 	}
