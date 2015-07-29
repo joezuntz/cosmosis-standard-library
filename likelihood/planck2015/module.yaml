@@ -38,6 +38,10 @@ explanation: >
 
      The cosmosis team wrote the wrapper which connects the PLC into
      cosmosis.
+
+     Important caveats about which likelihood files you can use together, and what priors
+     you should use on nuisance parameters, are available here:
+     http://wiki.cosmos.esa.int/planckpla2015/index.php/CMB_spectrum_%26_Likelihood_Code
     "
 
 # List of parameters that can go in the params.ini file in the section for this module    
