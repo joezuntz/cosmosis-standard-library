@@ -5,6 +5,7 @@ def setup(options):
 	#only one parameter - filepath
 	filename = options[option_section, "filepath"]
 	des_fmt = options.get_bool(option_section,"des_fmt",default=False)
+	histogram = options.get_bool(option_section,"histogram",default=False)
 	data_full = np.loadtxt(filename).T
 	if des_fmt:
 		z=0.5*(data_full[0]+data_full[1])
@@ -16,6 +17,15 @@ def setup(options):
 		nbin = len(data_full)-1
 		z = data_full[0]
 		n_of_z = data_full[1:]
+
+	if histogram:
+		#in this case the sample z values are lower edges of
+		#histogram bins.  So to turn them into samples we need to
+		#shift everything.  This assumes equal sized bins
+		dz = (z[1]-z[0])/2.0
+		print "n(z) set to histogram mode. Bin centers are %f higher than edges." %dz
+		z += dz
+
 	#check first z is zero, if not add some
 	if z[0]>0.00000001:
 		z_new=np.zeros(len(z)+1)
