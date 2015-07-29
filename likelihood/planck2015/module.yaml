@@ -42,8 +42,10 @@ explanation: >
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    data_1: (string) File path to a Planck likelihood (clik/plik) file
+    data_1: (string; optional) File path to a Planck likelihood (clik/plik) file. Need at least one of lensing_1 or data_1.
     data_2: "(string; optional) Additional likelihood files.  data_3, etc. allowed"
+    lensing_1: (string; optional) File path to a Planck lensing likelihood (clik/plik) file. Need at least one of lensing_1 or data_1.
+    lensing_2: "(string; optional) Additional lensing files.  data_3, etc. allowed."
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
@@ -56,11 +58,13 @@ inputs:
         te: Double vector of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
         pp: Double vector of phi-phi spectra in l*(l+1) C_ell (if using lensing)
     planck:
-        nuisance_parameters: Various nuisance parameters are accepted depending on the likelihood file
+        nuisance_parameters: Various nuisance parameters are accepted depending on the likelihood file.  See cosmosis-standard-library/likelihood/planck2015/nuisance.txt for listing
 
 
 outputs:
     likelihoods:
-        planck_1_like: (real) Log-likelihood from first file
+        planck_1_like: (real; only if data_1 specified) Log-likelihood from first file
         planck_2_like: (real; only if data_2 specified) Log-likelihood from second file.  Can also get planck_3_like etc.
-        planck2015_like: (real) Sum of all log-likelihoods
+        planck_lensing_1_like: (real; only if lensing_1 specified) Log-likelihood from first lensing file. 
+        planck_lensing_2_like:  (real; only if lensing_2 specified) Log-likelihood from second lensing file.  Can also get planck_lensing_3_like etc.
+        planck2015_like: (real) Sum of all Planck 2015 log-likelihoods
