@@ -1,0 +1,140 @@
+This file lists the nuisance parameters required in the [planck] section
+for each of the available clik and clik_lensing likelihood files.
+
+hi_l/plik/plik_dx11dr2_HM_v18_TT.clik: 16 params
+	0: A_cib_217
+	1: cib_index
+	2: xi_sz_cib
+	3: A_sz
+	4: ps_A_100_100
+	5: ps_A_143_143
+	6: ps_A_143_217
+	7: ps_A_217_217
+	8: ksz_norm
+	9: gal545_A_100
+	10: gal545_A_143
+	11: gal545_A_143_217
+	12: gal545_A_217
+	13: calib_100T
+	14: calib_217T
+	15: A_planck
+
+
+hi_l/plik/plik_dx11dr2_HM_v18_TTTEEE.clik: 94 params
+	0: A_cib_217
+	1: cib_index
+	2: xi_sz_cib
+	3: A_sz
+	4: ps_A_100_100
+	5: ps_A_143_143
+	6: ps_A_143_217
+	7: ps_A_217_217
+	8: ksz_norm
+	9: gal545_A_100
+	10: gal545_A_143
+	11: gal545_A_143_217
+	12: gal545_A_217
+	13: galf_EE_A_100
+	14: galf_EE_A_100_143
+	15: galf_EE_A_100_217
+	16: galf_EE_A_143
+	17: galf_EE_A_143_217
+	18: galf_EE_A_217
+	19: galf_EE_index
+	20: galf_TE_A_100
+	21: galf_TE_A_100_143
+	22: galf_TE_A_100_217
+	23: galf_TE_A_143
+	24: galf_TE_A_143_217
+	25: galf_TE_A_217
+	26: galf_TE_index
+	27: bleak_epsilon_0_0T_0E
+	28: bleak_epsilon_1_0T_0E
+	29: bleak_epsilon_2_0T_0E
+	30: bleak_epsilon_3_0T_0E
+	31: bleak_epsilon_4_0T_0E
+	32: bleak_epsilon_0_0T_1E
+	33: bleak_epsilon_1_0T_1E
+	34: bleak_epsilon_2_0T_1E
+	35: bleak_epsilon_3_0T_1E
+	36: bleak_epsilon_4_0T_1E
+	37: bleak_epsilon_0_0T_2E
+	38: bleak_epsilon_1_0T_2E
+	39: bleak_epsilon_2_0T_2E
+	40: bleak_epsilon_3_0T_2E
+	41: bleak_epsilon_4_0T_2E
+	42: bleak_epsilon_0_1T_1E
+	43: bleak_epsilon_1_1T_1E
+	44: bleak_epsilon_2_1T_1E
+	45: bleak_epsilon_3_1T_1E
+	46: bleak_epsilon_4_1T_1E
+	47: bleak_epsilon_0_1T_2E
+	48: bleak_epsilon_1_1T_2E
+	49: bleak_epsilon_2_1T_2E
+	50: bleak_epsilon_3_1T_2E
+	51: bleak_epsilon_4_1T_2E
+	52: bleak_epsilon_0_2T_2E
+	53: bleak_epsilon_1_2T_2E
+	54: bleak_epsilon_2_2T_2E
+	55: bleak_epsilon_3_2T_2E
+	56: bleak_epsilon_4_2T_2E
+	57: bleak_epsilon_0_0E_0E
+	58: bleak_epsilon_1_0E_0E
+	59: bleak_epsilon_2_0E_0E
+	60: bleak_epsilon_3_0E_0E
+	61: bleak_epsilon_4_0E_0E
+	62: bleak_epsilon_0_0E_1E
+	63: bleak_epsilon_1_0E_1E
+	64: bleak_epsilon_2_0E_1E
+	65: bleak_epsilon_3_0E_1E
+	66: bleak_epsilon_4_0E_1E
+	67: bleak_epsilon_0_0E_2E
+	68: bleak_epsilon_1_0E_2E
+	69: bleak_epsilon_2_0E_2E
+	70: bleak_epsilon_3_0E_2E
+	71: bleak_epsilon_4_0E_2E
+	72: bleak_epsilon_0_1E_1E
+	73: bleak_epsilon_1_1E_1E
+	74: bleak_epsilon_2_1E_1E
+	75: bleak_epsilon_3_1E_1E
+	76: bleak_epsilon_4_1E_1E
+	77: bleak_epsilon_0_1E_2E
+	78: bleak_epsilon_1_1E_2E
+	79: bleak_epsilon_2_1E_2E
+	80: bleak_epsilon_3_1E_2E
+	81: bleak_epsilon_4_1E_2E
+	82: bleak_epsilon_0_2E_2E
+	83: bleak_epsilon_1_2E_2E
+	84: bleak_epsilon_2_2E_2E
+	85: bleak_epsilon_3_2E_2E
+	86: bleak_epsilon_4_2E_2E
+	87: calib_100T
+	88: calib_217T
+	89: calib_100P
+	90: calib_143P
+	91: calib_217P
+	92: A_pol
+	93: A_planck
+
+
+hi_l/plik_lite/plik_lite_v18_TT.clik: 1 params
+	0: A_Planck
+
+
+hi_l/plik_lite/plik_lite_v18_TTTEEE.clik: 1 params
+	0: A_Planck
+
+
+low_l/bflike/lowl_SMW_70_dx11d_2014_10_03_v5c_Ap.clik: 1 params
+	0: A_planck
+
+
+low_l/commander/commander_rc2_v1.1_l2_29_B.clik: 1 params
+	0: A_planck
+
+lensing/smica_g30_ftl_full_pp.clik_lensing: 1 params
+	0: A_planck
+
+lensing/smica_g30_ftl_full_pttptt.clik_lensing: 1 params
+	0: A_planck
+

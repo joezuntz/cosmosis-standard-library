@@ -58,7 +58,7 @@ LAPACKLIBPATHMKL =
 #LAPACKLIBPATHMKL = -L$(MKLROOT)/lib/em64t
 
 #if you want to point to your own version of lapack set the following variables
-LAPACK = -L$(LAPACK_LIB) -llapack -lblas
+LAPACK = ${LAPACK_LINK}
 #LAPACKLIBPATH = /some/path
 
 

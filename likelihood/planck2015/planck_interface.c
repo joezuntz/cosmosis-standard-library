@@ -8,93 +8,111 @@
 #define MAX_NUMBER_LIKES 128
 
 typedef struct configuration_data{
-	int ndata;
+	int ndata, nlensing;
 	clik_object * clik_data[MAX_NUMBER_LIKES];
-
+	clik_lensing_object * clik_lensing_data[MAX_NUMBER_LIKES];
 
 } configuration_data;
 
-
-static int find_max_lmax(clik_object * like_obj)
-{
-	error * err = initError();
-	int n_cl = 6;
-	int lmax_by_type[n_cl];
-	clik_get_lmax(like_obj, lmax_by_type,&err);
-	int max_lmax = 0;
-	int i;
-	for (i=0; i<n_cl; i++) {
-		if (lmax_by_type[i]>max_lmax){
-			max_lmax = lmax_by_type[i];
-		}
-	}
-	return max_lmax;
-	endError(&err);
-}
+typedef enum {clik_type_standard, clik_type_lensing} clik_type;
 
 
 
-configuration_data * setup(c_datablock * options){
-	error * err = initError();
 
-	configuration_data * config = malloc(sizeof(configuration_data));
-
+static
+int read_requested_files(configuration_data * config, c_datablock * options, clik_type mode){
 	int status = 0;
-	config->ndata=0;
 	char param[512];
+	error * err = initError();
+	char * prefix;
+	switch (mode) {
+	case clik_type_standard:
+		prefix = "data";
+		break;
+	case clik_type_lensing:
+		prefix = "lensing";
+	  break;
+	default:
+	  fprintf(stderr, "Unknown type of clik file - this is a coding error, please report it.\n");
+	  exit(1);
+	  break;
+	}	
+
+
+	int n=0;
 	while (1){
-		snprintf(param, 128, "data_%d", config->ndata+1);
+		if (n==127){
+			fprintf(stderr, "Somehow you have reached the hard-coded maximum number of clik files supported by cosmosis: %d.", MAX_NUMBER_LIKES);
+			fprintf(stderr, "Probably you are just messing about trying to break things.  Well done, then.\n");
+			fprintf(stderr, "If not (somehow) you will need to modify MAX_NUMBER_LIKES in cosmosis-stadard-library/likelihood/planck2014/planck_interface.c\n");
+			exit(1);
+		}
+		snprintf(param, 128, "%s_%d", prefix, n+1);
 		char * value;
 		status |= c_datablock_get_string_default(options, OPTION_SECTION, 
 			param, "", &value);
 
-		if (strlen(value)>0){
-			printf("Looking for clik Planck likelihood file %d: %s\n", 
-				config->ndata+1, value);
-			config->clik_data[config->ndata] = clik_init(value, &err);
-			config->ndata++;
+		if (strlen(value)==0) break;
+
+		printf("Looking for clik Planck likelihood file %d: %s\n", 
+			n+1, value);
+
+		switch (mode) {
+			case clik_type_standard:
+				config->clik_data[n] = clik_init(value, &err);
+				break;
+			case clik_type_lensing:
+				config->clik_lensing_data[n] = clik_lensing_init(value, &err);
+			  break;
+			default:
+			  fprintf(stderr, "Unknown type of clik file - this is a coding error, please report it.\n");
+			  exit(1);
+			  break;
+		}				
+		n++;
 
 
-			if (isError(err)){
-				fprintf(stderr,"There was an error initializating one of the Planck likelihoods.\n");
-				fprintf(stderr,"Here is the error message:\n");
-				printError(stderr,err);
-				fprintf(stderr,"\nThis probably means that a likelihood file was not found.\n\n");
-				fprintf(stderr,"If you are running demo two or demo four then it just means that you\n");
-				fprintf(stderr,"did not download the Planck likelihood when installing.\n");
-				fprintf(stderr,"You can either get it manually from:\n");
-				fprintf(stderr,"     http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
-				fprintf(stderr,"and edit demos/demo2.ini, or just skip demos two and four for now.\n\n");
-				exit(1);
-			}
-			else{
-			printf("%s successfully initialized.\n", value);
-
-			}
-
-		}		
-		else{
-			break;
+		if (isError(err)){
+			fprintf(stderr,"There was an error initializating one of the Planck likelihoods.\n");
+			fprintf(stderr,"Here is the error message:\n");
+			printError(stderr,err);
+			fprintf(stderr,"\nIf it mentions \"stat\" then this probably means that a likelihood file was not found.\n\n");
+			fprintf(stderr,"If you are running demo two or demo four then it just means that you\n");
+			fprintf(stderr,"did not download the Planck likelihood when installing.\n");
+			fprintf(stderr,"You can either get it manually from:\n");
+			fprintf(stderr,"     http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
+			fprintf(stderr,"and edit demos/demo2.ini, or just skip demos two and four for now.\n\n");
+			exit(1);
 		}
 	}
+	endError(&err);
+	return n;
+}
 
 
+configuration_data * setup(c_datablock * options){
+	configuration_data * config = malloc(sizeof(configuration_data));
 
-	if (config->ndata==0){
+	int status = 0;
+	config->ndata=read_requested_files(config, options, clik_type_standard);
+	config->nlensing=read_requested_files(config, options, clik_type_lensing);
+
+	if (config->ndata==0 + config->nlensing){
 		fprintf(stderr, "No data files were specified for Planck at all!\n");
 		fprintf(stderr, "In the options file (not the values.ini file) you need to set in the section for Planck at least the first of:\n");
 		fprintf(stderr, "   data_1 = ...\n");
 		fprintf(stderr, "   data_2 = ...\n");
 		fprintf(stderr, "   data_3 = ...\n");
 		fprintf(stderr, "   data_4 = ...\n");
+		fprintf(stderr, "   etc. and/or\n");
+		fprintf(stderr, "   lensing_1 = ...\n");
+		fprintf(stderr, "   lensing_2 = ...\n");
 		fprintf(stderr, "   etc.\n");
 		fprintf(stderr, "The Planck data files can be downloaded from:\n");
 		fprintf(stderr, "http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
+		fprintf(stderr, "or some are packaged with the planck2015 cosmosis module.\n");
 		exit(1);
 	}
-
-
-	endError(&err);
 
 	return config;
 }
@@ -225,6 +243,83 @@ int run_clik_cosmosis(c_datablock * block, clik_object * like_obj, double * outp
 }
 
 
+static 
+int run_clik_cosmosis_lensing(c_datablock * block, clik_object * like_obj, double * output_like)
+{
+	int i;
+	const int N_CL=7;
+	int param_count=0;
+	int status = 0;
+	char * package_names[] = {"PP","TT","EE","BB","TE", "TB", "EB"};
+	error * err = initError();
+
+	int lmax_by_type[N_CL];
+
+
+	// Get the lmax values for the different spectra and sum them
+	clik_lensing_get_lmaxs(like_obj, lmax_by_type,&err);
+	for (i=0;i<N_CL;i++) if (lmax_by_type[i]>0) param_count += lmax_by_type[i]+1; 
+	// Check for any errors from the Planck library
+	if (isError(err)){
+		fprintf(stderr,"There was an error getting lmax from a Planck lensing likelihood:\n");
+		printError(stderr,err);
+		return 1;
+	}
+
+	// Get the number and names of extra parameters and add to total
+	int n_nuisance;
+	parname * nuisance_names;
+	n_nuisance = clik_lensing_get_extra_parameter_names(like_obj, &nuisance_names, &err);
+	param_count += n_nuisance;
+
+	// Check for any errors from the Planck library
+	if (isError(err)){
+		fprintf(stderr,"There was an error getting nuisance params from a Planck lensing likelihood.\n");
+		printError(stderr,err);
+		return 2;
+	}
+
+	// p is the overall space and cl is the space within it for each spectra.
+	double * p = malloc(sizeof(double)*param_count);
+	double * cl = p;
+
+	// Get the c_ell we need, and the nuisance parameters (if any)
+	status |= extract_c_ell(block, N_CL, package_names, lmax_by_type, n_nuisance, 
+		nuisance_names, p,cl);
+
+	free(nuisance_names);
+
+	// Check for any errors reading things in and quit early if problem
+	if (status){
+		free(p);
+		return status;
+	}
+
+
+	// Compute the actual likelihood and check for errors
+	double like = clik_lensing_compute(like_obj, p, &err);
+	free(p);
+
+	//Clean up
+	if (isError(err)){
+		status = 1;
+		fprintf(stderr, "Error running Planck lensing\n");
+	}
+
+	// Clean up Planck error system and 
+	// return required outputs
+	endError(&err);	
+	*output_like = like;
+	return 0;
+
+	return 0;
+}
+
+
+
+
+
+
 int execute(c_datablock * block, configuration_data * config){
 
 	double like = 0.0;
@@ -242,6 +337,20 @@ int execute(c_datablock * block, configuration_data * config){
 
 		like += like_i;
 	}
+
+	for (int i=0; i<config->nlensing; i++){
+		// Compute the likelihood for this file.
+		double like_i = 0.0;
+		status = run_clik_cosmosis_lensing(block, config->clik_lensing_data[i], &like_i);
+
+		//
+		char name[64];
+		snprintf(name, 64, "PLANCK_LENSING_%d_LIKE", i+1);
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
+
+		like += like_i;
+	}
+
 
 	if (status) return status;
 
