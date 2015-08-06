@@ -209,6 +209,7 @@ LAPACKMACOS = -L$(LAPACKLIBPATHMACOS) -lBLAS -lLAPACK
 
 # mkl I am assuming that the env variable MKLROOT contains the MKL root path
 # if not define it here
+LAPACK=$(LAPACK_LINK)
 
 LAPACKMKLCORELIB = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 LAPACKMKL = -L$(LAPACKLIBPATHMKL) $(LAPACKMKLCORELIB)  -liomp5 -lpthread -lm

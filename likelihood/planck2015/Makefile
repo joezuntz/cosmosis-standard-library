@@ -16,8 +16,6 @@ ifeq ($(LAPACK_LINK),)
 $(error To compile the Planck likelihood you must activate the UPS package lapack or set the environment variable LAPACK_LINK)
 endif
 
-LAPACK=${LAPACK_LINK}
-
 all: planck planck_interface.so
 
 planck: $(PLANCK_DIR)
