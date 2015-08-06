@@ -107,3 +107,12 @@ outputs:
         ell: "Sample ell values for output C_ell"
         nbin: "Number of redshift bins used"
         bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
+    magnification_intrinsic_cl:
+        ell: "Sample ell values for output C_ell"
+        nbin: "Number of redshift bins used"
+        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
+    magnification_shear_cl:
+        ell: "Sample ell values for output C_ell"
+        nbin: "Number of redshift bins used"
+        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
+
