@@ -1,0 +1,41 @@
+#This is a template for module description files
+name: Joachimi_Bridle_alpha
+version: "1.0"
+purpose: "Calculate the gradient of the galaxy luminosity function at the limiting magnitude of the survey."
+url: ""
+attribution: [CosmoSIS team, Simon Samuroff]
+rules: ""
+cite: []
+
+assumptions:
+    - "The galaxy luminosity function is well approximated by the fitting function of Blake & Bridle (2005)."
+    - "The limiting r-band magnitude r_lim>16.9 "
+
+explanation: >
+    "
+    The gradient of the cumulative galaxy luminosity function \alpha is sensitive to both redshift and magnitude limit of the survey 
+    considered. Joachimi & Bridle (2010) extend the fitting function of Blake & Bridle (2005) to obtain a polynomial \alpha(z, r_lim) 
+    at a range of redshifts, where z_i is the median in redshift bin i and r_lim is the r-band magnitude limit. Note that the fitting is based on ground-based
+    data from the COMBO-17 survey. See Joachimi & Bridle (2010) for discussion of its applicability. 
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+        magnitude_limit: "double; limiting r-band magnitude of the survey considered. default=24"
+        binned_alpha: "bool; compute alpha in the survey redshift bins, rather than as a continuous funtion of redshift. default=True"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    wl_num_density:
+        Nz: "integer; number of points used to evaluate the distribution in each redshift bin."
+        nzbin: "integer; number of survey redshift bins."
+        zmax: "double; maximum redshift of the redshift distributions."
+        bin_i: "real vector; an array of Nz points evenly sampled from the galaxy redshift distribution in bin i in the range z={0...zmax}. The index ranges i={0,1...nzbin}."
+
+outputs:
+    galaxy_luminosity_function:
+        z: "real vector; redshift values of alpha(z) samples"
+        alpha: "real vector; gradient of the logarithmic cumulative galaxy luminosity function at the limiting magnitude."
+        z_binned: "real vector; median values of the n(z) in the survey redshift bins."
+        alpha_binned: "real vector; gradient of the logarithmic cumulative galaxy luminosity function at the limiting magnitude, evaluated at the median redshift of each bin."
