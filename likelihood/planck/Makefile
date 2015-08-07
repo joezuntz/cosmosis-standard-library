@@ -12,8 +12,8 @@ ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),)
 $(error To compile the Planck likelihood you must activate the UPS package cfitsio or set the environment variables CFITSIO_INC and CFITSIO_LIB)
 endif
 
-ifeq ($(LAPACK_LIB),)
-$(error To compile the Planck likelihood you must activate the UPS package lapack or set the environment variable LAPACK_LIB)
+ifeq ($(LAPACK_LINK),)
+$(error To compile the Planck likelihood you must activate the UPS package lapack or set the environment variable LAPACK_LINK)
 endif
 
 all: planck planck_interface.so
@@ -22,7 +22,7 @@ planck: $(PLANCK_DIR)
 	cd $(PLANCK_DIR) && $(MAKE) install
 
 planck_interface.so: planck planck_interface.c
-	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c  $(LDFLAGS) -lclik
+	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c -lclik $(LDFLAGS) 
 
 clean:
 	rm -rf *.o *.so *.dSYM

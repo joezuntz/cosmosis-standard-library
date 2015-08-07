@@ -113,7 +113,7 @@ outputs:
         d_l: "1D real array, luminosity distance in Mpc"
         mu:  "1D real array, distance modulus"
         h:  "1D real array, hubble parameter with in units of Mpc"
-        rho: "1D real array, matter density.  Only if mode=all"
+        rho: "1D real array, matter density, in kg/m^3  Only if mode=all"
         # Scalars:
         age: "real, age of universe in GYr"
         zdrag: "real, redshift where baryons no longer dragged by photons. Only if mode!=background"

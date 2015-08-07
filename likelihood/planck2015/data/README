@@ -1,0 +1,9 @@
+We have only included two of the smaller Planck 2015 likelihood files here:
+    commander_rc2_v1.1_l2_29_B.clik
+    plik_lite_v18_TT.clik
+
+If you'd like others you can download them using from:
+http://pla.esac.esa.int/pla/#results
+under the "cosmology" then "likelihood" sections.  You probably just want the
+COM_Likelihood_Data-baseline_R2.00.tar.gz
+file.

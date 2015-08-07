@@ -28,8 +28,10 @@ explanation: >
 
     "
 
-# List of parameters that can go in the params.ini file in the section for this module    
-params: {}
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+  input_section_name: "Name of the angular power spectrum input section. See shear/spectra module. (Default: 'shear_cl')"
+  output_section_name: "Name of the angular correlation function output section (Default: 'shear_xi')"
 
 inputs:
     shear_cl:

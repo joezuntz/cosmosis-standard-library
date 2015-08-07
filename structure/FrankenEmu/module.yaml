@@ -31,6 +31,7 @@ explanation: >
 params:
     dz: "Spacing in redshift of output"
     nz: "Number of redshift samples.  Need nz*dz<=4.0"
+    do_distances: "boolean, Whether to also calculate cosmological distances (default=T)"
 
 
 inputs:

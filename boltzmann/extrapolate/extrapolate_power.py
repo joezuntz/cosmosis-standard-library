@@ -5,81 +5,68 @@ them linearly in log-space out to a specified high k_max
 """
 from cosmosis.datablock import option_section, names
 import numpy as np
-def extrapolate(log_k, log_P, n=200, log_new_kmax=None):
-	""" 
-	Extrapolate P(k) linearly in the logs of both P and k beyond
-	where they are defined.  This is not specific to P(k) - it is
-	just general linear interpolation.
+from numpy import log, exp
 
-	If log_new_kmax is set the the log_k must be the same for every redshift
-	"""
-	# Get the gradient at the end of the array
-	log_k = log_k.squeeze()
-	log_P = log_P.squeeze()
-	nd = np.ndim(log_P)
-	if nd==2:
-		new_log_P = []
-		d = log_P.shape[1]
-		for i in xrange(d):
-			log_P_i = log_P[:,i]
-			new_log_k, new_log_P_i = extrapolate(log_k, log_P_i, n, log_new_kmax) 
-			new_log_P.append(new_log_P_i)
-		new_log_P = np.vstack(new_log_P).T
-		return new_log_k, new_log_P
+def linear_extend(x, y, xmin, xmax, nmin, nmax, nfit):
+	if xmin<x.min():
+		xf = x[:nfit]
+		yf = y[:nfit]
+		p = np.polyfit(xf, yf, 1)
+		xnew = np.linspace(xmin, x.min(), nmin, endpoint=False)
+		ynew = np.polyval(p, xnew)
+		x = np.concatenate((xnew, x))
+		y = np.concatenate((ynew, y))
+	if xmax>x.max():
+		xf = x[-nfit:]
+		yf = y[-nfit:]
+		p = np.polyfit(xf, yf, 1)
+		xnew = np.linspace(x.max(), xmax, nmax, endpoint=True)
+		#skip the first point as it is just the xmax
+		xnew = xnew[1:]
+		ynew = np.polyval(p, xnew)
+		x = np.concatenate((x, xnew))
+		y = np.concatenate((y, ynew))
+	return x, y
 
-	elif nd>2:
-		raise ValueError("Cannot")
-	dlog_k = log_k[-1] - log_k[-2]
-	dlog_P = log_P[-1] - log_P[-2]
-	gradient = dlog_P / dlog_k
-
-	if log_new_kmax is not None:
-		n = int((log_new_kmax - log_k[-1])/dlog_k) + 1
-
-	#Extend the k array with logarithmically spaced entries
-	#and use the gradient we just found to extend P too.
-	more_log_k = dlog_k * (np.arange(n*1.0)+1)
-	more_log_P = more_log_k*gradient + log_P[-1]
-	more_log_k += log_k[-1]
-	#Combine the existing and extension arrays to get the
-	#new extended array
-	new_log_k = np.hstack((log_k, more_log_k))
-	new_log_P = np.hstack((log_P, more_log_P))
-	return new_log_k, new_log_P
-
-
-
-def extrapolate_section(block, section, kmax):
+def extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint):
 	#load current values
 	k = block[section, "k_h"]
-	#early exit if we already have high enough k
-	if k.max() >= kmax:
-		return
-
 	z = block[section, "z"]
 	nk = len(k)
 	nz = len(z)
 	#load other current values
-	P = block[section, "P_k"].reshape((nz, nk)).T
+	k,z,P = block.get_grid(section, "k_h", "z", "p_k")
 	#extrapolate
-	logk, logp = extrapolate(np.log(k), np.log(P), log_new_kmax=np.log(kmax))
-	#save results
-	# block[section, "k_h"] = np.exp(logk)
-	# block[section, "P_k"] = np.exp(logp).T.flatten()
-	# block[section, "nk"] = len(logk)
+	P_out=[]
+	for i in xrange(nz):
+		Pi = P[:,i]
+		logk, logp = linear_extend(log(k), log(Pi), log(kmin), log(kmax), nmin, nmax, npoint)
+		P_out.append(exp(logp))
 
-	block.replace_grid(section, "k_h", np.exp(logk), "z", z, "P_k", np.exp(logp))
+	k = exp(logk)
+	P_out = np.dstack(P_out).squeeze()
+
+	block.replace_grid(section, "z", z, "k_h", k, "P_k", P_out.T)
 
 
 def setup(options):
 	kmax = options.get_double(option_section, "kmax")
-	return {"kmax":kmax}
+	kmin = options.get_double(option_section, "kmin", default=1e10)
+	nmin = options.get_int(option_section, "nmin", default=50)
+	npoint = options.get_int(option_section, "npoint", default=3)
+	nmax = options.get_int(option_section, "nmax", default=200)
+	return {"kmax":kmax, "kmin":kmin, "nmin":nmin, "nmax":nmax, "npoint":npoint}
 
 
 def execute(block, config):
+	kmin = config['kmin']
 	kmax = config['kmax']
+	nmin = config['nmin']
+	nmax = config['nmax']
+	npoint = config['npoint']
+
 	#extrapolate non-linear power
 	for section in [names.matter_power_nl, names.matter_power_lin]:
 		if block.has_section(section):
-			extrapolate_section(block, section, kmax)
+			extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint)
 	return 0

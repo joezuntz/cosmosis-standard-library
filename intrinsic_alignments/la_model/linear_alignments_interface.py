@@ -37,28 +37,17 @@ def execute(block, config):
 	#run computation and write to datablock
 	if method=='krhb':
 		P_II, P_GI, b_I, r_I = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
-		if bias_option:
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "b_I", b_I)
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl, "r_I", r_I)
-		else:
-			block.put_grid(ia, "z", z_lin, "k_h", k_lin, "P_II", P_II)
-			block.put_grid(ia, "z", z_lin, "k_h", k_lin,  "P_GI", P_GI)
 	elif method=='bk':
 		P_II, P_GI, b_I, r_I = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
-		if bias_option:
-			block.put_grid(ia,  "z", z_nl, "k_h", k_nl, "b_I", b_I)
-			block.put_grid(ia,  "z", z_nl, "k_h", k_nl, "r_I", r_I)
-		else:
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_II", P_II)
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "P_GI", P_GI)
 	elif method=='bk_corrected':
 		P_II, P_GI, b_I, r_I = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
-		if bias_option:
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl, "b_I", b_I)
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "r_I", r_I)
-		else:
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_II", P_II)
-			block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "P_GI", P_GI)
+		
+	if bias_option:
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "b_I", b_I)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "r_I", r_I)
+	else:
+		block.put_grid(ia, "z", z_lin, "k_h", k_lin, "P_II", P_II)
+		block.put_grid(ia, "z", z_lin, "k_h", k_lin,  "P_GI", P_GI)
 	return 0
 
 def cleanup(config):
