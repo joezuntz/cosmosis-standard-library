@@ -12,6 +12,7 @@
 const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 const char * dist = DISTANCES_SECTION;
 const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
+const char * ia = INTRINSIC_ALIGNMENT_PARAMETERS_SECTION;
 const char * lum = GALAXY_LUMINOSITY_FUNCTION_SECTION;
 
 typedef enum spectrum_type_t {
@@ -72,9 +73,9 @@ void * setup(c_datablock * options){
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_mag", false,
 			&(config->magnification_magnification));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_IA", false,
-			&(config->magnification_magnification));
+			&(config->magnification_intrinsic));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_shear", false,
-			&(config->magnification_magnification));
+			&(config->magnification_shear));
 
 	if (status){
 		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
@@ -387,9 +388,10 @@ double choose_limber_coefficient(spectrum_type_t spectrum_type, double alpha_1, 
 		case matter_matter:
 		case matter_intrinsic:
 		case shear_intrinsic:
-			coeff = 1;
+			coeff = 1.0;
+			break;
 		default:
-			return 1;
+			coeff = 1.0/0.0;
 	}
 
 	return coeff;
@@ -432,14 +434,17 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 	// spectra also require the slope of the luminosity 
 	// function at the limiting magnitude of the survey
 	double *alpha, coeff;
-	int Nzbin, mag_switch;
-	if (spectrum_type==magnification_magnification || spectrum_type==matter_magnification ||
-	    spectrum_type==magnification_shear	       || spectrum_type==magnification_intrinsic){
+	int Nzbin;
+	int is_mag =   spectrum_type==magnification_magnification 
+	            || spectrum_type==matter_magnification 
+	            || spectrum_type==magnification_shear
+	            || spectrum_type==magnification_intrinsic;
+
+	if (is_mag){
 		status |= c_datablock_get_double_array_1d(block, lum, "alpha_binned", &alpha, &Nzbin);
-		mag_switch = 1;
 	}
-	else { mag_switch = 0; }
-	
+	if (status) return status;
+
 	for (int bin1=1; bin1<=nbin; bin1++){
 		// We also need to choose the max value of bin 2.
 		// For auto-spectra we don't compute both bin_i_j and bin_j_i,
@@ -447,7 +452,7 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		int bin2_max = choose_bin2_max(spectrum_type, nbin, bin1);
 		for (int bin2=1; bin2<=bin2_max; bin2++){
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
-			if (mag_switch==1) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
+			if (is_mag) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
 			else coeff=1;
 			int status = save_c_ell(block, section, bin1, bin2, coeff, c_ell, &lc);
 			gsl_spline_free(c_ell);
@@ -455,6 +460,7 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		}
 	}
 	free(lc.ell);
+	if (is_mag) free(alpha);
 	return status;
 }
 
@@ -643,10 +649,10 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
 		PK_II = load_interpolator_chi(
-			block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
+			block, chi_of_z_spline, ia, "k_h", "z", "P_II");
 
 		PK_GI = load_interpolator_chi(
-			block, chi_of_z_spline, IA_SPECTRUM_GI_SECTION, "k_h", "z", "P_GI");
+			block, chi_of_z_spline, ia, "k_h", "z", "P_GI");
 
 		if (PK_II==NULL) return 2;
 		if (PK_GI==NULL) return 3;
@@ -704,7 +710,7 @@ int execute(c_datablock * block, void * config_in)
 		status |= compute_spectra(block, nbin, matter_matter,
 			W_splines, Nchi_splines, PK_gg, config);
 		printf("Saved galaxy-galaxy spectrum.\n");
-		destroy_interp_2d(PK_gg);
+		if (PK_gg!=PK) destroy_interp_2d(PK_gg);
 	}
 	if (config->ggl_spectra){
 		status |= compute_spectra(block, nbin, matter_shear,
