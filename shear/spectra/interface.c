@@ -37,6 +37,7 @@ typedef struct shear_spectrum_config {
 	int n_ell;
 	double ell_min;
 	double ell_max;
+	bool verbose;
 	bool shear_shear;
 	bool intrinsic_alignments;
 	bool matter_spectra;
@@ -62,6 +63,8 @@ void * setup(c_datablock * options){
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_min", &(config->ell_min));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_max", &(config->ell_max));
 	// Selectors for different types of angular power spectra to compute
+	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "verbose", false,
+		&(config->verbose));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "shear_shear", true,
 		&(config->shear_shear));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "intrinsic_alignments", false,
@@ -551,6 +554,9 @@ int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nbi
 
 }
 
+#define printf_verbose(...) if (config->verbose) printf(__VA_ARGS__)
+
+
 int execute(c_datablock * block, void * config_in)
 {
 	DATABLOCK_STATUS status=0;
@@ -619,7 +625,7 @@ int execute(c_datablock * block, void * config_in)
 
 	// ------------
 	// Get the P(k)s we need
-	printf("Loading interpolation splines\n");
+	printf_verbose("Loading interpolation splines\n");
 	/*				Matter power spectrum			 		*/
 
 	Interpolator2D * PK = load_interpolator_chi(
@@ -641,7 +647,7 @@ int execute(c_datablock * block, void * config_in)
 			free_pk_gg = 1;
 		}
 		if (PK_gg==NULL){
-			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n"); 
+			printf_verbose("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n"); 
 			PK_gg=PK;
 			free_pk_gg = 0;
 		}
@@ -685,7 +691,7 @@ int execute(c_datablock * block, void * config_in)
 			free_pk_gm = 1;
 		}
 		if (PK_gm==NULL){
-			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n");
+			printf_verbose("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n");
 			PK_gm=PK;
 			free_pk_gm = 0;
 		}
@@ -700,7 +706,7 @@ int execute(c_datablock * block, void * config_in)
 			free_pk_gi = 1;
 		}
 		if (PK_gI==NULL){
-			printf("No galaxy position-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
+			printf_verbose("No galaxy position-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
 			PK_gI=PK_II;
 			free_pk_gi = 0;
 		}
@@ -711,7 +717,7 @@ int execute(c_datablock * block, void * config_in)
 	if (config->shear_shear){
 		status |= compute_spectra(block, nbin, shear_shear,
 			W_splines, Nchi_splines, PK, config);
-		printf("Saved shear-shear spectrum.\n");
+		printf_verbose("Saved shear-shear spectrum.\n");
 	}
 	if (config->intrinsic_alignments){
 
@@ -721,25 +727,25 @@ int execute(c_datablock * block, void * config_in)
 		status |= compute_spectra(block, nbin, shear_intrinsic,
 			W_splines, Nchi_splines, PK_GI, config);
 
-		printf("Saved IA spectra.\n");
+		printf_verbose("Saved IA spectra.\n");
 
 	}
 	if (config->matter_spectra){
 		status |= compute_spectra(block, nbin, matter_matter,
 			W_splines, Nchi_splines, PK_gg, config);
-		printf("Saved galaxy-galaxy spectrum.\n");
+		printf_verbose("Saved galaxy-galaxy spectrum.\n");
 		
 	}
 	if (config->ggl_spectra){
 		status |= compute_spectra(block, nbin, matter_shear,
 			W_splines, Nchi_splines, PK_gm, config);
-		printf("Saved galaxy-shear spectrum.\n");
+		printf_verbose("Saved galaxy-shear spectrum.\n");
 		
 	}
 	if (config->gal_IA_cross_spectra){
 		status |= compute_spectra(block, nbin, matter_intrinsic,
 			W_splines, Nchi_splines, PK_gI, config);
-		printf("Saved galaxy-intrinsic shape spectrum.\n"); 
+		printf_verbose("Saved galaxy-intrinsic shape spectrum.\n"); 
 		if (status) return status;
 	}
 	// For the spectra involving magnification, check the spectra already saved to the datablock
@@ -754,7 +760,7 @@ int execute(c_datablock * block, void * config_in)
 				W_splines, Nchi_splines, PK, config);
 		}
 		if (status) return status;
-		printf("Saved galaxy-magnification spectrum.\n");
+		printf_verbose("Saved galaxy-magnification spectrum.\n");
 	}
 
 	if (config->magnification_magnification) {
@@ -767,7 +773,7 @@ int execute(c_datablock * block, void * config_in)
 				W_splines, Nchi_splines, PK, config);
 		}
 		if (status) return status;
-		printf("Saved magnification-magnification spectrum.\n");
+		printf_verbose("Saved magnification-magnification spectrum.\n");
 	}
 
 	if (config->magnification_intrinsic) {
@@ -779,7 +785,7 @@ int execute(c_datablock * block, void * config_in)
 				W_splines, Nchi_splines, PK, config);
 		}
 		if (status) return status;
-		printf("Saved magnification-intrinsic shape spectrum.\n");
+		printf_verbose("Saved magnification-intrinsic shape spectrum.\n");
 	}
 	
 	if (config->magnification_shear ) {
@@ -792,7 +798,7 @@ int execute(c_datablock * block, void * config_in)
 				W_splines, Nchi_splines, PK, config);
 		}
 		if (status) return status;
-		printf("Saved shear-shear spectrum.\n");
+		printf_verbose("Saved shear-shear spectrum.\n");
 	}
 	
 	// tidy up global data
