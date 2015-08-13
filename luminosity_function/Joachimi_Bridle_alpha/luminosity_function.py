@@ -26,9 +26,9 @@ def initialise_jb_coefficients(mag_lim):
 	return a
 
 def get_binned_alpha(block, alpha, z):
-	n_z, z = load_n_z(block)
+	n_z, z1 = load_n_z(block)
 		
-	z_med = evaluate_median_z(n_z, z)
+	z_med = evaluate_median_z(n_z, z1)
 
 	interpolator = interpolate.interp1d(z,alpha)
 	alpha_binned = interpolator(z_med)	

@@ -4,12 +4,13 @@ import luminosity_function as luminosity
 import numpy as np
 
 def setup(options):
-	method = options[option_section, "method"].lower()
+	# method = options[option_section, "method"].lower()
 	# For the moment we only have one method. It may or may not be useful to try implementing more here later. 
 	#if method not in ["jb"]:
 	#	raise ValueError('The method in the luminosity function module must'
 	#		'be either "JB" (Joachimi and Bridle 2010) or')
-	
+	method = "jb"
+
 	try:	mag_lim = options[option_section, "magnitude_limit"]
 	except:	mag_lim = 24
 	try:	binned_alpha = options[option_section, "binned_alpha"]
@@ -31,17 +32,17 @@ def execute(block, config):
 	try:
 		Nz = block[names.wl_number_density, 'nz'] ;
 		nzbin = block[names.wl_number_density, 'nbin']
-		zmax = block[names.wl_number_density, 'edge_%d'%(nzbin+1)]		 
+		zmax = block[names.wl_number_density, 'edge_%d'%(nzbin+1)]
 	except:	
 		Nz = 500
 		zmax = 3.0
 
 	coeff_a = luminosity.initialise_jb_coefficients(mag_lim)
-	alpha , z = jb_calculate_alpha(coeff_a, zmax, Nz)	
+	alpha, z = jb_calculate_alpha(coeff_a, zmax, Nz)
 
 	# Write the fine grid alpha to the datablock
 	block.put_double_array_1d(lum,'alpha',alpha)
-	block.put_double_array_1d(lum,'z',z)	
+	block.put_double_array_1d(lum,'z',z)
 
 	# If required then interpolate alpha(z,rlim) to the mean values in each of the specified redshift bins
 	use_binned_alpha = config['use_binned_alpha']

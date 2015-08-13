@@ -49,6 +49,10 @@ typedef struct shear_spectrum_config {
 	
 } shear_spectrum_config;
 
+int destroy_and_null(Interpolator2D ** P){
+	if (*P) destroy_interp_2d(*P);
+	*P = NULL;
+}
 
 void * setup(c_datablock * options){
 
@@ -388,8 +392,6 @@ double choose_limber_coefficient(spectrum_type_t spectrum_type, double alpha_1, 
 		case matter_matter:
 		case matter_intrinsic:
 		case shear_intrinsic:
-			coeff = 1.0;
-			break;
 		default:
 			coeff = 1.0/0.0;
 	}
@@ -493,14 +495,23 @@ int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nbi
 	}
 
 	// The l sampling can be copied directly across to the new section
-	double *l;
+	double *l = NULL;
 	int nl;
 	status|=c_datablock_get_double_array_1d(block, in_section, "ell", &l, &nl);
 	status|=c_datablock_put_double_array_1d(block, out_section, "ell", l, nl);
+	if (status){
+		fprintf(stderr, "Could not find ell value in %s\n", in_section);
+		return status;
+	}
 
-	double *alpha;
+	double *alpha = NULL;
 	status|=c_datablock_get_double_array_1d(block, lum, "alpha_binned", &alpha, &nbin);
-	
+	if (status){
+		fprintf(stderr, "Could not find alpha value in %s\n", lum);
+		return status;
+	}
+
+
 	char spectrum_name[64];
 	double coeff, *C_l_new, *C_l_old;
 	C_l_new = (double*)malloc(sizeof(double)*nl);
@@ -623,13 +634,16 @@ int execute(c_datablock * block, void * config_in)
 	// It seems useful to highlight this decision. If the code does this
 	// silently, there's potential for confusion if an earlier module is omitted.
 	Interpolator2D * PK_gg = NULL;
+	int free_pk_gg;
 	if (config->matter_spectra) {
 		if (c_datablock_has_section(block, "matter_power_gal")) {
 			PK_gg = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal", "k_h", "z", "P_k");
+			free_pk_gg = 1;
 		}
 		if (PK_gg==NULL){
 			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n"); 
 			PK_gg=PK;
+			free_pk_gg = 0;
 		}
 	}
 
@@ -664,25 +678,31 @@ int execute(c_datablock * block, void * config_in)
 	// from the matter power spectrum if present in the data block. Otherwise,
 	// just use the matter power spectrum for the 'galaxy-mass power spectrum'
 	Interpolator2D * PK_gm = NULL;
+	int free_pk_gm;
 	if (config->ggl_spectra | config->galaxy_magnification) {
 		if (c_datablock_has_section(block, "matter_power_gal_mass")) {
 			PK_gm = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_mass", "k_h", "z", "P_k");
+			free_pk_gm = 1;
 		}
 		if (PK_gm==NULL){
 			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n");
 			PK_gm=PK;
+			free_pk_gm = 0;
 		}
 	}
 
 	/*				galaxy position - intrinsic shape spectrum			 		*/
 	Interpolator2D * PK_gI = NULL;
+	int free_pk_gi;
 	if (config->gal_IA_cross_spectra) {
 		if (c_datablock_has_section(block, "matter_power_gal_intrinsic")) {
 			PK_gI = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_intrinsic", "k_h", "z", "P_k");
+			free_pk_gi = 1;
 		}
 		if (PK_gI==NULL){
-			printf("No galaxy-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
+			printf("No galaxy position-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
 			PK_gI=PK_II;
+			free_pk_gi = 0;
 		}
 	}
 
@@ -703,26 +723,24 @@ int execute(c_datablock * block, void * config_in)
 
 		printf("Saved IA spectra.\n");
 
-		destroy_interp_2d(PK_GI);
-		destroy_interp_2d(PK_II);
 	}
 	if (config->matter_spectra){
 		status |= compute_spectra(block, nbin, matter_matter,
 			W_splines, Nchi_splines, PK_gg, config);
 		printf("Saved galaxy-galaxy spectrum.\n");
-		if (PK_gg!=PK) destroy_interp_2d(PK_gg);
+		
 	}
 	if (config->ggl_spectra){
 		status |= compute_spectra(block, nbin, matter_shear,
 			W_splines, Nchi_splines, PK_gm, config);
 		printf("Saved galaxy-shear spectrum.\n");
-		destroy_interp_2d(PK_gm);
+		
 	}
 	if (config->gal_IA_cross_spectra){
 		status |= compute_spectra(block, nbin, matter_intrinsic,
 			W_splines, Nchi_splines, PK_gI, config);
 		printf("Saved galaxy-intrinsic shape spectrum.\n"); 
-		destroy_interp_2d(PK_gI);
+		if (status) return status;
 	}
 	// For the spectra involving magnification, check the spectra already saved to the datablock
 	// It makes things quicker if the shear spectra can be rescaled rather than evaluating the
@@ -735,6 +753,7 @@ int execute(c_datablock * block, void * config_in)
 			status |= compute_spectra(block, nbin, matter_magnification,
 				W_splines, Nchi_splines, PK, config);
 		}
+		if (status) return status;
 		printf("Saved galaxy-magnification spectrum.\n");
 	}
 
@@ -747,6 +766,7 @@ int execute(c_datablock * block, void * config_in)
 			status |= compute_spectra(block, nbin, magnification_magnification,
 				W_splines, Nchi_splines, PK, config);
 		}
+		if (status) return status;
 		printf("Saved magnification-magnification spectrum.\n");
 	}
 
@@ -758,6 +778,7 @@ int execute(c_datablock * block, void * config_in)
 			status |= compute_spectra(block, nbin, matter_intrinsic,
 				W_splines, Nchi_splines, PK, config);
 		}
+		if (status) return status;
 		printf("Saved magnification-intrinsic shape spectrum.\n");
 	}
 	
@@ -770,6 +791,7 @@ int execute(c_datablock * block, void * config_in)
 			status |= compute_spectra(block, nbin, magnification_shear,
 				W_splines, Nchi_splines, PK, config);
 		}
+		if (status) return status;
 		printf("Saved shear-shear spectrum.\n");
 	}
 	
@@ -777,7 +799,13 @@ int execute(c_datablock * block, void * config_in)
 	for (int bin=0; bin<nbin; bin++) gsl_spline_free(W_splines[bin]);
 	gsl_spline_free(a_of_chi_spline);
 	gsl_spline_free(chi_of_z_spline);
-	destroy_interp_2d(PK);
+
+	destroy_and_null(&PK);
+	destroy_and_null(&PK_GI);
+	destroy_and_null(&PK_II);
+	if (free_pk_gm) destroy_and_null(&PK_gm);
+	if (free_pk_gg) destroy_and_null(&PK_gg);
+	if (free_pk_gi) destroy_and_null(&PK_gI);
 	free(chi);
 	free(a);
 	free(z);
@@ -785,6 +813,8 @@ int execute(c_datablock * block, void * config_in)
   return status;
 
 }
+
+
 
 int cleanup(void * config_in)
 {

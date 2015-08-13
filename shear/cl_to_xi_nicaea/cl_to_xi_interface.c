@@ -89,11 +89,20 @@ int execute(c_datablock * block, void * config_in)
 
 	// Load the number of redshift bins
 	status |= c_datablock_get_int(block, wl_nz, "nbin", &num_z_bin);
+
+	if (status) {
+		fprintf(stderr, "Could not load nbin in C_ell -> xi\n");
+		return status;
+	}
 	//Also load ell array
 	double * ell;
 
 	int n_ell;
 	status |= c_datablock_get_double_array_1d(block, config->input_section, "ell", &ell, &n_ell);
+	if (status) {
+		fprintf(stderr, "Could not load ell in C_ell -> xi\n");
+		return status;
+	}
 	double log_ell_min = log(ell[0]);
 	double log_ell_max = log(ell[n_ell-1]);
 	double dlog_ell=(log_ell_max-log_ell_min)/(n_ell-1);
@@ -111,7 +120,11 @@ int execute(c_datablock * block, void * config_in)
 			// read in C(l)
 			double * C_ell;
 			snprintf(name_in, 64, "bin_%d_%d",j_bin,i_bin);
-    	status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
+	    	status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
+			if (status) {
+				fprintf(stderr, "Could not load bin %d,%d in C_ell -> xi\n", i_bin, j_bin);
+				return status;
+			}
 
 			// Choose the type of Hankel transform
 			tpstat_t tpstat;
