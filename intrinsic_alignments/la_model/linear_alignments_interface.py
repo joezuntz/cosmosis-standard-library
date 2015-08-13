@@ -6,12 +6,12 @@ import numpy as np
 
 def setup(options):
 	method = options[option_section, "method"].lower()
-	bias_option = options[options_section, "bias"]
+	bias_option = options.get_bool(option_section, "bias", False)
 	if method not in ["krhb", "bk", "bk_corrected"]:
 		raise ValueError('The method in the linear alignment module must'
 			'be either "KRHB" (for Kirk, Rassat, Host, Bridle) or BK for '
 			'Bridle & King or "BK_corrected" for the corrected version of that')
-	return method, bias
+	return method, bias_option
 
 def execute(block, config):
 	# load z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, C1, omega_m, H0
@@ -48,6 +48,7 @@ def execute(block, config):
 	else:
 		block.put_grid(ia, "z", z_lin, "k_h", k_lin, "P_II", P_II)
 		block.put_grid(ia, "z", z_lin, "k_h", k_lin,  "P_GI", P_GI)
+		print "Saving PII"
 	return 0
 
 def cleanup(config):
