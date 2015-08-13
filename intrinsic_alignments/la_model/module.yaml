@@ -42,7 +42,6 @@ explanation: >
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
     method: "string, choice of 'bk', 'bk_corrected', 'krhb', chooses which model to run"
-    bias: "Bool, output biases b_I and r_I rather than power spectra P_II and P_GI"
 
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
