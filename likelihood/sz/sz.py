@@ -1,34 +1,38 @@
-from cosmosis.datablock import names, option_section
-# sigma8 * omega_m ** 0.3 = 
+from cosmosis.datablock import names
+from cosmosis.gaussian_likelihood import SingleValueGaussianLikelihood
 
 cosmo = names.cosmological_parameters
-likes = names.likelihoods
 sz = "sz"
 
-def setup(options):
-	measured_value = options.get_double(option_section, "measured_value", 0.764)
-	error = 0.025	
-	fiducial_omega = 0.27
-	return (measured_value, fiducial_omega, error)
+class SZXLikelihood(SingleValueGaussianLikelihood):
+	# The mean and standard deviation of the Planck SZ measurement.
+	# The user can over-ride these in the ini file if desired
+	mean = 0.764
+	sigma = 0.025
+	fid_omega = 0.27
 
-def execute(block, config):
-	(mu, fid, sigma) = config
-	sigma8 = block[cosmo, "sigma_8"]
-	omega_m = block[cosmo, "omega_m"]
+	#Where we should save the likelihood
+	like_name = "sz"
 
-	# Cosmology ...
-	x = sigma8 * (omega_m/fid)**0.3
+	def __init__(self, options):
+		super(SZXLikelihood, self).__init__(options)
+		#Allow the user to override the fiducial omega
+		#as well as the mean and sigma
+		if options.has_value("fid_omega"):
+			self.fid_omega = options["fid_omega"]
+		print "Fiducial omega_m for SZ = ", self.fid_omega
 
-	# save the likelihood
-	like = -0.5 * (x-mu)**2 / sigma**2
-	block[likes, "SZ_LIKE"] = like
-	block[sz, "x"] = x
-	#could put:
-	#extra_outputs = sz/x
+	def extract_theory_points(self, block):
+		#compute the derived quantity we need for this
+		#likelihood.  It is a combination of omega_m and
+		#sigma_8
+		sigma8 = block[cosmo, "sigma_8"]
+		omega_m = block[cosmo, "omega_m"]
 
-	return 0
+		#The original measurmen
+		x = sigma8 * (omega_m/self.fid_omega)**0.3
+		block[sz, "x"] = x
+		return x
 
 
-def cleanup(config):
-	pass
-
+setup, execute, cleanup = SZXLikelihood.build_module()
