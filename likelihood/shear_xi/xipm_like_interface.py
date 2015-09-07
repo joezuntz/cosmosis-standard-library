@@ -101,11 +101,30 @@ def execute(block, config):
 
     #Calculate the likelihood
 
-    like = calculator(xi_theory)
+    like, theory_vector, inv_cov = calculator(xi_theory)
     
     #save the result
     section=section_names.likelihoods
     block[section, "xipm_like"] = like
+
+    #And also the predicted data points, which we refer to
+    #here as the "fisher vector" - the vector of observables we want the derivatives
+    #of later, and inverse cov mat which also goes into the fisher matrix.
+    #If there is an existing Fisher vector, append to it.
+    if block.has_value(section_names.data_vector, 'vector'):
+        v = block[section_names.data_vector, 'vector']
+        v = np.concatenate((v, theory_vector))
+
+        #and the same for the inverse covariance
+        M = block[section_names.data_vector, 'inv_covariance']
+        M = scipy.linalg.block_diag(M, np.atleast_2d(inv_cov))
+    else:
+        #otherwise just use an empty existing vector
+        v = theory_vector
+        M = inv_cov
+
+    block["data_vector", "vector"] = v
+    block["data_vector", "inv_covariance"] = M
 
     return 0
 

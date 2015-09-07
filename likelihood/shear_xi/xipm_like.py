@@ -198,7 +198,7 @@ class XipmLikelihood(object):
         delta = xi_vector - self.data_vector
         #print delta
         chi2 = np.dot(delta, np.dot(self.weight, delta))
-        return -chi2/2.0
+        return -chi2/2.0, xi_vector, self.weight
 
 
 # ordering is (1,1) (1,2) (1,3) (1,4) (1,5) (1,6) (2,2) (2,3) ... (5,5), (5,6), (6,6)
