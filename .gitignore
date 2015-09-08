@@ -13,3 +13,11 @@ likelihood/planck/plc-1.0/buildir
 likelihood/planck/plc-1.0/bin/
 likelihood/planck/plc-1.0/lib/
 output/
+boltzmann/class/class_v2.4.1/build/
+boltzmann/class/class_v2.4.1/python/WD/
+boltzmann/class/class_v2.4.1/python/classy.c
+likelihood/planck2015/plc-2.0/bin/
+likelihood/planck2015/plc-2.0/buildir/
+likelihood/planck2015/plc-2.0/include/
+likelihood/planck2015/plc-2.0/lib/
+likelihood/planck2015/plc-2.0/share/
