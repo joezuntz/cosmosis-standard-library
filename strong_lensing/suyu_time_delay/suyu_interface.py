@@ -16,7 +16,8 @@ def setup(options):
 			lambda_d = options[option_section, "lambda_d"]
 			mu_d = options[option_section, "mu_d"]
 			sigma_d = options[option_section, "sigma_d"]
-			like = TimeDelayLikelihood(z_d, z_s, lambda_d, mu_d, sigma_d)
+			name = options[option_section, "name"]
+			like = TimeDelayLikelihood(name, z_d, z_s, lambda_d, mu_d, sigma_d)
 		except:
 			raise ValueError("If lens_name is not B1608 or RXJ1131, please set all of z_d, z_s, lambda_d, mu_d and sigma_d")
 
