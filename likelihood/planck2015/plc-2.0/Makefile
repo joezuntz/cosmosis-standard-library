@@ -346,11 +346,11 @@ $(BDIR)/libclik_f90.$(SO): $(BDIR)/libclik.$(SO) $(addprefix $(ODIR)/,clik_fortr
 
 $(BDIR)/clik_example_C: $(ODIR)/clik_example_c.o $(BDIR)/libclik.$(SO)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	@$(CC) $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik $< -o $@
+	@$(CC)  -L$(BDIR) -lclik $< -o $@ $(LDFLAG) $(LAPACK)
 
 $(BDIR)/clik_example_f90: $(ODIR)/clik_example_f90.f90.o $(BDIR)/libclik_f90.$(SO)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	@$(FC) $(LDFLAG) $(LAPACK)  -L$(BDIR) -lclik_f90 -lclik $< -o $@
+	@$(FC)   -L$(BDIR) -lclik_f90 -lclik $< -o $@ $(LDFLAG) $(LAPACK)
 
 $(BDIR)/liblapack_clik.$(SO): |$(BDIR)
 ifndef MKL_LIB_FULLPATH
