@@ -3,6 +3,7 @@ name: wmap_shift
 version: 1.0
 purpose: Massively simplified WMAP9 likelihood reduced to just shift parameter
 url: ""
+interface: wmap_shift.so
 attribution: [The WMAP Collaboration (measurement), CosmoSIS team (code)]
 rules: ""
 cite:

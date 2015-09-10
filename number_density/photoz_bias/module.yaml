@@ -1,0 +1,43 @@
+#This is a template for module description files
+name: photoz_bias
+version: 1
+purpose: "Modify a set of loaded n(z) distributions with a multiplicative or additive bias"
+url: ""
+interface: photoz_bias.py
+attribution: [CosmoSIS Team]
+rules: ""
+cite: []
+
+assumptions:
+    - "Simple photo-z bias models: n(z) -> n(z-b) or n(z*(1-b))"
+
+explanation: >
+    Photometric redshift distributions can contain biases - the actual distribution
+    of galaxies in a survey can be different to the estimated one.
+
+    This bias can remain even after calibration with a spectroscopic sample, or by other methods.
+
+    This module models the simplest possible type of n(z) bias - a simple shift in z by a multiplicative
+    or additive factor. The idea is that the shift parameter should be marginalized in sampling over to 
+    account for this bias.  Note that this is *not* the same as simply widening the n(z).
+
+    Ranges or priors should be put on the size of the bias that reflect your knowledge of remaining
+    possible biases.
+
+    The mode is:
+    n(z) -> n(z-b) or n(z*(1-b))
+
+params:
+    mode: "String; 'multiplicative' or 'additive', depending on what kind of bias model you want"
+
+inputs:
+    wl_number_density:
+        nbin: Integer; number of redshift bins
+        z: Real vector; redshift sample points of n(z) estimates
+        bin_i: Real vectors; for i=1..nbin. n(z) estimates
+    wl_photoz_errors:
+        bias_i: Real; for i=1..nbin. Bias size for this bin.
+
+outputs:
+    wl_number_density:
+        bin_i: Real vectors; for i=1..nbin. Modified n(z) estimates

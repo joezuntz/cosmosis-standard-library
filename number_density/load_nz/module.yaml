@@ -3,6 +3,7 @@ name: load_nz
 version: 1
 purpose: Load a number density n(z) for weak lensing from a file
 url: ""
+interface: load_nz.py
 attribution: [CosmoSIS Team]
 rules: "If you use a file from a particular survey you should cite that survey"
 cite: []

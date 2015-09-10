@@ -2,6 +2,7 @@ name: camb
 version: Jan15
 purpose: "Boltzmann and background integrator for BG, CMB, and matter power"
 url: http://camb.info
+interface: camb.so
 attribution: [Antony Lewis, Anthony Challinor]
 rules:
     "Please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"

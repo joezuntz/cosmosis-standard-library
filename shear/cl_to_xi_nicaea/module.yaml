@@ -3,6 +3,7 @@ name: cl_to_xi_nicaea
 version: "1.0"
 purpose: "Compute WL correlation functions xi+, xi- from C_ell"
 url: ""
+interface: nicaea_interface.so
 attribution: [Martin Kilbinger, Nicaea Team]
 rules: ""
 cite: ["http://arxiv.org/abs/0810.5129"]

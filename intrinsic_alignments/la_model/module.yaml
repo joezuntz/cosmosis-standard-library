@@ -3,6 +3,7 @@ name: linear_alignments
 version: "1.0"
 purpose: "Compute the terms P_II and P_GI which go into intrinsic aligment calculations"
 url: ""
+interface: linear_alignments_interface.py
 attribution: [CosmoSIS team, Donnacha Kirk]
 rules: ""
 cite: ["MNRAS 424 3 1647 (2012)", "New J Phys 9 12 444 (2007)"]

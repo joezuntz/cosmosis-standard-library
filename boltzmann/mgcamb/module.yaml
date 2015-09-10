@@ -2,6 +2,7 @@ name: mgcamb
 version: Feb14
 purpose: "Modified Gravity Boltzmann and background integrator for BG, CMB, and matter power"
 url: http://www.sfu.ca/~aha25/MGCAMB.html
+interface: camb.so
 attribution: [A. Hojjati, G.B. Zhao, L. Pogosian, A. Silvestri, Antony Lewis, Anthony Challinor]
 rules:
     "Please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"

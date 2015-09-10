@@ -3,6 +3,7 @@ name: planck
 version: 1.0
 purpose: Likelihood function of CMB from Planck
 url: ""
+interface: planck_interface.so
 attribution: [The Planck Collaboration]
 rules: >
     "Likelihood released by Planck Collaboration and packaged by cosmosis team.  

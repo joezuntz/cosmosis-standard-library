@@ -3,6 +3,7 @@ name: Joachimi_Bridle_alpha
 version: "1.0"
 purpose: "Calculate the gradient of the galaxy luminosity function at the limiting magnitude of the survey."
 url: ""
+interface: interface.py
 attribution: [CosmoSIS team, Simon Samuroff]
 rules: ""
 cite: []

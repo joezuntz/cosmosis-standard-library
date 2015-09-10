@@ -3,6 +3,7 @@ name: clerkin
 version: 1
 purpose: "Compute galaxy bias as function of k, z for 3-parameter Clerkin et al 2014 model"
 url: ""
+interface: clerkin_interface.py
 attribution: ["L. Clerkin"]
 rules:
     "Please cite the relevant papers if you use this module."

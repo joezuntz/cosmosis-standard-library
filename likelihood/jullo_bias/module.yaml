@@ -3,6 +3,7 @@ name: JulloLikelihood
 version: "2012"
 purpose: Likelihood of Jullo et al (2012) measurements of a galaxy bias sample
 url: "http://www.sdss3.org"
+interface: jullo.py
 attribution: [Lucy Clerkin, CosmoSIS Team]
 rules: []
 cite: 

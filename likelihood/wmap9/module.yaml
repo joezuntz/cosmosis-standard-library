@@ -3,6 +3,7 @@ name: wmap
 version: 5
 purpose: Likelihood function of CMB from WMAP
 url: ""
+interface: wmap_interface.so
 attribution: [The WMAP Collaboration]
 rules: >
     "Likelihood released by WMAP Collaboration and packaged by cosmosis team.  

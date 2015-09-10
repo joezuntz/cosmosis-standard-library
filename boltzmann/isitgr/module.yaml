@@ -2,6 +2,7 @@ name: isitgr-camb
 version: "1.1"
 purpose: "Modified version of CAMB to implement phenomenological modified gravity models"
 url: http://www.utdallas.edu/~jdossett/isitgr
+interface: camb.so
 attribution: [Jason Dossett, Mustapha Ishak, Jacob Moldenhauer, Antony Lewis, Anthony Challinor]
 rules:
     "Since isitgr is derived from CAMB, please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"

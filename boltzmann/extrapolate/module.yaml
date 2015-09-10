@@ -2,6 +2,7 @@ name: extrapolate
 version: 1.0
 purpose: "Simple log-linear extrapolation of P(k) to high k"
 url: https://bitbucket.org/joezuntz/cosmosis
+interface: extrapolate_power.py
 attribution: [CosmoSIS Team]
 rules: []
 cite: []

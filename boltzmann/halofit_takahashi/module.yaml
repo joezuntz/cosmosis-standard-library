@@ -2,6 +2,7 @@ name: Halofit_Takahashi
 version: Camb-Nov-13
 purpose: "Compute non-linear matter power spectrum"
 url: "http://camb.info"
+interface: halofit_interface.so
 attribution: [Antony Lewis, Simeon Bird]
 rules:
     "Please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"

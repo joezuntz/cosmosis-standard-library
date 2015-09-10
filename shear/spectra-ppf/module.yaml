@@ -3,6 +3,7 @@ name: wl_spectra_ppf
 version: "1.0"
 purpose: "Compute weak lensing C_ell from P(k,z) and MG D(k,z) with the Limber integral"
 url: ""
+interface: interface.so
 attribution: [CosmoSIS team, Matt Becker]
 rules: ""
 cite: []
