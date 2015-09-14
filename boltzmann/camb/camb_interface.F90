@@ -4,6 +4,7 @@ module camb_interface_tools
 	implicit none
 
 	integer :: standard_lmax = 1200
+	real(dl) :: standard_kmax = 50.0
 	integer, parameter :: CAMB_MODE_ALL = 1
 	integer, parameter :: CAMB_MODE_CMB = 2
 	integer, parameter :: CAMB_MODE_BG  = 3
@@ -28,6 +29,7 @@ module camb_interface_tools
 	real(dl), parameter :: default_pivot_scalar = 0.05
 	integer,  parameter :: default_massive_nu = 0
 	integer,  parameter :: default_sterile_neutrinos = 0
+	real(dl),  parameter :: default_kmax = 50.0
 
 
 	contains
@@ -130,6 +132,9 @@ module camb_interface_tools
 			status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
 			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 		endif
+
+		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)
+
 
 		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
 		status = status + datablock_get_logical_default(block, option_section, "do_lensing", .false. , do_lensing)
@@ -271,7 +276,7 @@ module camb_interface_tools
 		endif	
 
 		params%wantTransfer = .true.
-		params%transfer%kmax = 50.0
+		params%transfer%kmax = standard_kmax
 		params%wantTensors = (params%initpower%rat(1) .ne. 0.0) .or. do_tensors
 
         params%Max_l=standard_lmax
