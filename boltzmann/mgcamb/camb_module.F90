@@ -39,7 +39,7 @@ function execute_all(block, config) result(status)
 		return
 	endif
 	
-	status = camb_interface_set_params(block, params)
+	status = camb_interface_set_params(block, params, CAMB_MODE_ALL)
 	status = status + camb_interface_setup_zrange(params)
 	
 	if (status .ne. 0) then
@@ -100,7 +100,7 @@ function execute_cmb(block, config) result(status)
 	
 	status = 0
 	
-	status = camb_interface_set_params(block, params)
+	status = camb_interface_set_params(block, params, CAMB_MODE_CMB)
 	if (status .ne. 0) then
 		write(*,*) "Failed to get parameters in CAMB"
 		status=3
@@ -158,7 +158,7 @@ function execute_bg(block, config) result(status)
 	
 	status = 0
 
-	status = camb_interface_set_params(block, params, background_only=.true.)
+	status = camb_interface_set_params(block, params, CAMB_MODE_BG)
 	status = status + camb_interface_setup_zrange(params)
 	
 
@@ -209,7 +209,7 @@ function execute_thermal(block, config) result(status)
 	
 	status = 0
 	
-	status = camb_interface_set_params(block, params, background_only=.true.)
+	status = camb_interface_set_params(block, params, CAMB_MODE_THERMAL)
 	status = status + camb_interface_setup_zrange(params)
 
 	if (status .ne. 0) then

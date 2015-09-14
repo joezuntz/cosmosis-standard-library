@@ -176,17 +176,16 @@ module camb_interface_tools
 		endif
 	end function camb_initial_setup
 
-	function camb_interface_set_params(block, params, background_only) result(status)
+	function camb_interface_set_params(block, params, mode) result(status)
 		integer (c_int) :: status
 		integer (c_size_t) :: block
-		logical, optional :: background_only
+		integer :: mode
 		logical :: perturbations
 		type(CambParams) :: params
 		integer :: sterile_neutrino
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
-		perturbations = .true.
-		if (present(background_only)) perturbations = .not. background_only
+		perturbations = (mode .eq. CAMB_MODE_CMB) .or. (mode .eq. CAMB_MODE_ALL)
 
 	
 		call CAMB_SetDefParams(params)
@@ -275,7 +274,8 @@ module camb_interface_tools
 			endif
 		endif	
 
-		params%wantTransfer = .true.
+
+		params%wantTransfer = (mode==CAMB_MODE_ALL)
 		params%transfer%kmax = standard_kmax
 		params%wantTensors = (params%initpower%rat(1) .ne. 0.0) .or. do_tensors
 
