@@ -127,11 +127,9 @@ module camb_interface_tools
 		status = status + datablock_get_logical_default(block, option_section, "use_tabulated_w", .false., use_tabulated_w)
 		status = status + datablock_get_logical_default(block, option_section, "do_tensors", .false., do_tensors)
 
-		if (mode == CAMB_MODE_ALL) then
-			status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
-			status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
-			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
-		endif
+		status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
+		status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
+		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 
 		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)
 
@@ -330,7 +328,7 @@ module camb_interface_tools
 	        params%transfer%pk_redshifts(nz-i+1)  = zmin + dz*(i-1)
     	enddo
 
-
+    	write(*,*) "zmax = ", linear_zmax
     	call Transfer_SortAndIndexRedshifts(params%transfer)
 		status = 0
 	end function

@@ -127,11 +127,10 @@ module camb_interface_tools
 		status = status + datablock_get_int_default(block, option_section, "feedback", 0, FeedbackLevel)
 		status = status + datablock_get_logical_default(block, option_section, "do_tensors", .false., do_tensors)
 
-		if (mode == CAMB_MODE_ALL) then
-			status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
-			status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
-			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
-		endif
+		status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
+		status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
+		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
+
 
 		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)		
 
