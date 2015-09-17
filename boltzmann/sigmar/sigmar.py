@@ -8,14 +8,20 @@ from scipy.interpolate import RectBivariateSpline
 # Definition of z-bins and R-bins
 # Specify linear, nonlinear, or galaxy
 def setup(options):
-	zmin = options[option_section, "zmin"]
-	zmax = options[option_section, "zmax"]
-	dz = options[option_section, "dz"]
-	rmin = options[option_section, "rmin"]
-	rmax = options[option_section, "rmax"]
-	dr = options[option_section, "dr"]
-	z = np.arange(zmin,zmax,dz)
-	R = np.arange(rmin,rmax,dr)
+	if options.has_value(option_section, "z"):
+		z = np.array(options[option_section, "z"])
+	else:
+		zmin = options[option_section, "zmin"]
+		zmax = options[option_section, "zmax"]
+		dz = options[option_section, "dz"]
+		z = np.arange(zmin,zmax,dz)
+	if options.has_value(option_section, "r"):
+		R = np.array(options[option_section, "r"])
+	else:
+		rmin = options[option_section, "rmin"]
+		rmax = options[option_section, "rmax"]
+		dr = options[option_section, "dr"]		
+		R = np.arange(rmin,rmax,dr)
 	blockname = options[option_section, "matter_power"]
 	print "Sigmar(R,z) will be evaluated at:"
 	print "z = ", z
