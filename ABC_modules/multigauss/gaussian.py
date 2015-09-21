@@ -5,7 +5,6 @@ import os
 
 
 cosmo = section_names.cosmological_parameters
-abc = section_names.abc
 
 ROOT_dir = os.path.split(os.path.abspath(__file__))[0]
 COV_file = os.path.join(ROOT_dir,'abc_multigauss_cov.txt')
@@ -31,7 +30,7 @@ def execute(block, config):
         params[i] = block[cosmo, 'mu'+str(i)]
 
     model = np.random.multivariate_normal(params, sigma, ndata)
-    block[abc, 'abc_model'] = model
+    block[section_names.data_vector, 'abc_multigauss_simulation'] = model
 
     return 0
 

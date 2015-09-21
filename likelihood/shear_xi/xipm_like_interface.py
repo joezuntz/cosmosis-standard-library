@@ -101,7 +101,7 @@ def execute(block, config):
 
     #Calculate the likelihood
 
-    like, theory_vector, inv_cov = calculator(xi_theory)
+    like, theory_vector, inv_cov, sim = calculator(xi_theory)
     
     #save the result
     section=section_names.likelihoods
@@ -110,6 +110,7 @@ def execute(block, config):
     #Also save the data vector
     block[section_names.data_vector, "xipm_vector"] = theory_vector
     block[section_names.data_vector, "xipm_inverse_covariance"] = inv_cov
+    block[section_names.data_vector, "xipm_simulation"] = sim
 
     return 0
 
