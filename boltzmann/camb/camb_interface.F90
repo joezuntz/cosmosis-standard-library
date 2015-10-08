@@ -328,7 +328,6 @@ module camb_interface_tools
 	        params%transfer%pk_redshifts(nz-i+1)  = zmin + dz*(i-1)
     	enddo
 
-    	write(*,*) "zmax = ", linear_zmax
     	call Transfer_SortAndIndexRedshifts(params%transfer)
 		status = 0
 	end function
