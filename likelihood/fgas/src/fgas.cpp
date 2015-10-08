@@ -138,7 +138,7 @@ namespace Clusters {
     if ( fin.good() ) {
       fin >> *this;
       fin.close();
-      return fin;
+      return true;
     }
     else return false;
   }
