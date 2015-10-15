@@ -33,6 +33,7 @@ here. See the global variables for the structure.
 
 from numpy import nan, isnan, allclose
 import re
+from math import sqrt, log, exp, pow, log10
 
 def cosmology_consistency(verbose=False, relations_file=""):
 	if relations_file:
@@ -77,6 +78,8 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
 	("omega_m", "1-omega_lambda-omega_k-omega_nu"),
 	("omega_k", "1-omega_m-omega_lambda-omega_nu"),
 	("omega_nu", "1-omega_m-omega_lambda-omega_k"),
+	("log1e10As", "log(A_s*1.0e10)"),
+	("A_s", "exp(log1e10As)*1.0e-10"),
 ]
 
 COSMOLOGY_POSSIBLE_DEFAULTS = [
