@@ -281,7 +281,7 @@ module camb_interface_tools
         params%Max_eta_k=2*standard_lmax
 
         params%DoLensing = do_lensing
-
+        params%DerivedParameters = .true.
 		!Set nonlinear behaviour
 		if (do_nonlinear) then
 			params%NonLinear=2
@@ -289,7 +289,7 @@ module camb_interface_tools
 			params%NonLinear=0
 		endif
 
-	
+		if (mode==CAMB_MODE_THERMAL) params%reion%Reionization = .false.
 	
 		!Some extras and modifications 
 		params%want_zdrag = .true.
@@ -448,6 +448,7 @@ module camb_interface_tools
 
 	
 	function camb_interface_save_da(params, block, save_density, save_thermal) result(status)
+		use CAMBmain
 		integer (cosmosis_block) :: block
 		type(CambParams) :: params
 		integer (c_int) :: status
@@ -486,6 +487,11 @@ module camb_interface_tools
 			!if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
 		enddo
 		
+		!Need to call thermal history here
+		if (thermal .and. ThermoDerivedParams(derived_rdrag)==0.0 ) then
+
+			call cmbmain()
+		endif
 
 		shift = camb_shift_parameter(params)
 		status = status + datablock_put_double(block, dist, "CMBSHIFT", shift)
