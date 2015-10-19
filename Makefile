@@ -1,4 +1,4 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 include ${COSMOSIS_SRC_DIR}/config/subdirs.mk
 
-SUBDIRS = boltzmann likelihood shear supernovae structure mass_function
+SUBDIRS = boltzmann shear supernovae structure mass_function likelihood
