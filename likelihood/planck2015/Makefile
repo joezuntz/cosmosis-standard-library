@@ -13,7 +13,7 @@ $(error To compile the Planck likelihood you must activate the UPS package cfits
 endif
 
 ifeq ($(LAPACK_LINK),)
-$(error To compile the Planck likelihood you must activate the UPS package lapack or set the environment variable LAPACK_LINK)
+$(error To compile the Planck likelihood you must have the environment variable LAPACK_LINK set to tell me how to link to lapack on your system e.g. -L/usr/local/lib -llapack. If you are using the config/setup-cosmosis script then make sure everything is up to date and open a new terminal)
 endif
 
 all: planck planck_interface.so
