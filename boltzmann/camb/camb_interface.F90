@@ -31,6 +31,8 @@ module camb_interface_tools
 	integer,  parameter :: default_sterile_neutrinos = 0
 	real(dl),  parameter :: default_kmax = 50.0
 
+	logical :: need_thermal_init
+
 
 	contains
 
@@ -114,6 +116,8 @@ module camb_interface_tools
 		endif
 
 		status = 0
+
+		need_thermal_init = (mode==CAMB_MODE_THERMAL)
 
 		!We do not use the CMB lmax if only using the background mode
 		if (mode .ne. CAMB_MODE_BG) then
@@ -488,8 +492,7 @@ module camb_interface_tools
 		enddo
 		
 		!Need to call thermal history here
-		if (thermal .and. ThermoDerivedParams(derived_rdrag)==0.0 ) then
-
+		if (thermal .and. need_thermal_init) then
 			call cmbmain()
 		endif
 
