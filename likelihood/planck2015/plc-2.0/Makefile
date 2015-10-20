@@ -77,9 +77,9 @@ ECHO = echo
 
 
 # what is the openmp option for your C compiler (leave empty to cmpile without openmp)
-COPENMP = -fopenmp
+COPENMP =
 # what is the openmp option for your F90 compiler (leave empty to cmpile without openmp)
-FOPENMP = -openmp
+FOPENMP =
 
 # what is the 32/64 bit option for your C compiler (leave empty if you don't want to know)
 CM64 =
@@ -283,6 +283,7 @@ PLIKLKL := $(addprefix $(ODIR)/, smica.o clik_hfipack.o clik_parametric.o clik_p
 CMBLKL:= $(ACTSPTLKL) $(CAMSPECLKL) $(GIBBSLKL) $(LOWLIKELKL) $(BFLIKELKL) $(PLIKLITELKL) $(PLIKLKL)
 CLIKLIB := $(TOOLS) $(CLIKMAIN) $(CMBLKL) $(LENSLKL) $(LAPACKDEP)
 
+cosmosis: $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO)
 
 all: $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO) $(BDIR)/clik_example_C $(BDIR)/clik_example_f90
 
@@ -298,6 +299,12 @@ install_data: | install_dir
 	@mkdir -p $(PREFIX)/share/clik/rel2015
 	@$(ECHO) "install template data $(BLUE_COLOR) $(DATAPLIK) $(NO_COLOR) in $(BLUE_COLOR)$(PREFIX)/share/clik/rel2015 $(NO_COLOR)"
 	$(INSTALL) $(DATAPLIK) $(PREFIX)/share/clik/rel2015
+
+install_cosmosis: $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO) | install_dir
+	@$(INSTALL)  $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO) $(LAPACKDEP) $(PREFIX)/lib
+	@$(ECHO) "install includes $(BLUE_COLOR)clik.h clik.mod$(NO_COLOR) in $(BLUE_COLOR)$(PREFIX)/include $(NO_COLOR)"
+	@$(INSTALL)  src/clik.h src/minipmc/maths_base.h src/minipmc/errorlist.h src/minipmc/io.h src/lapack_clik.h src/minipmc/pmc.h $(ODIR)/clik.mod $(PREFIX)/include
+
 
 install: $(BDIR)/libclik.$(SO) $(BDIR)/libclik_f90.$(SO) $(BDIR)/clik_example_C $(BDIR)/clik_example_f90 $(LAPACKDEP) $(BDIR)/clik_profile.sh $(BDIR)/clik_profile.csh $(BDIR)/clik-config $(BDIR)/clik-config_f90 install_data | install_dir
 	@$(ECHO) "install libs $(BLUE_COLOR)libclik.$(SO) libclik_f90.$(SO)$(NO_COLOR) in $(BLUE_COLOR)$(PREFIX)/lib $(NO_COLOR)"

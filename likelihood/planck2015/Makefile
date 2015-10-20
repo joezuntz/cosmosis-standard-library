@@ -4,7 +4,7 @@ PLANCK_DIR=plc-2.0
 
 DEFINES=-D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D 'CLIKSVNVERSION="$(VERSION)"'
 USER_CFLAGS=-I$(PLANCK_DIR)/include -I$(PLANCK_DIR)/src -D_GNU_SOURCE $(DEFINES)
-USER_LDFLAGS=-L$(PLANCK_DIR)/lib -lcosmosis_fortran -lcosmosis $(RPATH_FLAGS)
+USER_LDFLAGS=-L$(PLANCK_DIR)/lib -lcosmosis_fortran -lcosmosis $(RPATH_FLAGS) -L$(CFITSIO_LIB) -lcfitsio $(LAPACK_LINK)
 
 RPATH_FLAGS=-Wl,-rpath,$(PWD)/$(PLANCK_DIR)/lib
 
@@ -19,7 +19,7 @@ endif
 all: planck planck_interface.so
 
 planck: $(PLANCK_DIR)
-	cd $(PLANCK_DIR) && $(MAKE) install
+	cd $(PLANCK_DIR) && $(MAKE) cosmosis && $(MAKE) install_cosmosis
 
 planck_interface.so: planck planck_interface.c
 	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c -lclik $(LDFLAGS) 
