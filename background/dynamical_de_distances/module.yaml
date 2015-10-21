@@ -1,5 +1,6 @@
 name: "distances"
 version: "2015"
+interface: distances.py
 purpose: "Output cosmological distance measures for dynamical dark energy"
 url: ""
 attribution: [ CosmoSIS team (code)]

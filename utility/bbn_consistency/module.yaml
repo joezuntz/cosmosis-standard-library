@@ -3,6 +3,7 @@ name: "BBN-Consistency"
 version: "0705.0290"
 purpose: "Compute consistent Helium fraction from baryon density given BBN"
 url: "http://parthenope.na.infn.it/"
+interface: bbn_consistency.py
 attribution: [CosmoSIS Team]
 rules: []
 cite: ["Comp.Phys.Commun.178:956-971,2008"]

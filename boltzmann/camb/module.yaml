@@ -31,6 +31,9 @@ explanation: >
     Anthony Lewis has kindly given permission for CAMB to be packaged
     with CosmoSIS.
 
+    If you would like to use the November 2013 version of CAMB instead you can
+    add camb_Nov13 to the SUBDIRS variable in the boltzmann/Makefile.
+
     The CosmoSIS team packaged this module into cosmosis form so any issues
     running it here please ask us first.
 
