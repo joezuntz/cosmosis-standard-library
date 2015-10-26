@@ -55,6 +55,7 @@ def execute_power(block, model):
 		print "Negative P: ", P_out.min()
 		return 1
 
+	import pdb ; pdb.set_trace
 	block.put_grid("matter_power_gal", "z", z, "k_h", k, "p_k", P_out.T)
 
 	return 0
@@ -68,8 +69,16 @@ def execute_bias(block, model):
 		b0 = block['bias_parameters', 'b0']
 		c = block['bias_parameters', 'c']
 		b = clerkin.gtd_bias(z1, growth_z, alpha, b0, c)
-		block[names.bias_field, "z"] = z1
-		block[names.bias_field, "b"] = b
+
+		nk = len(block['matter_power_nl', 'k_h'])
+		bias = np.array([np.array(b) for i in range(nk)])
+		#bias = bias.swapaxes(0,1)
+		
+		k_h = block['matter_power_nl', 'k_h']
+		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "b_g",  bias)
+		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "r_g", np.ones_like(bias) )
+
+		#import pdb ; pdb.set_trace()
 
 	elif model=="q":
 		k = np.logspace(-6, 2, 500)	

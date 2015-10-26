@@ -12,7 +12,6 @@
 const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 const char * dist = DISTANCES_SECTION;
 const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
-const char * ia = INTRINSIC_ALIGNMENT_PARAMETERS_SECTION;
 const char * lum = GALAXY_LUMINOSITY_FUNCTION_SECTION;
 
 typedef enum spectrum_type_t {
@@ -37,7 +36,6 @@ typedef struct shear_spectrum_config {
 	int n_ell;
 	double ell_min;
 	double ell_max;
-	bool verbose;
 	bool shear_shear;
 	bool intrinsic_alignments;
 	bool matter_spectra;
@@ -47,13 +45,11 @@ typedef struct shear_spectrum_config {
 	bool magnification_magnification;
 	bool magnification_intrinsic;
 	bool magnification_shear;
+	char *shear_survey;
+	char *LSS_survey;
 	
 } shear_spectrum_config;
 
-int destroy_and_null(Interpolator2D ** P){
-	if (*P) destroy_interp_2d(*P);
-	*P = NULL;
-}
 
 void * setup(c_datablock * options){
 
@@ -62,30 +58,30 @@ void * setup(c_datablock * options){
 	status |= c_datablock_get_int(options, OPTION_SECTION, "n_ell", &(config->n_ell));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_min", &(config->ell_min));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_max", &(config->ell_max));
-	// Selectors for different types of angular power spectra to compute
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "verbose", false,
-		&(config->verbose));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "shear_shear", true,
+	// Selection options for different types of angular power spectra to compute
+	c_datablock_get_bool_default(options, OPTION_SECTION, "shear_shear", true,
 		&(config->shear_shear));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "intrinsic_alignments", false,
+	c_datablock_get_bool_default(options, OPTION_SECTION, "intrinsic_alignments", false,
 		&(config->intrinsic_alignments));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "matter_spectra", false,
+	c_datablock_get_bool_default(options, OPTION_SECTION, "matter_spectra", false,
 		&(config->matter_spectra));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "ggl_spectra", false,
+	c_datablock_get_bool_default(options, OPTION_SECTION, "ggl_spectra", false,
 		&(config->ggl_spectra));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "gal_IA_cross_spectra", false,
+	c_datablock_get_bool_default(options, OPTION_SECTION, "gal_IA_cross_spectra", false,
 		&(config->gal_IA_cross_spectra));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_gal_cross_spectra", false,
+	c_datablock_get_bool_default(options, OPTION_SECTION, "mag_gal_cross_spectra", false,
 		&(config->galaxy_magnification));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_mag", false,
+	c_datablock_get_bool_default(options, OPTION_SECTION, "mag_mag", false,
 			&(config->magnification_magnification));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_IA", false,
+	status|=c_datablock_get_bool_default(options, OPTION_SECTION, "mag_IA", false,
 			&(config->magnification_intrinsic));
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "mag_shear", false,
+	status|=c_datablock_get_bool_default(options, OPTION_SECTION, "mag_shear", false,
 			&(config->magnification_shear));
+	status |= c_datablock_get_string(options, OPTION_SECTION, "LSS_survey",&(config->LSS_survey));
+	status |= c_datablock_get_string(options, OPTION_SECTION, "shear_survey",&(config->shear_survey));
 
 	if (status){
-		fprintf(stderr, "Please specify n_ell, ell_min, and ell_max in the shear spectra module.\n");
+		fprintf(stderr, "Please specify n_ell, ell_min, ell_max, LSS_survey and shear_survey in the spectra module.\n");
 		exit(status);
 	}
 
@@ -97,7 +93,7 @@ void * setup(c_datablock * options){
 	use in the Limber integral.
 */
 gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
-	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
+	gsl_spline * a_of_chi, gsl_spline * chi_of_z, shear_spectrum_config * config, char * survey)
 {
 	int status = 0;
 	double * N;
@@ -105,15 +101,16 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 	char name[20];
 	snprintf(name, 20, "bin_%d", bin);
 
-    status |= c_datablock_get_double_array_1d(block, wl_nz, name, &N, &n);
-    double Chi[n];
+	status |= c_datablock_get_double_array_1d(block, survey, name, &N, &n);
+    
+    	double Chi[n];
 
-    for (int i=0; i<n; i++){
+    	for (int i=0; i<n; i++){
 		double chi = gsl_spline_eval(chi_of_z, z[i], NULL);
 		double da_dchi = gsl_spline_eval_deriv(a_of_chi, chi, NULL);
 		Chi[i] = chi;
 		N[i] *= -(1+z[i])*(1+z[i])*da_dchi;
-    }
+    	}
 
 	gsl_spline * n_of_chi = spline_from_arrays(n, Chi, N);
 	free(N);
@@ -126,7 +123,7 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
    	of the lensing kernel W to use in the Limber integral.
 */
 gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
-	double chi_max, gsl_spline * a_of_chi_spline)
+	double chi_max, gsl_spline * a_of_chi_spline, shear_spectrum_config * config, char * survey)
 {
 	char name[20];
 	double * n_of_z;
@@ -135,15 +132,13 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 
 	// Load n(z)
 	snprintf(name, 20, "bin_%d", bin);
-	status |= c_datablock_get_double_array_1d(block, wl_nz, name, &n_of_z,
-		&nz1);
+	status |= c_datablock_get_double_array_1d(block, survey, name, &n_of_z, &nz1);
 
 	// Make a spline from n(z)
 	gsl_spline * n_of_z_spline = spline_from_arrays(nz1, z, n_of_z);
 
 	// Do the main computation
-	gsl_spline * W = shear_shear_kernel(chi_max, n_of_z_spline,
-		a_of_chi_spline);
+	gsl_spline * W = shear_shear_kernel(chi_max, n_of_z_spline, a_of_chi_spline);
 
 	// tidy up bin-specific data
 	gsl_spline_free(n_of_z_spline);
@@ -171,7 +166,6 @@ int save_c_ell(c_datablock * block, const char * section,
 	}
 
 	int status = c_datablock_put_double_array_1d(block, section, name, c_ell, n_ell);
-	status |= c_datablock_put_metadata(block, section, name, "note", "no ell^2 prefactor");
 	return status;
 
 }
@@ -323,35 +317,81 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 	return status;
 }
 
-/*
-	Select the combinations of line-of-sight kernels for the Limber integral.
-*/
-int choose_kernels(spectrum_type_t spectrum_type, int nbin, gsl_spline * W[nbin],
-	gsl_spline * Nchi[nbin], gsl_spline ** K1, gsl_spline ** K2)
-{
+int get_binning(spectrum_type_t spectrum_type, int nzbin_lss, int nzbin_shear, int *N1, int  *N2){
+	switch(spectrum_type){
+		case shear_shear:
+		case intrinsic_intrinsic:
+		case shear_intrinsic:
+			* N1 = nzbin_shear;
+			* N2 = nzbin_shear;
+			return 0;
+		
+		case matter_matter:
+		case magnification_magnification:
+		case matter_magnification:
+			* N1 = nzbin_lss;
+			* N2 = nzbin_lss;
+			return 0;
+		
+		case matter_shear:
+		case matter_intrinsic:
+		case magnification_shear:
+		case magnification_intrinsic:
+			* N1 = nzbin_lss;
+			* N2 = nzbin_shear;
+			return 0;
+		
+		default:
+			printf("Warning: no redshift binning assigned.\n");
+			return 1;
+	}
+}
+
+// Select the combinations of line-of-sight kernels for the Limber integral.
+int choose_kernels(spectrum_type_t spectrum_type, int nzbin_shear, int nzbin_lss, gsl_spline * W_shear[nzbin_shear],
+	gsl_spline * W_lss[nzbin_shear], gsl_spline * Nchi_shear[nzbin_shear], gsl_spline * Nchi_lss[nzbin_lss], 
+	gsl_spline ** K1, gsl_spline ** K2){
+	
 	// The different spectra use different kernels to integrate over:
 	// Here we choose which to use (we do it like this so we can use
 	// the same code for the different spectra)
 
 	switch(spectrum_type){
 		case shear_shear:
+			for(int b=0; b<nzbin_shear; b++) {K1[b] = W_shear[b]; K2[b] = W_shear[b];};
+			break;
 		case magnification_magnification:
+			for(int b=0; b<nzbin_lss; b++) K1[b] = W_lss[b]; 
+			for(int b=0; b<nzbin_shear; b++) K2[b] = W_shear[b];
+			break;
 		case magnification_shear:
-			for(int b=0; b<nbin; b++) {K1[b] = W[b]; K2[b] = W[b];};
+			for(int b=0; b<nzbin_lss; b++) K1[b] = W_lss[b]; 
+			for(int b=0; b<nzbin_shear; b++) K2[b] = W_shear[b];
 			break;
 		case intrinsic_intrinsic:
+			for(int b=0; b<nzbin_shear; b++) {K1[b] = Nchi_shear[b]; K2[b] = Nchi_shear[b];};
+			break;
 		case matter_matter:
+			for(int b=0; b<nzbin_lss; b++) {K1[b] = Nchi_lss[b]; K2[b] = Nchi_lss[b];};
+			break;
 		case matter_intrinsic:
-			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = Nchi[b];};
+			for(int b=0; b<nzbin_lss; b++) K1[b] = Nchi_lss[b]; 
+			for(int b=0; b<nzbin_shear; b++) K2[b] = Nchi_shear[b];
 			break;
 		case shear_intrinsic:
 		// This is actually IG rather than GI
+			for(int b=0; b<nzbin_shear; b++){ K1[b] = Nchi_shear[b] ; K2[b] = W_shear[b] ;};
+			break;
 		case matter_shear:
+			for(int b=0; b<nzbin_lss; b++) K1[b] = Nchi_lss[b];
+			for(int b=0; b<nzbin_shear; b++) K2[b] = W_shear[b]; 
+			break;
 		case matter_magnification:
-			for(int b=0; b<nbin; b++) {K1[b] = Nchi[b]; K2[b] = W[b];};
+			for(int b=0; b<nzbin_lss; b++){ K1[b] = Nchi_lss[b] ; K2[b] = W_lss[b] ;};
 			break;
 		case magnification_intrinsic:
-			for(int b=0; b<nbin; b++) {K1[b] = W[b]; K2[b] = Nchi[b];};
+			for(int b=0; b<nzbin_lss; b++) K1[b] = W_lss[b]; 
+			for(int b=0; b<nzbin_shear; b++) K2[b] = Nchi_shear[b];
 			break;
 		default:
 			return 1;
@@ -395,15 +435,16 @@ double choose_limber_coefficient(spectrum_type_t spectrum_type, double alpha_1, 
 		case matter_matter:
 		case matter_intrinsic:
 		case shear_intrinsic:
+			coeff = 1;
 		default:
-			coeff = 1.0/0.0;
+			return 1;
 	}
 
 	return coeff;
 }
 
-int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type,
-	gsl_spline * W[nbin], gsl_spline * Nchi[nbin], Interpolator2D * PK,
+int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectrum_type_t spectrum_type,
+	gsl_spline * W_shear[nzbin_shear], gsl_spline * W_lss[nzbin_lss], gsl_spline * Nchi_shear[nzbin_shear], gsl_spline * Nchi_lss[nzbin_lss], Interpolator2D * PK,
 	shear_spectrum_config * config)
 {
 	// This is a unified interface for generating different
@@ -415,13 +456,16 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 	//  - to choose the W/N kernels to integrate over.
 
 	limber_config lc;
-	lc.ell = NULL;
-	gsl_spline * K1[nbin];
-	gsl_spline * K2[nbin];
+
+	int N1,N2;
+	int status = get_binning(spectrum_type, nzbin_lss, nzbin_shear, &N1, &N2);
+
+	gsl_spline * K1[N1];
+	gsl_spline * K2[N2];
 
 	const char * section = choose_output_section(spectrum_type, config);
-	int status = choose_configuration(block, spectrum_type, &lc, config);
-	status |= choose_kernels(spectrum_type, nbin, W, Nchi, &K1[0], &K2[0]);
+	status = choose_configuration(block, spectrum_type, &lc, config);
+	status |= choose_kernels(spectrum_type, nzbin_shear, nzbin_lss, W_shear, W_lss, Nchi_shear, Nchi_lss, &K1[0], &K2[0]);
 
 	// If any of these have gone wrong we quit
 	// after cleaning up any allocated memory
@@ -431,33 +475,31 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		return status;
 	}
 
-	// First save the ell values and number of bins
+	// First save the ell values and number of redshift bins
 	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
-	status |= c_datablock_put_int(block, section, "nbin", nbin);
+	status |= c_datablock_put_int(block, section, "nzbin_lss", nzbin_lss);
+	status |= c_datablock_put_int(block, section, "nzbin_shear", nzbin_shear);
 
 	// In addition to the Limber kernel, the magnification 
 	// spectra also require the slope of the luminosity 
 	// function at the limiting magnitude of the survey
 	double *alpha, coeff;
-	int Nzbin;
-	int is_mag =   spectrum_type==magnification_magnification 
-	            || spectrum_type==matter_magnification 
-	            || spectrum_type==magnification_shear
-	            || spectrum_type==magnification_intrinsic;
-
-	if (is_mag){
-		status |= c_datablock_get_double_array_1d(block, lum, "alpha_binned", &alpha, &Nzbin);
+	int Nzbin, mag_switch;
+	if (spectrum_type==magnification_magnification || spectrum_type==matter_magnification ||
+	    spectrum_type==magnification_shear	       || spectrum_type==magnification_intrinsic){
+		status |= c_datablock_get_double_array_1d(block, config->LSS_survey, "alpha_binned", &alpha, &Nzbin);
+		mag_switch = 1;
 	}
-	if (status) return status;
+	else mag_switch = 0;
 
-	for (int bin1=1; bin1<=nbin; bin1++){
+	for (int bin1=1; bin1<=N1; bin1++){
 		// We also need to choose the max value of bin 2.
 		// For auto-spectra we don't compute both bin_i_j and bin_j_i,
 		// whereas for cross-spectra we do
-		int bin2_max = choose_bin2_max(spectrum_type, nbin, bin1);
+		int bin2_max = choose_bin2_max(spectrum_type, N2, bin1);
 		for (int bin2=1; bin2<=bin2_max; bin2++){
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
-			if (is_mag) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
+			if (mag_switch==1) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
 			else coeff=1;
 			int status = save_c_ell(block, section, bin1, bin2, coeff, c_ell, &lc);
 			gsl_spline_free(c_ell);
@@ -465,7 +507,6 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		}
 	}
 	free(lc.ell);
-	if (is_mag) free(alpha);
 	return status;
 }
 
@@ -474,13 +515,14 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 	These other spectra can simply be rescaled using the logarithmic slope of the luminosity function.
 	See e.g. Kirk, Rassat, Host and Bridle (2011)
 */
-int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nbin, shear_spectrum_config * config)
+int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nzbin_lss, shear_spectrum_config * config)
 {
 	int status = 0;
 
 	// Choose the appropriate sections to read from and save to
 	const char *in_section;
 	const char * out_section = choose_output_section(spectrum_type, config);
+	int nbin = nzbin_lss;
 
 	switch(spectrum_type){
 		case magnification_magnification:
@@ -498,23 +540,14 @@ int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nbi
 	}
 
 	// The l sampling can be copied directly across to the new section
-	double *l = NULL;
+	double *l;
 	int nl;
 	status|=c_datablock_get_double_array_1d(block, in_section, "ell", &l, &nl);
 	status|=c_datablock_put_double_array_1d(block, out_section, "ell", l, nl);
-	if (status){
-		fprintf(stderr, "Could not find ell value in %s\n", in_section);
-		return status;
-	}
 
-	double *alpha = NULL;
-	status|=c_datablock_get_double_array_1d(block, lum, "alpha_binned", &alpha, &nbin);
-	if (status){
-		fprintf(stderr, "Could not find alpha value in %s\n", lum);
-		return status;
-	}
-
-
+	double *alpha;
+	status|=c_datablock_get_double_array_1d(block, config->LSS_survey, "alpha_binned", &alpha, &nbin);
+	
 	char spectrum_name[64];
 	double coeff, *C_l_new, *C_l_old;
 	C_l_new = (double*)malloc(sizeof(double)*nl);
@@ -554,9 +587,6 @@ int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nbi
 
 }
 
-#define printf_verbose(...) if (config->verbose) printf(__VA_ARGS__)
-
-
 int execute(c_datablock * block, void * config_in)
 {
 	DATABLOCK_STATUS status=0;
@@ -565,18 +595,22 @@ int execute(c_datablock * block, void * config_in)
 	double * z;
 	int nz1, nz2;
 	int nbin;
+	// This change will need propagating through the code
+	// Any references to nbin will need to be changed to the relevant term
+	// Also any loops over nbin will potentially need to be split into two
+	int nzbin_lss , nzbin_shear;
 
 	shear_spectrum_config * config = (shear_spectrum_config*) config_in;
 
 	// Load the number of bins we will use
-	status |= c_datablock_get_int(block, wl_nz, "nbin", &nbin);
+	status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nbin);
+	status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nzbin_shear);
+	status |= c_datablock_get_int(block, config->LSS_survey, "nzbin", &nzbin_lss);
 
 	// Load z
-	status |= c_datablock_get_double_array_1d(block, wl_nz, "z", &z, &nz1);
+	status |= c_datablock_get_double_array_1d(block, config->shear_survey, "z", &z, &nz1);
 
 	// Load another, different z spacing.
-	// I am putting this in an array called "a"
-	// because I am about to convert it
 	status |= c_datablock_get_double_array_1d(block, dist, "z", &a, &nz2);
 
 	// Load chi(z)
@@ -603,17 +637,58 @@ int execute(c_datablock * block, void * config_in)
 	// Make spline of a(chi)
 	gsl_spline * a_of_chi_spline = spline_from_arrays(nz2, chi, a);
 
-	// Make the W()
+	// Construct the Limber intergral kernels
+	// Four of these are now needed to allow separation of shear and LSS samples
+	// When IA and magnification are included one needs to integrate over the n(z)
+	// and lensing efficiency for both galaxy populations
 	int error_status=0;
-	gsl_spline * W_splines[nbin];
-	gsl_spline * Nchi_splines[nbin];
-	for (int bin=1; bin<=nbin; bin++){
-		W_splines[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline);
-		Nchi_splines[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline);
-		if (W_splines[bin-1]==NULL) error_status=1;
-		if (Nchi_splines[bin-1]==NULL) error_status=1;
-
+	gsl_spline * W_splines_shear[nzbin_shear];
+	gsl_spline * Nchi_splines_shear[nzbin_shear];
+	gsl_spline * W_splines_lss[nzbin_lss];
+	gsl_spline * Nchi_splines_lss[nzbin_lss];
+	int stop=0;
+	// The loops have to be split here to account for the different binning in the two surveys
+	// The following structure seems slightly convoluted but is hopefully the quickest way of doing this
+	// The first loop writes to both the lensing kernel and n(z) arrays up to the end of the shorter 
+	// of the two
+	// The second completes the iteration to finish the longer array
+	int N1 = nzbin_lss;
+	int N2 =  nzbin_shear;
+	if (nzbin_shear<=nzbin_lss){
+		N1 = nzbin_shear;
+		N2 = nzbin_lss;
 	}
+
+	for (int bin=1; bin<=N1; bin++){
+		W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey);
+		Nchi_splines_shear[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey);		
+		W_splines_lss[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->LSS_survey);
+		Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+		
+		if (W_splines_shear[bin-1]==NULL) error_status=1;
+		if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
+		if (W_splines_lss[bin-1]==NULL) error_status=1;
+		if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
+		++stop;
+	}
+
+	if (N1!=N2){
+		for (int bin = stop+1 ; bin<=N2 ; ++bin) {
+			if (nzbin_shear<nzbin_lss){ 
+				Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+				W_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+				if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
+				if (W_splines_lss[bin-1]==NULL) error_status=1;
+			}
+			if (nzbin_lss<nzbin_shear){
+				Nchi_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
+				W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
+				if (W_splines_shear[bin-1]==NULL) error_status=1;
+				if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
+			}
+		}
+	}
+
 	if (error_status){
 		free(chi);
 		free(a);
@@ -625,7 +700,7 @@ int execute(c_datablock * block, void * config_in)
 
 	// ------------
 	// Get the P(k)s we need
-	printf_verbose("Loading interpolation splines\n");
+	printf("Loading interpolation splines.\n");
 	/*				Matter power spectrum			 		*/
 
 	Interpolator2D * PK = load_interpolator_chi(
@@ -640,16 +715,13 @@ int execute(c_datablock * block, void * config_in)
 	// It seems useful to highlight this decision. If the code does this
 	// silently, there's potential for confusion if an earlier module is omitted.
 	Interpolator2D * PK_gg = NULL;
-	int free_pk_gg;
 	if (config->matter_spectra) {
 		if (c_datablock_has_section(block, "matter_power_gal")) {
 			PK_gg = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal", "k_h", "z", "P_k");
-			free_pk_gg = 1;
 		}
 		if (PK_gg==NULL){
-			printf_verbose("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n"); 
+			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n"); 
 			PK_gg=PK;
-			free_pk_gg = 0;
 		}
 	}
 
@@ -669,10 +741,10 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
 		PK_II = load_interpolator_chi(
-			block, chi_of_z_spline, ia, "k_h", "z", "P_II");
+			block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
 
 		PK_GI = load_interpolator_chi(
-			block, chi_of_z_spline, ia, "k_h", "z", "P_GI");
+			block, chi_of_z_spline, IA_SPECTRUM_GI_SECTION, "k_h", "z", "P_GI");
 
 		if (PK_II==NULL) return 2;
 		if (PK_GI==NULL) return 3;
@@ -684,134 +756,126 @@ int execute(c_datablock * block, void * config_in)
 	// from the matter power spectrum if present in the data block. Otherwise,
 	// just use the matter power spectrum for the 'galaxy-mass power spectrum'
 	Interpolator2D * PK_gm = NULL;
-	int free_pk_gm;
 	if (config->ggl_spectra | config->galaxy_magnification) {
 		if (c_datablock_has_section(block, "matter_power_gal_mass")) {
 			PK_gm = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_mass", "k_h", "z", "P_k");
-			free_pk_gm = 1;
 		}
 		if (PK_gm==NULL){
-			printf_verbose("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n");
+			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n");
 			PK_gm=PK;
-			free_pk_gm = 0;
 		}
 	}
 
 	/*				galaxy position - intrinsic shape spectrum			 		*/
 	Interpolator2D * PK_gI = NULL;
-	int free_pk_gi;
 	if (config->gal_IA_cross_spectra) {
 		if (c_datablock_has_section(block, "matter_power_gal_intrinsic")) {
 			PK_gI = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_intrinsic", "k_h", "z", "P_k");
-			free_pk_gi = 1;
 		}
 		if (PK_gI==NULL){
-			printf_verbose("No galaxy position-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
+			printf("No galaxy-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
 			PK_gI=PK_II;
-			free_pk_gi = 0;
 		}
 	}
 
 	// ------------
 	// Compute the angular power spectra
+
+	printf("Calculating spectra.\n");
+
 	if (config->shear_shear){
-		status |= compute_spectra(block, nbin, shear_shear,
-			W_splines, Nchi_splines, PK, config);
-		printf_verbose("Saved shear-shear spectrum.\n");
+		status |= compute_spectra(block, nzbin_shear, 0, shear_shear,
+			W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
+		printf("Saved shear-shear spectrum. %d\n", status);
 	}
 	if (config->intrinsic_alignments){
 
-		status |= compute_spectra(block, nbin, intrinsic_intrinsic,
-			W_splines, Nchi_splines, PK_II, config);
+		status |= compute_spectra(block, nzbin_shear, 0, intrinsic_intrinsic,
+			W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_II, config);
 
-		status |= compute_spectra(block, nbin, shear_intrinsic,
-			W_splines, Nchi_splines, PK_GI, config);
+		status |= compute_spectra(block, nzbin_shear, 0, shear_intrinsic,
+			W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_GI, config);
 
-		printf_verbose("Saved IA spectra.\n");
+		printf("Saved IA spectra. %d\n", status);
 
+		destroy_interp_2d(PK_GI);
+		destroy_interp_2d(PK_II);
 	}
 	if (config->matter_spectra){
-		status |= compute_spectra(block, nbin, matter_matter,
-			W_splines, Nchi_splines, PK_gg, config);
-		printf_verbose("Saved galaxy-galaxy spectrum.\n");
-		
+		status |= compute_spectra(block, 0, nzbin_lss, matter_matter,
+			W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_gg, config);
+		printf("Saved g-g spectrum. %d\n", status);
+		destroy_interp_2d(PK_gg);
 	}
 	if (config->ggl_spectra){
-		status |= compute_spectra(block, nbin, matter_shear,
-			W_splines, Nchi_splines, PK_gm, config);
-		printf_verbose("Saved galaxy-shear spectrum.\n");
-		
+		status |= compute_spectra(block, nzbin_shear, nzbin_lss, matter_shear,
+			W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_gm, config);
+		printf("Saved galaxy-shear spectrum. %d\n", status);
+		destroy_interp_2d(PK_gm);
 	}
 	if (config->gal_IA_cross_spectra){
-		status |= compute_spectra(block, nbin, matter_intrinsic,
-			W_splines, Nchi_splines, PK_gI, config);
-		printf_verbose("Saved galaxy-intrinsic shape spectrum.\n"); 
-		if (status) return status;
+		status |= compute_spectra(block, nzbin_shear, nzbin_lss, matter_intrinsic,
+			W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_gI, config);
+		printf("Saved galaxy-intrinsic shape spectrum. %d\n", status); 
+		destroy_interp_2d(PK_gI);
 	}
 	// For the spectra involving magnification, check the spectra already saved to the datablock
 	// It makes things quicker if the shear spectra can be rescaled rather than evaluating the
 	// full Limber integral 
 	if (config->galaxy_magnification){
-		if (c_datablock_has_section(block, "ggl_cl")) {
-			status |= rescale_spectrum(block, matter_magnification, nbin, config);
+		if (c_datablock_has_section(block, "ggl_cl") && nzbin_shear==nzbin_lss) {
+			status |= rescale_spectrum(block, matter_magnification, nzbin_lss, config);
 		}
 		else { 
-			status |= compute_spectra(block, nbin, matter_magnification,
-				W_splines, Nchi_splines, PK, config);
+			status |= compute_spectra(block, 0, nzbin_lss, matter_magnification,
+				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
 		}
-		if (status) return status;
-		printf_verbose("Saved galaxy-magnification spectrum.\n");
+		printf("Saved galaxy-magnification spectrum. %d\n", status);
 	}
 
 	if (config->magnification_magnification) {
-		if ( c_datablock_has_section(block, SHEAR_CL_GG_SECTION) ||   
-		     c_datablock_has_section(block, SHEAR_CL_SECTION) ) {
-			status |= rescale_spectrum(block, magnification_magnification, nbin, config);
+		if ( (c_datablock_has_section(block, SHEAR_CL_GG_SECTION) ||   
+		     c_datablock_has_section(block, SHEAR_CL_SECTION)) && nzbin_shear==nzbin_lss){
+			status |= rescale_spectrum(block, magnification_magnification, nzbin_lss, config);
 		}
 		else { 
-			status |= compute_spectra(block, nbin, magnification_magnification,
-				W_splines, Nchi_splines, PK, config);
+			status |= compute_spectra(block, 0, nzbin_lss, magnification_magnification,
+				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
 		}
-		if (status) return status;
-		printf_verbose("Saved magnification-magnification spectrum.\n");
+		printf("Saved magnification-magnification spectrum. %d\n", status);
 	}
 
 	if (config->magnification_intrinsic) {
-		if (c_datablock_has_section(block, SHEAR_CL_GI_SECTION)) {
-			status |= rescale_spectrum(block, magnification_intrinsic, nbin, config);
+		if (c_datablock_has_section(block, SHEAR_CL_GI_SECTION)  && nzbin_shear==nzbin_lss) {
+			status |= rescale_spectrum(block, magnification_intrinsic, nzbin_lss, config);
 		}
 		else { 
-			status |= compute_spectra(block, nbin, matter_intrinsic,
-				W_splines, Nchi_splines, PK, config);
+			status |= compute_spectra(block, nzbin_shear, nzbin_lss, magnification_intrinsic,
+				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
 		}
-		if (status) return status;
-		printf_verbose("Saved magnification-intrinsic shape spectrum.\n");
+		printf("Saved magnification-intrinsic shape spectrum. %d\n", status);
 	}
 	
 	if (config->magnification_shear ) {
-		if ( c_datablock_has_section(block, SHEAR_CL_GG_SECTION) ||
-		     c_datablock_has_section(block, SHEAR_CL_SECTION) ) {
-			status |= rescale_spectrum(block, magnification_shear, nbin, config);
+		if ( c_datablock_has_section(block, SHEAR_CL_GG_SECTION) || c_datablock_has_section(block, SHEAR_CL_SECTION) ) { 
+			if (nzbin_shear==nzbin_lss) status |= rescale_spectrum(block, magnification_shear, nzbin_lss, config);
 		}
 		else { 
-			status |= compute_spectra(block, nbin, magnification_shear,
-				W_splines, Nchi_splines, PK, config);
+			status |= compute_spectra(block, nzbin_shear, nzbin_lss, magnification_shear, W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
 		}
-		if (status) return status;
-		printf_verbose("Saved shear-shear spectrum.\n");
+		printf("Saved magnification-shear spectrum. %d\n", status);
 	}
 	
 	// tidy up global data
-	for (int bin=0; bin<nbin; bin++) gsl_spline_free(W_splines[bin]);
+	for (int bin=0; bin<nzbin_shear; bin++) {
+		gsl_spline_free(W_splines_shear[bin]);
+		gsl_spline_free(Nchi_splines_shear[bin]);}
+	for (int bin=0; bin<nzbin_lss; bin++){ 
+		gsl_spline_free(W_splines_lss[bin]);
+		gsl_spline_free(Nchi_splines_lss[bin]);}
 	gsl_spline_free(a_of_chi_spline);
 	gsl_spline_free(chi_of_z_spline);
-
-	destroy_and_null(&PK);
-	destroy_and_null(&PK_GI);
-	destroy_and_null(&PK_II);
-	if (free_pk_gm) destroy_and_null(&PK_gm);
-	if (free_pk_gg) destroy_and_null(&PK_gg);
-	if (free_pk_gi) destroy_and_null(&PK_gI);
+	destroy_interp_2d(PK);
 	free(chi);
 	free(a);
 	free(z);
@@ -819,8 +883,6 @@ int execute(c_datablock * block, void * config_in)
   return status;
 
 }
-
-
 
 int cleanup(void * config_in)
 {

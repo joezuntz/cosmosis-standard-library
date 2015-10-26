@@ -21,40 +21,26 @@ def execute(block, config):
 
 	method = config
 
-	#z_lin = block[lin, "z"]
-	#k_lin = block[lin, "k_h"]
-	#p_lin = block[lin, "p_k"]
-	#z_nl = block[nl, "z"]
-	#k_nl = block[nl, "k_h"]
-	#p_nl = block[nl, "p_k"]
-
-	#p_lin = p_lin.reshape((z_lin.size, k_lin.size)).T
-	#p_nl = p_nl.reshape((z_nl.size, k_nl.size)).T
 	z_lin,k_lin,p_lin=block.get_grid(lin,"z","k_h","p_k")
 	z_nl,k_nl,p_nl=block.get_grid(nl,"z","k_h","p_k")
 
 	omega_m = block[cosmo, "omega_m"]
 	A = block[ia, "A"]
-	#if abs(A)<1e-6:
-	#	block.put_grid(ia,"z",z_lin,"k_h",k_lin,"P_GI",np.zeros_like(p_nl))
-	#	block.put_grid(ia,"z",z_lin,"k_h",k_lin,"P_II",np.zeros_like(p_nl))
 
-	#run computation
+	#run computation and write to datablock
 	if method=='krhb':
-		P_II, P_GI = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
-		block.put_grid(ia, "z", z_lin, "k_h", k_lin, "P_GI", P_GI)
-		block.put_grid(ia, "z", z_lin, "k_h", k_lin, "P_II", P_II)
+		P_II, P_GI, b_I, r_I = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "b_I", b_I)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "r_I", r_I)
 	elif method=='bk':
-		P_II, P_GI = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
-		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_GI", P_GI)
-		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_II", P_II)
+		P_II, P_GI, b_I, r_I = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
+		block.put_grid(ia,  "z", z_nl, "k_h", k_nl, "b_I", b_I)
+		block.put_grid(ia,  "z", z_nl, "k_h", k_nl, "r_I", r_I)
 	elif method=='bk_corrected':
-		P_II, P_GI = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
-		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_GI", P_GI)
-		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "P_II", P_II)
-
-
-
+		P_II, P_GI, b_I, r_I = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "b_I", b_I)
+		block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "r_I", r_I)
+		
 	return 0
 
 def cleanup(config):

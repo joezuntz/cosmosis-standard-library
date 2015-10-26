@@ -7,6 +7,13 @@
 const char * nl = MATTER_POWER_NL_SECTION;
 const char * mps = MATTER_POWER_LIN_SECTION;
 
+//Interpolator functions 
+Interpolator2D * init_interp_2d_akima_grid(double *x1, double *x2, double **y, int N1, int N2);
+Interpolator2D * interp_bg;
+Interpolator2D * interp_rg;
+void destroy_interp_2d(Interpolator2D * interp2d);
+double interp_2d(double x1, double x2, Interpolator2D * interp2d);
+
 // Define some structs to hold the configuration parameters and biases
 
 typedef enum spectrum_type_t {
@@ -87,25 +94,25 @@ const char * choose_spectrum_name(spectrum_type_t spectrum_type){
 	}
 }
 
-double apply_bias_coefficients(spectrum_type_t spectrum_type, double b_I, double r_I, double b_g, double r_g, double P_nl){
+double apply_bias_coefficients(spectrum_type_t spectrum_type, biases * b, int j, int i){
 
 	double Pk; 
 
 	switch(spectrum_type){
 		case intrinsic_intrinsic:
-			Pk = b_I * b_I * P_nl;
+			Pk = b->b_I[j][i] * b->b_I[j][i] * b->P_nl[j][i];
 			break;
 		case galaxy_galaxy:
-			Pk = b_g * b_g * P_nl; 
+			Pk = b->b_g[j][i] * b->b_g[j][i] * b->P_nl[j][i]; 
 			break;
 		case mass_intrinsic:
-			Pk = r_I * b_I * P_nl; 
+			Pk = b->r_I[j][i] * b->b_I[j][i] * b->P_nl[j][i]; 
 			break;
 		case galaxy_mass:
-			Pk = r_g * b_g * P_nl; 
+			Pk = b->r_g[j][i] * b->b_g[j][i] * b->P_nl[j][i]; 
 			break;
 		case galaxy_intrinsic:
-			Pk = r_I * b_I * r_g * b_g * P_nl; 
+			Pk = b->r_I[j][i] * b->b_I[j][i] * b->r_g[j][i] * b->b_g[j][i] * b->P_nl[j][i]; 
 			break;
 	}
 
@@ -115,7 +122,6 @@ double apply_bias_coefficients(spectrum_type_t spectrum_type, double b_I, double
 
 int get_power_spectrum(c_datablock * block, spectrum_type_t spectrum_type, biases * b){
 	int status=0;
-
 
 	const char * section = choose_output_section(spectrum_type);
 	const char * spectrum_name = choose_spectrum_name(spectrum_type);
@@ -130,7 +136,7 @@ int get_power_spectrum(c_datablock * block, spectrum_type_t spectrum_type, biase
 	// This gives a measurable spectrum, which represents the underlying mass distribution in a biased way
 	for (int i=0 ; i<b->nz ; ++i){
 		for (int j=0 ; j<b->nk ; ++j){
-			Pk[j][i] = apply_bias_coefficients(spectrum_type, b->b_I[j][i], b->r_I[j][i], b->b_g[j][i], b->r_g[j][i], b->P_nl[j][i]);
+			Pk[j][i] = apply_bias_coefficients(spectrum_type, b, j, i);
 		}
 	}	
 
@@ -157,8 +163,35 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 	} 
 
 	if (config->galaxy_bias){
-		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), "b_g", &(b->b_g) );
-		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), "r_g", &(b->r_g) );
+		int nk_g; 
+		int nz_g; 
+		double **b_g, **r_g; 
+		double *k_h_g, *z_g;
+		
+		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, "b_g", &b_g );
+		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, "r_g", &r_g );
+
+		interp_bg = init_interp_2d_akima_grid(k_h_g, z_g, b_g, nk_g, nz_g);
+		interp_rg = init_interp_2d_akima_grid(k_h_g, z_g, r_g, nk_g, nz_g);
+
+		b->b_g= malloc(b->nk*sizeof(double*));
+		b->b_g[0] = malloc(b->nk*b->nz*sizeof(double));
+		b->r_g= malloc(b->nk*sizeof(double*));
+		b->r_g[0] = malloc(b->nk*b->nz*sizeof(double));
+		for(int i= 1 ; i< b->nk ; i++){
+			b->b_g[i]= b->b_g[0]+i*b->nz;
+			b->r_g[i]= b->r_g[0]+i*b->nz;}
+		
+		for (int j=0 ; j<b->nz ; ++j){
+			for (int i=0 ; i<b->nk ; ++i){ 
+				b->b_g[i][j] = interp_2d(b->k_h[i],b->z[j],interp_bg);
+				b->r_g[i][j] = interp_2d(b->k_h[i],b->z[j],interp_rg);
+			}
+		}
+
+		destroy_interp_2d(interp_bg);
+		destroy_interp_2d(interp_rg);
+
 		if(config->verbosity > 1){ printf("Loaded galaxy bias.\n"); }
 	}
 
@@ -188,4 +221,15 @@ int get_all_spectra(c_datablock * block, biases * b, bias_config * config){
 	}
 
 	return status;
+}
+
+void free_memory(biases *b, bias_config * config){
+	if (config->intrinsic_alignments){
+		free(b->b_I);
+		free(b->r_I);}
+	if (config->galaxy_bias){
+		free(b->b_g);
+		free(b->r_g);}
+	free(b->P_nl);
+	free(b->k_h);
 }

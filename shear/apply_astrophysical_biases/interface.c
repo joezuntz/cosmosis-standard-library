@@ -14,7 +14,6 @@ void * setup(c_datablock * options){
 		&(config->galaxy_bias));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "intrinsic_alignments", true,
 		&(config->intrinsic_alignments));
-	
 
 	if (status){
 		fprintf(stderr, "Please specify intrinsic_alignments and galaxy_bias as true or false.\n");
@@ -31,11 +30,13 @@ int execute(c_datablock * block, void * config_in)
 	bias_config * config = (bias_config*) config_in;
 	biases b;
 
+	
 	status|=load_biases(block, &b, config);
 
-	status|=get_all_spectra(block, &b, config);		
+	status|=get_all_spectra(block, &b, config);	
+	free_memory(&b, config);	
 
-  return status;
+	return status;
 
 }
 
