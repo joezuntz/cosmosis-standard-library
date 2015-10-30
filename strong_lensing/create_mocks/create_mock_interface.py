@@ -3,8 +3,8 @@ from time_delay_likelihood import TimeDelayLikelihood, B1608, RXJ1131
 from scipy.stats import lognorm
 import numpy as np
 
-def draw_from_lognorm(mu,sig):
-    return lognorm.rvs(sig, loc=mu,size=1)
+def draw_from_lognorm(mu,sig,lbd):
+    return lognorm.rvs(sig, loc=mu,size=1,scale=lbd)
 
 def D_deltat(z_d,z_s, comovingDistance, omega_k, H0):
     c = 299792.4580  #km/s
@@ -24,14 +24,15 @@ def D_deltat(z_d,z_s, comovingDistance, omega_k, H0):
 def setup(options):
 
 	sig = options[option_section, "sigma"]
+	lbd = options[option_section, "lambdaD"]
         fname = options[option_section, "filename"]
         data = np.loadtxt(fname)
         z_d = data[:,0]; z_s = data[:,1] 
-	return sig, z_d,z_s
+	return sig,lbd, z_d,z_s
 
 
 def execute(block, config):
-	sig, z_d,z_s = config
+	sig,lbd, z_d,z_s = config
 
 	z_m = block[names.distances, "z"][::-1]
 	d_m = block[names.distances, "d_m"][::-1]
@@ -42,8 +43,9 @@ def execute(block, config):
         Ddt_obs = np.zeros(len(z_d))
         for i,z in enumerate(z_d):
             Ddt_true=D_deltat(z,z_s[i], comovingDistance, omega_k, H0)
-            d_obs=draw_from_lognorm(Ddt_true,sig)
+            d_obs=draw_from_lognorm(Ddt_true,sig,lbd)
             Ddt_obs[i]=d_obs
+            #print d_obs, Ddt_true
         err=np.ones(len(Ddt_obs))*sig
         np.savetxt('cosmosis-standard-library/strong_lensing/time_delay_lenses/mock.txt',np.vstack((z_d,z_s,Ddt_obs,err)).T)
 	return 0
