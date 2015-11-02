@@ -32,6 +32,7 @@ typedef struct emu_options {
     int output_type;
     int nz;
     double dz;
+    bool do_distances;
 } emu_options;
 
 void reverse(double * x, int n)
@@ -53,6 +54,7 @@ void* setup(c_datablock * options){
 
     status |= c_datablock_get_int_default(options, OPTION_SECTION, "nz", 300, &(config->nz));
     status |= c_datablock_get_double_default(options, OPTION_SECTION, "dz", 0.01, &(config->dz));
+    status |= c_datablock_get_bool_default(options, OPTION_SECTION, "do_distances", true, &(config->do_distances));
 
     if (status){
         fprintf(stderr,"Please set an integer nz and double dz in FrankenEmu.\n");
@@ -133,25 +135,27 @@ int execute(c_datablock * block, emu_options * config) {
         "k_h", nk, k_h, 
         "p_k", PK);
 
-    // put the distances in chronological order
-    // for consistency with camb
-    reverse(a,config->nz);
-    reverse(z,config->nz);
-    reverse(d_a,config->nz);
-    reverse(d_m,config->nz);
-    reverse(h_z,config->nz);
-    reverse(d_l,config->nz);
-    reverse(mu,config->nz);
+    if (config->do_distances){
+        // put the distances in chronological order
+        // for consistency with camb
+        reverse(a,config->nz);
+        reverse(z,config->nz);
+        reverse(d_a,config->nz);
+        reverse(d_m,config->nz);
+        reverse(h_z,config->nz);
+        reverse(d_l,config->nz);
+        reverse(mu,config->nz);
 
 
-    const char * dist = DISTANCES_SECTION;
-    status |= c_datablock_put_double_array_1d(block, dist, "z", z, config->nz);
-    status |= c_datablock_put_double_array_1d(block, dist, "a", a, config->nz);
-    status |= c_datablock_put_double_array_1d(block, dist, "d_a", d_a, config->nz);
-    status |= c_datablock_put_double_array_1d(block, dist, "d_m", d_m, config->nz);
-    status |= c_datablock_put_double_array_1d(block, dist, "d_l", d_l, config->nz);
-    status |= c_datablock_put_double_array_1d(block, dist, "mu", mu, config->nz);
-    status |= c_datablock_put_double_array_1d(block, dist, "h", h_z, config->nz);
+        const char * dist = DISTANCES_SECTION;
+        status |= c_datablock_put_double_array_1d(block, dist, "z", z, config->nz);
+        status |= c_datablock_put_double_array_1d(block, dist, "a", a, config->nz);
+        status |= c_datablock_put_double_array_1d(block, dist, "d_a", d_a, config->nz);
+        status |= c_datablock_put_double_array_1d(block, dist, "d_m", d_m, config->nz);
+        status |= c_datablock_put_double_array_1d(block, dist, "d_l", d_l, config->nz);
+        status |= c_datablock_put_double_array_1d(block, dist, "mu", mu, config->nz);
+        status |= c_datablock_put_double_array_1d(block, dist, "h", h_z, config->nz);
+    }
 
     return status;
 }

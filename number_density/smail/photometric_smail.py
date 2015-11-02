@@ -1,7 +1,9 @@
 #Code by Donnacha Kirk
+#Edited by Simon Samuroff 07/2015 
 
 import numpy as np
 from cosmosis.datablock import names as section_names
+from cosmosis.datablock import option_section
 
 def gaussian(z,mu,sigma):
 	return np.exp(-0.5*(z-mu)**2/sigma**2) / np.sqrt(2*np.pi) / sigma
@@ -15,6 +17,7 @@ def photometric_error(z, Nz, sigma_z, bias):
 	for i in xrange(nz):
 		p = gaussian(z,z[i]-bias,sigma_z*(1+z[i]))
 		#Could add f_cat or other terms here.
+		#import pdb ; pdb.set_trace()
 		output[:,i] = p * Nz[i]
 	return output
 
@@ -34,26 +37,33 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 	dz = z[1]-z[0]
 	for low,high in zip(edges[:-1], edges[1:]):
 		w = np.where((z>low) & (z<high))[0]
+		# Sum over all possible ztrue
+		# Equivalent to marginalising p(zphot|ztrue) wrt ztrue
 		ni = z_prob_matrix[w,:].sum(axis=0)
-		#make this integrate to ngal/nbin, since we
-		#have divided the ngal total up evenly
-		ni*=ngal/(nbin*ni.sum()*dz)
+
+		# Normalise the n(z) in each redshift bin to 1 over the redshift range
+		# of the survey
+		ni*= 1.0/(ni.sum()*dz)							#ngal/(nbin*ni.sum()*dz)
+		#import pdb ; pdb.set_trace()
 		assert(len(ni)==len(z))
 		NI.append(ni)
 	return NI
 	
 
 def compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias):
-	#Set up Smail distribution of z vector
+	#Set up Smail distribution of z vector as the distribution of true redshifts of the galaxies, n(ztrue)
 	nz_true = smail_distribution(z, alpha, beta, z0)
+
+	# Multiply that by a Gaussian to get the probability distribution of the measured photo-z for each true redshift p(zphot|ztrue)
+	# This gives a 2D probability distribution
 	z_prob_matrix = photometric_error(z, nz_true, sigma_z, bias)
 	edges = find_bins(z,nz_true,nbin)
 	bin_nz = compute_bin_nz(z_prob_matrix, z, edges, ngal)
 	return edges,bin_nz
 		
 def setup(options):
-	dz = options.get_int(option_section, "dz", default=0.01)
-	zmax = options.get_float(option_section, "zmax", default=4.0)
+	dz = options.get_double(option_section, "dz", default=0.01)
+	zmax = options.get_double(option_section, "zmax", default=4.0)
 	nbin = options.get_int(option_section, "nbin")
 	return (dz, zmax, nbin)
 
@@ -61,12 +71,13 @@ def execute(block, config):
 	(dz, zmax, nbin) = config
 	#read fits file data
 	params = section_names.number_density_params
+	#import pdb ; pdb.set_trace()
 	alpha = block[params, "alpha"]
 	beta = block[params, "beta"]
 	z0 = block[params, "z0"]
-	sigz = block[params, "sigz"]
+	sigma_z = block[params, "sigz"]
 	ngal = block[params, "ngal"]
-	bias = block.get(params, "bias", default=0.0)
+	bias = block.get(params, "bias")
 
 	
 	#Compute the redshift vector
@@ -77,9 +88,9 @@ def execute(block, config):
 
 	#Save the results
 	nz_section = section_names.wl_number_density
-	data[nz_section,"nbin"] = nbin
-	data[nz_section,"nz"] = len(z)
-	data[nz_section,"z"] = z
+	block[nz_section,"nbin"] = nbin
+	block[nz_section,"nz"] = len(z)
+	block[nz_section,"z"] = z
 
 	#Loop through the bins
 	for i,bin in enumerate(bins):
@@ -87,11 +98,11 @@ def execute(block, config):
 		b=i+1
 		name = "BIN_%d" % b
 		#Save the bin edges as parameters
-		data[nz_section,"EDGE_%d"%b] = edges[i]
+		block[nz_section,"EDGE_%d"%b] = edges[i]
 		#And save the bin n(z) as a column
-		data[nz_section, name] =  bin
+		block[nz_section, name] =  bin
 	#Also save the upper limit to the top bin
-	data[nz_section,"EDGE_%d"%(nbin+1)] = edges[-1]
+	block[nz_section,"EDGE_%d"%(nbin+1)] = edges[-1]
 
 	return 0
 		

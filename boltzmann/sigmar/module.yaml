@@ -2,6 +2,7 @@ name: sigma_r
 version: 1.0
 purpose: "Compute anisotropy dispersion sigma(R,z)"
 url: ""
+interface: sigmar.py
 attribution: [Scott Dodelson]
 rules:
     ""

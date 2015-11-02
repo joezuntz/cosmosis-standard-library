@@ -2,6 +2,7 @@ name: Halofit
 version: Camb-Oct-09
 purpose: "Compute non-linear matter power spectrum"
 url: "http://camb.info"
+interface: halofit_module.so
 attribution: [Antony Lewis, Simeon Bird]
 rules:
     "Please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"

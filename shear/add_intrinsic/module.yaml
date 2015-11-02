@@ -3,6 +3,7 @@ name: add_intrinsic
 version: "1.0"
 purpose: "Sum together intrinsic aligments with shear signal"
 url: ""
+interface: add_intrinsic.py
 attribution: [CosmoSIS team]
 rules: ""
 cite: []

@@ -3,6 +3,7 @@ name: growth_factor
 version: 1
 purpose: returns linear growth factor and growth rate for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa
 url: ""
+interface: interface.so
 attribution: [CosmoSIS Team]
 rules: "If you use a file from a particular survey you should cite that survey"
 cite: []

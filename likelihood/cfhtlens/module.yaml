@@ -3,6 +3,7 @@ name: CFHTLens
 version: "1.0"
 purpose: "Compute the likelihood of CFHTLens tomographic data given input shear correlation functions"
 url: "http://www.cfhtlens.org/astronomers/content-suitable-astronomers"
+interface: cfhtlens_interface.py
 attribution: ["CFHTLens Team (data)", "CosmoSIS Team (module code)"]
 rules: "See required acknowledgement text: http://www.cfhtlens.org/astronomers/data-store"
 cite: 

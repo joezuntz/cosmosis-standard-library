@@ -3,6 +3,7 @@ name: load_nz
 version: 1
 purpose: Load a number density n(z) for weak lensing from a file
 url: ""
+interface: load_nz.py
 attribution: [CosmoSIS Team]
 rules: "If you use a file from a particular survey you should cite that survey"
 cite: []
@@ -17,8 +18,8 @@ explanation: >
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
     filepath: "String; absolute or relative path to an n(z) file"
-    sigma: "Real scalar or vector; width of the bins in redshift"
-
+    des_fmt: "Bool, default=F; use the DES format n(z) with columns zmin, zmax, nz1, nz2..."
+    histogram: "Bool, default=F; Assume that the given z values are lower edges of histogram bins, not sample points."
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs: {}

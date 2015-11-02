@@ -3,6 +3,7 @@ name: WiggleZBao
 version: "1401.0358v2"
 purpose: Compute the likelihood of the supplied expansion history against WiggleZ BAO data
 url: "http://www.smp.uq.edu.au/wigglez-data/"
+interface: wigglez_bao.py
 attribution: [WiggleZ Team, MontePython Team]
 rules: ""
 cite: 

@@ -3,6 +3,7 @@ name: BOSS
 version: "1303.4486"
 purpose: Compute the likelihood of supplied fsigma8(z=0.57), H(z=0.57), D_a(z=0.57), omegamh2, bsigma8(z=0.57)         
 url: "http://www.sdss3.org"
+interface: boss_rsd.py
 attribution: [SDSS-III BOSS Team]
 rules: ""
 cite: 

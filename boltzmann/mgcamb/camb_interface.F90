@@ -6,6 +6,7 @@ module camb_interface_tools
 	character(*), parameter :: modified_gravity_section = "modified_gravity"
 
 	integer :: standard_lmax = 1200
+	real(dl) :: standard_kmax = 50.0	
 	integer, parameter :: CAMB_MODE_ALL = 1
 	integer, parameter :: CAMB_MODE_CMB = 2
 	integer, parameter :: CAMB_MODE_BG  = 3
@@ -26,6 +27,7 @@ module camb_interface_tools
 	real(dl), parameter :: default_wa = 0.0
 	real(dl), parameter :: default_pivot_scalar = 0.05
 	integer,  parameter :: default_massive_nu = 0
+	real(dl),  parameter :: default_kmax = 50.0
 
 	logical :: TGR_scale_dep= .false.  !JD for TGR 
 	integer :: TGR_Rfunc = 0     !JD for TGR
@@ -125,11 +127,12 @@ module camb_interface_tools
 		status = status + datablock_get_int_default(block, option_section, "feedback", 0, FeedbackLevel)
 		status = status + datablock_get_logical_default(block, option_section, "do_tensors", .false., do_tensors)
 
-		if (mode == CAMB_MODE_ALL) then
-			status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
-			status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
-			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
-		endif
+		status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
+		status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
+		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
+
+
+		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)		
 
 		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
 		status = status + datablock_get_logical_default(block, option_section, "do_lensing", .false. , do_lensing)
@@ -171,16 +174,15 @@ module camb_interface_tools
 		endif
 	end function camb_initial_setup
 
-	function camb_interface_set_params(block, params, background_only) result(status)
+	function camb_interface_set_params(block, params, mode) result(status)
 		integer (c_int) :: status
 		integer (c_size_t) :: block
-		logical, optional :: background_only
+		integer :: mode
 		logical :: perturbations
 		type(CambParams) :: params
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
-		perturbations = .true.
-		if (present(background_only)) perturbations = .not. background_only
+		perturbations = (mode .eq. CAMB_MODE_CMB) .or. (mode .eq. CAMB_MODE_ALL)
 
 	
 		call CAMB_SetDefParams(params)
@@ -233,8 +235,8 @@ module camb_interface_tools
 		endif
 
 
-		params%wantTransfer = .true.
-		params%transfer%kmax = 50.0
+		params%wantTransfer = (mode==CAMB_MODE_ALL)
+		params%transfer%kmax = standard_kmax
 		params%wantTensors = (params%initpower%rat(1) .ne. 0.0) .or. do_tensors
 
         params%Max_l=standard_lmax

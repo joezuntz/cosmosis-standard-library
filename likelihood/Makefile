@@ -1,11 +1,13 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 include ${COSMOSIS_SRC_DIR}/config/subdirs.mk
 
-SUBDIRS = fgas planck wmap_shift
+SUBDIRS = fgas  wmap_shift
 
 ifeq ($(WMAPDATA_VERSION),v5_00)
-SUBDIRS += wmap9
+SUBDIRS += wmap9 
 endif
 ifeq ($(WMAPDATA_VERSION),v4_00)
-SUBDIRS += wmap7
+SUBDIRS += wmap7 
 endif
+
+SUBDIRS+=planck planck2015

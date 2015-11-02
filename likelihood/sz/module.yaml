@@ -2,6 +2,7 @@ name: "planck_sz"
 version: "1.0"
 purpose: "Prior on sigma_8 * Omega_M ** 0.3 from Planck SZ cluster counts"
 url: ""
+interface: sz.py
 attribution: [Planck collaboration (measurement), CosmoSIS team (code)]
 rules: "None."
 cite:

@@ -2,6 +2,7 @@ name: camb
 version: Jan15
 purpose: "Boltzmann and background integrator for BG, CMB, and matter power"
 url: http://camb.info
+interface: camb.so
 attribution: [Antony Lewis, Anthony Challinor]
 rules:
     "Please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"
@@ -29,6 +30,9 @@ explanation: >
 
     Anthony Lewis has kindly given permission for CAMB to be packaged
     with CosmoSIS.
+
+    If you would like to use the November 2013 version of CAMB instead you can
+    add camb_Nov13 to the SUBDIRS variable in the boltzmann/Makefile.
 
     The CosmoSIS team packaged this module into cosmosis form so any issues
     running it here please ask us first.
@@ -93,7 +97,7 @@ outputs:
         d_l: "1D real array, luminosity distance in Mpc"
         mu:  "1D real array, distance modulus"
         h:  "1D real array, hubble parameter with in units of Mpc"
-        rho: "1D real array, matter density.  Only if mode=all"
+        rho: "1D real array, matter density, in kg/m^3.  Only if mode=all"
         # Scalars:
         age: "real, age of universe in GYr"
         zdrag: "real, redshift where baryons no longer dragged by photons. Only if mode!=background"

@@ -2,6 +2,7 @@ name: "Cluster_mass"
 version: "1.0"
 purpose: "Likelihood of z=1.59 Cluster mass from Santos et al. 2011"
 url: ""
+interface: cluster_mass.py
 attribution: [Santos et al. 2011 (measurement), Harrison & Coles 2012, CosmoSIS team (code)]
 rules: []
 cite:

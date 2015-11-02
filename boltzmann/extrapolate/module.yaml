@@ -2,6 +2,7 @@ name: extrapolate
 version: 1.0
 purpose: "Simple log-linear extrapolation of P(k) to high k"
 url: https://bitbucket.org/joezuntz/cosmosis
+interface: extrapolate_power.py
 attribution: [CosmoSIS Team]
 rules: []
 cite: []
@@ -14,13 +15,18 @@ explanation: >
   of k. These values are unphysical but are useful for numerical stability.
 
   This module does a simple linear extrapolation in log-log space of P(k)
-  up to a specified kmax.
+  out to a specified kmin and kmax.  If the data already extends that far then
+  it does not do anything.
 
   It tries both linear and non-linear spectra but does not complain if either or 
   both are not present.
 
 params:
     kmax:  "real, the max wavenumber k to extrapolate to"
+    kmin:  "real, the min wavenumber k to extrapolate to (default 1e10 - high enough for no extrapolation)"
+    nmin:  "integer, the number of points to add at low k (default 50)"
+    nmax:  "integer, the number of points to add at high k (default 200)"
+    npoint: "integer, the number of end k-samples to use to fit the line at the end (default 3)"
 
 inputs:
     matter_power_lin:

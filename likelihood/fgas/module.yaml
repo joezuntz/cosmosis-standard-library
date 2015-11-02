@@ -2,6 +2,7 @@ name: "fgas"
 version: "2014"
 purpose: "Likelihood of galaxy cluster gas-mass fractions"
 url: "http://www.slac.stanford.edu/~amantz/work/fgas14/"
+interface: fgas.so
 attribution: [Adam Mantz]
 rules: "MIT license"
 cite:

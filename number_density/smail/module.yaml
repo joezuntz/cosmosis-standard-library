@@ -3,6 +3,7 @@ name: smail
 version: 1
 purpose: Compute window functions for photometric n(z) 
 url: ""
+interface: photometric_smail.py
 attribution: [CosmoSIS Team]
 rules: "You can do what you want with this file"
 cite: []

@@ -33,6 +33,7 @@ here. See the global variables for the structure.
 
 from numpy import nan, isnan, allclose
 import re
+from math import sqrt, log, exp, pow, log10
 
 def cosmology_consistency(verbose=False, relations_file=""):
 	if relations_file:

@@ -4,6 +4,7 @@ module camb_interface_tools
 	implicit none
 
 	integer :: standard_lmax = 1200
+	real(dl) :: standard_kmax = 50.0
 	integer, parameter :: CAMB_MODE_ALL = 1
 	integer, parameter :: CAMB_MODE_CMB = 2
 	integer, parameter :: CAMB_MODE_BG  = 3
@@ -28,6 +29,9 @@ module camb_interface_tools
 	real(dl), parameter :: default_pivot_scalar = 0.05
 	integer,  parameter :: default_massive_nu = 0
 	integer,  parameter :: default_sterile_neutrinos = 0
+	real(dl),  parameter :: default_kmax = 50.0
+
+	logical :: need_thermal_init
 
 
 	contains
@@ -113,6 +117,8 @@ module camb_interface_tools
 
 		status = 0
 
+		need_thermal_init = (mode==CAMB_MODE_THERMAL)
+
 		!We do not use the CMB lmax if only using the background mode
 		if (mode .ne. CAMB_MODE_BG) then
 			status = status + datablock_get_int_default(block, option_section, "lmax", default_lmax, standard_lmax)
@@ -125,11 +131,12 @@ module camb_interface_tools
 		status = status + datablock_get_logical_default(block, option_section, "use_tabulated_w", .false., use_tabulated_w)
 		status = status + datablock_get_logical_default(block, option_section, "do_tensors", .false., do_tensors)
 
-		if (mode == CAMB_MODE_ALL) then
-			status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
-			status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
-			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
-		endif
+		status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
+		status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
+		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
+
+		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)
+
 
 		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
 		status = status + datablock_get_logical_default(block, option_section, "do_lensing", .false. , do_lensing)
@@ -171,17 +178,16 @@ module camb_interface_tools
 		endif
 	end function camb_initial_setup
 
-	function camb_interface_set_params(block, params, background_only) result(status)
+	function camb_interface_set_params(block, params, mode) result(status)
 		integer (c_int) :: status
 		integer (c_size_t) :: block
-		logical, optional :: background_only
+		integer :: mode
 		logical :: perturbations
 		type(CambParams) :: params
 		integer :: sterile_neutrino
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
-		perturbations = .true.
-		if (present(background_only)) perturbations = .not. background_only
+		perturbations = (mode .eq. CAMB_MODE_CMB) .or. (mode .eq. CAMB_MODE_ALL)
 
 	
 		call CAMB_SetDefParams(params)
@@ -270,15 +276,16 @@ module camb_interface_tools
 			endif
 		endif	
 
-		params%wantTransfer = .true.
-		params%transfer%kmax = 50.0
+
+		params%wantTransfer = (mode==CAMB_MODE_ALL)
+		params%transfer%kmax = standard_kmax
 		params%wantTensors = (params%initpower%rat(1) .ne. 0.0) .or. do_tensors
 
         params%Max_l=standard_lmax
         params%Max_eta_k=2*standard_lmax
 
         params%DoLensing = do_lensing
-
+        params%DerivedParameters = .true.
 		!Set nonlinear behaviour
 		if (do_nonlinear) then
 			params%NonLinear=2
@@ -286,7 +293,7 @@ module camb_interface_tools
 			params%NonLinear=0
 		endif
 
-	
+		if (mode==CAMB_MODE_THERMAL) params%reion%Reionization = .false.
 	
 		!Some extras and modifications 
 		params%want_zdrag = .true.
@@ -324,7 +331,6 @@ module camb_interface_tools
 			params%transfer%redshifts(nz-i+1)  = zmin + dz*(i-1)
 	        params%transfer%pk_redshifts(nz-i+1)  = zmin + dz*(i-1)
     	enddo
-
 
     	call Transfer_SortAndIndexRedshifts(params%transfer)
 		status = 0
@@ -435,7 +441,7 @@ module camb_interface_tools
 		endif
 
 		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
-        	"k_h", k, "z", z, "delta_cdm", P)
+        	"k_h", k, "z", z, "delta_cdm", T)
 
 		if (status .ne. 0) then
 			write(*,*) "Failed to save matter power in CAMB."
@@ -446,6 +452,7 @@ module camb_interface_tools
 
 	
 	function camb_interface_save_da(params, block, save_density, save_thermal) result(status)
+		use CAMBmain
 		integer (cosmosis_block) :: block
 		type(CambParams) :: params
 		integer (c_int) :: status
@@ -484,6 +491,10 @@ module camb_interface_tools
 			!if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
 		enddo
 		
+		!Need to call thermal history here
+		if (thermal .and. need_thermal_init) then
+			call cmbmain()
+		endif
 
 		shift = camb_shift_parameter(params)
 		status = status + datablock_put_double(block, dist, "CMBSHIFT", shift)

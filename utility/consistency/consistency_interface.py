@@ -1,5 +1,6 @@
 from cosmosis.datablock import option_section, names
 import consistency
+import numpy as np
 
 def setup(options):
     verbose = options.get_bool(option_section, "verbose", default=False)
@@ -39,6 +40,11 @@ def execute(block, config):
         print "You set inconsistent cosmological parameters:"
         print error
         return 2
+
+    #Annoyingly this does not fit elsewhere
+    if block.has_value(cosmo, "log1e10As"):
+        block[cosmo, "A_s"] = np.exp(block[cosmo, 'log1e10As'])*1.0e-10
+        
 
     #Set or replace the new values
     for param, value in filled_parameters.items():
