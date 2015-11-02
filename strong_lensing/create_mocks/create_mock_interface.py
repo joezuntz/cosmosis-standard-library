@@ -23,14 +23,13 @@ def D_deltat(z_d,z_s, comovingDistance, omega_k, H0):
 
 
 def setup(options):
-
-	sig = options[option_section, "sigma"]
-	lbd = options[option_section, "lambdaD"]
+    sig = options[option_section, "sigma"]
+    lbd = options[option_section, "lambdaD"]
     fname = options[option_section, "filename"]
     outfile = options[option_section, "output_file"]
     data = np.loadtxt(fname)
     z_d = data[:,0]; z_s = data[:,1] 
-	return sig,lbd, z_d,z_s,outfile
+    return sig,lbd, z_d,z_s,outfile
 
 
 def execute(block, config):
