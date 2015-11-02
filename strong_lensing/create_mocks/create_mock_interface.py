@@ -4,7 +4,8 @@ from scipy.stats import lognorm
 import numpy as np
 
 def draw_from_lognorm(mu,sig,lbd):
-    return lognorm.rvs(sig, loc=mu,size=1,scale=lbd)
+    #lognorm.rvs(x, s, loc, scale) is identically equivalent to lognorm.pdf(y, s) / scale with y = (x - loc) / scale.
+    return lognorm.rvs(sig, loc=lbd,size=1,scale=np.exp(mu))
 
 def D_deltat(z_d,z_s, comovingDistance, omega_k, H0):
     c = 299792.4580  #km/s
