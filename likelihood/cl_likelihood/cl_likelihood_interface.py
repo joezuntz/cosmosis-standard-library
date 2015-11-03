@@ -9,22 +9,30 @@ def setup(options):
 	except: covmat_file=None
 	data_file = options.get_string(sec, 'data')
 	survey = options.get_string(sec, 'survey')
+	shear = options.get_bool(sec, 'shear')
+	galaxy_clustering = options.get_bool(sec, 'galaxy_clustering')
+	ggl = options.get_bool(sec, 'ggl')
+	auto = options.get_bool(sec, 'auto_zbins')
+	cross = options.get_bool(sec, 'cross_zbins')
 
-	config = [covmat_file, data_file, survey]
+	import cl_likelihood as cll
+	like= cll.ClLikelihood(survey, covmat_file, data_file, shear=shear, galaxy_clustering=galaxy_clustering, sh_gal_cross=ggl)
+
+	config = [covmat_file, data_file, survey, auto, cross], like
 
 	return config
 
 def execute(block, config):
 
-	covmat_file = config[0]
-	data_file = config[1]
-	survey = config[2]
+	options, like = config
+	covmat_file = options[0]
+	data_file = options[1]
+	survey = options[2]
+	auto = options[3]
+	cross = options[4]
 
-	pdb.set_trace()
-	import cl_likelihood as cll
-	like= cll.ClLikelihood(block, survey, covmat_file, data_file, shear=True, galaxy_clustering=True, sh_gal_cross=True, auto=True, cross=True)
+	like.initialise_theory(block, covmat_file, auto=auto, cross=cross)
 	like.do_likelihood(block)
-	pdb.set_trace()
 
 	# That's everthing. The Cl likelihood class handles the details of
 	# the covariance and likelihood calculations internally.
