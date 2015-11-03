@@ -47,6 +47,8 @@ typedef struct shear_spectrum_config {
 	bool magnification_shear;
 	char *shear_survey;
 	char *LSS_survey;
+	bool use_shear;
+	bool use_LSS;
 	
 } shear_spectrum_config;
 
@@ -55,6 +57,8 @@ void * setup(c_datablock * options){
 
 	shear_spectrum_config * config = malloc(sizeof(shear_spectrum_config));
 	int status = 0;
+	int status_shear=0;
+	int status_LSS=0;
 	status |= c_datablock_get_int(options, OPTION_SECTION, "n_ell", &(config->n_ell));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_min", &(config->ell_min));
 	status |= c_datablock_get_double(options, OPTION_SECTION, "ell_max", &(config->ell_max));
@@ -77,11 +81,17 @@ void * setup(c_datablock * options){
 			&(config->magnification_intrinsic));
 	status|=c_datablock_get_bool_default(options, OPTION_SECTION, "mag_shear", false,
 			&(config->magnification_shear));
-	status |= c_datablock_get_string(options, OPTION_SECTION, "LSS_survey",&(config->LSS_survey));
-	status |= c_datablock_get_string(options, OPTION_SECTION, "shear_survey",&(config->shear_survey));
+	status_shear |= c_datablock_get_string_default(options, OPTION_SECTION, "LSS_survey", "None", &(config->LSS_survey));
+	status_LSS |= c_datablock_get_string_default(options, OPTION_SECTION, "shear_survey", "None", &(config->shear_survey));
 
+	config->use_shear = !status_shear;
+	config->use_LSS = !status_LSS;
+
+	if (status_shear && status_LSS){
+			fprintf(stderr, "Please specify at least one survey in the spectra module (LSS_survey or shear_survey).\n");
+	}
 	if (status){
-		fprintf(stderr, "Please specify n_ell, ell_min, ell_max, LSS_survey and shear_survey in the spectra module.\n");
+		fprintf(stderr, "Please specify n_ell, ell_min and ell_max in the spectra module.\n");
 		exit(status);
 	}
 
@@ -598,14 +608,15 @@ int execute(c_datablock * block, void * config_in)
 	// This change will need propagating through the code
 	// Any references to nbin will need to be changed to the relevant term
 	// Also any loops over nbin will potentially need to be split into two
-	int nzbin_lss , nzbin_shear;
+	int nzbin_lss=1; 
+	int nzbin_shear=1;
 
 	shear_spectrum_config * config = (shear_spectrum_config*) config_in;
 
 	// Load the number of bins we will use
 	status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nbin);
-	status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nzbin_shear);
-	status |= c_datablock_get_int(block, config->LSS_survey, "nzbin", &nzbin_lss);
+	if(config->use_shear) status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nzbin_shear);
+	if(config->use_LSS) status |= c_datablock_get_int(block, config->LSS_survey, "nzbin", &nzbin_lss);
 
 	// Load z
 	status |= c_datablock_get_double_array_1d(block, config->shear_survey, "z", &z, &nz1);
@@ -646,6 +657,7 @@ int execute(c_datablock * block, void * config_in)
 	gsl_spline * Nchi_splines_shear[nzbin_shear];
 	gsl_spline * W_splines_lss[nzbin_lss];
 	gsl_spline * Nchi_splines_lss[nzbin_lss];
+	
 	int stop=0;
 	// The loops have to be split here to account for the different binning in the two surveys
 	// The following structure seems slightly convoluted but is hopefully the quickest way of doing this
@@ -660,31 +672,40 @@ int execute(c_datablock * block, void * config_in)
 	}
 
 	for (int bin=1; bin<=N1; bin++){
-		W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey);
-		Nchi_splines_shear[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey);		
-		W_splines_lss[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->LSS_survey);
-		Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+		if (config->use_shear){
+			W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey);
+			Nchi_splines_shear[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey);
+			if (W_splines_shear[bin-1]==NULL) error_status=1;
+			if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
+			
+		}
+		if (config->use_LSS){
+			W_splines_lss[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->LSS_survey);
+			Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+			if (W_splines_lss[bin-1]==NULL) error_status=1;
+			if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
+		}
 		
-		if (W_splines_shear[bin-1]==NULL) error_status=1;
-		if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
-		if (W_splines_lss[bin-1]==NULL) error_status=1;
-		if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
 		++stop;
 	}
 
 	if (N1!=N2){
 		for (int bin = stop+1 ; bin<=N2 ; ++bin) {
 			if (nzbin_shear<nzbin_lss){ 
-				Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
-				W_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
-				if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
-				if (W_splines_lss[bin-1]==NULL) error_status=1;
+				if (config->use_LSS){
+					Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+					W_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
+					if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
+					if (W_splines_lss[bin-1]==NULL) error_status=1;
+				}
 			}
 			if (nzbin_lss<nzbin_shear){
-				Nchi_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
-				W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
-				if (W_splines_shear[bin-1]==NULL) error_status=1;
-				if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
+				if (config->use_shear){
+					Nchi_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
+					W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
+					if (W_splines_shear[bin-1]==NULL) error_status=1;
+					if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
+				}
 			}
 		}
 	}
@@ -740,11 +761,9 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_GI = NULL;
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
-		PK_II = load_interpolator_chi(
-			block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
+		PK_II = load_interpolator_chi(block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
 
-		PK_GI = load_interpolator_chi(
-			block, chi_of_z_spline, IA_SPECTRUM_GI_SECTION, "k_h", "z", "P_GI");
+		PK_GI = load_interpolator_chi(block, chi_of_z_spline, IA_SPECTRUM_GI_SECTION, "k_h", "z", "P_GI");
 
 		if (PK_II==NULL) return 2;
 		if (PK_GI==NULL) return 3;
@@ -764,6 +783,7 @@ int execute(c_datablock * block, void * config_in)
 			printf("No galaxy power spectrum found in datablock. Using the matter power spectrum instead.\n");
 			PK_gm=PK;
 		}
+		if (PK_gm==NULL) return 4;
 	}
 
 	/*				galaxy position - intrinsic shape spectrum			 		*/
@@ -773,8 +793,13 @@ int execute(c_datablock * block, void * config_in)
 			PK_gI = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_intrinsic", "k_h", "z", "P_k");
 		}
 		if (PK_gI==NULL){
-			printf("No galaxy-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
+			printf("No galaxy-intrinsic power spectrum found in datablock. Using the II spectrum instead %s.\n", IA_SPECTRUM_II_SECTION);
 			PK_gI=PK_II;
+			if (PK_gI==NULL){
+				PK_gI = load_interpolator_chi(block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
+			}
+			if (PK_gI==NULL) return 5;
+			
 		}
 	}
 

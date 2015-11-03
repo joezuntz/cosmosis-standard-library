@@ -205,9 +205,9 @@ int get_all_spectra(c_datablock * block, biases * b, bias_config * config){
 	// Apply the bias arrays loaded earlier to the nonlinear power spectrum to get the required spectra
 	if(config->intrinsic_alignments){
 		status|=get_power_spectrum(block, intrinsic_intrinsic, b);
-		if(config->verbosity>0){ printf("Saved II spectrum.\n");}
+		if(config->verbosity>0){ printf("Saved II spectrum. %d\n",status);}
 		status|=get_power_spectrum(block,  mass_intrinsic, b);	
-		if(config->verbosity>0){ printf("Saved GI spectrum.\n");}	
+		if(config->verbosity>0){ printf("Saved GI spectrum. %d\n",status);}	
 	}
 	if(config->galaxy_bias){
 		status|=get_power_spectrum(block, galaxy_galaxy, b);
