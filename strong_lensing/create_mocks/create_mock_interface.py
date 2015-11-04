@@ -23,17 +23,17 @@ def D_deltat(z_d,z_s, comovingDistance, omega_k, H0):
 
 
 def setup(options):
-
-	sig = options[option_section, "sigma"]
-	lbd = options[option_section, "lambdaD"]
-        fname = options[option_section, "filename"]
-        data = np.loadtxt(fname)
-        z_d = data[:,0]; z_s = data[:,1] 
-	return sig,lbd, z_d,z_s
+    sig = options[option_section, "sigma"]
+    lbd = options[option_section, "lambdaD"]
+    fname = options[option_section, "filename"]
+    outfile = options[option_section, "output_file"]
+    data = np.loadtxt(fname)
+    z_d = data[:,0]; z_s = data[:,1] 
+    return sig,lbd, z_d,z_s,outfile
 
 
 def execute(block, config):
-	sig,lbd, z_d,z_s = config
+	sig,lbd, z_d,z_s,outfile = config
 
 	z_m = block[names.distances, "z"][::-1]
 	d_m = block[names.distances, "d_m"][::-1]
@@ -48,7 +48,7 @@ def execute(block, config):
             Ddt_obs[i]=d_obs
             #print d_obs, Ddt_true
         err=np.ones(len(Ddt_obs))*sig
-        np.savetxt('cosmosis-standard-library/strong_lensing/time_delay_lenses/mock.txt',np.vstack((z_d,z_s,Ddt_obs,err)).T)
+        np.savetxt(outfile,np.vstack((z_d,z_s,Ddt_obs,err)).T)
 	return 0
 
 
