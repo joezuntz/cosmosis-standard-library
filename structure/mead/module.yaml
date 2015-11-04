@@ -3,6 +3,7 @@ name: mead
 version: 1.0
 purpose: Uses an extended Halo model to compute non-linear and baryonic power
 url: "https://github.com/alexander-mead/hmcode"
+interface: mead_interface.so
 attribution: [Alexander Mead]
 rules: []
 cite: ["http://arxiv.org/abs/1505.07833v1"]
