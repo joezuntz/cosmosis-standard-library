@@ -1,9 +1,9 @@
 #This is a template for module description files
-name: suyu_time_delay
+name: strong_lens_time_delays
 version: 1
 purpose: ""
 url: ""
-interface: suyu_interface.py
+interface: time_delay_interface.py
 attribution: ["Suyu et al data"]
 rules:
     ""
