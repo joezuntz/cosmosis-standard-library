@@ -12,16 +12,17 @@ class Cl_class:
 		self.magnification = config['magnification']
 
 		self.noise = config['noise']
+		self.bias = config['bias'][0]
+		self.m_per_bin = config['bias'][1]
 
 		survey = config['survey']
+
+		self.dobinning = config['binning']
 
 		# Relevant parameters for the noise
 		if self.noise: 
 			self.sigma_gamma = block.get_double(survey, 'shape_dispersion')
 			self.ngal = block.get_double(survey, 'ngal')
-		
-		# Get the desired binning		
-		self.get_l_bins(block, survey)
 
 		# And the configuration of the theory spectra
 		self.Nzbin= int(block[survey,'nzbin'])
@@ -29,6 +30,12 @@ class Cl_class:
 		if self.shear: self.l = block['shear_cl_gg','ell']
 		elif self.clustering: self.l = block['galaxy_cl_gg','ell']
 		self.Nl = len(self.l)
+
+		if self.bias:
+			self.multiplicative_bias = [ block[survey, "m%d"%i] for i in range(1, self.Nzbin+1) ] 
+
+		# Finally get the desired binning		
+		self.get_l_bins(block, survey)
 
 	def load_and_generate_observable_cls(self, block, names):
 
@@ -83,11 +90,11 @@ class Cl_class:
 				if not self.noise:
 					# Finally resample the spectra in the survey angular frequency bins
 					if self.shear:
-						self.C_ee_binned[i-1][j-1] = get_binned_cl(self.C_ee[i-1][j-1], self.l, self.lbin_edges )
+						self.C_ee_binned[i-1][j-1] = get_binned_cl(self.C_ee[i-1][j-1], self.l, self.lbin_edges, self.dobinning )
 					if self.clustering:
-						self.C_nn_binned[i-1][j-1] = get_binned_cl(self.C_nn[i-1][j-1], self.l, self.lbin_edges )
+						self.C_nn_binned[i-1][j-1] = get_binned_cl(self.C_nn[i-1][j-1], self.l, self.lbin_edges, self.dobinning )
 					if self.shear and self.clustering:
-						self.C_ne_binned[i-1][j-1] = get_binned_cl(self.C_ne[i-1][j-1], self.l, self.lbin_edges )
+						self.C_ne_binned[i-1][j-1] = get_binned_cl(self.C_ne[i-1][j-1], self.l, self.lbin_edges, self.dobinning )
 
 		if self.noise:
 			# Add noise if required	
@@ -97,14 +104,29 @@ class Cl_class:
 			for i in range(1, self.Nzbin+1):
 				for j in range(1, self.Nzbin+1):
 					if self.shear:
-						self.C_ee_binned[i-1][j-1] = get_binned_cl(self.C_ee[i-1][j-1], self.l, self.lbin_edges )
+						self.C_ee_binned[i-1][j-1] = get_binned_cl(self.C_ee[i-1][j-1], self.l, self.lbin_edges, self.dobinning )
+						if self.bias: self.apply_measurement_bias(i, j, 'shear')
 					if self.clustering:
-						self.C_nn_binned[i-1][j-1] = get_binned_cl(self.C_nn[i-1][j-1], self.l, self.lbin_edges )
+						self.C_nn_binned[i-1][j-1] = get_binned_cl(self.C_nn[i-1][j-1], self.l, self.lbin_edges, self.dobinning )
 					if self.shear and self.clustering:
-						self.C_ne_binned[i-1][j-1] = get_binned_cl(self.C_ne[i-1][j-1], self.l, self.lbin_edges )
+						self.C_ne_binned[i-1][j-1] = get_binned_cl(self.C_ne[i-1][j-1], self.l, self.lbin_edges, self.dobinning )
+						if self.bias: self.apply_measurement_bias(i, j,'ggl')
 
+	def apply_measurement_bias(self, i, j, mode=None):
+		if not self.m_per_bin:
+			m0 = self.multiplicative_bias[0]
+
+		#Compute scaling parameter for this pair of redshift bins
+		if self.m_per_bin:
+			mi = self.multiplicative_bias[i-1]
+			mj = self.multiplicative_bias[j-1]
+		else:
+			mi,mj = m0,m0
+
+		#Apply scaling
+		if mode=='shear': self.C_ee_binned[i-1][j-1] *= (1+mi)*(1+mj)
+		if mode=='ggl': self.C_ne_binned[i-1][j-1] *= (1+mj)
 		
-
 	def add_noise(self, block):
 		
 		n_binned = get_binned_number_densities(self.Nzbin, self.ngal)
@@ -130,7 +152,8 @@ class Cl_class:
 		if self.clustering:	self.C_nn += N_shot
 
 	def get_l_bins(self, block, survey):
-		self.Nlbin = int(block[survey, 'nlbin'])
+		if self.dobinning: self.Nlbin = int(block[survey, 'nlbin'])
+		else: self.Nlbin = self.Nl
 		self.lmin = block[survey, 'lmin']
 		self.lmax = block[survey, 'lmax']
 		# Define some l bins for this survey
@@ -141,19 +164,19 @@ class Cl_class:
 		
 		if self.shear:
 			block.put_double_array_1d('galaxy_shape_cl', 'l_bin_edges', self.lbin_edges)
-			block.put_double_array_1d('galaxy_shape_cl', 'l_bins', self.l_bins)
+			block.put_double_array_1d('galaxy_shape_cl', 'ell', self.l_bins)
 			block.put_double_array_1d('galaxy_shape_cl', 'z_bin_edges', self.zbin_edges)
 			block.put_int('galaxy_shape_cl', 'nl', self.Nlbin)
 			block.put_int('galaxy_shape_cl', 'nz', self.Nzbin)
 		if self.clustering:
 			block.put_double_array_1d('galaxy_position_cl', 'l_bin_edges', self.lbin_edges)
-			block.put_double_array_1d('galaxy_position_cl', 'l_bins', self.l_bins)
+			block.put_double_array_1d('galaxy_position_cl', 'ell', self.l_bins)
 			block.put_double_array_1d('galaxy_position_cl', 'z_bin_edges', self.zbin_edges)
 			block.put_int('galaxy_position_cl', 'nl', self.Nlbin)
 			block.put_int('galaxy_position_cl', 'nz', self.Nzbin)
 		if self.shear and self.clustering:
 			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'l_bin_edges', self.lbin_edges)
-			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'l_bins', self.l_bins)
+			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'ell', self.l_bins)
 			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'z_bin_edges', self.zbin_edges)
 			block.put_int('galaxy_position_shape_cross_cl', 'nl', self.Nlbin)
 			block.put_int('galaxy_position_shape_cross_cl', 'nz', self.Nzbin)
@@ -174,10 +197,14 @@ class Cl_class:
 				if self.shear and self.clustering:
 					block.put_double_array_1d('galaxy_position_shape_cross_cl', bin, self.C_ne_binned[i-1][j-1])
 					if out_path is not None:	out_C_ne[bin]=	self.C_ne_binned[i-1][j-1]
-
+		
+		try: omega_de = block['cosmological_parameters', 'omega_de']
+		except:
+			omega_k = block['cosmological_parameters', 'omega_k']
+			omega_de = 1.0 - block['cosmological_parameters', 'omega_m'] - omega_k
 		if out_path is not None:
 			cospar={'omega_m': block['cosmological_parameters', 'omega_m'],
-				'omega_de': block['cosmological_parameters', 'omega_de'],
+				'omega_de': omega_de,
 				'omega_b': block['cosmological_parameters', 'omega_b'],
 				'h': block['cosmological_parameters', 'h0'],
 				'sigma_8': block['cosmological_parameters', 'sigma_8'],
@@ -192,13 +219,16 @@ class Cl_class:
 			pickle.dump(datavector, f)
 			f.close()
 
-def get_binned_cl(Cl, l, lbin_edges):
-	Cl_binned = np.zeros(len(lbin_edges)-1)
-	for i in range(len(lbin_edges)-1):
-		lmin = lbin_edges[i] ; lmax = lbin_edges[i+1]
-		sel = (l>lmin) & (l<lmax)
-		Cl_binned[i] = np.mean(Cl[sel])
-	return Cl_binned
+def get_binned_cl(Cl, l, lbin_edges, dobinning):
+	if dobinning:	
+		Cl_binned = np.zeros(len(lbin_edges)-1)
+		for i in range(len(lbin_edges)-1):
+			lmin = lbin_edges[i] ; lmax = lbin_edges[i+1]
+			sel = (l>lmin) & (l<lmax)
+			Cl_binned[i] = np.mean(Cl[sel])
+		return Cl_binned
+	else:
+		return Cl
 
 
 def get_binned_number_densities(nzbin, ngal):

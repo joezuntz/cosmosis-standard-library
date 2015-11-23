@@ -28,8 +28,8 @@ def sigma_phot(sigma_z, alpha_z, z):
 	return sigma_z*(1+z)**alpha_z
 
 def photometric_error(z, Nz, sigma_z, alpha_z, bias, cat_opt):
-	# Calculates the n(zphot|zspec), assuming a Gaussian error distribution
-	# Also includes catastrophic outliers
+	# Calculates the n(zspec|zphot), assuming a Gaussian error distribution
+	# Also includes redistribution of probability due to catastrophic outliers
 	# See Hearin et al (2010) for the prescription used
 	nz = len(z)
 	output = np.zeros((nz,nz))
@@ -37,14 +37,11 @@ def photometric_error(z, Nz, sigma_z, alpha_z, bias, cat_opt):
 	cat_mode = None
 	if cat_opt!=None:
 		cat_mode = cat_opt['mode']
-		fcat = cat_opt['fcat']
-		dzcat = cat_opt['dzcat']
-		zcat = cat_opt['zcat']
-		sigcat= cat_opt['sigcat']
-		try: zcat0= cat_opt['zcat0']
-		except:
-			zcat0 = np.random.random()*(z[-1]-z[0])+z[0]
-
+		fcat = cat_opt['fcat'] #0.05
+		dzcat = cat_opt['dzcat']  #0.129
+		zcat0= cat_opt['zcat0']  #0.65
+		zcat = cat_opt['zcat']  #0.5
+		sigcat= cat_opt['sigcat']  #0.1
 	dz = (z[1]-z[0])
 
 	Nz /= sum(Nz * (z[1]-z[0]))
@@ -94,6 +91,7 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 	for low,high in zip(edges[:-1], edges[1:]):
 		w = np.where((z>low) & (z<high))[0]
 		# Sum over all possible ztrue
+		# Equivalent to marginalising p(zphot,ztrue) wrt ztrue
 		ni = z_prob_matrix[w,:].sum(axis=0)
 
 		# Normalise the n(z) in each redshift bin to 1 over the redshift range
@@ -107,7 +105,7 @@ def compute_nz(smail_dist, z, nbin, sigma_z, alpha_z, ngal, bias, cat_opt):
 	#Set up Smail distribution of z vector as the distribution of true redshifts of the galaxies, n(ztrue)
 	nz_true = smail_dist #ribution(z, alpha, beta, z0)
 
-	# Multiply that by a Gaussian to get the probability distribution of the measured photo-z for each true redshift
+	# Multiply that by a Gaussian to get the probability distribution of the measured photo-z for each true redshift p(zphot|ztrue)
 	# This gives a 2D probability distribution
 	z_prob_matrix = photometric_error(z, nz_true, sigma_z, alpha_z, bias, cat_opt)
 	edges = find_bins(z,nz_true,nbin)
@@ -153,6 +151,15 @@ def execute(block, config):
 		block[survey, name] =  bin
 	#Also save the upper limit to the top bin
 	block[survey,"edge_%d"%(nbin+1)] = edges[-1]
+
+	#redmagic = pi.load(open('/home/sws/Desktop/redmagic_n_z_stacked_gaussian.p','rb'))
+	#pdb.set_trace()
+
+	#real=np.loadtxt('/home/sws/cosmosis/modules/modules/number_density/scaled_smail/data/nofz_svng16_06.06.15_skynet2sweight-True_mean_final_v16.txt')
+	#rz=(real.T[0]+real.T[1])/2.
+	#rbin1=real.T[2]/(real.T[2]*(rz[1]-rz[0])).sum()
+	#rbin2=real.T[3]/(real.T[3]*(rz[1]-rz[0])).sum()
+	#rbin3=real.T[4]/(real.T[4]*(rz[1]-rz[0])).sum()
 
 	return 0
 		

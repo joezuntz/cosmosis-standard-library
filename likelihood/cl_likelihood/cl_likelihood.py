@@ -157,6 +157,7 @@ class ClLikelihood(GaussianLikelihood):
 					print 'Evaluated matrix %s%s' %(spect1[0],spect2[0]) 
 
 				# Write to the appropriate block of the matrix
+				#pdb.set_trace()
 				try:	Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
 				except:	pdb.set_trace()
 
@@ -272,31 +273,38 @@ class ClLikelihood(GaussianLikelihood):
 		# Loop over the redshift bin combinations in the right order
 		for spect1 in [i[1] for i in self.spectra if i[0]==mode[0]]:
 			for spect2 in [j[1] for j in self.spectra if j[0]==mode[1]]:
-				# If possible get the sub-matrix by symmetry
-				if (mode[0]==mode[1]) and (spect1>spect2):
-					m = cov[n2*self.nlbin:(n2+1)*self.nlbin, n1*self.nlbin:(n1+1)*self.nlbin ]
-				# Otherwise calculate it
-				else:
-					# Choose the needed combinations of the four redshift bins
-					a0,b0 = spect1[0],spect2[0] # i,k
-					a1,b1 = spect1[1],spect2[1] # j,m
-					a2,b2 = spect1[0],spect2[1] # i,m
-					a3,b3 = spect1[1],spect2[0] # j,k
-					# Evaluate each of the four different spectra, 
-					# switching the bin ordering if necessary
-					for sec in range(len(sections)):
-						exec 'a,b = a%d,b%d' %(sec,sec) 
-						if sections[sec][1]: a,b = b,a
-						exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][self.scale_cut]" %(sec,sec,1+a,1+b)
-					# Finally allocate the diagonal matrix to the right block of this 
-					# covariance matrix
-					m = np.diag( p * (Cl0 * Cl1 + Cl2 * Cl3) )
+				if n2>n1 and (mode[0]==mode[1]): continue
+				# Only do the calculation for half of the block if possible
+				# Each nlxnl sub-section can be filled in above and below
+				# the diagonal only if this block is for like correlations
+				# e.g. ee,ee ; nn,nn; ne,ne
+				
+				# Choose the needed combinations of the four redshift bins
+				a0,b0 = spect1[0],spect2[0] # i,k
+				a1,b1 = spect1[1],spect2[1] # j,m
+				a2,b2 = spect1[0],spect2[1] # i,m
+				a3,b3 = spect1[1],spect2[0] # j,k
+				# Evaluate each of the four different spectra, 
+				# switching the bin ordering if necessary
+				for sec in range(len(sections)):
+					exec 'a,b = a%d,b%d' %(sec,sec) 
+					if sections[sec][1]: a,b = b,a
+					exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][self.scale_cut]" %(sec,sec,1+a,1+b)
+				# Finally allocate the diagonal matrix to the right block of this 
+				# covariance matrix
+				m = np.diag( p * (Cl0 * Cl1 + Cl2 * Cl3) )
 				# Write to the appropriate part of the matrix for this pair of 
 				# spectrum types
-				try:	cov[n1*self.nlbin:(n1+1)*self.nlbin, n2*self.nlbin:(n2+1)*self.nlbin] += m
+				try:	
+					cov[n1*self.nlbin:(n1+1)*self.nlbin, n2*self.nlbin:(n2+1)*self.nlbin] += m
+					trans_cov = cov[n2*self.nlbin:(n2+1)*self.nlbin, n1*self.nlbin:(n1+1)*self.nlbin ]
+					# If the transpose hasn't been written and this block is symmetric
+					if (sum(trans_cov.flatten())==0) and (mode[0]==mode[1]):
+						cov[n2*self.nlbin:(n2+1)*self.nlbin, n1*self.nlbin:(n1+1)*self.nlbin ]+=m
 				except: 
 					print 'Warning: invalid matrix dimensions'
 					pdb.set_trace()
+				#pdb.set_trace()
 				
 				n2+=1
 			n2 = 0

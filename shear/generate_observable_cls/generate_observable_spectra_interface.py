@@ -10,26 +10,23 @@ def setup(options):
 	clustering= options[option_section, "clustering"]
 	magnification= options[option_section, "magnification"]
 	noise = options[option_section, "noise"]
+	bias = (options[option_section, "bias"], options[option_section, "m_per_bin"])
+	bins = options[option_section, "angular_frequency_bins"]
+
+	disp={True:'yes', False:'no'}
+	print 'Shot noise: %s'%disp[noise]
+	print 'Shape measurement bias (in each bin): %s (%s)'%(disp[bias[0]], disp[bias[1]])
+	print 'Angular frequency binning: %s'%disp[bins]
 
 	survey = options[option_section, "survey"]
 
 	try: output_datavector = options[option_section, "output"]
 	except: output_datavector = None
 
-	opt= {'shear': shear, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'survey': survey, 'output_datavector': output_datavector}
+	opt= {'shear': shear, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins,'survey': survey, 'output_datavector': output_datavector}
 	return opt
 
 def execute(block, config):
-	
-	survey = config['survey']
-
-	# Survey parameters
-	Nl = int(block[survey, 'nlbin'])
-	lmax = block.get_double(survey, 'lmax')
-	lmin = block.get_double(survey, 'lmin')
-
-	# Defines whether to add noise 
-	noise = config['noise']
 
 	out_path = config['output_datavector']
 	
