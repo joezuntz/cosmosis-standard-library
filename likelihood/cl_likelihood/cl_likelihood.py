@@ -81,7 +81,7 @@ class ClLikelihood(GaussianLikelihood):
 		# a spectrum type and a tuple of z bin indices for each C(l)
 
 		# Do a consistency check with the theory vector to ensure the binning is the same
-		self.l_bins = block[cl_sections[self.spectra[0][0]], 'l_bins']
+		self.l_bins = block[cl_sections[self.spectra[0][0]], 'ell']
 		if len(self.l_bins) != len(self.data_x):
 			print 'Error: the angular frequency binning in the theory vector is inconsistent with the data.'
 			exit()
@@ -109,7 +109,7 @@ class ClLikelihood(GaussianLikelihood):
 		for i in range(len(self.spectra)):
 			cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][self.scale_cut])
 
-		self.data_y = np.array(self.data_y).flatten()
+		self.data_y = np.array(cut_data).flatten()
 
 		self.nlbins = len(self.data_x)
 

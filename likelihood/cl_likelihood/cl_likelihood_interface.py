@@ -30,10 +30,8 @@ def execute(block, config):
 	survey = options[2]
 	auto = options[3]
 	cross = options[4]
-
 	like.initialise_theory(block, covmat_file, auto=auto, cross=cross)
 	like.do_likelihood(block)
-	if block['cosmological_parameters','omega_m']==0.31: pdb.set_trace()
 
 	# That's everthing. The Cl likelihood class handles the details of
 	# the covariance and likelihood calculations internally.
