@@ -359,7 +359,7 @@ int get_binning(spectrum_type_t spectrum_type, int nzbin_lss, int nzbin_shear, i
 
 // Select the combinations of line-of-sight kernels for the Limber integral.
 int choose_kernels(spectrum_type_t spectrum_type, int nzbin_shear, int nzbin_lss, gsl_spline * W_shear[nzbin_shear],
-	gsl_spline * W_lss[nzbin_shear], gsl_spline * Nchi_shear[nzbin_shear], gsl_spline * Nchi_lss[nzbin_lss], 
+	gsl_spline * W_lss[nzbin_lss], gsl_spline * Nchi_shear[nzbin_shear], gsl_spline * Nchi_lss[nzbin_lss], 
 	gsl_spline ** K1, gsl_spline ** K2){
 	
 	// The different spectra use different kernels to integrate over:
@@ -475,7 +475,7 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 
 	const char * section = choose_output_section(spectrum_type, config);
 	status = choose_configuration(block, spectrum_type, &lc, config);
-	status |= choose_kernels(spectrum_type, nzbin_shear, nzbin_lss, W_shear, W_lss, Nchi_shear, Nchi_lss, &K1[0], &K2[0]);
+	status |= choose_kernels(spectrum_type, nzbin_shear, nzbin_lss, W_shear, W_lss, Nchi_shear, Nchi_lss, K1, K2);
 
 	// If any of these have gone wrong we quit
 	// after cleaning up any allocated memory
