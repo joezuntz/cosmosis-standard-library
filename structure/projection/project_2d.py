@@ -13,7 +13,7 @@ class Spectrum(object):
     power_spectrum = "?"
     kernel_1 = "?"
     kernel_2 = "?"
-    strictly_positive = False
+    is_autocorrelation = False
     name = "?"
     prefactor_power = 1
 
@@ -43,7 +43,7 @@ class Spectrum(object):
 
         #The spline is done in log space if the spectrum never goes
         #negative, otherwise linear space.
-        xlog = ylog = self.strictly_positive
+        xlog = ylog = self.is_autocorrelation
         #Generate a spline
         c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block))
         return c_ell
@@ -60,70 +60,70 @@ class SpectrumType(Enum):
     class ShearShear(Spectrum):
         power_spectrum = "p_mm"
         kernels = "W W"
-        strictly_positive = True
+        is_autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
         power_spectrum = "p_mi"
         kernels = "W N"
-        strictly_positive = False
+        is_autocorrelation = False
         name = names.shear_cl_gi
         prefactor_power = 1
 
     class IntrinsicIntrinsic(Spectrum):
         power_spectrum = "p_ii"
         kernels = "N N"
-        strictly_positive = True
+        is_autocorrelation = True
         name = names.shear_cl_ii
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
         power_spectrum = "p_gg"
         kernels = "N N"
-        strictly_positive = True
+        is_autocorrelation = True
         name = "galaxy_cl"
         prefactor_power = 0
 
     class PositionMagnification(Spectrum):
         power_spectrum = "p_gm"
         kernels = "N W"
-        strictly_positive = False
+        is_autocorrelation = False
         name = "galaxy_magnification_cl"
         prefactor_power = 1    
 
     class MagnificationMagnification(Spectrum):
         power_spectrum = "p_mm"
         kernels = "W W"
-        strictly_positive = True
+        is_autocorrelation = True
         name = "magnification_cl"
         prefactor_power = 2
 
     class PositionShear(Spectrum):
         power_spectrum = "p_gm"
         kernels = "N W"
-        strictly_positive = False
+        is_autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
 
     class PositionIntrinsic(Spectrum):
         power_spectrum = "p_gi"
         kernels = "N N"
-        strictly_positive = False
+        is_autocorrelation = False
         name = "galaxy_intrinsic_cl"
         prefactor_power = 0
 
     class MagnificationIntrinsic(Spectrum):
         power_spectrum = "p_mi"
         kernels = "W N"
-        strictly_positive = False
+        is_autocorrelation = False
         name = "magnification_intrinsic_cl"
         prefactor_power = 1
        
     class MagnificationShear(Spectrum):
         power_spectrum = "p_mm"
         kernels = "W W"
-        strictly_positive = False
+        is_autocorrelation = False
         name = "magnification_shear_cl"
         prefactor_power = 1
 
@@ -278,7 +278,6 @@ class SpectrumCalulcator(object):
         self.power['p_gm'] = p_gm
 
     def load_galaxy_intrinsic_power(self, block):
-
         #galaxy power. If we have been asked for unbiased galaxies we will
         #just use the matter power, either the one we have loaded
         if self.unbiased_galaxies:
@@ -297,7 +296,10 @@ class SpectrumCalulcator(object):
     def compute_spectra(self, block, spectrum):
         block[spectrum.name, 'ell'] = self.ell
         for i in xrange(self.nbin):
-            for j in xrange(i+1):
+            #for auto-correlations C_ij = C_ji so we only do one of them.
+            #for cross-correlations we must do both
+            jmax = i+1 if spectrum.is_autocorrelation else nbin
+            for j in xrange(jmax):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum.name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum.name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
