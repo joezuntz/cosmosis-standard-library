@@ -18,12 +18,13 @@ def setup(options):
 	print 'Shape measurement bias (in each bin): %s (%s)'%(disp[bias[0]], disp[bias[1]])
 	print 'Angular frequency binning: %s'%disp[bins]
 
-	survey = options[option_section, "survey"]
+	shear_survey = options[option_section, "shear_sample"]
+	pos_survey = options[option_section, "clustering_sample"]
 
 	try: output_datavector = options[option_section, "output"]
 	except: output_datavector = None
 
-	opt= {'shear': shear, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins,'survey': survey, 'output_datavector': output_datavector}
+	opt= {'shear': shear, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector}
 	return opt
 
 def execute(block, config):

@@ -1,5 +1,5 @@
 from gaussian_likelihood import GaussianLikelihood
-from cosmosis.datablock import names
+from cosmosis.datablock import names, option_section
 import cPickle as pickle
 import numpy as np
 import string
@@ -31,17 +31,25 @@ cl_sections= {'ee':'galaxy_shape_cl', 'ne':'galaxy_position_shape_cross_cl', 'nn
 class ClLikelihood(GaussianLikelihood):
 	constant_covariance=False
 	#one section name
-	#don't define section name when readig options
-	def __init__(self, survey, covmat_file, data_file, shear, galaxy_clustering, sh_gal_cross):
+	#don't define section name when reading options
+	def __init__(self, options):
+		
+		covmat_file = options.get_string(option_section, 'covariance', default='none')
+		data_file = options.get_string(option_section, 'data')
+		self.shear_cat = options.get_string(option_section, 'shear_sample')
+		self.pos_cat = options.get_string(option_section, 'clustering_sample')
+		self.shear = options.get_bool(option_section, 'shear')
+		self.pos = options.get_bool(option_section, 'galaxy_clustering')
+		self.ggl = options.get_bool(option_section, 'ggl')
+		auto = options.get_bool(option_section, 'auto_zbins')
+		cross = options.get_bool(option_section, 'cross_zbins')
 
-		# Put all of the information specifying the datavector where
+		# Put the information specifying the datavector where
 		# it can be accessed later
 		self.spectra_to_use = []
-		if shear:	self.spectra_to_use.append('ee')
-		if sh_gal_cross:	self.spectra_to_use.append('ne')
-		if galaxy_clustering:	self.spectra_to_use.append('nn')
-
-		self.survey = survey
+		if self.shear:	self.spectra_to_use.append('ee')
+		if self.ggl:	self.spectra_to_use.append('ne')
+		if self.pos:	self.spectra_to_use.append('nn')
 
 		self.x_section = [cl_sections[sp] for sp in self.spectra_to_use]
 		self.x_name    = 'l_bin_edges'
@@ -56,87 +64,123 @@ class ClLikelihood(GaussianLikelihood):
 
 		# Load the datavector from the disc
 		self.data_x, self.data_y = self.build_data(data_file)
+		if covmat_file!='none':
+			self.constant_covariance = True
+			self.covmat_file = covmat_file
 
-	def initialise_theory(self, block, covmat_file, auto=None, cross=None):
+	def initialise_theory(self, block, auto=None, cross=None):
 		"""
 		Sets up the theory datavector and covariance matrix, if not using a
 		fixed one. These are cosmology dependent and so could not be loaded
 		in the setup function at the start of the pipeline.
 		"""
-		# Get the angular frequency and reshift binning
-		self.llim = (block[self.survey, 'lmin'],block[self.survey, 'lmax'])
-		print 'Applying angular frequency cuts %e< l < %e' %(self.llim[0], self.llim[1])
-		self.apply_scale_cuts()
-		bins = self.get_zbin_combinations(block, auto, cross)
+		# Get the reshift binning
+		self.get_zbin_combinations(block, auto, cross)
 
 		# Choose which Cls to load
 		self.spectra_theory = []
+		self.n_elem = 0
 		for sp in self.spectra_to_use:
+			bins = getattr(self, 'bins_%s'%sp)
 			for zcomb in bins: 
 				# For the symmetric spectra ee and nn, only half the redshift
 				# bin combinations are required
 				if (sp[0]==sp[1]) and (zcomb[1]<zcomb[0]): continue
-				else: self.spectra_theory.append((sp, zcomb))
+				else:
+					self.spectra_theory.append((sp, zcomb))
+					l = block[cl_sections[sp],'ell']
+					scale_cut = (l > block[cl_sections[sp],'lmin_%s_%s'%(zcomb[0]+1,zcomb[1]+1) ]) & (l < block[cl_sections[sp],'lmax_%s_%s'%(zcomb[0]+1,zcomb[1]+1)])
+					self.n_elem += len(l[scale_cut])
 		# This list should now fully specify the datavector, with
 		# a spectrum type and a tuple of z bin indices for each C(l)
 
 		# Do a consistency check with the theory vector to ensure the binning is the same
 		self.l_bins = block[cl_sections[self.spectra[0][0]], 'ell']
-		if len(self.l_bins) != len(self.data_x):
-			print 'Error: the angular frequency binning in the theory vector is inconsistent with the data.'
-			exit()
+		#if len(self.l_bins) != len(self.data_x):
+		#	print 'Error: the angular frequency binning in the theory vector is inconsistent with the data.'
+		#	exit()
 		if len(self.spectra_theory) != len(self.spectra):
 			print 'Error: the selected redshift bin combinations in the theory vector are inconsistent with the data.'
-			pdb.set_trace()
 			exit()
 
 		# Set the datavector names now the binning is known
 		self.y_name = ['bin_%d_%d'%sp[1] for sp in self.spectra ]
 
 		# Finally evaluate the covariance matrix and invert it
-		self.cov = self.build_covariance(block, covmat_file)
+		self.cov = self.build_covariance(block)
 		self.inv_cov = self.build_inverse_covariance(block)
 
-	def apply_scale_cuts(self):
-		if (self.llim[0]!=None) and (self.llim[1]!=None): 
-			self.scale_cut = (self.data_x>self.llim[0]) & (self.data_x<self.llim[1])
-		else:
-			self.scale_cut = np.array([True]*len(self.data_x))
+	#def choose_scale_cuts(self, option, shear, ggl, pos, cuts_file=None, block):
+#		if option='file':
+#			cuts = np.loadtxt(cuts_file)
+#			corrtypes = cuts.T[0]
+#			if shear:
+#				self.lmin_shear = cuts.T[2][corrtypes==0.]
+#				self.lmax_shear = cuts.T[3][corrtypes==0.]
+#			if ggl or pos:
+#				self.lmin_pos = cuts.T[2][corrtypes==1.]	
+#				self.lmax_pos = cuts.T[3][corrtypes==1.]
+#			print 'Read scale cuts from %s' %cuts_file
+#
+#		elif (option=='fixed') or (option=='vary'):
+#			if shear:
+#				self.lmin_shear = []
+#				self.lmax_shear = []
+#				for i in self.nzbin_shear:
+#					lmin = block[self.shear_cat, 'lmin_%d'%i]
+#					lmax = block[self.shear_cat, 'lmax_%d'%i]
+#					self.lmin_shear.append(lmin)
+#					self.lmax_shear.append(lmax)
+#				for i in self.nzbin_pos:
+#					lmin = block[self.pos_cat, 'lmin_%d'%i]
+#					lmax = block[self.pos_cat, 'lmax_%d'%i]
+#					self.lmin_pos.append(lmin)
+#					self.lmax_pos.append(lmax)
+#			
+#
+#	def apply_scale_cuts(self):
+		#if (self.llim[0]!=None) and (self.llim[1]!=None): 
+	#		self.scale_cut = (self.data_x>self.llim[0]) & (self.data_x<self.llim[1])
+	#	else:
+	#		self.scale_cut = np.array([True]*len(self.data_x))
 
-		self.data_x = self.data_x[self.scale_cut]
+		#self.data_x = self.data_x[self.scale_cut]
 
-		cut_data=[]
-		for i in range(len(self.spectra)):
-			cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][self.scale_cut])
+#		cut_data=[]
+#		for i in range(len(self.spectra)):
+#			pdb.set_trace()
+#			cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][self.scale_cut])
 
-		self.data_y = np.array(cut_data).flatten()
+#		self.data_y = np.array(cut_data).flatten()
 
-		self.nlbins = len(self.data_x)
+#		self.nlbin = len(self.data_x)
 
-	def build_covariance(self, block, filename=None):
+	def build_covariance(self, block):
 		"""
 		Fits a series of sub-matrices together to give the covariance
 		matrix for the full datavector. 
 		"""
-		cov = None
-		if (filename!=None):
-			cov_file = open(filename, 'rb')
-			cov = pickle.load(cov_file)
-			cov_file.close()
-			print 'Loading covariance matrix from %s' %filename
+		cov=None
+		if self.constant_covariance:
+			cov = self.cov
 		else:	
 			print 'Calculating covariance matrix.'
-			# Get some survey parameters needed for the calculation
-			self.A = block[self.survey, 'area'] * (np.pi*np.pi)/(180*180)
-			self.l_bins = self.l_bins[self.scale_cut]
+			# Get some parameters for this galaxy catalogue needed for the calculation
+			self.A_shear = block[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
+			self.A_pos = block[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
+			self.A = self.A_shear 
+			if (self.A_shear!=self.A_pos):
+				if self.A_shear<self.A_pos: self.A = self.A_shear
+				else: self.A = self.A_pos
+			self.l_bins_shear = self.l_bins
+			self.l_bins_pos = self.l_bins
 			self.dl = block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][1:] - block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][:-1]
-			self.dl = self.dl[self.scale_cut]		
 
 		nspec = len(self.spectra)
 		nl = self.nlbin
-		n_z_pair = self.nzbin * (self.nzbin+1)/2
-		self.nt = nspec*nl
-		nt = self.nt
+		#n_z_pair = self.nzbin * (self.nzbin+1)/2
+		#self.nt = nspec*nl
+		nt = self.n_elem
 		# Initialise a blank matrix
 		Cov = np.zeros((nt, nt))
 
@@ -149,7 +193,7 @@ class ClLikelihood(GaussianLikelihood):
 		# This should give a maximum of 9 combinations
 		for spect1 in [ x for x in self.spectra if x[1]==(0,0) ]:
 			for spect2 in [ y for y in self.spectra if y[1]==(0,0) ]:
-				if (filename!=None):
+				if self.constant_covariance:
 					m = cov[ 'cov_%s%s'%(spect1[0],spect2[0]) ][spect1[1]][spect2[1]][self.scale_cut]
 				else:
 					m = self.compute_covariance_matrix( block, mode=[ spect1[0],spect2[0]] )
@@ -157,9 +201,7 @@ class ClLikelihood(GaussianLikelihood):
 					print 'Evaluated matrix %s%s' %(spect1[0],spect2[0]) 
 
 				# Write to the appropriate block of the matrix
-				#pdb.set_trace()
-				try:	Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
-				except:	pdb.set_trace()
+				Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
 
 				# Update indices
 				j+=m.shape[1]
@@ -167,7 +209,6 @@ class ClLikelihood(GaussianLikelihood):
 				i+=1
 			i=0
 			j=0
-		#import matplotlib.pyplot as plt
 
 		self.cov = Cov
 		return Cov
@@ -177,15 +218,23 @@ class ClLikelihood(GaussianLikelihood):
 			cov = self.cov
 		except:
 			self.build_covariance(block)
+
 		self.inv_cov = np.linalg.inv(self.cov)
 		block['data_vector', self.like_name+'_inverse_covariance']=self.inv_cov
 		return self.inv_cov
+
+	def extract_covariance(self,block):
+		if self.constant_covariance:
+			cov_file = open(self.covmat_file, 'rb')
+			self.cov = pickle.load(cov_file)
+			cov_file.close()
+			print 'Loading covariance matrix from %s' %filename
 
 	def build_data(self, datafile):
 		print 'Loading datavector.'
 		cl_data_all = pickle.load(open(datafile, 'rb'))
 
-		self.data_x = (cl_data_all['l_bin_edges'][1:] + cl_data_all['l_bin_edges'][:-1])/2.
+		self.data_x = (cl_data_all['l_bin_edges_shear'][1:] + cl_data_all['l_bin_edges_shear'][:-1])/2.
 
 		self.nlbin = len(self.data_x)
 
@@ -216,24 +265,67 @@ class ClLikelihood(GaussianLikelihood):
 		for spect in self.spectra:
 			section = cl_sections[spect[0]]
 			bin = 'bin_%d_%d' %(spect[1][0]+1, spect[1][1]+1)
-			self.theory_vector.append(block[section, bin][self.scale_cut])
+			ell = block[section, 'ell']
+			try:
+				lmin= block[section, 'lmin_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
+				lmax= block[section, 'lmax_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
+			except:
+				print 'No prescription for scale cuts found. Using full datavector.'
+				lmin = 0. ; lmax = 1e5
+			scale_cut = (ell>lmin) & (ell<lmax)
+			self.theory_vector.append(block[section, bin][scale_cut])
 
-		block['data_vector', self.like_name+'_theory'] = np.array(self.theory_vector).flatten()
-		return np.array(self.theory_vector).flatten()
+		block['data_vector', self.like_name+'_theory'] = np.concatenate((np.array(self.theory_vector)))
+		return np.concatenate((np.array(self.theory_vector)))
+
+	def apply_scale_cuts(self, block):
+		cut_data = []
+		for i in range(len(self.spectra)):
+			spect = self.spectra[i]
+			section = cl_sections[spect[0]]
+			ell = block[section, 'ell']
+			try:
+				lmin= block[section, 'lmin_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
+				lmax= block[section, 'lmax_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
+			except:
+				print 'No prescription for scale cuts found. Using the full datavector.'
+				return 1
+			scale_cut = (ell>lmin) & (ell<lmax)
+			cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][scale_cut])
+			pdb.set_trace()
+
+		self.data_y = np.concatenate((np.array(cut_data)))
+
+		self.nlbin = len(self.data_x)
 
 	def get_zbin_combinations(self, block, auto, cross):
 		"""
 		Looks up the number of redshift bins and saves all 
 		possible combinations of pairs as a list of tuples. 
 		"""
-		self.nzbin = int(block[self.survey, 'nzbin'])
-		bins = []
+		self.bins_ee = []
+		self.bins_ne = []
+		self.bins_nn = []
+		if self.shear:
+			self.nzbin_shear = int(block[self.shear_cat, 'nzbin'])
 
-		for i in range(self.nzbin):
-			for j in range(self.nzbin):
-				bins.append((i,j))
+			for i in range(self.nzbin_shear):
+				for j in range(self.nzbin_shear):
+					self.bins_ee.append((i,j))
 
-		return bins
+		if self.pos:
+			self.nzbin_pos = int(block[self.pos_cat, 'nzbin'])
+			for i in range(self.nzbin_pos):
+				for j in range(self.nzbin_pos):
+					self.bins_nn.append((i,j))
+
+		if self.ggl:
+			self.nzbin_pos = int(block[self.pos_cat, 'nzbin'])
+			self.nzbin_shear = int(block[self.shear_cat, 'nzbin'])
+			
+			for i in range(self.nzbin_pos):
+				for j in range(self.nzbin_shear):
+					self.bins_ne.append((i,j))
 
 	def compute_covariance_matrix(self, block, mode):
 		""" 
@@ -264,50 +356,165 @@ class ClLikelihood(GaussianLikelihood):
 
 		p = 2. * np.pi / ( self.l_bins * self.dl * self.A ) 
 
-		n_z_pair = self.nzbin * (self.nzbin+1)/2
+		#import pdb ; pdb.set_trace()
+		#n_z_pair = self.nzbin * (self.nzbin+1)/2
 		n_z_pair1 = len([i[1] for i in self.spectra if i[0]==mode[0]])
 		n_z_pair2 = len([i[1] for i in self.spectra if i[0]==mode[1]])
 		cov = np.zeros((n_z_pair1* self.nlbin, n_z_pair2* self.nlbin))
 
-		n1,n2 = 0,0
+		# Get the l coordinates along each axis of this block, accounting for differences in 
+		# redshift binning and scale cuts 
+		ell_0=[] 
+		ell_1=[]
+		ell = block[cl_sections[mode[0]], 'ell']
+		for i in self.spectra:
+			if i[0]==mode[0]:
+				
+				l = np.argwhere((ell > block[cl_sections[mode[0]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[0]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
+
+				for m in l: ell_0 += [(m, i[1])]
+		#pdb.set_trace()
+
+		ell = block[cl_sections[mode[1]], 'ell']
+		for i in self.spectra:
+			if i[0]==mode[1]:
+				l = np.argwhere((ell > block[cl_sections[mode[1]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[1]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
+				for m in l: ell_1 += [(m, i[1])]
+
+		cov = np.zeros((len(ell_0), len(ell_1)))
+
+		if mode[0]==mode[1]:
+			symmetric=True
+		else:
+			symmetric=False
+
+		#Then just cycle through each point in the flat matrix block
+		for m0 in enumerate(ell_0):
+			for m1 in enumerate(ell_1):
+				y, (l0, spect0) = m0
+				x, (l1, spect1) = m1 
+				
+				# Different l points are trivially 0
+				# Also only evaluate half the block in the cases where it's
+				# known to be symmetric
+				if l0!=l1 or (x>y and symmetric): continue
+
+				# Choose the needed combinations of the four redshift bins
+				a0,b0 = spect0[0],spect1[0] # i,k
+				a1,b1 = spect0[1],spect1[1] # j,m
+				a2,b2 = spect0[0],spect1[1] # i,m
+				a3,b3 = spect0[1],spect1[0] # j,k
+
+				for sec in range(len(sections)):
+					exec 'a,b = a%d,b%d' %(sec,sec) 
+					if sections[sec][1]: a,b = b,a
+					
+					# There's no need to apply scale cuts here as the structure 
+					# of ell_0 and ell_1 already take them into account
+					exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][%d]" %(sec,sec,1+a,1+b, l0)
+				# Evaluate this point
+				m = p[l0] * (Cl0 * Cl1 + Cl2 * Cl3)
+
+				cov[y][x]+=m
+
+				# If possible evaluate the transpose element by symmetry
+				if cov[x][y]==0.0 and symmetric:
+					cov[x][y]+=m
+
+		return cov
+
+
+#		pdb.set_trace()
+
+
+
+
+#		n1,n2 = 0,0
+#		x0=[0]
+#		y0=0
 		# Loop over the redshift bin combinations in the right order
-		for spect1 in [i[1] for i in self.spectra if i[0]==mode[0]]:
-			for spect2 in [j[1] for j in self.spectra if j[0]==mode[1]]:
-				if n2>n1 and (mode[0]==mode[1]): continue
+#		for spect1 in [i[1] for i in self.spectra if i[0]==mode[0]]:
+#			for spect2 in [j[1] for j in self.spectra if j[0]==mode[1]]:
+				
 				# Only do the calculation for half of the block if possible
 				# Each nlxnl sub-section can be filled in above and below
 				# the diagonal only if this block is for like correlations
 				# e.g. ee,ee ; nn,nn; ne,ne
 				
 				# Choose the needed combinations of the four redshift bins
-				a0,b0 = spect1[0],spect2[0] # i,k
-				a1,b1 = spect1[1],spect2[1] # j,m
-				a2,b2 = spect1[0],spect2[1] # i,m
-				a3,b3 = spect1[1],spect2[0] # j,k
-				# Evaluate each of the four different spectra, 
+#				a0,b0 = spect1[0],spect2[0] # i,k
+#				a1,b1 = spect1[1],spect2[1] # j,m
+#				a2,b2 = spect1[0],spect2[1] # i,m
+#				a3,b3 = spect1[1],spect2[0] # j,k
+#				# Evaluate each of the four different spectra, 
 				# switching the bin ordering if necessary
-				for sec in range(len(sections)):
-					exec 'a,b = a%d,b%d' %(sec,sec) 
-					if sections[sec][1]: a,b = b,a
-					exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][self.scale_cut]" %(sec,sec,1+a,1+b)
+#				lmin = block[cl_sections[mode[0]], 'lmin_%d_%d'%(1+spect2[0],1+spect2[1])]
+#				lmax = block[cl_sections[mode[0]], 'lmax_%d_%d'%(1+spect2[0],1+spect2[1])]
+#				ell = block[cl_sections[mode[0]], 'ell']
+#				scale_cut = (ell>lmin) & (ell<lmax)
+#				if n2<n1 and (mode[0]==mode[1]): 
+#					y0 += len(ell[scale_cut])
+#					if n1==0: x0+=[len(ell[scale_cut])]
+#					else: x0[n2]+=len(ell[scale_cut])
+#					n2+=1
+#					continue
+#
+#				for sec in range(len(sections)):
+#					exec 'a,b = a%d,b%d' %(sec,sec) 
+#					if sections[sec][1]: a,b = b,a
+					
+					# Apply THE SAME scale cut to all spectra used to get the covariance for 
+					# this particular mode and redshift bin combination
+#					exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][scale_cut]" %(sec,sec,1+a,1+b)
 				# Finally allocate the diagonal matrix to the right block of this 
 				# covariance matrix
-				m = np.diag( p * (Cl0 * Cl1 + Cl2 * Cl3) )
+				#pdb.set_trace()
+#				m = np.diag( p[scale_cut] * (Cl0 * Cl1 + Cl2 * Cl3) )
+				
+
 				# Write to the appropriate part of the matrix for this pair of 
 				# spectrum types
-				try:	
-					cov[n1*self.nlbin:(n1+1)*self.nlbin, n2*self.nlbin:(n2+1)*self.nlbin] += m
-					trans_cov = cov[n2*self.nlbin:(n2+1)*self.nlbin, n1*self.nlbin:(n1+1)*self.nlbin ]
-					# If the transpose hasn't been written and this block is symmetric
-					if (sum(trans_cov.flatten())==0) and (mode[0]==mode[1]):
-						cov[n2*self.nlbin:(n2+1)*self.nlbin, n1*self.nlbin:(n1+1)*self.nlbin ]+=m
-				except: 
-					print 'Warning: invalid matrix dimensions'
-					pdb.set_trace()
-				#pdb.set_trace()
-				
-				n2+=1
-			n2 = 0
-			n1+=1
-
-		return cov
+#				y,x = m.shape
+#				if n1==0:
+##					x0+=[x]
+#					cov[y0:y0+y, :x] += m
+#					trans_cov = cov[:y, y0:y0+x]
+#					print 'a writing to: %d:%d, 0:%d' %(y0,y0+y,x) 
+#				else:
+#					cov[y0:y0+y, x0[n2]:x0[n2]+x] += m
+#					trans_cov = cov[x0[n2]:x0[n2]+y, y0:y0+x ]
+#					print 'b writing to: %d:%d, %d:%d' %(y0,y0+y,x0[n2],x0[n2]+x)
+#
+#					np.array(x0)[n2]+=x
+#				# If the transpose hasn't been written and this block is symmetric
+#				# evaluate the transpose by symmetry
+#				if (sum(trans_cov.flatten())==0) and (mode[0]==mode[1]):
+#					if n1==0: cov[:y, y0:y0+x]+=m
+#					else: cov[x0[n2]:x0[n2]+y, y0:y0+x ]+=m
+#				
+#				nlbin = len(ell[scale_cut])
+#				#pdb.set_trace()
+#				print n1, n2 
+#
+#			#	try:	
+#			#		cov[n1*nlbin:(n1+1)*nlbin, n2*nlbin:(n2+1)*nlbin] += m
+#			#		trans_cov = cov[n2*nlbin:(n2+1)*nlbin, n1*nlbin:(n1+1)*nlbin ]
+#					# If the transpose hasn't been written and this block is symmetric
+#			#		if (sum(trans_cov.flatten())==0) and (mode[0]==mode[1]):
+#			#			cov[n2*nlbin:(n2+1)*nlbin, n1*nlbin:(n1+1)*nlbin ]+=m
+#			#	except: 
+#			#		print 'Warning: invalid matrix dimensions'
+#			#		pdb.set_trace()
+#				#pdb.set_trace()
+#				
+#				if n1!=0: x0[n2]+=x
+#				n2+=1
+#				y0+=y
+#				import pylab as plt
+#				plt.matshow(np.log(cov[:30,:30]))
+#				pdb.set_trace()
+#			n2 = 0
+#			y0=0
+#			n1+=1
+#
+#		return cov
