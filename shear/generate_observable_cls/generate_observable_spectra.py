@@ -33,17 +33,31 @@ class Cl_class:
 		if self.shear: 
 			self.l_shear = block['shear_cl_gg','ell']
 			self.Nl_shear = len(self.l_shear)
+			if self.dobinning: 
+				self.Nlbin_shear = int(config['nlbin_shear']) 
+			else: 
+				self.Nlbin_shear = self.Nl_shear
 		if self.clustering: 
 			self.l_pos = block['matter_cl','ell']
 			self.Nl_pos = len(self.l_pos)
-		
+			if self.dobinning: 
+				self.Nlbin_pos = int(config['nlbin_pos']) 
+			else: 
+				self.Nlbin_pos = self.Nl_pos
+		if self.shear and self.clustering: 
+			self.l_pos = block['matter_cl','ell']
+			self.Nl_pos = len(self.l_pos)
+			if self.dobinning: 
+				self.Nlbin_ggl = int(config['nlbin_ggl']) 
+			else: 
+				self.Nlbin_ggl = self.Nl_pos
 
 		if self.bias:
 			self.multiplicative_bias = [ block[shear_cat, "m%d"%i] for i in range(1, self.Nzbin_shear+1) ] 
 			self.additive_bias = [ block[shear_cat, "c%d"%i] for i in range(1, self.Nzbin_shear+1) ]
 
 		# Finally get the desired binning		
-		self.get_l_bins(block, shear_cat, pos_cat)
+		self.get_l_bins(config)
 
 	def load_and_generate_observable_cls(self, block, names):
 
@@ -56,7 +70,7 @@ class Cl_class:
 			self.C_nn_binned = np.zeros((self.Nzbin_pos, self.Nzbin_pos, self.Nlbin_pos))
 		if self.shear and self.clustering:
 			self.C_ne = np.zeros((self.Nzbin_pos, self.Nzbin_shear, self.Nl_pos))
-			self.C_ne_binned = np.zeros((self.Nzbin_pos, self.Nzbin_shear, self.Nlbin_pos))
+			self.C_ne_binned = np.zeros((self.Nzbin_pos, self.Nzbin_shear, self.Nlbin_ggl))
 	
 		# Then cycle through all the redshift bin combinations
 		for i in range(1, self.Nzbin_shear+1):
@@ -189,26 +203,21 @@ class Cl_class:
 		if self.shear:	self.C_ee += N_shot_ee
 		if self.clustering:	self.C_nn += N_shot_nn
 
-	def get_l_bins(self, block, shear_survey, pos_survey):
-		if self.shear:
-			if self.dobinning: 
-				self.Nlbin_shear = int(block[shear_survey, 'nlbin']) 
-			else: 
-				self.Nlbin_shear = self.Nl_shear
-			# Define some l bins for this survey
-			lmin, lmax= block[shear_survey, 'lmin'], block[shear_survey, 'lmax']
+	def get_l_bins(self, config):
+
+			# Define some l bins for these galaxy samples
+			lmin, lmax= config['lmin_shear'], config['lmax_shear']
 			self.lbin_edges_shear = np.logspace(np.log10(lmin), np.log10(lmax), self.Nlbin_shear+1)
 			self.l_bins_shear = np.exp( (np.log(self.lbin_edges_shear[1:] * self.lbin_edges_shear[:-1]))/2.0 ) 
 
-		if self.clustering:
-			if self.dobinning: 
-				self.Nlbin_pos = int(block[pos_survey, 'nlbin'])
-			else: 
-				self.Nlbin_pos = self.Nl_pos
-			# Define some l bins for this survey
-			lmin, lmax= block[pos_survey, 'lmin'], block[pos_survey, 'lmax']
+			lmin, lmax= config['lmin_pos'], config['lmax_pos']
 			self.lbin_edges_pos = np.logspace(np.log10(lmin), np.log10(lmax), self.Nlbin_pos+1)
 			self.l_bins_pos = np.exp( (np.log(self.lbin_edges_pos[1:] * self.lbin_edges_pos[:-1]))/2.0 ) 
+			
+			lmin, lmax= config['lmin_ggl'], config['lmax_ggl']
+			self.lbin_edges_ggl = np.logspace(np.log10(lmin), np.log10(lmax), self.Nlbin_ggl+1)
+			self.l_bins_ggl = np.exp( (np.log(self.lbin_edges_pos[1:] * self.lbin_edges_pos[:-1]))/2.0 ) 
+
 
 	def save_cls(self, block, out_path):
 		
@@ -225,11 +234,11 @@ class Cl_class:
 			block.put_int('galaxy_position_cl', 'nl', self.Nlbin_pos)
 			block.put_int('galaxy_position_cl', 'nz', self.Nzbin_pos)
 		if self.shear and self.clustering:
-			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'l_bin_edges', self.lbin_edges_pos)
-			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'ell', self.l_bins_pos)
+			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'l_bin_edges', self.lbin_edges_ggl)
+			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'ell', self.l_bins_ggl)
 			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'z_bin_edges_shear', self.zbin_edges_shear)
 			block.put_double_array_1d('galaxy_position_shape_cross_cl', 'z_bin_edges_position', self.zbin_edges_pos)
-			block.put_int('galaxy_position_shape_cross_cl', 'nl', self.Nlbin_pos)
+			block.put_int('galaxy_position_shape_cross_cl', 'nl', self.Nlbin_ggl)
 			block.put_int('galaxy_position_shape_cross_cl', 'nz_shear', self.Nzbin_shear)			
 			block.put_int('galaxy_position_shape_cross_cl', 'nz_position', self.Nzbin_pos)	
 
