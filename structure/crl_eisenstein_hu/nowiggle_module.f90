@@ -76,6 +76,11 @@ function execute(block, config) result(status)
   status = status+ datablock_get_double_array_1d(block, GROWTH_PARAMETERS_SECTION, "d_z", dz,n_growth);
   status = status+  datablock_get_double_array_1d(block, GROWTH_PARAMETERS_SECTION, "z", zbins,n_growth);
 
+  if (status .ne. 0) then
+    write(*,*) "Error in crl_eistenstein_hu"
+    return
+  endif
+
   !    INTERPOLATE GROWTH
   allocate(dz_interpolated(n_growth))
 

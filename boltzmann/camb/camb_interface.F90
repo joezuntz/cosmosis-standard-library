@@ -448,6 +448,7 @@ module camb_interface_tools
 		endif
 
 		deallocate(k, z, P, T)
+		call MatterPowerdata_Free(PK)
 	end function
 
 	
