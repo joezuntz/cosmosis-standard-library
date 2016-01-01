@@ -115,8 +115,15 @@ int execute(c_datablock * block, void * config_in)
 	double log_theta_min, log_theta_max;
 
 	// Loop through bin combinations, loading ell,C_ell and computing xi+/-
+	int j_bin_start;
   for (int i_bin=1; i_bin<=num_z_bin; i_bin++) {
-  	for (int j_bin=i_bin; j_bin<=num_z_bin; j_bin++) {
+	if (config->corr_type == 2){
+		j_bin_start=1;
+	}  	
+	else{
+		j_bin_start=i_bin;
+	}
+  	for (int j_bin=j_bin_start; j_bin<=num_z_bin; j_bin++) {
 			// read in C(l)
 			double * C_ell;
 			snprintf(name_in, 64, "bin_%d_%d",j_bin,i_bin);
@@ -148,14 +155,28 @@ int execute(c_datablock * block, void * config_in)
 					return 10;
 			}
 
+			//check for zeros...
+
+
 			//fill cl_table for P_projected
-			//need to check for negative values...if there are some, can't do loglog interpolation
+			//need to check for zero or negative values...if there are some, can't do loglog interpolation
 			int neg_vals=0;
 			for (int i=0; i<n_ell; i++){
-				if (C_ell[i]<0) {
+				if (C_ell[i]<=0) {
 					neg_vals += 1;
 				}
 			}
+			//also check for zeros, and replace with v small number if all other C_ells are all +ve or -ve
+			for (int i=0; i<n_ell; i++){
+				if (abs(C_ell[i])<=1.e-30) {
+					if (neg_vals==n_ell){
+						C_ell[i]=-1.e-30;
+					}
+					else if (neg_vals==0) {
+						C_ell[i]=1.e-30;
+					}
+				}
+			}		
 
 			if (neg_vals == 0) {
 		    cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
