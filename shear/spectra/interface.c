@@ -122,6 +122,34 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 }
 
 /*
+	Same as above, but now name n(z) section
+*/
+gsl_spline * get_nchi_spline_named(c_datablock * block, const char * section, int bin, double *z,
+	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
+{
+	int status = 0;
+	double * N;
+	int n;
+	char name[20];
+	snprintf(name, 20, "bin_%d", bin);
+
+    status |= c_datablock_get_double_array_1d(block, section, name, &N, &n);
+    double Chi[n];
+
+    for (int i=0; i<n; i++){
+		double chi = gsl_spline_eval(chi_of_z, z[i], NULL);
+		double da_dchi = gsl_spline_eval_deriv(a_of_chi, chi, NULL);
+		Chi[i] = chi;
+		N[i] *= -(1+z[i])*(1+z[i])*da_dchi;
+    }
+
+	gsl_spline * n_of_chi = spline_from_arrays(n, Chi, N);
+	free(N);
+	return n_of_chi;
+
+}
+
+/*
 	Read z, N(z) values from the datablock and initialize a spline
    	of the lensing kernel W to use in the Limber integral.
 */
@@ -136,6 +164,36 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 	// Load n(z)
 	snprintf(name, 20, "bin_%d", bin);
 	status |= c_datablock_get_double_array_1d(block, wl_nz, name, &n_of_z,
+		&nz1);
+
+	// Make a spline from n(z)
+	gsl_spline * n_of_z_spline = spline_from_arrays(nz1, z, n_of_z);
+
+	// Do the main computation
+	gsl_spline * W = shear_shear_kernel(chi_max, n_of_z_spline,
+		a_of_chi_spline);
+
+	// tidy up bin-specific data
+	gsl_spline_free(n_of_z_spline);
+	free(n_of_z);
+	return W;
+}
+
+/*
+	Read z, N(z) values from the datablock and initialize a spline
+   	of the lensing kernel W to use in the Limber integral.
+*/
+gsl_spline * get_w_spline_named(c_datablock * block, const char * section, int bin, double * z,
+	double chi_max, gsl_spline * a_of_chi_spline)
+{
+	char name[20];
+	double * n_of_z;
+	int nz1;
+	int status = 0;
+
+	// Load n(z)
+	snprintf(name, 20, "bin_%d", bin);
+	status |= c_datablock_get_double_array_1d(block, section, name, &n_of_z,
 		&nz1);
 
 	// Make a spline from n(z)
