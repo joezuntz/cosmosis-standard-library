@@ -460,6 +460,7 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 			if (is_mag) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
 			else coeff=1;
 			int status = save_c_ell(block, section, bin1, bin2, coeff, c_ell, &lc);
+
 			gsl_spline_free(c_ell);
 			if (status) return status;
 		}
@@ -630,7 +631,6 @@ int execute(c_datablock * block, void * config_in)
 
 	Interpolator2D * PK = load_interpolator_chi(
 		block, chi_of_z_spline, MATTER_POWER_NL_SECTION, "k_h", "z", "P_k");
-
 	/*				Galaxy power spectrum			 		*/
 
 	// Get a galaxy power spectrum with a bias model that distinguishes from the
@@ -703,11 +703,12 @@ int execute(c_datablock * block, void * config_in)
 	if (config->gal_IA_cross_spectra) {
 		if (c_datablock_has_section(block, "matter_power_gal_intrinsic")) {
 			PK_gI = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_intrinsic", "k_h", "z", "P_k");
+			printf("here\n");
 			free_pk_gi = 1;
 		}
 		if (PK_gI==NULL){
-			printf_verbose("No galaxy position-intrinsic power spectrum found in datablock. Using the II spectrum instead.\n");
-			PK_gI=PK_II;
+			printf_verbose("No galaxy position-intrinsic power spectrum found in datablock. Using the GI spectrum instead.\n");
+			PK_gI=PK_GI;
 			free_pk_gi = 0;
 		}
 	}
