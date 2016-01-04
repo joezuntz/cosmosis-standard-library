@@ -12,15 +12,19 @@ def find_gsl():
     libfile_dylib = os.path.join(gsl_lib_dir, "libgsl.dylib")
     if os.path.exists(libfile_so):
         libfile = libfile_so
+        cblas_libfile = os.path.join(gsl_lib_dir, "libgslcblas.so")
     elif os.path.exists(libfile_dylib):
         libfile = libfile_dylib
+        cblas_libfile = os.path.join(gsl_lib_dir, "libgslcblas.dylib")
     else:
         raise ValueError("Looked for GSL libs but could not find them: tried {0} and  {1}".format(libfile_so, libfile_dylib))
-    return libfile
+    return libfile, cblas_libfile
+
 def load_gsl(libfile=None):
     if libfile is None:
-        libfile = find_gsl()
-    gsl = ct.cdll.LoadLibrary(libfile)
+        libfile, cblas_libfile = find_gsl()
+    cblas = ct.CDLL(cblas_libfile, mode=ct.RTLD_GLOBAL)
+    gsl = ct.CDLL(libfile, mode=ct.RTLD_GLOBAL)
     return gsl
 
 #global gsl library
