@@ -150,7 +150,7 @@ int execute(c_datablock * block, void * config_in)
   	for (int j_bin=j_bin_start; j_bin<=num_z_bin_B; j_bin++) {
 			// read in C(l)
 			double * C_ell;
-			snprintf(name_in, 64, "bin_%d_%d",j_bin,i_bin);
+			snprintf(name_in, 64, "bin_%d_%d",i_bin,j_bin);
 	    	status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
 			if (status) {
 				fprintf(stderr, "Could not load bin %d,%d in C_ell -> xi\n", i_bin, j_bin);
@@ -162,16 +162,16 @@ int execute(c_datablock * block, void * config_in)
 			switch(config->corr_type) {
 				case shear_shear:
 					tpstat = tp_xipm;
-					snprintf(name_xip, 64, "xiplus_%d_%d",j_bin,i_bin);
-					snprintf(name_xim, 64, "ximinus_%d_%d",j_bin,i_bin);
+					snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
+					snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
 					break;
 				case matter:
 					tpstat = tp_w;
-					snprintf(name_xip, 64, "wmatter_%d_%d",j_bin,i_bin);
+					snprintf(name_xip, 64, "wmatter_%d_%d",i_bin,j_bin);
 					break;
 				case ggl:
 					tpstat = tp_gt;
-					snprintf(name_xip, 64, "tanshear_%d_%d",j_bin,i_bin);
+					snprintf(name_xip, 64, "tanshear_%d_%d",i_bin,j_bin);
 					break;
 				default:
 					printf("corr_type: %d\n", config->corr_type);
