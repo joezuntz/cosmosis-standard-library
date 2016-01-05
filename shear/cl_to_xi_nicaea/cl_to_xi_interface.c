@@ -22,6 +22,9 @@ typedef struct cl_to_xi_config {
 	double theta_max_user;
 	char * input_section;
 	char * output_section;
+	char * nz_section_A;
+	char * nz_section_B;
+	int auto_corr;
 	corr_type_t corr_type;
 
 } cl_to_xi_config;
@@ -32,14 +35,33 @@ void * setup(c_datablock * options)
 	cl_to_xi_config * config = malloc(sizeof(cl_to_xi_config));
 	int corr_type;
 	int status = 0;
+	int auto_corr;
 	//status |= c_datablock_get_int(options, OPTION_SECTION, "n_theta", 10, &(config->n_theta_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_min", 0.0, &(config->theta_min_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_max", 0.0, &(config->theta_max_user));
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
+	//optionally read n(z) sections (may be two for cross-correlations)
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "nz_section_name_A", wl_nz, &(config->nz_section_A));
+	status |= c_datablock_get_string_default(options, OPTION_SECTION, "nz_section_name_B", config->nz_section_A, &(config->nz_section_B));
 	status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
+	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
+	status |= c_datablock_get_int_default(options, OPTION_SECTION, "auto_corr", -1, &auto_corr);
 
 	config->corr_type = (corr_type_t)corr_type;
+
+	//If auto_corr is not given in options file, make a sensible choice - set to 0 if
+	//nz_section_A and nz_section_B are different, or if corr_type indicates ggl.
+	if (auto_corr == -1){
+		if (config->nz_section_A != config->nz_section_B){
+			auto_corr = 0;
+		}
+		if (corr_type == 2){
+			auto_corr = 0;
+		}
+	}
+
+	config->auto_corr = auto_corr;
 
 	if (status){
 		fprintf(stderr, "Please specify input_section_name and output_section_name in the cl_to_xi module.\n");
@@ -80,7 +102,8 @@ static double P_projected_logl(void *info, double ell, int bin_i, int bin_j, err
 int execute(c_datablock * block, void * config_in)
 {
 	DATABLOCK_STATUS status=0;
-	int num_z_bin;
+	int num_z_bin_A;
+	int num_z_bin_B;
 	int count=2;
 	double ** xi = malloc(count*sizeof(double*));
 	for (int i=0; i<count; i++) xi[i] = malloc(sizeof(double)*N_thetaH);
@@ -88,7 +111,8 @@ int execute(c_datablock * block, void * config_in)
 	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
 	// Load the number of redshift bins
-	status |= c_datablock_get_int(block, wl_nz, "nbin", &num_z_bin);
+	status |= c_datablock_get_int(block, config->nz_section_A, "nbin", &num_z_bin_A);
+	status |= c_datablock_get_int(block, config->nz_section_B, "nbin", &num_z_bin_B);
 
 	if (status) {
 		fprintf(stderr, "Could not load nbin in C_ell -> xi\n");
@@ -115,11 +139,18 @@ int execute(c_datablock * block, void * config_in)
 	double log_theta_min, log_theta_max;
 
 	// Loop through bin combinations, loading ell,C_ell and computing xi+/-
-  for (int i_bin=1; i_bin<=num_z_bin; i_bin++) {
-  	for (int j_bin=i_bin; j_bin<=num_z_bin; j_bin++) {
+	int j_bin_start;
+  for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
+  	if (config->auto_corr==1){
+  		j_bin_start=i_bin;
+  	}
+  	else{
+  		j_bin_start=1;
+  	}
+  	for (int j_bin=j_bin_start; j_bin<=num_z_bin_B; j_bin++) {
 			// read in C(l)
 			double * C_ell;
-			snprintf(name_in, 64, "bin_%d_%d",j_bin,i_bin);
+			snprintf(name_in, 64, "bin_%d_%d",i_bin,j_bin);
 	    	status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
 			if (status) {
 				fprintf(stderr, "Could not load bin %d,%d in C_ell -> xi\n", i_bin, j_bin);
@@ -131,16 +162,16 @@ int execute(c_datablock * block, void * config_in)
 			switch(config->corr_type) {
 				case shear_shear:
 					tpstat = tp_xipm;
-					snprintf(name_xip, 64, "xiplus_%d_%d",j_bin,i_bin);
-					snprintf(name_xim, 64, "ximinus_%d_%d",j_bin,i_bin);
+					snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
+					snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
 					break;
 				case matter:
 					tpstat = tp_w;
-					snprintf(name_xip, 64, "wmatter_%d_%d",j_bin,i_bin);
+					snprintf(name_xip, 64, "wmatter_%d_%d",i_bin,j_bin);
 					break;
 				case ggl:
 					tpstat = tp_gt;
-					snprintf(name_xip, 64, "tanshear_%d_%d",j_bin,i_bin);
+					snprintf(name_xip, 64, "tanshear_%d_%d",i_bin,j_bin);
 					break;
 				default:
 					printf("corr_type: %d\n", config->corr_type);
@@ -148,14 +179,28 @@ int execute(c_datablock * block, void * config_in)
 					return 10;
 			}
 
+			//check for zeros...
+
+
 			//fill cl_table for P_projected
-			//need to check for negative values...if there are some, can't do loglog interpolation
+			//need to check for zero or negative values...if there are some, can't do loglog interpolation
 			int neg_vals=0;
 			for (int i=0; i<n_ell; i++){
-				if (C_ell[i]<0) {
+				if (C_ell[i]<=0) {
 					neg_vals += 1;
 				}
 			}
+			//also check for zeros, and replace with v small number if all other C_ells are all +ve or -ve
+			for (int i=0; i<n_ell; i++){
+				if (fabs(C_ell[i])<=1.e-30) {
+					if (neg_vals==n_ell){
+						C_ell[i]=-1.e-30;
+					}
+					else if (neg_vals==0) {
+						C_ell[i]=1.e-30;
+					}
+				}
+			}		
 
 			if (neg_vals == 0) {
 		    cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
@@ -214,7 +259,8 @@ int execute(c_datablock * block, void * config_in)
 				       tpstat, &P_projected_logl, i_bin, j_bin, &err);
 			}
 			//Now save to block
-			c_datablock_put_int(block, config->output_section, "nbin", num_z_bin);
+			c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
+			c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
 			c_datablock_put_double_array_1d(block, config->output_section, name_xip,
 		                  xi[0], N_thetaH);
 			if (config->corr_type == shear_shear) {
