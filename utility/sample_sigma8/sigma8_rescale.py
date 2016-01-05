@@ -22,6 +22,10 @@ def execute(block, config):
 	TE = block[cmb, 'TE']
 	P_k = block[matter_powspec,'P_k']
 
+	zmin = block[matter_powspec,'z'].min()
+	if zmin!=0.0:
+		raise ValueError("You need to set zmin=0 in CAMB to use the sigma8_rescale module.")
+
 	# Calculate rescale factor
 	r = (sigma8_input**2)/(sigma8_camb**2)
 
