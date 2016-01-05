@@ -19,11 +19,11 @@ c_gsl_spline = ct.c_void_p
 
 dirname = os.path.split(__file__)[0]
 lib = ct.cdll.LoadLibrary(dirname + "/../../shear/spectra/interface.so")
-lib.get_w_spline.restype = c_gsl_spline
-lib.get_w_spline.argtypes = [ct.c_size_t, ct.c_int, c_dbl_array, ct.c_double, ct.c_void_p]
+lib.get_named_w_spline.restype = c_gsl_spline
+lib.get_named_w_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_double, ct.c_void_p]
 
-lib.get_nchi_spline.restype = c_gsl_spline
-lib.get_nchi_spline.argtypes = [ct.c_size_t, ct.c_int, c_dbl_array, ct.c_void_p, ct.c_void_p]
+lib.get_named_nchi_spline.restype = c_gsl_spline
+lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_void_p, ct.c_void_p]
 
 lib.limber_integral.restype = c_gsl_spline
 lib.limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p]
@@ -31,16 +31,17 @@ lib.limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_v
 lib.load_interpolator_chi.restype = ct.c_void_p
 lib.load_interpolator_chi.argtypes = [ct.c_size_t, ct.c_void_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p]
 
-def get_w_spline(block, bin, z, chi_max, a_of_chi):
+
+def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
+    return GSLSpline(lib.get_named_nchi_spline(block._ptr, section, nbin, z, a_of_chi, chi_of_z))
+
+def get_named_w_spline(block, section, bin, z, chi_max, a_of_chi):
     "Compute a shear kernel W(chi) spline"
-    return GSLSpline(lib.get_w_spline(block._ptr, bin, z, chi_max, a_of_chi))
+    return GSLSpline(lib.get_named_w_spline(block._ptr, section, bin, z, chi_max, a_of_chi))
 
 def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
     "Load P(k,z) and convert z -> chi"
     return lib.load_interpolator_chi(block._ptr, chi_of_z, section, k_name, z_name, p_name)
-
-def get_nchi_spline(block, nbin, z, a_of_chi, chi_of_z):
-    return GSLSpline(lib.get_nchi_spline(block._ptr, nbin, z, a_of_chi, chi_of_z))
 
 
 def limber(WX, WY, P, xlog, ylog, ell, prefactor):
