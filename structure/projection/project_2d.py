@@ -4,22 +4,46 @@ import ctypes as ct
 import numpy as np
 import limber
 from gsl_wrappers import GSLSpline
-from cosmosis.datablock import names, option_section
+from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
-
+import re
 
 
 class Spectrum(object):
     power_spectrum = "?"
-    kernel_1 = "?"
-    kernel_2 = "?"
-    is_autocorrelation = False
+    kernels = "??"
+    autocorrelation = False
     name = "?"
-    prefactor_power = 1
+    prefactor_power = np.nan
 
-    def __init__(self, source):
+    def __init__(self, source, sample_a=names.wl_number_density, sample_b=names.wl_number_density):
         #caches of n(z), w(z), P(k,z), etc.
         self.source = source
+        self.sample_a = sample_a
+        self.sample_b = sample_b
+
+    def nbins(self):
+        na = len(self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a])
+        nb = len(self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b])
+        return na,nb
+
+    def is_autocorrelation(self):
+        """
+        This is an autocorrelation if the basic type is an auto-correlation
+        (e.g. shear-shear, position-position, but not shear position)
+        and the two n(z) samples are the same.
+        """
+        return self.autocorrelation and (self.sample_a==self.sample_b)
+
+    @classmethod
+    def option_name(cls):
+        """Convert the CamelCase name to hypen-separated.
+        For example ShearShear becomes shear-shear
+        """
+        name = cls.__name__
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
+
 
     def prefactor(self, block):
         if self.prefactor_power == 0:
@@ -38,12 +62,12 @@ class Spectrum(object):
         #Get the required kernels
         #maybe get from rescaled version of existing spectra
         P = self.source.power[self.power_spectrum]
-        K1 = self.source.kernels_A[self.kernels[0]][bin1]
-        K2 = self.source.kernels_B[self.kernels[-1]][bin2]
+        K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
+        K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
 
         #The spline is done in log space if the spectrum never goes
         #negative, otherwise linear space.
-        xlog = ylog = self.is_autocorrelation
+        xlog = ylog = self.autocorrelation
         #Generate a spline
         c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block))
         return c_ell
@@ -60,72 +84,74 @@ class SpectrumType(Enum):
     class ShearShear(Spectrum):
         power_spectrum = "p_mm"
         kernels = "W W"
-        is_autocorrelation = True
+        autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
         power_spectrum = "p_mi"
         kernels = "W N"
-        is_autocorrelation = False
+        autocorrelation = False
         name = names.shear_cl_gi
         prefactor_power = 1
 
     class IntrinsicIntrinsic(Spectrum):
         power_spectrum = "p_ii"
         kernels = "N N"
-        is_autocorrelation = True
+        autocorrelation = True
         name = names.shear_cl_ii
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
         power_spectrum = "p_gg"
         kernels = "N N"
-        is_autocorrelation = True
+        autocorrelation = True
         name = "galaxy_cl"
         prefactor_power = 0
 
     class PositionMagnification(Spectrum):
         power_spectrum = "p_gm"
         kernels = "N W"
-        is_autocorrelation = False
+        autocorrelation = False
         name = "galaxy_magnification_cl"
         prefactor_power = 1    
 
     class MagnificationMagnification(Spectrum):
         power_spectrum = "p_mm"
         kernels = "W W"
-        is_autocorrelation = True
+        autocorrelation = True
         name = "magnification_cl"
         prefactor_power = 2
 
     class PositionShear(Spectrum):
         power_spectrum = "p_gm"
         kernels = "N W"
-        is_autocorrelation = False
+        autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
 
     class PositionIntrinsic(Spectrum):
         power_spectrum = "p_gi"
         kernels = "N N"
-        is_autocorrelation = False
+        autocorrelation = False
         name = "galaxy_intrinsic_cl"
         prefactor_power = 0
 
     class MagnificationIntrinsic(Spectrum):
         power_spectrum = "p_mi"
         kernels = "W N"
-        is_autocorrelation = False
+        autocorrelation = False
         name = "magnification_intrinsic_cl"
         prefactor_power = 1
        
     class MagnificationShear(Spectrum):
         power_spectrum = "p_mm"
         kernels = "W W"
-        is_autocorrelation = False
+        autocorrelation = False
         name = "magnification_shear_cl"
         prefactor_power = 1
+
+
 
 
 class SpectrumCalulcator(object):
@@ -140,8 +166,34 @@ class SpectrumCalulcator(object):
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
             default = (spectrum==SpectrumType.ShearShear)
-            if options.get_bool(option_section, spectrum.value.name, default=default):
+            name = spectrum.value.option_name()
+            try:
+                #first look for a string, e.g. redmagic-redmagic or similar (name of samples)
+                value = options.get_string(option_section, name)
+            except BlockError:
+                #or try a bool
+                value = options.get_bool(option_section, name, default=default)
+            if isinstance(value, bool) and value:
                 self.req_spectra.append(spectrum.value(self))
+                #Now we just look for the wl_number_density section.
+                #though we may change this
+            elif isinstance(value, bool):
+                pass
+            else:
+                #now we are looking for things of the form
+                #shear-shear = euclid-ska
+                #where we would now search for nz_euclid and nz_ska
+                values = value.split()
+                for value in values:
+                    try:
+                        kernel_a, kernel_b = value.split('-',1)
+                        kernel_a = kernel_a.strip()
+                        kernel_b = kernel_b.strip()
+                        self.req_spectra.append(spectrum.value(self, kernel_a, kernel_b))
+                    except:
+                        raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
+
+
 
         print "Will project these spectra into 2D:"
         for spectrum in self.req_spectra:
@@ -152,21 +204,28 @@ class SpectrumCalulcator(object):
         if self.unbiased_galaxies:
             print "You have asked for 'unbiased_galaxies=T', so I will use the 3D matter power spectrum as the 3D galaxy power spectrum."
 
-        #Decide which kernels we will need to save
-        self.req_kernels = set()
+        #Decide which kernels we will need to save.
+        #The overall split is into A and B, the two samples we are correlating into.
+        #Within each list of those we may need W(z) and N(z). These may be just
+        #a single group for a single galaxy sample, or they may be more complicated.
+        #The keys in kernels_A are things like "N_REDMAGIC" or "W_MAINSAMPLE", or if
+        #everything is left with the defaults just "N_WL_NUMBER_DENSITY" and "W_WL_NUMBER_DENSITY"
+        #The values are dictionaries where the keys are the bin numbers 1..nbin
+        self.kernels_A = {}
+        self.kernels_B = {}
         for spectrum in self.req_spectra:
-            self.req_kernels.add(spectrum.kernels[0])
-            self.req_kernels.add(spectrum.kernels[-1])
+            #names e.g. N_REDMAGIC, W_EUCLID
+            kernel_a = spectrum.kernels[0] + "_" + spectrum.sample_a 
+            kernel_b = spectrum.kernels[-1] + "_" + spectrum.sample_b 
+            #one dictionary per named group
+            self.kernels_A[kernel_a] = {}
+            self.kernels_B[kernel_b] = {}
 
         self.req_power = set()
         for spectrum in self.req_spectra:
             self.req_power.add(spectrum.power_spectrum)
 
 
-        #Modify this to do cross-experiment or sample 
-        #spectra
-        self.kernels_A = {"N":{}, "W":{}}
-        self.kernels_B = self.kernels_A
         self.power = {}
         self.outputs = {}
 
@@ -193,23 +252,59 @@ class SpectrumCalulcator(object):
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
 
+
     def load_kernels(self, block):
-        if 'N' in self.req_kernels:
-            self.load_nchi_splines(block)
-        if 'W' in self.req_kernels:
-            self.load_w_splines(block)
+        #During the setup we already decided what kernels (W(z) or N(z) splines)
+        #we needed for the spectra we want to do.  Their names are stored in the
+        #kernels_A and kernels_B dictionaries.
+        for kernel_name, kernel_dict in self.kernels_A.items():
+            #Get rid of any N(z) from the previous point in the chain
+            kernel_dict.clear()
+            #Load in the new kernel
+            if self.verbose:
+                print "Loading kernel", kernel_name
+            self.load_kernel(block, kernel_name, kernel_dict)
 
-    def load_nchi_splines(self, block):
-        self.kernels_A['N'].clear()
-        z = block[names.wl_number_density, 'z']
-        for i in xrange(self.nbin):
-            self.kernels_A['N'][i] = limber.get_nchi_spline(block, i+1, z, self.a_of_chi, self.chi_of_z)
+        #We are always using two kernels, which we call A and B
+        #Often these will be the same groups of kernels, but not
+        #always, so we may have to load them separately
+        for kernel_name, kernel_dict in self.kernels_B.items():
+            #Again, remove anything from the previous chain step
+            kernel_dict.clear()
+            #Most of the time we are cross-correlating
+            #samples and the kernel will be the same for A and B
+            #In that case just refer to the one we already loaded
+            if kernel_name in self.kernels_A:
+            #Loop through all the loaded N(z), W(z)
+                if self.verbose:
+                    print "Using cached ", kernel_name
+                for i,kernel in self.kernels_A[kernel_name].items():
+                    kernel_dict[i] = kernel
+            else:
+                #If not already cached we will have to load it freshly
+                self.load_kernel(block, kernel_name, kernel_dict)
 
-    def load_w_splines(self, block):
-        self.kernels_A['W'].clear()
-        z = block[names.wl_number_density, 'z']
-        for i in xrange(self.nbin):
-            self.kernels_A['W'][i] = limber.get_w_spline(block, i+1, z, self.chi_max, self.a_of_chi)
+
+
+    def load_kernel(self, block, kernel_name, kernel_dict):
+        #the name is of the form N_SAMPLENAME or W_SAMPLENAME
+        kernel_type = kernel_name[0]
+        sample_name = "nz_" + kernel_name[2:]
+        if kernel_name[2:] == names.wl_number_density:
+            sample_name = names.wl_number_density
+
+        z = block[sample_name, 'z']
+        nbin = block[sample_name, 'nbin']
+
+        #Now load n(z) or W(z) for each bin in the range
+        for i in xrange(nbin):
+            if kernel_type=="N":
+                kernel_dict[i] = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
+            elif kernel_type=="W":
+                kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
+            else:
+                raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
+
 
     def load_power(self, block):
         if 'p_mm' in self.req_power:
@@ -295,10 +390,11 @@ class SpectrumCalulcator(object):
 
     def compute_spectra(self, block, spectrum):
         block[spectrum.name, 'ell'] = self.ell
-        for i in xrange(self.nbin):
+        na, nb = spectrum.nbins()
+        for i in xrange(na):
             #for auto-correlations C_ij = C_ji so we only do one of them.
             #for cross-correlations we must do both
-            jmax = i+1 if spectrum.is_autocorrelation else nbin
+            jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum.name+"_{}_{}".format(i,j)] = c_ell
@@ -309,10 +405,11 @@ class SpectrumCalulcator(object):
         self.power.clear()
         for kernels in self.kernels_A.values():
             kernels.clear()
+        for kernels in self.kernels_B.values():
+            kernels.clear()
         self.outputs.clear()
 
     def execute(self, block):
-        self.nbin = block[names.wl_number_density, 'nbin']
         self.load_distance_splines(block)
         self.load_kernels(block)
         self.load_power(block)
