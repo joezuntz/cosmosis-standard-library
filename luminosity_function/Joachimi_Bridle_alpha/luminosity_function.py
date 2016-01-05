@@ -1,11 +1,9 @@
 import numpy as np
 from scipy import interpolate
 
-def jb_calculate_alpha(a, zmax, Nz):
-	# First set up a redshift array for the given survey parameters
-	z = np.linspace(0, zmax, Nz)
+def jb_calculate_alpha(a, z):
 	
-	# Then just apply the coefficients
+	# Just apply the coefficients
 	alpha = np.zeros_like(z)
 	alpha += a[0]
 	alpha += a[1]*z
@@ -29,7 +27,6 @@ def get_binned_alpha(block, survey, alpha, z):
 	n_z, z = load_n_z(block, survey)
 		
 	z_med = evaluate_median_z(n_z, z)
-
 	interpolator = interpolate.interp1d(z,alpha)
 	alpha_binned = interpolator(z_med)	
 

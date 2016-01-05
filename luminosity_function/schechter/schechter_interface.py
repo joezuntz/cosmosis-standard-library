@@ -1,6 +1,5 @@
-# Based on the luminosity scaling in Joachimi et al (2011)
-# Requires an interpolation table as the redshift scaling depends 
-# on the limiting magnitude and the galaxy sample in question
+# Reads Schechter function fit parameters from a data file
+# or gets them from the datablock
 
 from cosmosis.datablock import names, option_section
 import numpy as np
@@ -8,22 +7,23 @@ import numpy as np
 def setup(options):
 	survey = block[options, 'survey']
 	data = block[options, 'data']
-	option= block[options, 'mode']
+	option = block[options, 'mode']
+	per_bin = block[options, 'per_bin']
 
-	if option not in ["luminosity_function", "interpolation_table"]:
-		raise ValueError("Please choose a method from the following: 'luminosity_function', ' interpolation_table'")
+	if option not in ["data", "theory"]:
+		raise ValueError("Please choose a method from the following: 'data', 'theory'")
 
-	if (option=="interpolation_table"):
+	if (option=="data"):
 		data = block[options, 'data']
 	else:
 		data = None
 
-	config = survey, data
+	config = survey, data, option, per_bin
 	return config
 
 def execute(block, config):
 
-	survey,filename = config
+	survey,filename, option, per_bin = config
 	ia_section = names.intrinsic_alignment_parameters
 
 	#read in power spectra

@@ -1,14 +1,18 @@
 from cosmosis.datablock import option_section, names
 import numpy as np
 
+# This simple module is designed to stitch together the outputs of some combination
+# of other IA codes to estimate the IA signal in a galaxy sample with an 
+# arbitrary mixture of red and blue galaxies.
+# It is assumed that power spectra for BOTH red and blue galaxies have been
+# separately saved to the datablock prior to this module being called. 
+
 def setup(options):
-	red_model = options[option_section, "red_model"]
-	blue_model = options[option_section, "blue_model"]
 	catalogue = options[option_section, "catalogue"]
-	return red_model, blue_model, catalogue
+	return catalogue
 
 def execute(block, config):
-	modelr, modelb, catalogue = config
+	catalogue = config
 
 	section_II = names.ia_spectrum_ii
 	section_GI = names.ia_spectrum_gi
@@ -17,19 +21,19 @@ def execute(block, config):
 	# Load nuisance parameters for the two models
 	f_red = block[catalogue, 'red_fraction']
 	f_blue = 1. - f_red
-	A_red = block[section_ia, 'A' + '_%s'%model_r]
-	A_blue = block[section_ia, 'A' + '_%s'%model_b]
-	alpha_red = block[section_ia, 'alpha' + '_%s'%model_r]
-	alpha_blue = block[section_ia, 'alpha' + '_%s'%model_b]
+	A_red = block[section_ia, 'A_red']
+	A_blue = block[section_ia, 'A_blue']
+	alpha_red = block[section_ia, 'alpha_red']
+	alpha_blue = block[section_ia, 'alpha_blue']
 
 	# Define scaling grid
 	_,z_grid=np.meshgrid(k,z)
 
 	# Get relevant power spectra
-	z,k,P_II_red = block.get_grid(section_ia,  "z", "k_h", "P_II"+ '_%s'%model_r)
-	z,k,P_II_blue = block.get_grid(section_ia,  "z", "k_h", "P_II"  + '_%s'%model_b)
-	z,k,P_GI_red  = block.get_grid(section_ia,  "z", "k_h", "P_GI" + '_%s'%model_r)
-	z,k,P_GI_blue  = block.get_grid(section_ia,  "z", "k_h", "P_GI" + '_%s'%model_b)
+	z,k,P_II_red = block.get_grid(section_ia,  "z", "k_h", "P_II_red")
+	z,k,P_II_blue = block.get_grid(section_ia,  "z", "k_h", "P_II_blue")
+	z,k,P_GI_red  = block.get_grid(section_ia,  "z", "k_h", "P_GI_red")
+	z,k,P_GI_blue  = block.get_grid(section_ia,  "z", "k_h", "P_GI_blue")
 	P_II_red_blue = np.sqrt(P_II_red*P_II_blue)
 
 	# Combine red, blue and cross terms
@@ -39,3 +43,5 @@ def execute(block, config):
 
 	P_GI = f_red * A_red * P_GI_red * (1+z)**(alpha_red)
 	P_GI = f_blue * A_blue * P_GI_blue * (1+z)**(alpha_blue)
+
+

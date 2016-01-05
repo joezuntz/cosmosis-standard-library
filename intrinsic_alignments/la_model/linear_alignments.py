@@ -54,9 +54,9 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 		P_GI[i] = f * P_nl[i] / growth
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
-	R1= P_II/P_nl ; R2= P_GI/P_nl
-	b_I= -1.0* np.sqrt(R1)
-	r_I= R2/b_I
+	R1 = P_II_resample/P_nl
+	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+	r_I = P_GI_resample/P_II_resample *b_I
 
 	return P_II, P_GI, b_I, r_I
 
@@ -83,9 +83,9 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 		P_GI[i] = F[i] * P_nl[i]
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
-	R1= P_II/P_nl ; R2= P_GI/P_nl
-	b_I= -1.0* np.sqrt(R1)
-	r_I= R2/b_I
+	R1 = P_II_resample/P_nl
+	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+	r_I = P_GI_resample/P_II_resample *b_I
 
 	return P_II, P_GI, b_I, r_I
 
@@ -114,19 +114,15 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	for i in xrange(nz):
 		P_II[i] = f**2 * P_lin[z0]
 
-	P_II_0=np.copy(P_II) ; P_lin_0=np.copy(P_lin)
-	P_II=[] ; P_lin=[]   
-	# Get the overlap of the two k arrays
-	for i in xrange(nz):
-		P_II+= [ P_II_0[i][ (k_lin>k_nl[0]) & (k_lin<k_nl[-1]) ] ]
-	P_II=np.array(P_II);
-
-	for j in range(len(P_lin_0)):
-		P_lin+= [ P_lin_0[j][ (k_lin>k_nl[0]) & (k_lin<k_nl[-1]) ] ] 			 
-	P_lin=np.array(P_lin);	
+	# Make sure the k sampling of the two spectra are contiguous
+	ikstart = np.argwhere((k_lin>k_nl[0]) & (k_lin<k_nl[-1])).T[0,0]
+	ikend = np.argwhere((k_lin>k_nl[0]) & (k_lin<k_nl[-1])).T[0,-1]
 	
-	k_lin=k_lin[ (k_lin>k_nl[0]) & (k_lin<k_nl[-1]) ]
+	P_II = P_II[:, ikstart:ikend]
+	P_lin = P_lin[:, ikstart:ikend] 			 
+	k_lin = k_lin[ikstart:ikend]
 
+	#import pdb ; pdb.set_trace()
 	#Get nonlinear P(k) at the same sampling as linear
 	P_nl_resample = np.zeros_like(P_lin)
 	for i in xrange(nz):
@@ -140,16 +136,18 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 
 	P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 
-	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
-	P_II_resample = np.zeros_like(P_nl) ; P_GI_resample = np.zeros_like(P_nl)
+	# Finally calculate the IA and stochastic bias terms from the power spectra
+	P_II_resample = np.zeros_like(P_nl)
+	P_GI_resample = np.zeros_like(P_nl)
 	for i in xrange(nz):
 		log_P_resample = np.interp(np.log(k_nl), np.log(k_lin), np.log(P_II[i]))
 		P_II_resample[i] = np.exp(log_P_resample)
 		log_P_resample = np.interp(np.log(k_nl), np.log(k_lin), np.log(abs(P_GI[i])))
-		P_GI_resample[i] = -1.0* np.exp(log_P_resample)
+		# preserve the sign of the resampled GI spectrum
+		P_GI_resample[i] = -1.*A/abs(A) * np.exp(log_P_resample)
 
-	R1= P_II_resample/P_nl ; R2= P_GI_resample/P_nl
-	b_I= -1.0* np.sqrt(R1)
-	r_I= R2/b_I
+	R1 = P_II_resample/P_nl
+	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+	r_I = P_GI_resample/P_II_resample *b_I
 
-	return P_II, P_GI, b_I, r_I
+	return P_II, P_GI, b_I, r_I, k_lin
