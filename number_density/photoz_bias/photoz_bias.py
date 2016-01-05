@@ -36,21 +36,30 @@ def execute(block, config):
 		nz_biased = f(z+dz)
 
 		# Do a simple extrapolation to predict the points where n(z) has been set to zero
-		# by the shift in z
+		# by the shift in the peak z or a change in width
 		# Otherwise the n(z) is truncated at what was the end of the z array
 		# This will start to look odd if the additive bias is large
 		if nz_biased[-1]==0.0: 
-			i = np.argwhere(nz_biased==0.0)[0,0]
+			i = np.argwhere(nz_biased[0.5*len(nz_biased):]==0.0).T[0,0]
 			alpha = (nz_biased[i-1]-nz_biased[i-2])/(z[i-1]-z[i-2])
 			for j in xrange(len(z)-i):
-				nz_biased[i+j] = nz_biased[i+j-1] + alpha*(z[1]-z[0])
+				nzextrap = nz_biased[i+j-1] + alpha*(z[1]-z[0])
+				if nzextrap>0:
+					nz_biased[i+j] = nzextrap
+				else:
+					nz_biased[i+j] = 0.
 		if nz_biased[0]==0.0: 
-			i = np.argwhere(nz_biased==0.0)[0,-1]
+			i = np.argwhere(nz_biased[:0.5*len(nz_biased)]==0.0).T[0,-1]
 			alpha = (nz_biased[i+1]-nz_biased[i+2])/(z[i+1]-z[i+2])
-			for j in xrange(i):
+			for j in np.flipud(xrange(i)):
 				nz_biased[j] = nz_biased[j+1] + alpha*(z[1]-z[0])
+				nzextrap = nz_biased[j+1] + alpha*(z[1]-z[0])
+				if nzextrap>0:
+					nz_biased[j] = nzextrap
+				else:
+					nz_biased[j] = 0.
 
-		#normalize
+		#normalise
 		nz_biased/=np.trapz(nz_biased,z)
 		block[pz, bin_name] = nz_biased
 	return 0
