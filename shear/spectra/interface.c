@@ -96,7 +96,7 @@ void * setup(c_datablock * options){
 	Read z, N(z) values from the datablock and initialize a spline to
 	use in the Limber integral.
 */
-gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
+gsl_spline * get_named_nchi_spline(c_datablock * block, const char * section, int bin, double *z,
 	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
 {
 	int status = 0;
@@ -105,7 +105,7 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 	char name[20];
 	snprintf(name, 20, "bin_%d", bin);
 
-    status |= c_datablock_get_double_array_1d(block, wl_nz, name, &N, &n);
+    status |= c_datablock_get_double_array_1d(block, section, name, &N, &n);
     double Chi[n];
 
     for (int i=0; i<n; i++){
@@ -121,11 +121,14 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 
 }
 
-/*
-	Read z, N(z) values from the datablock and initialize a spline
-   	of the lensing kernel W to use in the Limber integral.
-*/
-gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
+gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
+	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
+{
+	return get_named_nchi_spline(block, wl_nz, bin, z, a_of_chi, chi_of_z);
+}
+
+
+gsl_spline * get_named_w_spline(c_datablock * block, const char * section, int bin, double * z,
 	double chi_max, gsl_spline * a_of_chi_spline)
 {
 	char name[20];
@@ -135,7 +138,7 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 
 	// Load n(z)
 	snprintf(name, 20, "bin_%d", bin);
-	status |= c_datablock_get_double_array_1d(block, wl_nz, name, &n_of_z,
+	status |= c_datablock_get_double_array_1d(block, section, name, &n_of_z,
 		&nz1);
 
 	// Make a spline from n(z)
@@ -150,6 +153,19 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 	free(n_of_z);
 	return W;
 }
+
+
+/*
+	Read z, N(z) values from the datablock and initialize a spline
+   	of the lensing kernel W to use in the Limber integral.
+*/
+gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
+	double chi_max, gsl_spline * a_of_chi_spline)
+{
+	return get_named_w_spline(block, wl_nz, bin, z, chi_max, a_of_chi_spline);
+}
+
+
 
 /*
 	Save an angular power spectrum to the datablock (for a single pair of z bins).
