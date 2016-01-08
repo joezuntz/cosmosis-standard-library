@@ -1,3 +1,6 @@
+#This is based on project_2d.py, but generalised for cross-spectra e.g. when correlating
+#two populations with different n(z)s.
+
 #coding:utf-8
 import os
 import ctypes as ct
