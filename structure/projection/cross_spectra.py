@@ -349,6 +349,8 @@ class SpectrumCalulcator(object):
         for spectrum in self.req_spectra:
             print "Computing spectrum:", spectrum.__class__.__name__
             self.compute_spectra(block, spectrum)
+            block[spectrum.name, "nbin_A"]=self.nbin_A
+            block[spectrum.name, "nbin_B"]=self.nbin_B
         self.clean()
         return 0
 
