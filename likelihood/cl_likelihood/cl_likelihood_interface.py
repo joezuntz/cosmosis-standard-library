@@ -10,6 +10,7 @@ def setup(options):
 
 	cuts = options.get_bool(option_section, 'scale_cuts')
 
+
 	shear_sample = options.get_string(option_section, 'shear_sample')
 	pos_sample = options.get_string(option_section, 'clustering_sample')
 	auto = options.get_bool(option_section, 'auto_zbins')
@@ -42,6 +43,7 @@ def execute(block, config):
 	if like.constant_covariance:
 		like.build_inverse_covariance(block)
 
+	pdb.set_trace()
 	# Do the likelihood calculation
 	like.do_likelihood(block)
 	#like.normalise_likelihood(block)

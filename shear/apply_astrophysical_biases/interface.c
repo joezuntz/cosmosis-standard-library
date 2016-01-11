@@ -3,22 +3,39 @@
 #include "utils.h"
 #include <stdio.h>
 #include <math.h>
-
+#include <string.h>
 
 void * setup(c_datablock * options){
 
 	bias_config * config = malloc(sizeof(bias_config));
 	int status = 0;
+	int status_colour = 0;
+	char *colour;
 	status |= c_datablock_get_int(options, OPTION_SECTION, "verbosity", &(config->verbosity));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "galaxy_bias", true,
 		&(config->galaxy_bias));
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "intrinsic_alignments", true,
 		&(config->intrinsic_alignments));
+	status_colour |= c_datablock_get_string(options, OPTION_SECTION, "colour", &colour);
+
 
 	if (status){
 		fprintf(stderr, "Please specify intrinsic_alignments and galaxy_bias as true or false.\n");
 		exit(status);
 	}
+
+	// If a colour is specified a suffix is added to the power spectra and bias names
+	// colour_switch is 1 if a colour variable is available and 0 otherwise
+	if (!status_colour){
+		char suffix[1];
+		sprintf(suffix, "_");
+		strcat(suffix, colour);
+		sprintf(config->colour, suffix); 
+		config->colour_switch = 1;
+	}
+	else{
+		config->colour_switch = 0;
+		status_colour = 0; }
 
 	return config;
 }

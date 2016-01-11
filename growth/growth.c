@@ -27,10 +27,8 @@ int execute(c_datablock * block, growthconfig * config){
 	double a;
 
 	//Read cosmological parameters required for growth calculation
-	printf("TESTING1\n");
 	cosmology *cospar = initialise_cosmological_parameters(block);
 	// Initialise support parameters
-	printf("TESTING2\n");
 	support *suppar = initialise_support();
 	
 	fprintf(stderr, "Calculating growth factor. \n");

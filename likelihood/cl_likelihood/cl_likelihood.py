@@ -33,7 +33,7 @@ class ClLikelihood(GaussianLikelihood):
 	#one section name
 	#don't define section name when reading options
 	def __init__(self, options):
-		
+
 		constcov = options.get_bool(option_section, 'fixed_covariance')
 		if constcov:
 			self.constant_covariance=True
@@ -46,6 +46,8 @@ class ClLikelihood(GaussianLikelihood):
 		self.ggl = options.get_bool(option_section, 'ggl')
 		auto = options.get_bool(option_section, 'auto_zbins')
 		cross = options.get_bool(option_section, 'cross_zbins')
+
+		self.interpolate = options.get_bool(option_section, 'interpolate')
 
 		# Put the information specifying the datavector where
 		# it can be accessed later
@@ -118,51 +120,6 @@ class ClLikelihood(GaussianLikelihood):
 		if not self.constant_covariance:
 			self.cov = self.build_covariance(block)
 			self.inv_cov = self.build_inverse_covariance(block)
-
-	#def choose_scale_cuts(self, option, shear, ggl, pos, cuts_file=None, block):
-#		if option='file':
-#			cuts = np.loadtxt(cuts_file)
-#			corrtypes = cuts.T[0]
-#			if shear:
-#				self.lmin_shear = cuts.T[2][corrtypes==0.]
-#				self.lmax_shear = cuts.T[3][corrtypes==0.]
-#			if ggl or pos:
-#				self.lmin_pos = cuts.T[2][corrtypes==1.]	
-#				self.lmax_pos = cuts.T[3][corrtypes==1.]
-#			print 'Read scale cuts from %s' %cuts_file
-#
-#		elif (option=='fixed') or (option=='vary'):
-#			if shear:
-#				self.lmin_shear = []
-#				self.lmax_shear = []
-#				for i in self.nzbin_shear:
-#					lmin = block[self.shear_cat, 'lmin_%d'%i]
-#					lmax = block[self.shear_cat, 'lmax_%d'%i]
-#					self.lmin_shear.append(lmin)
-#					self.lmax_shear.append(lmax)
-#				for i in self.nzbin_pos:
-#					lmin = block[self.pos_cat, 'lmin_%d'%i]
-#					lmax = block[self.pos_cat, 'lmax_%d'%i]
-#					self.lmin_pos.append(lmin)
-#					self.lmax_pos.append(lmax)
-#			
-#
-#	def apply_scale_cuts(self):
-		#if (self.llim[0]!=None) and (self.llim[1]!=None): 
-	#		self.scale_cut = (self.data_x>self.llim[0]) & (self.data_x<self.llim[1])
-	#	else:
-	#		self.scale_cut = np.array([True]*len(self.data_x))
-
-		#self.data_x = self.data_x[self.scale_cut]
-
-#		cut_data=[]
-#		for i in range(len(self.spectra)):
-#			pdb.set_trace()
-#			cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][self.scale_cut])
-
-#		self.data_y = np.array(cut_data).flatten()
-
-#		self.nlbin = len(self.data_x)
 
 	def build_covariance(self, block):
 		"""
@@ -251,7 +208,7 @@ class ClLikelihood(GaussianLikelihood):
 		print 'Loading datavector.'
 		cl_data_all = pickle.load(open(datafile, 'rb'))
 
-		self.data_x = (cl_data_all['l_bin_edges_shear'][1:] + cl_data_all['l_bin_edges_shear'][:-1])/2.
+		self.data_x = cl_data_all['ell_shear']
 
 		self.nlbin = len(self.data_x)
 
@@ -269,8 +226,8 @@ class ClLikelihood(GaussianLikelihood):
 				else:
 					self.spectra.append((spect.split('_')[1], zcomb))
 					self.data_y.append( cl_data_all[spect][bin] )
-		self.data_y = np.array(self.data_y).flatten() 
-	
+		self.data_y = np.array(self.data_y).flatten()
+
 		return self.data_x, self.data_y
 
 	def extract_theory_points(self, block):
@@ -282,15 +239,23 @@ class ClLikelihood(GaussianLikelihood):
 		for spect in self.spectra:
 			section = cl_sections[spect[0]]
 			bin = 'bin_%d_%d' %(spect[1][0]+1, spect[1][1]+1)
-			ell = block[section, 'ell']
+			if self.interpolate:
+				ell = self.data_x
+				theory_vector = np.interp(ell, block[section,'ell'], block[section, bin])
+			else:
+				ell = block[section, 'ell']
+				theory_vector = block[section, bin]
 			if self.cuts:
 				lmin= block[section, 'lmin_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 				lmax= block[section, 'lmax_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 			else:
 				print 'No prescription for scale cuts found. Using full datavector.'
-				lmin = 0. ; lmax = 1e5
+				lmin = 0. ; lmax = 1e7
+
 			scale_cut = (ell>lmin) & (ell<lmax)
-			self.theory_vector.append(block[section, bin][scale_cut])
+			theory_vector = theory_vector[scale_cut]
+
+			self.theory_vector.append(theory_vector)
 
 		block['data_vector', self.like_name+'_theory'] = np.concatenate((np.array(self.theory_vector)))
 		return np.concatenate((np.array(self.theory_vector)))
@@ -458,15 +423,17 @@ class ClLikelihood(GaussianLikelihood):
 				spect00 = spect0
 				spect10 = spect1
 
+		## For code comparison
+		## output data and covariance in a form readable by cl_like
 		dat=np.array([])
 		data=np.array([])
 		for i in range(6):
 			sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1)])
-			out = self.data_y[i*11:(i+1)*11]
+			out = self.data_y[i*12:(i+1)*12]
 			out = np.concatenate((sp,out))
 			if i==0: data = out
 			else: data = np.vstack((data,out))
-#		np.savetxt('data.txt', data) 
+		#np.savetxt('data.txt', data) 
 			
 
 		for i in range(6):
@@ -474,18 +441,16 @@ class ClLikelihood(GaussianLikelihood):
 				
 				#pdb.set_trace()
 				sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1), int(self.spectra[j][1][1]+1), int(self.spectra[j][1][0]+1)])
-				mat = np.diag(cov[j*11:(j+1)*11, i*11:(i+1)*11] )
+				mat = np.diag(cov[j*12:(j+1)*12, i*12:(i+1)*12] )
 				mat = np.concatenate((sp, mat))
 				if i==0 and j==0: 
 					dat=mat
 				else:
 					dat=np.vstack((dat,  mat ))
-#		np.savetxt('covmat.txt', dat)
+		#np.savetxt('covmat.txt', dat)
+
 
 		return cov
-
-
-#		pdb.set_trace()
 
 
 

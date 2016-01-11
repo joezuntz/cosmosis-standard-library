@@ -3,6 +3,7 @@
 #include "utils.h"
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 const char * nl = MATTER_POWER_NL_SECTION;
 const char * mps = MATTER_POWER_LIN_SECTION;
@@ -34,6 +35,8 @@ typedef struct bias_config {
 	int verbosity;
 	bool intrinsic_alignments;
 	bool galaxy_bias;
+	char colour[1];
+	int colour_switch;
 	
 } bias_config;
 
@@ -73,22 +76,41 @@ const char * choose_output_section(spectrum_type_t spectrum_type){
 	}
 }
 
-const char * choose_spectrum_name(spectrum_type_t spectrum_type){
+const char * choose_spectrum_name(spectrum_type_t spectrum_type, bias_config * config, char * name){
 	switch(spectrum_type){
 		case intrinsic_intrinsic:
-			return "P_II";
+			sprintf(name, "P_II");
+			if (config->colour_switch){
+				strcat(name, config->colour);
+			}			
+			return name;
 			break;
 		case mass_intrinsic:
-			return "P_GI";
+			sprintf(name, "P_GI");
+			if (config->colour_switch){
+				strcat(name, config->colour);
+			}			
+			return name;
 			break;
 		case galaxy_galaxy:
-			return "P_k";
+			sprintf(name, "P_k");
+			if (config->colour_switch){
+				strcat(name, config->colour);
+			}			
+			return name;
 			break;
 		case galaxy_mass:
-			return "P_k";
+			sprintf(name, "P_k");
+			if (config->colour_switch){
+				strcat(name, config->colour);
+			}			
+			return name;
 		case galaxy_intrinsic:
-			return "P_k";
-			break;
+			sprintf(name, "P_k");
+			if (config->colour_switch){
+				strcat(name, config->colour);
+			}			
+			return name;
 		default:
 			return NULL;
 	}
@@ -120,11 +142,11 @@ double apply_bias_coefficients(spectrum_type_t spectrum_type, biases * b, int j,
 
 }
 
-int get_power_spectrum(c_datablock * block, spectrum_type_t spectrum_type, biases * b){
+int get_power_spectrum(c_datablock * block, spectrum_type_t spectrum_type, biases * b, bias_config * config){
 	int status=0;
-
+	char spectrum_name[8];
 	const char * section = choose_output_section(spectrum_type);
-	const char * spectrum_name = choose_spectrum_name(spectrum_type);
+	choose_spectrum_name(spectrum_type, config, spectrum_name);
 
 	double **Pk;
 	Pk= (double **)malloc(b->nk*sizeof(double*));
@@ -152,14 +174,24 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 
 	// First load the nonlinear spectrum 
 	status |= c_datablock_get_double_grid(block, MATTER_POWER_NL_SECTION, "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), "P_k", &(b->P_nl));
-	if (config->verbosity>1) printf("Loaded matter power spectrum.\n");
+	if (config->verbosity>1) printf("Loaded matter power spectrum %d.\n", status);
 
 	// Then the biases
 	int nk,nz;
 	if (config->intrinsic_alignments){
-		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), "b_I", &(b->b_I) );
-		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), "r_I", &(b->r_I) );
-		if(config->verbosity > 1){ printf("Loaded intrinsic alignment bias.\n"); }
+		char bI_name[3];
+		char rI_name[3];
+		sprintf(bI_name, "b_I");
+		sprintf(rI_name, "r_I");
+
+		if (config->colour_switch){
+			strcat(bI_name, config->colour);
+			strcat(rI_name, config->colour);}
+
+		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), bI_name, &(b->b_I) );
+		printf("Loaded intrinsic alignment bias %d.\n", status);
+		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), rI_name, &(b->r_I) );
+		if(config->verbosity > 1){ printf("Loaded intrinsic alignment bias %d.\n", status); }
 	} 
 
 	if (config->galaxy_bias){
@@ -167,9 +199,15 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 		int nz_g; 
 		double **b_g, **r_g; 
 		double *k_h_g, *z_g;
-		
-		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, "b_g", &b_g );
-		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, "r_g", &r_g );
+
+		char bg_name[3];
+		char rg_name[3];
+		sprintf(bg_name, "b_g");
+		strcat(bg_name, config->colour);
+		sprintf(rg_name, "r_g");
+		strcat(rg_name, config->colour);
+		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, bg_name, &b_g );
+		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, rg_name, &r_g );
 
 		interp_bg = init_interp_2d_akima_grid(k_h_g, z_g, b_g, nk_g, nz_g);
 		interp_rg = init_interp_2d_akima_grid(k_h_g, z_g, r_g, nk_g, nz_g);
@@ -204,19 +242,19 @@ int get_all_spectra(c_datablock * block, biases * b, bias_config * config){
 
 	// Apply the bias arrays loaded earlier to the nonlinear power spectrum to get the required spectra
 	if(config->intrinsic_alignments){
-		status|=get_power_spectrum(block, intrinsic_intrinsic, b);
+		status|=get_power_spectrum(block, intrinsic_intrinsic, b, config);
 		if(config->verbosity>0){ printf("Saved II spectrum. %d\n",status);}
-		status|=get_power_spectrum(block,  mass_intrinsic, b);	
+		status|=get_power_spectrum(block,  mass_intrinsic, b, config);	
 		if(config->verbosity>0){ printf("Saved GI spectrum. %d\n",status);}	
 	}
 	if(config->galaxy_bias){
-		status|=get_power_spectrum(block, galaxy_galaxy, b);
+		status|=get_power_spectrum(block, galaxy_galaxy, b, config);
 		if(config->verbosity>0){ printf("Saved gg spectrum.\n");}
 	}
 	if (config->intrinsic_alignments && config->galaxy_bias){
-		status|=get_power_spectrum(block, galaxy_mass ,b);
+		status|=get_power_spectrum(block, galaxy_mass ,b, config);
 		if(config->verbosity>0){ printf("Saved gG spectrum.\n");}
-		status|=get_power_spectrum(block, galaxy_intrinsic ,b);
+		status|=get_power_spectrum(block, galaxy_intrinsic ,b, config);
 		if(config->verbosity>0){ printf("Saved gI spectrum.\n");}
 	}
 

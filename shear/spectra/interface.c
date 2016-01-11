@@ -7,6 +7,8 @@
 #include "limber.h"
 #include <math.h>
 
+//TODO allow separation of lens and source galaxies in shear-shear correlations
+
 // Short-hand names for the sections we will
 // be looking at
 const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
@@ -133,22 +135,36 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
    	of the lensing kernel W to use in the Limber integral.
 */
 gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
-	double chi_max, gsl_spline * a_of_chi_spline, shear_spectrum_config * config, char * survey)
+	double chi_max, gsl_spline * a_of_chi_spline, gsl_spline * chi_of_z, shear_spectrum_config * config, char * survey)
 {
 	char name[20];
 	double * n_of_z;
+	
 	int nz1;
 	int status = 0;
 
 	// Load n(z)
 	snprintf(name, 20, "bin_%d", bin);
 	status |= c_datablock_get_double_array_1d(block, survey, name, &n_of_z, &nz1);
+	status |= c_datablock_get_double_array_1d(block, survey, "z", &z, &nz1);
 
 	// Make a spline from n(z)
 	gsl_spline * n_of_z_spline = spline_from_arrays(nz1, z, n_of_z);
 
 	// Do the main computation
 	gsl_spline * W = shear_shear_kernel(chi_max, n_of_z_spline, a_of_chi_spline);
+
+	// Evaluate on the same points as the n(z) and save to the datablock
+	double lensing_kernel[nz1];
+	double chi;
+	for  (int i=0 ; i<nz1 ; ++i ){
+		chi = gsl_spline_eval(chi_of_z, z[i], NULL);
+		lensing_kernel[i] = gsl_spline_eval(W, chi, NULL);
+	}
+	char kernel_name[26];
+	snprintf(kernel_name, 26, "lensing_efficiency_bin_%d", bin);
+	status |= c_datablock_put_double_array_1d(block, survey, kernel_name, lensing_kernel, nz1 );
+	
 
 	// tidy up bin-specific data
 	gsl_spline_free(n_of_z_spline);
@@ -487,8 +503,14 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 
 	// First save the ell values and number of redshift bins
 	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
-	status |= c_datablock_put_int(block, section, "nzbin_lss", nzbin_lss);
-	status |= c_datablock_put_int(block, section, "nzbin_shear", nzbin_shear);
+	if (N1==N2){
+		status |= c_datablock_put_int(block, section, "nbin", N1);
+		status |= c_datablock_put_int(block, section, "nzbin", N1);
+	}
+	else{
+		status |= c_datablock_put_int(block, section, "nzbin_lss", nzbin_lss);
+		status |= c_datablock_put_int(block, section, "nzbin_shear", nzbin_shear);
+	}
 
 	// In addition to the Limber kernel, the magnification 
 	// spectra also require the slope of the luminosity 
@@ -678,14 +700,14 @@ int execute(c_datablock * block, void * config_in)
 
 	for (int bin=1; bin<=N1; bin++){
 		if (config->use_shear){
-			W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey);
+			W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey);
 			Nchi_splines_shear[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey);
 			if (W_splines_shear[bin-1]==NULL) error_status=1;
 			if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
 			
 		}
 		if (config->use_LSS){
-			W_splines_lss[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->LSS_survey);
+			W_splines_lss[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
 			Nchi_splines_lss[bin-1] = get_nchi_spline(block, bin, z, a_of_chi_spline, chi_of_z_spline, config, config->LSS_survey);
 			if (W_splines_lss[bin-1]==NULL) error_status=1;
 			if (Nchi_splines_lss[bin-1]==NULL) error_status=1;
@@ -706,8 +728,8 @@ int execute(c_datablock * block, void * config_in)
 			}
 			if (nzbin_lss<nzbin_shear){
 				if (config->use_shear){
-					Nchi_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
-					W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, config, config->shear_survey); 
+					Nchi_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey); 
+					W_splines_shear[bin-1] = get_w_spline(block, bin, z, chi_max, a_of_chi_spline, chi_of_z_spline, config, config->shear_survey); 
 					if (W_splines_shear[bin-1]==NULL) error_status=1;
 					if (Nchi_splines_shear[bin-1]==NULL) error_status=1;
 				}

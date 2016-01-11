@@ -12,7 +12,10 @@ def setup(options):
 	noise = options[option_section, "noise"]
 	bias = (options[option_section, "bias"], options[option_section, "m_per_bin"])
 	bins = options[option_section, "angular_frequency_bins"]
-
+	if bins:
+		window = options[option_section, "window"]
+	else:
+		window = ''
 	nlbin_shear = options[option_section, "nlbin_shear"]
 	nlbin_ggl = options[option_section, "nlbin_ggl"]
 	nlbin_pos = options[option_section, "nlbin_pos"]
@@ -28,6 +31,8 @@ def setup(options):
 	print 'Shot noise: %s'%disp[noise]
 	print 'Shape measurement bias (in each bin): %s (%s)'%(disp[bias[0]], disp[bias[1]])
 	print 'Angular frequency binning: %s'%disp[bins]
+	if bins:
+		print 'Using window function: %s'%window
 
 	shear_survey = options[option_section, "shear_sample"]
 	pos_survey = options[option_section, "clustering_sample"]
@@ -35,7 +40,7 @@ def setup(options):
 	try: output_datavector = options[option_section, "output"]
 	except: output_datavector = None
 
-	opt= {'shear': shear, 'nlbin_shear': nlbin_shear, 'nlbin_ggl': nlbin_ggl, 'nlbin_pos': nlbin_pos, 'lmax_shear':lmax_sh, 'lmin_shear':lmin_sh, 'lmax_pos': lmax_pos, 'lmin_pos': lmin_pos, 'lmax_ggl': lmax_ggl, 'lmin_ggl': lmin_ggl, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector}
+	opt= {'shear': shear, 'nlbin_shear': nlbin_shear, 'nlbin_ggl': nlbin_ggl, 'nlbin_pos': nlbin_pos, 'lmax_shear':lmax_sh, 'lmin_shear':lmin_sh, 'lmax_pos': lmax_pos, 'lmin_pos': lmin_pos, 'lmax_ggl': lmax_ggl, 'lmin_ggl': lmin_ggl, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins, "window":window,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector}
 	return opt
 
 def execute(block, config):
