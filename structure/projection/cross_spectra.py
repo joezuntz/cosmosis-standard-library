@@ -134,13 +134,11 @@ class Kernels(object):
 
 class SpectrumCalulcator(object):
     def __init__(self, options):
+
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
-
         self.nofz_sec_A=options.get_string(option_section, "nofz_section_A", names.wl_number_density)
         self.nofz_sec_B=options.get_string(option_section, "nofz_section_B", names.wl_number_density)
-
-
 
         #Get the list of spectra that we want to compute.
         #The full list
@@ -246,10 +244,10 @@ class SpectrumCalulcator(object):
 
         if 'p_mi' in self.req_power:
             self.power['p_mi'] = limber.load_power_chi(block, self.chi_of_z,
-                                    names.intrinsic_alignment_parameters, "k_h", "z", "p_gi")
+                                    names.intrinsic_alignment_parameters, "k_h", "z", "p_matter_int")
         if 'p_ii' in self.req_power:
             self.power['p_ii'] = limber.load_power_chi(block, self.chi_of_z,
-                                    names.intrinsic_alignment_parameters, "k_h", "z", "p_ii")
+                                    names.intrinsic_alignment_parameters, "k_h", "z", "p_int_int")
         if 'p_gi' in self.req_power:
             self.load_galaxy_intrinsic_power(block)
 
@@ -308,11 +306,11 @@ class SpectrumCalulcator(object):
                 p_gi = self.power['p_mi']
             else:
                 p_gi = limber.load_power_chi(block, self.chi_of_z,
-                    names.intrinsic_alignment_parameters, "k_h", "z", "p_mi")
+                    names.intrinsic_alignment_parameters, "k_h", "z", "p_matter_int")
         else:
             #load the galaxy power spectrum
             p_gi = limber.load_power_chi(block, self.chi_of_z,
-                'names.intrinsic_alignment_parameters', "k_h", "z", "p_pos_i")
+                names.intrinsic_alignment_parameters, "k_h", "z", "p_pos_int")
         self.power['p_gi'] = p_gi
 
 
