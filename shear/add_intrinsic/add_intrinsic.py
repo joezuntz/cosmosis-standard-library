@@ -40,7 +40,9 @@ def execute(block, config):
 		for b1 in xrange(1,nbin_A+1):
 			for b2 in xrange(b1,nbin_B+1):
 				col = "bin_%d_%d"%(b1,b2)
+				col_rev = "bin_%d_%d"%(b2,b1)
 				block[sec_names['gG_out'], col] = pos_shear_total[(b1,b2)]
+				block[sec_names['gG_out'], col_rev] = pos_shear_total[(b1,b2)]
 
 	if shear_shear:
 		shear_shear_total = {}
