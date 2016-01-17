@@ -136,8 +136,7 @@ class ClLikelihood(GaussianLikelihood):
 			self.A_pos = block[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
 			self.A = self.A_shear 
 			if (self.A_shear!=self.A_pos):
-				if self.A_shear<self.A_pos: self.A = self.A_shear
-				else: self.A = self.A_pos
+				self.A = min(self.A_pos, self.A_shear)
 			self.l_bins_shear = self.l_bins
 			self.l_bins_pos = self.l_bins
 			self.dl = block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][1:] - block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][:-1]
@@ -165,6 +164,7 @@ class ClLikelihood(GaussianLikelihood):
 
 				# Write to the appropriate block of the matrix
 				Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
+				
 
 				# Update indices
 				j+=m.shape[1]
@@ -208,7 +208,10 @@ class ClLikelihood(GaussianLikelihood):
 		print 'Loading datavector.'
 		cl_data_all = pickle.load(open(datafile, 'rb'))
 
-		self.data_x = cl_data_all['ell_shear']
+		try:
+			self.data_x = cl_data_all['ell_shear']
+		except:
+			self.data_x = cl_data_all['ell_pos']
 
 		self.nlbin = len(self.data_x)
 
@@ -368,7 +371,7 @@ class ClLikelihood(GaussianLikelihood):
 		for i in self.spectra:
 			if i[0]==mode[1]:
 				if self.cuts:
-					l = np.argwhere((ell > block[cl_sections[mode[0]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[0]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
+					l = np.argwhere((ell > block[cl_sections[mode[1]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[1]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
 				else:
 					l = np.argwhere((ell > 0) & (ell < 1e6 )).flatten()
 				for m in l: ell_1 += [(m, i[1])]
@@ -423,30 +426,28 @@ class ClLikelihood(GaussianLikelihood):
 				spect00 = spect0
 				spect10 = spect1
 
-		## For code comparison
+		## For code comparison 1/16
 		## output data and covariance in a form readable by cl_like
-		dat=np.array([])
-		data=np.array([])
-		for i in range(6):
-			sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1)])
-			out = self.data_y[i*12:(i+1)*12]
-			out = np.concatenate((sp,out))
-			if i==0: data = out
-			else: data = np.vstack((data,out))
+		#dat=np.array([])
+		#data=np.array([])
+		#for i in range(6):
+		#	sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1)])
+		#	out = self.data_y[i*12:(i+1)*12]
+		#	out = np.concatenate((sp,out))
+		#	if i==0: data = out
+		#	else: data = np.vstack((data,out))
 		#np.savetxt('data.txt', data) 
 			
-
-		for i in range(6):
-			for j in range(6):
+#		for i in range(6):
+#			for j in range(6):
 				
-				#pdb.set_trace()
-				sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1), int(self.spectra[j][1][1]+1), int(self.spectra[j][1][0]+1)])
-				mat = np.diag(cov[j*12:(j+1)*12, i*12:(i+1)*12] )
-				mat = np.concatenate((sp, mat))
-				if i==0 and j==0: 
-					dat=mat
-				else:
-					dat=np.vstack((dat,  mat ))
+#				sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1), int(self.spectra[j][1][1]+1), int(self.spectra[j][1][0]+1)])
+	#			mat = np.diag(cov[j*12:(j+1)*12, i*12:(i+1)*12] )
+	#			mat = np.concatenate((sp, mat))
+	#			if i==0 and j==0: 
+	#				dat=mat
+	#			else:
+	#				dat=np.vstack((dat,  mat ))
 		#np.savetxt('covmat.txt', dat)
 
 

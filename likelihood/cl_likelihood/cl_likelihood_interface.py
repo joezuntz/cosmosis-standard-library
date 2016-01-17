@@ -43,7 +43,6 @@ def execute(block, config):
 	if like.constant_covariance:
 		like.build_inverse_covariance(block)
 
-	pdb.set_trace()
 	# Do the likelihood calculation
 	like.do_likelihood(block)
 	#like.normalise_likelihood(block)
