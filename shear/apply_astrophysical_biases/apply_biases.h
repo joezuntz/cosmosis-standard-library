@@ -35,7 +35,7 @@ typedef struct bias_config {
 	int verbosity;
 	bool intrinsic_alignments;
 	bool galaxy_bias;
-	char colour[1];
+	char colour[8];
 	int colour_switch;
 	
 } bias_config;
@@ -162,7 +162,17 @@ int get_power_spectrum(c_datablock * block, spectrum_type_t spectrum_type, biase
 		}
 	}	
 
-	status|=c_datablock_put_double_grid(block, section, "k_h", b->nk, b->k_h, "z", b->nz, b->z, spectrum_name, Pk);
+	char kname[10];
+	char zname[10];
+	if (config->colour_switch){
+		snprintf(kname, 10, "k_h%s", config->colour);
+		snprintf(zname, 10, "z%s", config->colour);
+	}
+	else{
+		snprintf(kname, 10, "k_h");
+		snprintf(zname, 10, "z");
+	}
+	status|=c_datablock_put_double_grid(block, section, kname, b->nk, b->k_h, zname, b->nz, b->z, spectrum_name, Pk);
 
 	free(Pk);
 
@@ -179,14 +189,14 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 	// Then the biases
 	int nk,nz;
 	if (config->intrinsic_alignments){
-		char bI_name[3];
-		char rI_name[3];
-		sprintf(bI_name, "b_I");
-		sprintf(rI_name, "r_I");
-
-		if (config->colour_switch){
-			strcat(bI_name, config->colour);
-			strcat(rI_name, config->colour);}
+		char bI_name[10];
+		char rI_name[10];
+		if (!config->colour_switch){
+			snprintf(bI_name, 10, "b_I");
+			snprintf(rI_name, 10, "r_I");}
+		else{
+			snprintf(bI_name, 10, "b_I%s", config->colour);
+			snprintf(rI_name, 10, "r_I%s", config->colour);}
 
 		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), bI_name, &(b->b_I) );
 		printf("Loaded intrinsic alignment bias %d.\n", status);
@@ -200,12 +210,15 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 		double **b_g, **r_g; 
 		double *k_h_g, *z_g;
 
-		char bg_name[3];
-		char rg_name[3];
-		sprintf(bg_name, "b_g");
-		strcat(bg_name, config->colour);
-		sprintf(rg_name, "r_g");
-		strcat(rg_name, config->colour);
+		char bg_name[10];
+		char rg_name[10];
+		if (!config->colour_switch){
+			snprintf(bg_name, 8, "b_g");
+			snprintf(rg_name, 8, "r_g");}
+		else{
+			snprintf(bg_name, 8, "b_g%s", config->colour);
+			snprintf(rg_name, 8, "r_g%s", config->colour);}
+
 		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, bg_name, &b_g );
 		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, rg_name, &r_g );
 
@@ -250,10 +263,10 @@ int get_all_spectra(c_datablock * block, biases * b, bias_config * config){
 	if(config->galaxy_bias){
 		status|=get_power_spectrum(block, galaxy_galaxy, b, config);
 		if(config->verbosity>0){ printf("Saved gg spectrum.\n");}
-	}
-	if (config->intrinsic_alignments && config->galaxy_bias){
 		status|=get_power_spectrum(block, galaxy_mass ,b, config);
 		if(config->verbosity>0){ printf("Saved gG spectrum.\n");}
+	}
+	if (config->intrinsic_alignments && config->galaxy_bias){
 		status|=get_power_spectrum(block, galaxy_intrinsic ,b, config);
 		if(config->verbosity>0){ printf("Saved gI spectrum.\n");}
 	}

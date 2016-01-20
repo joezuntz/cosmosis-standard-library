@@ -18,7 +18,6 @@ void * setup(c_datablock * options){
 		&(config->intrinsic_alignments));
 	status_colour |= c_datablock_get_string(options, OPTION_SECTION, "colour", &colour);
 
-
 	if (status){
 		fprintf(stderr, "Please specify intrinsic_alignments and galaxy_bias as true or false.\n");
 		exit(status);
@@ -27,15 +26,16 @@ void * setup(c_datablock * options){
 	// If a colour is specified a suffix is added to the power spectra and bias names
 	// colour_switch is 1 if a colour variable is available and 0 otherwise
 	if (!status_colour){
-		char suffix[1];
-		sprintf(suffix, "_");
-		strcat(suffix, colour);
-		sprintf(config->colour, suffix); 
+		snprintf(config->colour, 10, "_%s",colour); 
 		config->colour_switch = 1;
 	}
 	else{
 		config->colour_switch = 0;
 		status_colour = 0; }
+
+	printf("%d\n", status_colour);
+	printf("%d \n", config->colour_switch);
+	
 
 	return config;
 }

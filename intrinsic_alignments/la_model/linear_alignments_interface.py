@@ -16,7 +16,7 @@ def setup(options):
 		raise ValueError('The method in the linear alignment module must'
 			'be either "KRHB" (for Kirk, Rassat, Host, Bridle) or BK for '
 			'Bridle & King or "BK_corrected" for the corrected version of that')
-	if colour not in ["none", "red", "blue"]:
+	if colour not in ["none", "red", "blue", "r", "b"]:
 		raise ValueError("Unrecognised choice of galaxy colour sample. Please specify"
 				"'red' or 'blue' or omit the colour parameter in the config file.")
 	return method, colour, spectra

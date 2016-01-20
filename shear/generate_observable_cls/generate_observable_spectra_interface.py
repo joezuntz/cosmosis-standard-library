@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 def setup(options):
 	shear= options[option_section, "shear"]
 	intrinsic_alignments= options[option_section, "intrinsic_alignments"]
+	if intrinsic_alignments:
+		GI = options[option_section, "GI"]
+		II = options[option_section, "II"]
+	else:
+		GI=False
+		II=False
 	clustering= options[option_section, "clustering"]
 	magnification= options[option_section, "magnification"]
 	noise = options[option_section, "noise"]
@@ -40,7 +46,7 @@ def setup(options):
 	try: output_datavector = options[option_section, "output"]
 	except: output_datavector = None
 
-	opt= {'shear': shear, 'nlbin_shear': nlbin_shear, 'nlbin_ggl': nlbin_ggl, 'nlbin_pos': nlbin_pos, 'lmax_shear':lmax_sh, 'lmin_shear':lmin_sh, 'lmax_pos': lmax_pos, 'lmin_pos': lmin_pos, 'lmax_ggl': lmax_ggl, 'lmin_ggl': lmin_ggl, 'intrinsic_alignments': intrinsic_alignments, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins, "window":window,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector}
+	opt= {'shear': shear, 'nlbin_shear': nlbin_shear, 'nlbin_ggl': nlbin_ggl, 'nlbin_pos': nlbin_pos, 'lmax_shear':lmax_sh, 'lmin_shear':lmin_sh, 'lmax_pos': lmax_pos, 'lmin_pos': lmin_pos, 'lmax_ggl': lmax_ggl, 'lmin_ggl': lmin_ggl, 'intrinsic_alignments': intrinsic_alignments, 'GI': GI, 'II': II, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins, "window":window,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector}
 	return opt
 
 def execute(block, config):

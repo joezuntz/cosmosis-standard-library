@@ -14,6 +14,7 @@ def setup(options):
 def execute(block, config):
 	catalogue = config
 
+	import pdb ; pdb.set_trace()
 	section_II = names.ia_spectrum_ii
 	section_GI = names.ia_spectrum_gi
 	section_ia = names.intrinsic_alignment_parameters

@@ -12,14 +12,14 @@ def setup(options):
 
 
 	shear_sample = options.get_string(option_section, 'shear_sample')
-	pos_sample = options.get_string(option_section, 'clustering_sample')
+	pos_sample = options.get_string(option_section, 'LSS_sample')
 	auto = options.get_bool(option_section, 'auto_zbins')
 	cross = options.get_bool(option_section, 'cross_zbins')
 
 	try: save_dir = options.get_string(option_section, 'output')
 	except: save_dir = None
 
-	config = [shear_sample, pos_sample, auto, cross, cuts], like, save_dir
+	config = [shear_sample, pos_sample, cuts], like, save_dir
 
 	return config
 
@@ -28,9 +28,7 @@ def execute(block, config):
 	options, like, output = config
 	shear_cat = options[0]
 	pos_cat = options[1]
-	auto = options[2]
-	cross = options[3]
-	cuts = options[4]
+	cuts = options[2]
 
 	# First apply scale cuts
 	# This is done here rather than on setup as they may change with
@@ -38,10 +36,11 @@ def execute(block, config):
 	# free parameters)
 	like.apply_scale_cuts(block, cuts)
 	# Setup the theory vector
-	like.initialise_theory(block, auto=auto, cross=cross)
+	like.initialise_theory(block)
 
 	if like.constant_covariance:
 		like.build_inverse_covariance(block)
+	#import pdb ; pdb.set_trace()
 
 	# Do the likelihood calculation
 	like.do_likelihood(block)

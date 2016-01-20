@@ -1,21 +1,28 @@
 from cosmosis.datablock import option_section, names
 from scipy.interpolate import interp1d
 import numpy as np
+import pylab as plt
+import pdb
 
-MODES = ["multiplicative", "mean", "width"]
+MODES = ["skew", "mean", "width"]
 
 def setup(options):
 	additive_bias = options[option_section, "mean"]
 	broadening = options[option_section, "width"]
+	skew  = options[option_section, "tail"]
 	per_bin = options[option_section, "bias_per_bin"]
 	survey = options[option_section, "survey"]
-	if not additive_bias and not broadening and not multiplicative:
+	if (not additive_bias) and (not broadening) and (not skew):
 		raise ValueError("please set one or more of: %r to T"%MODES)
-	return {"additive":additive_bias, "broadening":broadening, "survey":survey, "per_bin":per_bin}
+
+	try: 
+		cat_opt = options.get_string(option_section, "catastrophic_outliers")
+	except: cat_opt = None
+	
+	return {"additive":additive_bias, "broadening":broadening, "skew": skew, "survey":survey, "per_bin":per_bin, "catastrophic_outliers":cat_opt}
 
 def execute(block, config):
-	import pylab as plt
-	additive,broadening = config['additive'], config['broadening']
+	additive, broadening, skew = config['additive'], config['broadening'], config['skew']
 	pz = config['survey']
 	biases = pz
 	nbin = block[pz, "nzbin"]
@@ -24,11 +31,13 @@ def execute(block, config):
 		bin_name = "bin_%d" % i
 		nz = block[pz, bin_name]
 		if config['per_bin']:
-			bias = block[biases, "bias_%d"%i]
-			delta_z = block[biases, "delta_z_%d"%i]
+			if additive: bias = block[biases, "bias_%d"%i]
+			if broadening: S = block[biases, "S_z_%d"%i]
+			if skew: T = block[biases, "T_z_%d"%i]
 		else:
-			bias = block[biases, "bias_1"]
-			delta_z = block[biases, "delta_z_1"]
+			if additive: bias = block[biases, "bias_1"]
+			if broadening: S_z = block[biases, "S_z_1"]
+			if skew: T = block[biases, "T_z_1"]
 		dz = np.zeros_like(z)
 		f = interp1d(z, nz, kind='cubic', fill_value = 0.0, bounds_error=False)
 		#if mode=="multiplicative":
@@ -36,39 +45,53 @@ def execute(block, config):
 		if broadening:
 			# Use the main peak of n(z) as a pivot point about which to distort n(z)
 			zp = z[np.argwhere(nz==nz.max())[0][0]]
-			dz += delta_z*(z-zp)
+			dz += S*(z-zp)
 		if additive:
 			dz -= bias
 		nz_biased = f(z+dz)
 
-		# Do a simple extrapolation to predict the points where n(z) has been set to zero
-		# by the shift in the peak z or a change in width
-		# Otherwise the n(z) is truncated at what was the end of the z array
-		# This will start to look odd if the additive bias is large
-		#if nz_biased[-1]==0.0: 
-		#	i = np.argwhere(nz_biased[0.5*len(nz_biased):]==0.0).T[0,0]
-		#	alpha = (nz_biased[i-1]-nz_biased[i-2])/(z[i-1]-z[i-2])
-		#	for j in xrange(len(z)-i):
-		#		nzextrap = nz_biased[i+j-1] + alpha*(z[1]-z[0])
-		#		if nzextrap>0:
-		#			nz_biased[i+j] = nzextrap
-		#		else:
-		#			nz_biased[i+j] = 0.
-		#if nz_biased[0]==0.0: 
-		#	i = np.argwhere(nz_biased[:0.5*len(nz_biased)]==0.0).T[0,-1]
-		#	alpha = (nz_biased[i+1]-nz_biased[i+2])/(z[i+1]-z[i+2])
-		#	for j in np.flipud(xrange(i)):
-		#		nz_biased[j] = nz_biased[j+1] + alpha*(z[1]-z[0])
-		#		nzextrap = nz_biased[j+1] + alpha*(z[1]-z[0])
-		#		if nzextrap>0:
-		#			nz_biased[j] = nzextrap
-		#		else:
-		#			nz_biased[j] = 0.
+		if skew:
+			# Redistribute proability upwards in redshift witout altering
+			# the peak of the n(z) 
+			delta1 = T*(z-zp)+nz.max()
+			delta2 = -1.*T*(z-zp)+nz.max()
+			nz_biased += delta1 - delta2
+			np.putmask(nz_biased, nz_biased<0., 0.)
 
-		
 		#normalise
 		nz_biased/=np.trapz(nz_biased,z)
-		block[pz, bin_name] = nz_biased
+
+		# Add a population of catastrophic outliers
+		# See Hearin et al (2010)
+
+		if config['catastrophic_outliers']!=None:
+			cat_mode = block[pz, 'method']
+			fcat = block[pz,'fcat'] #0.05
+			dzcat = block[pz,'dzcat']  #0.129
+			zcat0= block[pz,'zcat0']  #0.65
+			zcat = block[pz,'zcat']  #0.5
+			sigcat= block[pz,'sigcat']  #0.1
+
+			step = (dzcat/2.)-abs(z-zcat0)
+			step[step==0.0] = -1.0
+			step = 0.5*(step/abs(step)+1.0)
+
+			dz = (z[1]-z[0])
+
+			# Define a Gaussian island of outliers, normalised to 
+			# the probability scattered from the affected region
+			if cat_mode=='island':
+				pcat = (1./(2.0*np.pi)**0.5 / sigcat) * np.exp(-1.0*(z-zcat)*(z-zcat) / (2.*sigcat*sigcat))
+				pcat *= np.trapz(step*fcat*nz_biased,z)
+				nz_biased = (1.-step*fcat)*nz_biased + pcat
+
+			# Or scatter it uniformly across the theory redshift range
+			elif cat_mode=='uniform':
+				nz_biased = (1.-step*fcat)*nz_biased + step*fcat/(z[-1]-z[0])
+		
+		#renormalise
+		nz_biased/=np.trapz(nz_biased,z)
+		block[pz, bin_name] = nz_biased	
 
 	return 0
 

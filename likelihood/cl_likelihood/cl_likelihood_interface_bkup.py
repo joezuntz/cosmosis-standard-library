@@ -33,19 +33,19 @@ class ClLikelihood(GaussianLikelihood):
 	#one section name
 	#don't define section name when reading options
 	def __init__(self, options):
-
+		
 		constcov = options.get_bool(option_section, 'fixed_covariance')
 		if constcov:
 			self.constant_covariance=True
 			covmat_file = options.get_string(option_section, 'covariance')
-		data_file = options.get_string(option_section, 'data')
+		self.datafile = options.get_string(option_section, 'data')
 		self.shear_cat = options.get_string(option_section, 'shear_sample')
-		self.pos_cat = options.get_string(option_section, 'LSS_sample')
+		self.pos_cat = options.get_string(option_section, 'clustering_sample')
 		self.shear = options.get_bool(option_section, 'shear')
 		self.pos = options.get_bool(option_section, 'galaxy_clustering')
 		self.ggl = options.get_bool(option_section, 'ggl')
-
-		self.interpolate = options.get_bool(option_section, 'interpolate')
+		auto = options.get_bool(option_section, 'auto_zbins')
+		cross = options.get_bool(option_section, 'cross_zbins')
 
 		# Put the information specifying the datavector where
 		# it can be accessed later
@@ -55,7 +55,7 @@ class ClLikelihood(GaussianLikelihood):
 		if self.pos:	self.spectra_to_use.append('nn')
 
 		self.x_section = [cl_sections[sp] for sp in self.spectra_to_use]
-		self.x_name = 'l_bin_edges'
+		self.x_name    = 'l_bin_edges'
 		self.y_section = [cl_sections[sp] for sp in self.spectra_to_use]
 
 		if len(self.spectra_to_use)==1:
@@ -66,21 +66,33 @@ class ClLikelihood(GaussianLikelihood):
 			self.like_name = 'combined_cl_%s'%string.join(self.spectra_to_use).replace(' ','_')
 
 		# Load the datavector and covariance matrix if fixed from the disc
-		self.data_x, self.data_y = self.build_data(data_file)
+		self.data_x, self.data_y = self.build_data()
 		self.data_y_uncut = np.copy(self.data_y)
 		if self.constant_covariance:
 			self.covmat_file = covmat_file
 			self.extract_covariance()
 
-	def initialise_theory(self, block):
+	def set_covariance_options(self, constant_covariance):
+		self.constant_covariance = constant_covariance
+
+	def initialise_theory(self, block, auto=None, cross=None):
 		"""
 		Sets up the theory datavector and covariance matrix, if not using a
 		fixed one. These are cosmology dependent and so could not be loaded
 		in the setup function at the start of the pipeline.
 		"""
 
+		# Get some parameters for this galaxy catalogue needed for the calculation
+		self.A_shear = block[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		self.A_pos = block[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		self.A = min(self.A_shear, self.A_pos) 
+		self.l_bins_shear = self.l_bins
+		self.l_bins_pos = self.l_bins
+		self.dl = block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][1:] - block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][:-1]
+
 		# Get the reshift binning
-		self.get_zbin_combinations(block)
+		self.get_zbin_combinations(block, auto, cross)
+	
 
 		# Choose which Cls to load
 		self.spectra_theory = []
@@ -104,6 +116,9 @@ class ClLikelihood(GaussianLikelihood):
 
 		# Do a consistency check with the theory vector to ensure the binning is the same
 		self.l_bins = block[cl_sections[self.spectra[0][0]], 'ell']
+		#if len(self.l_bins) != len(self.data_x):
+		#	print 'Error: the angular frequency binning in the theory vector is inconsistent with the data.'
+		#	exit()
 		if len(self.spectra_theory) != len(self.spectra):
 			print 'Error: the selected redshift bin combinations in the theory vector are inconsistent with the data.'
 			exit()
@@ -113,10 +128,13 @@ class ClLikelihood(GaussianLikelihood):
 
 		# Finally evaluate the covariance matrix and invert it
 		if not self.constant_covariance:
-			self.cov = self.build_covariance(block)
-			self.inv_cov = self.build_inverse_covariance(block)
+			self.cov = self.build_covariance()
+			self.inv_cov = self.build_inverse_covariance()
+			# Save to the datablock
+			block['data_vector', self.like_name+'_inverse_covariance']=self.inv_cov
+			
 
-	def build_covariance(self, block):
+	def build_covariance(self):
 		"""
 		Fits a series of sub-matrices together to give the covariance
 		matrix for the full datavector. 
@@ -126,15 +144,7 @@ class ClLikelihood(GaussianLikelihood):
 			cov = self.cov
 		else:	
 			print 'Calculating covariance matrix.'
-			# Get some parameters for this galaxy catalogue needed for the calculation
-			self.A_shear = block[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
-			self.A_pos = block[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
-			self.A = self.A_shear 
-			if (self.A_shear!=self.A_pos):
-				self.A = min(self.A_pos, self.A_shear)
-			self.l_bins_shear = self.l_bins
-			self.l_bins_pos = self.l_bins
-			self.dl = block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][1:] - block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][:-1]
+
 
 		nspec = len(self.spectra)
 		nl = self.nlbin
@@ -157,7 +167,6 @@ class ClLikelihood(GaussianLikelihood):
 
 				# Write to the appropriate block of the matrix
 				Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
-				
 
 				# Update indices
 				j+=m.shape[1]
@@ -180,31 +189,18 @@ class ClLikelihood(GaussianLikelihood):
 		# Read the likelihood, add the normalisation factor and
 		# resave to the datablock
 		like = block["likelihoods", self.like_name+"_LIKE"]
-		like += p
+		like -= p
 		block.replace_double("likelihoods", self.like_name+"_LIKE", like)
-
-	def build_inverse_covariance(self, block):
-		try:
-			cov = self.cov
-		except:
-			self.build_covariance(block)
-
-		self.inv_cov = np.linalg.inv(self.cov)
-		block['data_vector', self.like_name+'_inverse_covariance']=self.inv_cov
-		return self.inv_cov
 
 	def extract_covariance(self):
 		self.cov = np.loadtxt(self.covmat_file)
 		print 'Loading covariance matrix from %s' %self.covmat_file
 
-	def build_data(self, datafile):
+	def build_data(self):
 		print 'Loading datavector.'
-		cl_data_all = pickle.load(open(datafile, 'rb'))
+		cl_data_all = pickle.load(open(self.datafile, 'rb'))
 
-		try:
-			self.data_x = cl_data_all['ell_shear']
-		except:
-			self.data_x = cl_data_all['ell_pos']
+		self.data_x = (cl_data_all['l_bin_edges_shear'][1:] + cl_data_all['l_bin_edges_shear'][:-1])/2.
 
 		self.nlbin = len(self.data_x)
 
@@ -222,8 +218,8 @@ class ClLikelihood(GaussianLikelihood):
 				else:
 					self.spectra.append((spect.split('_')[1], zcomb))
 					self.data_y.append( cl_data_all[spect][bin] )
-		self.data_y = np.array(self.data_y).flatten()
-
+		self.data_y = np.array(self.data_y).flatten() 
+	
 		return self.data_x, self.data_y
 
 	def extract_theory_points(self, block):
@@ -235,23 +231,15 @@ class ClLikelihood(GaussianLikelihood):
 		for spect in self.spectra:
 			section = cl_sections[spect[0]]
 			bin = 'bin_%d_%d' %(spect[1][0]+1, spect[1][1]+1)
-			if self.interpolate:
-				ell = self.data_x
-				theory_vector = np.interp(ell, block[section,'ell'], block[section, bin])
-			else:
-				ell = block[section, 'ell']
-				theory_vector = block[section, bin]
+			ell = block[section, 'ell']
 			if self.cuts:
 				lmin= block[section, 'lmin_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 				lmax= block[section, 'lmax_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 			else:
 				print 'No prescription for scale cuts found. Using full datavector.'
-				lmin = 0. ; lmax = 1e7
-
+				lmin = 0. ; lmax = 1e5
 			scale_cut = (ell>lmin) & (ell<lmax)
-			theory_vector = theory_vector[scale_cut]
-
-			self.theory_vector.append(theory_vector)
+			self.theory_vector.append(block[section, bin][scale_cut])
 
 		block['data_vector', self.like_name+'_theory'] = np.concatenate((np.array(self.theory_vector)))
 		return np.concatenate((np.array(self.theory_vector)))
@@ -274,13 +262,14 @@ class ClLikelihood(GaussianLikelihood):
 				return 1
 			scale_cut = (ell>lmin) & (ell<lmax)
 			
-			cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][scale_cut])
+			try: cut_data.append(self.data_y[i*self.nlbin : (i+1)*self.nlbin][scale_cut])
+			except: pdb.set_trace()
 
 		self.data_y = np.concatenate((np.array(cut_data)))
 
 		self.nlbin = len(self.data_x)
 
-	def get_zbin_combinations(self, block):
+	def get_zbin_combinations(self, block, auto, cross):
 		"""
 		Looks up the number of redshift bins and saves all 
 		possible combinations of pairs as a list of tuples. 
@@ -289,21 +278,21 @@ class ClLikelihood(GaussianLikelihood):
 		self.bins_ne = []
 		self.bins_nn = []
 		if self.shear:
-			self.nzbin_shear = block[self.shear_cat, 'nzbin']
+			self.nzbin_shear = int(block[self.shear_cat, 'nzbin'])
 
 			for i in xrange(self.nzbin_shear):
 				for j in xrange(self.nzbin_shear):
 					self.bins_ee.append((i,j))
 
 		if self.pos:
-			self.nzbin_pos = block[self.pos_cat, 'nzbin']
+			self.nzbin_pos = int(block[self.pos_cat, 'nzbin'])
 			for i in xrange(self.nzbin_pos):
 				for j in xrange(self.nzbin_pos):
 					self.bins_nn.append((i,j))
 
 		if self.ggl:
-			self.nzbin_pos = block[self.pos_cat, 'nzbin']
-			self.nzbin_shear = block[self.shear_cat, 'nzbin']
+			self.nzbin_pos = int(block[self.pos_cat, 'nzbin'])
+			self.nzbin_shear = int(block[self.shear_cat, 'nzbin'])
 			
 			for i in xrange(self.nzbin_pos):
 				for j in xrange(self.nzbin_shear):
@@ -338,12 +327,14 @@ class ClLikelihood(GaussianLikelihood):
 
 		p = 2. * np.pi / ( self.l_bins * self.dl * self.A ) 
 
+		#import pdb ; pdb.set_trace()
+		#n_z_pair = self.nzbin * (self.nzbin+1)/2
 		n_z_pair1 = len([i[1] for i in self.spectra if i[0]==mode[0]])
 		n_z_pair2 = len([i[1] for i in self.spectra if i[0]==mode[1]])
 		cov = np.zeros((n_z_pair1* self.nlbin, n_z_pair2* self.nlbin))
 
 		# Get the l coordinates along each axis of this block, accounting for differences in 
-		# redshift binning, l binning and scale cuts 
+		# redshift binning and scale cuts 
 		ell_0=[] 
 		ell_1=[]
 		ell = block[cl_sections[mode[0]], 'ell']
@@ -352,17 +343,18 @@ class ClLikelihood(GaussianLikelihood):
 				if self.cuts:
 					l = np.argwhere((ell > block[cl_sections[mode[0]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[0]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
 				else:
-					l = np.argwhere((ell > 0) & (ell < 1e7 )).flatten()
+					l = np.argwhere((ell > 0) & (ell < 1e6 )).flatten()
 
 				for m in l: ell_0 += [(m, i[1])]
+		#pdb.set_trace()
 
 		ell = block[cl_sections[mode[1]], 'ell']
 		for i in self.spectra:
 			if i[0]==mode[1]:
 				if self.cuts:
-					l = np.argwhere((ell > block[cl_sections[mode[1]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[1]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
+					l = np.argwhere((ell > block[cl_sections[mode[0]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[0]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
 				else:
-					l = np.argwhere((ell > 0) & (ell < 1e7 )).flatten()
+					l = np.argwhere((ell > 0) & (ell < 1e6 )).flatten()
 				for m in l: ell_1 += [(m, i[1])]
 
 		cov = np.zeros((len(ell_0), len(ell_1)))
@@ -400,42 +392,22 @@ class ClLikelihood(GaussianLikelihood):
 					# There's no need to apply scale cuts here as the structure 
 					# of ell_0 and ell_1 already take them into account
 					exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][%d]" %(sec,sec,1+a,1+b, l0)
-				# Evaluate
+				# Evaluate this point
 				m = p[l0] * (Cl0 * Cl1 + Cl2 * Cl3)
 				if not np.isfinite(m): pdb.set_trace()
 
+				#pdb.set_trace()
+
 				cov[y][x]+=m
 
-				# If possible get the transpose element by symmetry
+				# If possible evaluate the transpose element by symmetry
 				if symmetric:
 					if cov[x][y]==0.0:
 						cov[x][y]+=m
 				spect00 = spect0
 				spect10 = spect1
-
-		## For code comparison 1/16
-		## output data and covariance in a form readable by cl_like
-		#dat=np.array([])
-		#data=np.array([])
-		#for i in range(6):
-		#	sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1)])
-		#	out = self.data_y[i*12:(i+1)*12]
-		#	out = np.concatenate((sp,out))
-		#	if i==0: data = out
-		#	else: data = np.vstack((data,out))
-		#np.savetxt('data.txt', data) 
-			
-#		for i in range(6):
-#			for j in range(6):
-				
-#				sp = np.array([int(self.spectra[i][1][1]+1), int(self.spectra[i][1][0]+1), int(self.spectra[j][1][1]+1), int(self.spectra[j][1][0]+1)])
-	#			mat = np.diag(cov[j*12:(j+1)*12, i*12:(i+1)*12] )
-	#			mat = np.concatenate((sp, mat))
-	#			if i==0 and j==0: 
-	#				dat=mat
-	#			else:
-	#				dat=np.vstack((dat,  mat ))
-		#np.savetxt('covmat.txt', dat)
-
-
+	
 		return cov
+
+
+

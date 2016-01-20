@@ -879,7 +879,7 @@ int execute(c_datablock * block, void * config_in)
 		else { 
 			printf("Insufficient information to attempt rescaling. Calculating galaxy-magnification spectrum.\n");
 			status |= compute_spectra(block, 0, nzbin_lss, matter_magnification,
-				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
+				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_gm, config);
 		}
 		printf("Saved galaxy-magnification spectrum. %d\n", status);
 	}
@@ -902,7 +902,7 @@ int execute(c_datablock * block, void * config_in)
 		}
 		else { 
 			status |= compute_spectra(block, nzbin_shear, nzbin_lss, magnification_intrinsic,
-				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK, config);
+				W_splines_shear, W_splines_lss, Nchi_splines_shear, Nchi_splines_lss, PK_GI, config);
 		}
 		printf("Saved magnification-intrinsic shape spectrum. %d\n", status);
 	}

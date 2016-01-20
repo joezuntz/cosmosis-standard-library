@@ -179,6 +179,11 @@ int execute(c_datablock * block, void * config_in)
 		}
 	}
 
+	//Finally save to the datablock
+	status|=c_datablock_put_double_grid(block, IA_SPECTRUM_II_SECTION, "k_h", nk, k_h, "z", nz, z, "P_II_EEho", P_II);
+	status|=c_datablock_put_double_grid(block, IA_SPECTRUM_II_SECTION, "k_h", nk, k_h, "z", nz, z, "P_II_BB", P_B);
+
+
 	destroy_interp_2d(PK);
 	gsl_spline_free(BG);
 	gsl_spline_free(DZ);

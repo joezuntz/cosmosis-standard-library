@@ -6,7 +6,7 @@ class Cl_class:
 
 		# Spectra to use
 		self.shear = config['shear']
-		self.intrinsic_alignments= config['intrinsic_alignments']
+		self.intrinsic_alignments= (config['intrinsic_alignments'], config['GI'], config['II'])
 		self.clustering = config['clustering']
 		self.magnification = config['magnification']
 
@@ -32,7 +32,7 @@ class Cl_class:
 		self.zbin_edges_shear = [ block[shear_cat, 'edge_%d'%i] for i in xrange(1, self.Nzbin_shear + 1) ]
 		self.zbin_edges_pos = [ block[pos_cat, 'edge_%d'%i] for i in xrange(1, self.Nzbin_pos + 1) ]
 		if self.shear: 
-			if self.intrinsic_alignments:
+			if self.intrinsic_alignments[0]:
 				gg_section = 'shear_cl_gg'
 			else:
 				gg_section = 'shear_cl'
@@ -50,7 +50,7 @@ class Cl_class:
 			else: 
 				self.Nlbin_pos = self.Nl_pos
 		if self.shear and self.clustering: 
-			self.l_pos = block['matter_cl','ell']
+			self.l_ggl = block['matter_cl','ell']
 			self.Nl_pos = len(self.l_pos)
 			if self.dobinning: 
 				self.Nlbin_ggl = int(config['nlbin_ggl']) 
@@ -59,7 +59,6 @@ class Cl_class:
 
 		if self.bias:
 			self.multiplicative_bias = [ block[shear_cat, "m%d"%i] for i in xrange(1, self.Nzbin_shear+1) ] 
-			self.additive_bias = [ block[shear_cat, "c%d"%i] for i in xrange(1, self.Nzbin_shear+1) ]
 
 		# Finally get the desired binning
 		self.get_l_bins(config)
@@ -90,12 +89,13 @@ class Cl_class:
 					
 				if self.shear:
 											# GG
-					if self.intrinsic_alignments:
+					if self.intrinsic_alignments[0]:
 						self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gg, a)
-						self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gi, bin)				# GI
-						self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gi, bin_tr)					# IG
-						try:	self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_ii, a)					# I
-						except: print "WARNING: No II spectrum found."
+						if self.intrinsic_alignments[1]:
+							self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gi, bin)				# GI
+							self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gi, bin_tr)				# IG
+						if self.intrinsic_alignments[2]:
+							self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_ii, a)				# II
 					else:
 						self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl, a)
 
@@ -127,7 +127,7 @@ class Cl_class:
 				if self.shear and self.clustering:
 					try: 
 						self.C_ne[i-1][j-1] += block.get_double_array_1d(names.ggl_cl, bin)							# gG
-						if self.intrinsic_alignments:
+						if self.intrinsic_alignments[0]:
 							self.C_ne[i-1][j-1] += block.get_double_array_1d(names.gal_IA_cross_cl, bin)					# gI
 							if self.magnification:
 								self.C_ne[i-1][j-1] += block.get_double_array_1d(names.magnification_intrinsic_cl, bin)		# mI
@@ -139,10 +139,12 @@ class Cl_class:
 					# Finally resample the spectra in the survey angular frequency bins
 					if self.shear:
 						self.C_ee_binned[i-1][j-1] = get_binned_cl(self.C_ee[i-1][j-1], self.l_shear, self.lbin_edges_shear, self.dobinning, self.window )
+						if self.bias: self.apply_measurement_bias(i, j, 'shear')
 					if self.clustering:
 						self.C_nn_binned[i-1][j-1] = get_binned_cl(self.C_nn[i-1][j-1], self.l_pos, self.lbin_edges_pos, self.dobinning, self.window )
 					if self.shear and self.clustering:
 						self.C_ne_binned[i-1][j-1] = get_binned_cl(self.C_ne[i-1][j-1], self.l_pos, self.lbin_edges_pos, self.dobinning, self.window )
+						if self.bias: self.apply_measurement_bias(i, j, 'ggl')
 
 		if self.noise:
 			# Add shot noise if required	
@@ -194,12 +196,18 @@ class Cl_class:
 
 		N_shot_ee = [] ; N_shot_nn = []
 
-		for i in xrange( len(self.C_ee[0][0]) ):
-			N_shot_ee += [ N_ee_0 ]
-			N_shot_nn += [ N_nn_0 ]
+		if self.shear:
+			for i in xrange( len(self.C_ee[0][0]) ):
+				N_shot_ee += [ N_ee_0 ]
+			N_shot_ee = np.swapaxes(N_shot_ee,0,2) ; 
+			N_shot_ee = np.swapaxes(N_shot_ee,0,1)
+		if self.clustering:
+			for i in xrange( len(self.C_nn[0][0]) ):
+				N_shot_nn += [ N_nn_0 ]
 
-		N_shot_nn = np.swapaxes(N_shot_nn,0,2) ; N_shot_nn = np.swapaxes(N_shot_nn,0,1) 
-		N_shot_ee = np.swapaxes(N_shot_ee,0,2) ; N_shape = np.swapaxes(N_shot_ee,0,1)
+			N_shot_nn = np.swapaxes(N_shot_nn,0,2) ;
+			N_shot_nn = np.swapaxes(N_shot_nn,0,1) 
+		
 
 		# Then add the relevant noise to the Cl matrices
 		if self.shear:	self.C_ee += N_shot_ee
@@ -215,7 +223,10 @@ class Cl_class:
 				self.l_bins_shear = np.zeros_like(self.lbin_edges_shear[:-1])
 				if self.window == 'tophat':
 					self.l_bins_shear = np.exp( (np.log(self.lbin_edges_shear[1:] * self.lbin_edges_shear[:-1]))/2.0 ) 
+				elif self.window == 'tophat-arithmetic':
+					self.l_bins_shear = (self.lbin_edges_shear[1:] + self.lbin_edges_shear[:-1])/2.0
 				elif self.window == 'delta':
+					# Just take the mid point of each bin and sample the Cls there
 					for i in xrange(len(self.lbin_edges_shear)-1):
 						lmin0 = self.lbin_edges_shear[i]
 						lmax0 = self.lbin_edges_shear[i+1]
@@ -229,6 +240,8 @@ class Cl_class:
 				lmin, lmax= config['lmin_pos'], config['lmax_pos']
 				if self.window == 'tophat':
 					self.l_bins_pos = np.exp( (np.log(self.lbin_edges_pos[1:] * self.lbin_edges_pos[:-1]))/2.0 ) 
+				elif self.window == 'tophat-arithmetic':
+					self.l_bins_pos = (self.lbin_edges_pos[1:] + self.lbin_edges_pos[:-1])/2.0
 				elif self.window == 'delta':
 					for i in xrange(len(self.lbin_edges_pos)-1):
 						lmin0 = self.lbin_edges_pos[i]
@@ -243,7 +256,9 @@ class Cl_class:
 				lmin, lmax= config['lmin_ggl'], config['lmax_ggl']
 				self.lbin_edges_ggl = np.logspace(np.log10(lmin), np.log10(lmax), self.Nlbin_ggl+1)
 				if self.window == 'tophat':
-					self.l_bins_ggl = np.exp( (np.log(self.lbin_edges_ggl[1:] * self.lbin_edges_ggl[:-1]))/2.0 ) 
+					self.l_bins_ggl = np.exp( (np.log(self.lbin_edges_ggl[1:] * self.lbin_edges_ggl[:-1]))/2.0 )
+				elif self.window == 'tophat-arithmetic':
+					self.l_bins_ggl = (self.lbin_edges_ggl[1:] + self.lbin_edges_ggl[:-1])/2.0 
 				elif self.window == 'delta':
 					for i in xrange(len(self.lbin_edges_ggl)-1):
 						lmin0 = self.lbin_edges_ggl[i]
@@ -356,6 +371,8 @@ def get_binned_cl(Cl, l, lbin_edges, dobinning, window):
 			lmin = lbin_edges[i] ; lmax = lbin_edges[i+1]
 			sel = (l>lmin) & (l<lmax)
 			if window == 'tophat':
+				Cl_binned[i] = np.prod(Cl[sel])**(1./len(Cl[sel]))
+			elif window == 'tophat-arithmetic':
 				Cl_binned[i] = np.mean(Cl[sel])
 			elif window == 'delta':
 				i0 = len(Cl[sel])/2
