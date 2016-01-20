@@ -168,7 +168,7 @@ int execute(c_datablock * block, void * config_in)
 			}
 			//also check for zeros, and replace with v small number if all other C_ells are all +ve or -ve
 			for (int i=0; i<n_ell; i++){
-				if (abs(C_ell[i])<=1.e-30) {
+				if (fabs(C_ell[i])<=1.e-30) {
 					if (neg_vals==n_ell){
 						C_ell[i]=-1.e-30;
 					}
