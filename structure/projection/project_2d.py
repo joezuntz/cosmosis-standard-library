@@ -9,6 +9,19 @@ from enum34 import Enum
 import re
 
 
+
+
+class PowerType(Enum):
+    matter = "matter_power"
+    galaxy = "galaxy_power"
+    intrinsic = "intrinsic_power"
+    matter_galaxy = "matter_galaxy_power"
+    matter_intrinsic = "matter_intrinsic_power"
+    galaxy_intrinsic = "galaxy_intrinsic_power"
+
+
+
+
 class Spectrum(object):
     power_spectrum = "?"
     kernels = "??"
@@ -82,70 +95,70 @@ class Spectrum(object):
 class SpectrumType(Enum):
 
     class ShearShear(Spectrum):
-        power_spectrum = "p_mm"
+        power_spectrum = PowerType.matter
         kernels = "W W"
         autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
-        power_spectrum = "p_mi"
+        power_spectrum = PowerType.matter_intrinsic
         kernels = "W N"
         autocorrelation = False
         name = names.shear_cl_gi
         prefactor_power = 1
 
     class IntrinsicIntrinsic(Spectrum):
-        power_spectrum = "p_ii"
+        power_spectrum = PowerType.intrinsic
         kernels = "N N"
         autocorrelation = True
         name = names.shear_cl_ii
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
-        power_spectrum = "p_gg"
+        power_spectrum = PowerType.galaxy
         kernels = "N N"
         autocorrelation = True
         name = "galaxy_cl"
         prefactor_power = 0
 
-    class PositionMagnification(Spectrum):
-        power_spectrum = "p_gm"
-        kernels = "N W"
+    class MagnificationPosition(Spectrum):
+        power_spectrum = PowerType.matter_galaxy
+        kernels = "W N"
         autocorrelation = False
-        name = "galaxy_magnification_cl"
+        name = "magnification_galaxy_cl"
         prefactor_power = 1    
 
     class MagnificationMagnification(Spectrum):
-        power_spectrum = "p_mm"
+        power_spectrum = PowerType.matter
         kernels = "W W"
         autocorrelation = True
         name = "magnification_cl"
         prefactor_power = 2
 
-    class PositionShear(Spectrum):
-        power_spectrum = "p_gm"
-        kernels = "N W"
+    class ShearPosition(Spectrum):
+        power_spectrum = PowerType.matter_galaxy
+        kernels = "W N"
         autocorrelation = False
-        name = "galaxy_shear_cl"
+        name = "shear_galaxy_cl"
         prefactor_power = 1
 
     class PositionIntrinsic(Spectrum):
-        power_spectrum = "p_gi"
+        power_spectrum = PowerType.galaxy_intrinsic
         kernels = "N N"
         autocorrelation = False
         name = "galaxy_intrinsic_cl"
         prefactor_power = 0
 
     class MagnificationIntrinsic(Spectrum):
-        power_spectrum = "p_mi"
+        power_spectrum = PowerType.matter_intrinsic
         kernels = "W N"
         autocorrelation = False
         name = "magnification_intrinsic_cl"
         prefactor_power = 1
        
     class MagnificationShear(Spectrum):
-        power_spectrum = "p_mm"
+        power_spectrum = PowerType.matter
         kernels = "W W"
         autocorrelation = False
         name = "magnification_shear_cl"
@@ -307,85 +320,9 @@ class SpectrumCalulcator(object):
 
 
     def load_power(self, block):
-        if 'p_mm' in self.req_power:
-            self.power['p_mm'] = self.load_matter_power(block)
-
-        if 'p_gg' in self.req_power:
-            self.load_galaxy_power(block)
-
-        if 'p_gm' in self.req_power:
-            self.load_galaxy_matter_power(block)
-
-        if 'p_mi' in self.req_power:
-            self.power['p_mi'] = limber.load_power_chi(block, self.chi_of_z,
-                                    names.intrinsic_alignment_parameters, "k_h", "z", "p_gi")
-        if 'p_ii' in self.req_power:
-            self.power['p_ii'] = limber.load_power_chi(block, self.chi_of_z,
-                                    names.intrinsic_alignment_parameters, "k_h", "z", "p_ii")
-        if 'p_gi' in self.req_power:
-            self.load_galaxy_intrinsic_power(block)
-
-
-
-    def load_matter_power(self, block):
-        #If we have already loaded matter power just use that.
-        #This one is a special case as we may use it elsewhere
-        if 'p_mm' in self.power:
-            p_mm = self.power['p_mm']
-        #Otherwise load it.
-        else:
-            p_mm = limber.load_power_chi(block, self.chi_of_z,
-                        names.matter_power_nl, "k_h", "z", "p_k")
-        return p_mm
-
-
-    def load_galaxy_power(self, block):
-        #galaxy power. If we have been asked for unbiased galaxies we will
-        #just use the matter power, either the one we have loaded
-        if self.unbiased_galaxies:
-            p_gg = self.load_matter_power(block)
-        #we want the galaxy power directly
-        else:
-            #special case here for ease of use - give a more useful message
-            #if galaxy power is not found
-            if not block.has_section("galaxy_power"):
-                raise RuntimeError("No galaxy_power section available. If you just want to use matter_power_nl then set unbiased_galaxies=T")
-            #load the galaxy power spectrum
-            p_gg = limber.load_power_chi(block, self.chi_of_z,
-                'galaxy_power', "k_h", "z", "p_k")
-        self.power['p_gg'] = p_gg
-
-    def load_galaxy_matter_power(self, block):
-
-        #galaxy power. If we have been asked for unbiased galaxies we will
-        #just use the matter power, either the one we have loaded
-        if self.unbiased_galaxies:
-            p_gm = self.load_matter_power(block)
-        else:
-            #we want the galaxy power directly
-            #special case here for ease of use - give a more useful message
-            #if galaxy power is not found
-            if not block.has_section("galaxy_matter_power"):
-                raise RuntimeError("No galaxy_power section available. If you just want to use matter_power_nl then set unbiased_galaxies=T")
-            #load the galaxy power spectrum
-            p_gm = limber.load_power_chi(block, self.chi_of_z,
-                'galaxy_matter_power', "k_h", "z", "p_k")
-        self.power['p_gm'] = p_gm
-
-    def load_galaxy_intrinsic_power(self, block):
-        #galaxy power. If we have been asked for unbiased galaxies we will
-        #just use the matter power, either the one we have loaded
-        if self.unbiased_galaxies:
-            if 'p_mi' in self.power:
-                p_gi = self.power['p_mi']
-            else:
-                p_gi = limber.load_power_chi(block, self.chi_of_z,
-                    names.intrinsic_alignment_parameters, "k_h", "z", "p_mi")
-        else:
-            #load the galaxy power spectrum
-            p_gi = limber.load_power_chi(block, self.chi_of_z,
-                'names.intrinsic_alignment_parameters', "k_h", "z", "p_pos_i")
-        self.power['p_gi'] = p_gi
+        for powerType in self.req_power:
+            self.power[powerType] = limber.load_power_chi(
+                block, self.chi_of_z, powerType, "k_h", "z", "p_k")
 
 
     def compute_spectra(self, block, spectrum):
