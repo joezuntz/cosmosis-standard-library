@@ -41,7 +41,10 @@ def get_named_w_spline(block, section, bin, z, chi_max, a_of_chi):
 
 def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
     "Load P(k,z) and convert z -> chi"
-    return lib.load_interpolator_chi(block._ptr, chi_of_z, section, k_name, z_name, p_name)
+    r = lib.load_interpolator_chi(block._ptr, chi_of_z, section, k_name, z_name, p_name)
+    if not r:
+        raise ValueError("Could not load power spectrum from section {0} (k:{1} z:{2} p:{3})".format(section, k_name, z_name, p_name))
+    return r
 
 
 def limber(WX, WY, P, xlog, ylog, ell, prefactor):

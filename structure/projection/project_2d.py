@@ -12,7 +12,7 @@ import re
 
 
 class PowerType(Enum):
-    matter = "matter_power"
+    matter = "matter_power_nl" #special case
     galaxy = "galaxy_power"
     intrinsic = "intrinsic_power"
     matter_galaxy = "matter_galaxy_power"
@@ -212,10 +212,6 @@ class SpectrumCalulcator(object):
         for spectrum in self.req_spectra:
             print "    - ", spectrum.name
 
-        self.unbiased_galaxies = options.get_bool(option_section, 'unbiased_galaxies', default=False)
-
-        if self.unbiased_galaxies:
-            print "You have asked for 'unbiased_galaxies=T', so I will use the 3D matter power spectrum as the 3D galaxy power spectrum."
 
         #Decide which kernels we will need to save.
         #The overall split is into A and B, the two samples we are correlating into.
@@ -322,7 +318,7 @@ class SpectrumCalulcator(object):
     def load_power(self, block):
         for powerType in self.req_power:
             self.power[powerType] = limber.load_power_chi(
-                block, self.chi_of_z, powerType, "k_h", "z", "p_k")
+                block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
 
 
     def compute_spectra(self, block, spectrum):

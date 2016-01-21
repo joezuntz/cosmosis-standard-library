@@ -1,9 +1,11 @@
 import numpy as np
 from scipy import interpolate
 
-def jb_calculate_alpha(a, z):
+def jb_calculate_alpha(a, zmax, Nz):
+	# First set up a redshift array for the given survey parameters
+	z = np.linspace(0, zmax, Nz)
 	
-	# Just apply the coefficients
+	# Then just apply the coefficients
 	alpha = np.zeros_like(z)
 	alpha += a[0]
 	alpha += a[1]*z
@@ -23,25 +25,27 @@ def initialise_jb_coefficients(mag_lim):
 
 	return a
 
-def get_binned_alpha(block, survey, alpha, z):
-	n_z, z = load_n_z(block, survey)
+def get_binned_alpha(block, alpha, z):
+	n_z, z1 = load_n_z(block)
 		
-	z_med = evaluate_median_z(n_z, z)
+	z_med = evaluate_median_z(n_z, z1)
+
 	interpolator = interpolate.interp1d(z,alpha)
 	alpha_binned = interpolator(z_med)	
 
 	return alpha_binned, z_med
 	
-def load_n_z(block, survey):
+def load_n_z(block):
 	""" Load the n(z) profile in each bin as a 2d array """
+	num_den = 'wl_number_density'
 
 	n_z = []
-	N_zbins = int(block[ survey, 'nzbin'])
+	N_zbins = block[ num_den, 'nbin']
 	for i in range(1,N_zbins+1):
-		n_z += [ block.get_double_array_1d( survey, 'bin_%d'%i) ] 
+		n_z += [ block.get_double_array_1d( num_den, 'bin_%d'%i) ] 
 	n_z = np.array(n_z)
 
-	z= block.get_double_array_1d(survey, 'z')
+	z= block.get_double_array_1d(num_den, 'z')
 
 	return n_z , z
 

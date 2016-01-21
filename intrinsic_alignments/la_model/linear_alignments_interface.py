@@ -33,7 +33,7 @@ def execute(block, config):
 	ia_ii = names.intrinsic_power + suffix
 	ia_gi = names.galaxy_intrinsic_power + suffix
 	ia_mi = names.matter_intrinsic_power + suffix
-	gm = "galaxy_matter_power" + suffix
+	gm = "matter_galaxy_power" + suffix
 	cosmo = names.cosmological_parameters
 
 
@@ -48,9 +48,9 @@ def execute(block, config):
 	if method=='krhb':
 		P_II, P_GI, b_I, r_I, k_I = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
 	elif method=='bk':
-		P_II, P_GI, b_I, r_I = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
+		P_II, P_GI, b_I, r_I, k_I = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
 	elif method=='bk_corrected':
-		P_II, P_GI, b_I, r_I = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
+		P_II, P_GI, b_I, r_I, k_I = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
 
 	if grid_mode:
 		block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "b_I"+suffix, b_I)
@@ -65,7 +65,7 @@ def execute(block, config):
 	if gal_intrinsic_power:
 		z,k,p_gm=block.get_grid(gm, "z", "k_h", "p_k")
 		P_gI = P_GI * p_gm/p_nl
-		block.put_grid(ia_gi, "z", z, "k_h", k, "pk", P_gI)
+		block.put_grid(ia_gi, "z", z, "k_h", k, "p_k", P_gI)
 	return 0
 
 def cleanup(config):

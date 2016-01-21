@@ -25,6 +25,13 @@ def compute_c1_baseline():
 	f = C1_SI * rho_crit_0
 	return f
 
+def resample_power(P1, P2, k1, k2):
+	"Linearly resample P2 into the k values from P1. z values assumed equal"
+	P_resampled = np.zeros_like(P1)
+	nz = P1.shape[1]
+	for i in xrange(nz):
+		p_i = np.interp(np.log(k1), np.log(k2), np.log(abs(P2[i])))
+		P_resampled[i] = np.exp(p_i) * np.sign(P2[i])
 
 
 #in units of rho_crit0
@@ -53,12 +60,15 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 		growth = (P_nl[i,ksmall] / P_nl[z0,ksmall])**0.5
 		P_GI[i] = f * P_nl[i] / growth
 
+	P_II_resample = resample_power(P_nl, P_II, k_nl, k_lin)
+	P_GI_resample = resample_power(P_nl, P_GI, k_nl, k_lin)
+
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
 	R1 = P_II_resample/P_nl
 	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
 	r_I = P_GI_resample/P_II_resample *b_I
 
-	return P_II, P_GI, b_I, r_I
+	return P_II, P_GI, b_I, r_I, k_nl
 
 def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	# What was used in CFHTLens and Maccrann et al.
@@ -82,12 +92,13 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	for i in xrange(nz):
 		P_GI[i] = F[i] * P_nl[i]
 
-	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
-	R1 = P_II_resample/P_nl
-	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
-	r_I = P_GI_resample/P_II_resample *b_I
 
-	return P_II, P_GI, b_I, r_I
+	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
+	R1 = P_II/P_nl
+	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+	r_I = P_GI/P_II *b_I
+
+	return P_II, P_GI, b_I, r_I, k_nl
 
 
 def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omega_m):
@@ -122,12 +133,8 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	P_lin = P_lin[:, ikstart:ikend] 			 
 	k_lin = k_lin[ikstart:ikend]
 
-	#import pdb ; pdb.set_trace()
-	#Get nonlinear P(k) at the same sampling as linear
-	P_nl_resample = np.zeros_like(P_lin)
-	for i in xrange(nz):
-		log_P_resample = np.interp(np.log(k_lin), np.log(k_nl), np.log(P_nl[i]))
-		P_nl_resample[i] = np.exp(log_P_resample)
+	P_nl_resample = resample_power(P_nl, P, k_nl, k_lin)
+
 
 	growth = np.zeros_like(P_lin)
 	ksmall = np.argmin(k_lin)
@@ -137,14 +144,10 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 
 	# Finally calculate the IA and stochastic bias terms from the power spectra
-	P_II_resample = np.zeros_like(P_nl)
-	P_GI_resample = np.zeros_like(P_nl)
-	for i in xrange(nz):
-		log_P_resample = np.interp(np.log(k_nl), np.log(k_lin), np.log(P_II[i]))
-		P_II_resample[i] = np.exp(log_P_resample)
-		log_P_resample = np.interp(np.log(k_nl), np.log(k_lin), np.log(abs(P_GI[i])))
-		# preserve the sign of the resampled GI spectrum
-		P_GI_resample[i] = -1.*A/abs(A) * np.exp(log_P_resample)
+
+
+	P_II_resample = resample_power(P_nl, P_II, k_nl, k_lin)
+	P_GI_resample = resample_power(P_nl, P_GI, k_nl, k_lin)
 
 	R1 = P_II_resample/P_nl
 	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
