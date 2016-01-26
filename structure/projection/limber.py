@@ -25,6 +25,10 @@ lib.get_named_w_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_arr
 lib.get_named_nchi_spline.restype = c_gsl_spline
 lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_void_p, ct.c_void_p]
 
+lib.cmb_wl_kappa_kernel.restype = c_gsl_spline
+lib.cmb_wl_kappa_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline]
+
+
 lib.limber_integral.restype = c_gsl_spline
 lib.limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p]
 
@@ -38,6 +42,11 @@ def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
 def get_named_w_spline(block, section, bin, z, chi_max, a_of_chi):
     "Compute a shear kernel W(chi) spline"
     return GSLSpline(lib.get_named_w_spline(block._ptr, section, bin, z, chi_max, a_of_chi))
+
+def get_cmb_kappa_spline(chi_max, chi_star, a_of_chi):
+    "Compute the CMB WL kernel W_cmb(chi) spline"
+    return GSLSpline(lib.cmb_wl_kappa_kernel(chi_max, chi_star, a_of_chi))
+
 
 def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
     "Load P(k,z) and convert z -> chi"

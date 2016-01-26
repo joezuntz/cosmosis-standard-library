@@ -556,7 +556,7 @@ module camb_interface_tools
 
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
-			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Myr")
+			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Mpc")
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))

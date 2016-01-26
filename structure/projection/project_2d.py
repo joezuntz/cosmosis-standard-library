@@ -164,6 +164,35 @@ class SpectrumType(Enum):
         name = "magnification_shear_cl"
         prefactor_power = 1
 
+    class ShearCmbkappa(Spectrum):
+        power_spectrum = PowerType.matter
+        kernels = "W K"
+        autocorrelation = False
+        name = "shear_cmbkappa_cl"
+        prefactor_power = 2
+
+    class CmbkappaCmbkappa(Spectrum):
+        power_spectrum = PowerType.matter
+        kernels = "K K"
+        autocorrelation = True
+        name = "cmbkappa_cl"
+        prefactor_power = 2
+
+    class IntrinsicCmbkappa(Spectrum):
+        power_spectrum = PowerType.matter_intrinsic
+        kernels = "N K"
+        autocorrelation = False
+        name = "intrinsic_cmbkappa_cl"
+        prefactor_power = 1
+
+    class PositionCmbkappa(Spectrum):
+        power_spectrum = PowerType.matter_galaxy
+        kernels = "N K"
+        autocorrelation = False
+        name = "galaxy_cmbkappa_cl"
+        prefactor_power = 1
+
+
 
 
 
@@ -180,6 +209,7 @@ class SpectrumCalulcator(object):
             #everything else is not done by default
             default = (spectrum==SpectrumType.ShearShear)
             name = spectrum.value.option_name()
+            print "Looking for", name
             try:
                 #first look for a string, e.g. redmagic-redmagic or similar (name of samples)
                 value = options.get_string(option_section, name)
@@ -257,6 +287,7 @@ class SpectrumCalulcator(object):
         #convert Mpc to Mpc/h
         chi_distance *= h0
         
+        self.chi_star = block[names.distances, 'CHISTAR'] * h0
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
@@ -296,14 +327,17 @@ class SpectrumCalulcator(object):
 
 
     def load_kernel(self, block, kernel_name, kernel_dict):
-        #the name is of the form N_SAMPLENAME or W_SAMPLENAME
+        #the name is of the form N_SAMPLENAME or W_SAMPLENAME, or K_SAMPLENAME
         kernel_type = kernel_name[0]
         sample_name = "nz_" + kernel_name[2:]
         if kernel_name[2:] == names.wl_number_density:
             sample_name = names.wl_number_density
 
-        z = block[sample_name, 'z']
-        nbin = block[sample_name, 'nbin']
+        if kernel_type == "K":
+            nbin = 1
+        else:
+            z = block[sample_name, 'z']
+            nbin = block[sample_name, 'nbin']
 
         #Now load n(z) or W(z) for each bin in the range
         for i in xrange(nbin):
@@ -311,6 +345,8 @@ class SpectrumCalulcator(object):
                 kernel_dict[i] = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
             elif kernel_type=="W":
                 kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
+            elif kernel_type=="K":
+                kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
 
@@ -336,7 +372,8 @@ class SpectrumCalulcator(object):
 
     def clean(self):
         self.power.clear()
-        for kernels in self.kernels_A.values():
+        print "MEMORY LEAK" * 10
+        for name,kernels in self.kernels_A.items():
             kernels.clear()
         for kernels in self.kernels_B.values():
             kernels.clear()
