@@ -74,8 +74,8 @@ def apply_angular_frequency_cuts(block, samples, corr, lmin_ee, lmax_ee, lmin_nn
 			for i in xrange(maxbin1):	
 				for j in xrange(maxbin2):
 					
-					upper =  min(lmax[i],lmax[j])
-					lower =  max(lmin[i],lmin[j])
+					upper =  lmax[j]
+					lower =  lmin[j]
 					print 'Applying scale cuts %e > ell > %e on bin %d %d'%(lower,upper,i+1,j+1)
 					block[sp[2], 'lmin_%d_%d'%(i+1,j+1)]= lower
 					block[sp[2], 'lmax_%d_%d'%(i+1,j+1)]= upper
@@ -92,11 +92,12 @@ def choose_l_limits(block, cuts_file, bin, sample, method, chi_of_z):
 	if method=='fixed':
 		return block[sample, 'lmin_%d'%bin], block[sample, 'lmax_%d'%bin]
 	elif method=='rassat08':
+		h = block['cosmological_parameters', 'h0']
 		z_med = get_median_redshift(block, bin, sample)
 		x = chi_of_z(z_med)
 
-		kmax = 0.132 * z_med
+		kmax = 0.132 * z_med * h
 		lmax = kmax * x
-		return 0, lmax
+		return 10., lmax
 	elif method=='file':
 		return cuts_file[0][bin-1], cuts_file[1][bin-1]

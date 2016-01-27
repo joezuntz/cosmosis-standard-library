@@ -1,4 +1,5 @@
 import scipy.interpolate
+import scipy.stats.mstats as mstats
 import numpy as np
 
 class Cl_class:
@@ -22,9 +23,8 @@ class Cl_class:
 
 		# Relevant parameters for the noise
 		if self.noise: 
-			self.sigma_gamma = block.get_double(shear_cat, 'shape_dispersion')
-			self.ngal_shear = block.get_double(shear_cat, 'ngal')
-			self.ngal_pos = block.get_double(pos_cat, 'ngal')
+			self.sigma_gamma = config['shape_dispersion']
+			self.ngal_shear, self.ngal_pos = config['ngal']
 
 		# And the configuration of the theory spectra
 		self.Nzbin_shear= int(block[shear_cat,'nzbin'])
@@ -90,14 +90,14 @@ class Cl_class:
 				if self.shear:
 											# GG
 					if self.intrinsic_alignments[0]:
-						self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gg, a)
+						self.C_ee[i-1][j-1] += block.get_double_array_1d("shear_cl_gg", a)
 						if self.intrinsic_alignments[1]:
-							self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gi, bin)				# GI
-							self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_gi, bin_tr)				# IG
+							self.C_ee[i-1][j-1] += block.get_double_array_1d("shear_cl_gi", bin)				# GI
+							self.C_ee[i-1][j-1] += block.get_double_array_1d("shear_cl_gi", bin_tr)				# IG
 						if self.intrinsic_alignments[2]:
-							self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl_ii, a)				# II
+							self.C_ee[i-1][j-1] += block.get_double_array_1d("shear_cl_ii", a)				# II
 					else:
-						self.C_ee[i-1][j-1] += block.get_double_array_1d(names.shear_cl, a)
+						self.C_ee[i-1][j-1] += block.get_double_array_1d("shear_cl", a)
 
 		for i in xrange(1, self.Nzbin_pos+1):
 			for j in xrange(1, self.Nzbin_pos+1):
@@ -112,9 +112,9 @@ class Cl_class:
 				if self.clustering:			
 					self.C_nn[i-1][j-1] += block.get_double_array_1d('matter_cl', a)							# gg
 					if self.magnification:
-						self.C_nn[i-1][j-1] += block.get_double_array_1d(names.galaxy_magnification_cl, bin)				# mg
-						self.C_nn[i-1][j-1] += block.get_double_array_1d(names.galaxy_magnification_cl, bin_tr)			# gm
-						self.C_nn[i-1][j-1] += block.get_double_array_1d(names.magnification_magnification_cl, a)			# mm
+						self.C_nn[i-1][j-1] += block.get_double_array_1d("galaxy_magnification_cl", bin)				# mg
+						self.C_nn[i-1][j-1] += block.get_double_array_1d("galaxy_magnification_cl", bin_tr)			# gm
+						self.C_nn[i-1][j-1] += block.get_double_array_1d("magnification_magnification_cl", a)			# mm
 		for i in xrange(1, self.Nzbin_pos+1):
 			for j in xrange(1, self.Nzbin_shear+1):
 				bin = "bin_%d_%d" %(i,j)
@@ -126,13 +126,13 @@ class Cl_class:
 				else:		a = bin_tr
 				if self.shear and self.clustering:
 					try: 
-						self.C_ne[i-1][j-1] += block.get_double_array_1d(names.ggl_cl, bin)							# gG
+						self.C_ne[i-1][j-1] += block.get_double_array_1d("ggl_cl", bin)							# gG
 						if self.intrinsic_alignments[0]:
-							self.C_ne[i-1][j-1] += block.get_double_array_1d(names.gal_IA_cross_cl, bin)					# gI
+							self.C_ne[i-1][j-1] += block.get_double_array_1d("gal_IA_cross_cl", bin)					# gI
 							if self.magnification:
-								self.C_ne[i-1][j-1] += block.get_double_array_1d(names.magnification_intrinsic_cl, bin)		# mI
+								self.C_ne[i-1][j-1] += block.get_double_array_1d("magnification_intrinsic_cl", bin)		# mI
 						if self.magnification:
-							self.C_ne[i-1][j-1] += block.get_double_array_1d(names.magnification_shear_cl, bin)				# mG
+							self.C_ne[i-1][j-1] += block.get_double_array_1d("magnification_shear_cl", bin)				# mG
 					except:  print "WARNING: One of the components of the GGL spectrum is missing."
 	
 				if not self.noise:
@@ -331,7 +331,7 @@ class Cl_class:
 		except:
 			omega_k = block['cosmological_parameters', 'omega_k']
 			omega_de = 1.0 - block['cosmological_parameters', 'omega_m'] - omega_k
-		if out_path is not None:
+		if out_path is not "":
 			cospar={'omega_m': block['cosmological_parameters', 'omega_m'],
 				'omega_de': omega_de,
 				'omega_b': block['cosmological_parameters', 'omega_b'],
@@ -371,7 +371,9 @@ def get_binned_cl(Cl, l, lbin_edges, dobinning, window):
 			lmin = lbin_edges[i] ; lmax = lbin_edges[i+1]
 			sel = (l>lmin) & (l<lmax)
 			if window == 'tophat':
-				Cl_binned[i] = np.prod(Cl[sel])**(1./len(Cl[sel]))
+				Cl_binned[i] = mstats.gmean(Cl[sel])
+				if Cl_binned[i] == 0.0:
+					print "WARNING: Binned power spectrum is exactly 0.0."
 			elif window == 'tophat-arithmetic':
 				Cl_binned[i] = np.mean(Cl[sel])
 			elif window == 'delta':

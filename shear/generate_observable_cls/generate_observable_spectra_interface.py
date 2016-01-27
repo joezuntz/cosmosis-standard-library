@@ -8,8 +8,8 @@ def setup(options):
 	shear= options[option_section, "shear"]
 	intrinsic_alignments= options[option_section, "intrinsic_alignments"]
 	if intrinsic_alignments:
-		GI = options[option_section, "GI"]
-		II = options[option_section, "II"]
+		GI = options.get_bool(option_section, "GI", default=True)
+		II = options.get_bool(option_section, "II", default=True)
 	else:
 		GI=False
 		II=False
@@ -40,13 +40,15 @@ def setup(options):
 	if bins:
 		print 'Using window function: %s'%window
 
-	shear_survey = options[option_section, "shear_sample"]
-	pos_survey = options[option_section, "clustering_sample"]
+	shear_survey = options.get_string(option_section, "shear_sample", default="")
+	pos_survey = options.get_string(option_section, "clustering_sample", default="")
+	ngal_shear = options.get_double(shear_survey, "ngal", default=0.)
+	ngal_pos = options.get_double(pos_survey, "ngal", default=0.)
+	sigma_gamma = options.get_double(shear_survey, "shape_dispersion", default=0.25)
 
-	try: output_datavector = options[option_section, "output"]
-	except: output_datavector = None
+	output_datavector = options.get_string(option_section, "output", default="")
 
-	opt= {'shear': shear, 'nlbin_shear': nlbin_shear, 'nlbin_ggl': nlbin_ggl, 'nlbin_pos': nlbin_pos, 'lmax_shear':lmax_sh, 'lmin_shear':lmin_sh, 'lmax_pos': lmax_pos, 'lmin_pos': lmin_pos, 'lmax_ggl': lmax_ggl, 'lmin_ggl': lmin_ggl, 'intrinsic_alignments': intrinsic_alignments, 'GI': GI, 'II': II, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins, "window":window,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector}
+	opt= {'shear': shear, 'nlbin_shear': nlbin_shear, 'nlbin_ggl': nlbin_ggl, 'nlbin_pos': nlbin_pos, 'lmax_shear':lmax_sh, 'lmin_shear':lmin_sh, 'lmax_pos': lmax_pos, 'lmin_pos': lmin_pos, 'lmax_ggl': lmax_ggl, 'lmin_ggl': lmin_ggl, 'intrinsic_alignments': intrinsic_alignments, 'GI': GI, 'II': II, 'clustering': clustering, 'magnification': magnification, 'noise': noise, 'bias': bias, 'binning': bins, "window":window,'shear_cat': shear_survey, 'pos_cat': pos_survey, 'output_datavector': output_datavector, 'ngal':(ngal_shear, ngal_pos), 'shape_dispersion':sigma_gamma}
 	return opt
 
 def execute(block, config):

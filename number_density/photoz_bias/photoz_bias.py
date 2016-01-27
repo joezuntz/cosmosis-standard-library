@@ -1,8 +1,6 @@
 from cosmosis.datablock import option_section, names
 from scipy.interpolate import interp1d
 import numpy as np
-import pylab as plt
-import pdb
 
 MODES = ["skew", "mean", "width"]
 
@@ -11,7 +9,7 @@ def setup(options):
 	broadening = options[option_section, "width"]
 	skew  = options[option_section, "tail"]
 	per_bin = options[option_section, "bias_per_bin"]
-	survey = options[option_section, "survey"]
+	sample = options.get_string(option_section, "sample", default=None)
 	if (not additive_bias) and (not broadening) and (not skew):
 		raise ValueError("please set one or more of: %r to T"%MODES)
 
@@ -19,17 +17,27 @@ def setup(options):
 		cat_opt = options.get_string(option_section, "catastrophic_outliers")
 	except: cat_opt = None
 	
-	return {"additive":additive_bias, "broadening":broadening, "skew": skew, "survey":survey, "per_bin":per_bin, "catastrophic_outliers":cat_opt}
+	return {"additive":additive_bias, "broadening":broadening, "skew": skew, "sample":sample, "per_bin":per_bin, "catastrophic_outliers":cat_opt}
 
 def execute(block, config):
 	additive, broadening, skew = config['additive'], config['broadening'], config['skew']
-	pz = config['survey']
+	pz = config['sample']
 	biases = pz
 	nbin = block[pz, "nzbin"]
 	z = block[pz, "z"]
+
+	# Pad the nz with zeros to prevent an unphysical cutoff
+	# if the distribution is shifted upwards in redshift
+	z_med = z[int(len(z)/2.)]
+	d = z[1]-z[0]
+	add_pts = int((z[-1] - z_med) / d)
+	pad = np.zeros(add_pts)
+	padz = np.arange(z.max()+d, z.max()+ (add_pts+1)*d, d )
+	z = np.append(z, padz)
 	for i in xrange(1,nbin+1):
 		bin_name = "bin_%d" % i
 		nz = block[pz, bin_name]
+		nz = np.append(nz,pad)
 		if config['per_bin']:
 			if additive: bias = block[biases, "bias_%d"%i]
 			if broadening: S = block[biases, "S_z_%d"%i]
@@ -91,7 +99,9 @@ def execute(block, config):
 		
 		#renormalise
 		nz_biased/=np.trapz(nz_biased,z)
-		block[pz, bin_name] = nz_biased	
+		block[pz, bin_name] = nz_biased
+
+	block[pz, 'z'] = z
 
 	return 0
 

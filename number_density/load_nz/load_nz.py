@@ -6,6 +6,8 @@ def setup(options):
 	filename = options[option_section, "filepath"]
 	des_fmt = options.get_bool(option_section,"des_fmt",default=False)
 	histogram = options.get_bool(option_section,"histogram",default=False)
+	sample = options.get_string(option_section,"sample", default=None)
+
 	data_full = np.loadtxt(filename).T
 	if des_fmt:
 		z=0.5*(data_full[0]+data_full[1])
@@ -40,14 +42,14 @@ def setup(options):
 		col/=norm
 
 	print "Found %d samples and %d bins in redshift in file %s" % (nbin, nz, filename)
-	return (nz, nbin, z, n_of_z)
+	return (nz, nbin, z, n_of_z), sample
 
 def execute(block, config):
-	(nz, nbin, z, n_of_z) = config
+	(nz, nbin, z, n_of_z), sample = config
 
-	section = section_names.wl_number_density
+	section = sample
 	block[section, 'nz'] = nz
-	block[section, 'nbin'] = nbin
+	block[section, 'nzbin'] = nbin
 	block[section, 'z'] = z
 	for (bin, bin_n_of_z) in enumerate(n_of_z):
 		name = "bin_%d"%(bin+1)

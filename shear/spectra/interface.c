@@ -83,8 +83,8 @@ void * setup(c_datablock * options){
 			&(config->magnification_intrinsic));
 	status|=c_datablock_get_bool_default(options, OPTION_SECTION, "mag_shear", false,
 			&(config->magnification_shear));
-	status_shear |= c_datablock_get_string_default(options, OPTION_SECTION, "LSS_survey", "None", &(config->LSS_survey));
-	status_LSS |= c_datablock_get_string_default(options, OPTION_SECTION, "shear_survey", "None", &(config->shear_survey));
+	status_shear |= c_datablock_get_string_default(options, OPTION_SECTION, "LSS_sample", "None", &(config->LSS_survey));
+	status_LSS |= c_datablock_get_string_default(options, OPTION_SECTION, "shear_sample", "None", &(config->shear_survey));
 
 	config->use_shear = !status_shear;
 	config->use_LSS = !status_LSS;
@@ -207,13 +207,13 @@ const char * choose_output_section(spectrum_type_t spectrum_type,
 			return "matter_cl";
 			break;
 		case shear_intrinsic: // config->intrinsic_alignments
-			return 	SHEAR_CL_GI_SECTION;
+			return 	"SHEAR_CL_GI";
 			break;
 		case intrinsic_intrinsic: // config->intrinsic_alignments
-			return SHEAR_CL_II_SECTION;
+			return "SHEAR_CL_II";
 			break;
 		case shear_shear: // config->shear_shear
-			return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
+			return (config->intrinsic_alignments ? "SHEAR_CL_GG" : "SHEAR_CL");
 			break;
 		case matter_shear: // config->ggl_spectra
 			return "ggl_cl";
@@ -788,9 +788,9 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_GI = NULL;
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
-		PK_II = load_interpolator_chi(block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
+		PK_II = load_interpolator_chi(block, chi_of_z_spline, "IA_SPECTRUM_II", "k_h", "z", "P_II");
 
-		PK_GI = load_interpolator_chi(block, chi_of_z_spline, IA_SPECTRUM_GI_SECTION, "k_h", "z", "P_GI");
+		PK_GI = load_interpolator_chi(block, chi_of_z_spline, "IA_SPECTRUM_GI", "k_h", "z", "P_GI");
 
 		if (PK_II==NULL) return 2;
 		if (PK_GI==NULL) return 3;
@@ -820,9 +820,9 @@ int execute(c_datablock * block, void * config_in)
 			PK_gI = load_interpolator_chi(block, chi_of_z_spline, "matter_power_gal_intrinsic", "k_h", "z", "P_k");
 		}
 		if (PK_gI==NULL){
-			printf("No galaxy-intrinsic power spectrum found in datablock. Using the II spectrum instead %s.\n", IA_SPECTRUM_II_SECTION);
+			printf("No galaxy-intrinsic power spectrum found in datablock. Using the II spectrum instead %s.\n", "IA_SPECTRUM_II");
 			PK_gI=PK_II;}
-		if (PK_gI==NULL) PK_gI = load_interpolator_chi(block, chi_of_z_spline, IA_SPECTRUM_II_SECTION, "k_h", "z", "P_II");
+		if (PK_gI==NULL) PK_gI = load_interpolator_chi(block, chi_of_z_spline, "IA_SPECTRUM_II", "k_h", "z", "P_II");
 		if (PK_gI==NULL) return 5;
 			
 	}
@@ -885,8 +885,8 @@ int execute(c_datablock * block, void * config_in)
 	}
 
 	if (config->magnification_magnification) {
-		if ( (c_datablock_has_section(block, SHEAR_CL_GG_SECTION) ||   
-		     c_datablock_has_section(block, SHEAR_CL_SECTION)) && nzbin_shear==nzbin_lss){
+		if ( (c_datablock_has_section(block, "SHEAR_CL_GG") ||   
+		     c_datablock_has_section(block, "SHEAR_CL")) && nzbin_shear==nzbin_lss){
 			status |= rescale_spectrum(block, magnification_magnification, nzbin_lss, config);
 		}
 		else { 
@@ -897,7 +897,7 @@ int execute(c_datablock * block, void * config_in)
 	}
 
 	if (config->magnification_intrinsic) {
-		if (c_datablock_has_section(block, SHEAR_CL_GI_SECTION)  && nzbin_shear==nzbin_lss) {
+		if (c_datablock_has_section(block, "SHEAR_CL_GI")  && nzbin_shear==nzbin_lss) {
 			status |= rescale_spectrum(block, magnification_intrinsic, nzbin_lss, config);
 		}
 		else { 
@@ -908,7 +908,7 @@ int execute(c_datablock * block, void * config_in)
 	}
 	
 	if (config->magnification_shear ) {
-		if ( c_datablock_has_section(block, SHEAR_CL_GG_SECTION) || c_datablock_has_section(block, SHEAR_CL_SECTION) ) { 
+		if ( c_datablock_has_section(block, "SHEAR_CL_GG") || c_datablock_has_section(block, "SHEAR_CL") ) { 
 			if (nzbin_shear==nzbin_lss) status |= rescale_spectrum(block, magnification_shear, nzbin_lss, config);
 		}
 		else { 
