@@ -26,12 +26,13 @@ import pdb
 
 
 
-cl_sections= {'ee':'galaxy_shape_cl', 'ne':'galaxy_position_shape_cross_cl', 'nn':'galaxy_position_cl'}
+cl_sections= {'ee':'galaxy_shape_cl', 'ne':'galaxy_position_shape_cross_cl', 'nn':'galaxy_position_cl',
+	'kk':'cmb_kappa_cl',
+	'ke':'kappa_shear_cross_cl',
+	'kn':'kappa_position_cross_cl'}
 
 class ClLikelihood(GaussianLikelihood):
 	constant_covariance=False
-	#one section name
-	#don't define section name when reading options
 	def __init__(self, options):
 
 		constcov = options.get_bool(option_section, 'fixed_covariance')
@@ -41,9 +42,13 @@ class ClLikelihood(GaussianLikelihood):
 		data_file = options.get_string(option_section, 'data')
 		self.shear_cat = options.get_string(option_section, 'shear_sample')
 		self.pos_cat = options.get_string(option_section, 'LSS_sample')
+		self.cmb_cat = options.get_string(option_section, 'CMB_sample', default="")
 		self.shear = options.get_bool(option_section, 'shear')
 		self.pos = options.get_bool(option_section, 'galaxy_clustering')
 		self.ggl = options.get_bool(option_section, 'ggl')
+		self.cmb_kappa = options.get_bool(option_section, 'cmb_kappa', default=False)
+		self.kappa_shear = options.get_bool(option_section, 'kappa_shear', default=False)
+		self.kappa_pos = options.get_bool(option_section, 'kappa_position', default=False)
 
 		self.interpolate = options.get_bool(option_section, 'interpolate')
 
@@ -53,6 +58,9 @@ class ClLikelihood(GaussianLikelihood):
 		if self.shear:	self.spectra_to_use.append('ee')
 		if self.ggl:	self.spectra_to_use.append('ne')
 		if self.pos:	self.spectra_to_use.append('nn')
+		if self.cmb_kappa:	self.spectra_to_use.append('kk')
+		if self.kappa_shear:	self.spectra_to_use.append('ke')
+		if self.kappa_pos:	self.spectra_to_use.append('kn')
 
 		self.x_section = [cl_sections[sp] for sp in self.spectra_to_use]
 		self.x_name = 'l_bin_edges'
@@ -71,6 +79,21 @@ class ClLikelihood(GaussianLikelihood):
 		if self.constant_covariance:
 			self.covmat_file = covmat_file
 			self.extract_covariance()
+
+                # Get some parameters for this galaxy catalogue needed for the calculation
+		self.A_shear = np.inf
+		self.A_pos = np.inf
+		self.A_cmb = np.inf
+		if self.shear:
+			self.A_shear = options[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		if self.pos or self.ggl:
+			self.A_pos = options[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		if self.cmb_kappa or self.kappa_shear or self.kappa_pos:
+			self.A_cmb = options[self.cmb_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		#if (self.A_shear!=self.A_pos):
+		if not (self.A_shear==self.A_pos==self.A_cmb):
+			self.A = min(self.A_pos, self.A_shear, self.A_cmb)			
+#			self.A = min(self.A_pos, self.A_shear)
 
 	def initialise_theory(self, block):
 		"""
@@ -127,13 +150,6 @@ class ClLikelihood(GaussianLikelihood):
 		else:	
 			print 'Calculating covariance matrix.'
 			# Get some parameters for this galaxy catalogue needed for the calculation
-			self.A_shear = block[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
-			self.A_pos = block[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
-			self.A = self.A_shear 
-			if (self.A_shear!=self.A_pos):
-				self.A = min(self.A_pos, self.A_shear)
-			self.l_bins_shear = self.l_bins
-			self.l_bins_pos = self.l_bins
 			self.dl = block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][1:] - block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][:-1]
 
 		nspec = len(self.spectra)
@@ -146,7 +162,7 @@ class ClLikelihood(GaussianLikelihood):
 		# block for each pair of spectra
 
 		i,j=0,0
-		k = np.zeros(nt)
+		k = np.zeros(nt).astype(int)
 		# Loop over the types of spectra e.g. ee, nn, ne 
 		# This should give a maximum of 9 combinations
 		for spect1 in [ x for x in self.spectra if x[1]==(0,0) ]:
@@ -155,10 +171,10 @@ class ClLikelihood(GaussianLikelihood):
 				m = self.compute_covariance_matrix( block, mode=[ spect1[0],spect2[0]] )
 				print 'Evaluated matrix %s%s' %(spect1[0],spect2[0]) 
 
+			
 				# Write to the appropriate block of the matrix
-				Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
-				
-
+				try: Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
+				except: pdb.set_trace()
 				# Update indices
 				j+=m.shape[1]
 				k[i] += m.shape[0]
@@ -180,7 +196,7 @@ class ClLikelihood(GaussianLikelihood):
 		# Read the likelihood, add the normalisation factor and
 		# resave to the datablock
 		like = block["likelihoods", self.like_name+"_LIKE"]
-		like += p
+		like -= p
 		block.replace_double("likelihoods", self.like_name+"_LIKE", like)
 
 	def build_inverse_covariance(self, block):
@@ -201,10 +217,12 @@ class ClLikelihood(GaussianLikelihood):
 		print 'Loading datavector.'
 		cl_data_all = pickle.load(open(datafile, 'rb'))
 
-		try:
+		if "ell_shear" in cl_data_all.keys():
 			self.data_x = cl_data_all['ell_shear']
-		except:
+		elif "ell_pos" in cl_data_all.keys():
 			self.data_x = cl_data_all['ell_pos']
+		#elif "ell_cmb" in cl_data_all.keys():
+		#	self.data_x = cl_data_all['ell_cmb']
 
 		self.nlbin = len(self.data_x)
 
@@ -245,7 +263,7 @@ class ClLikelihood(GaussianLikelihood):
 				lmin= block[section, 'lmin_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 				lmax= block[section, 'lmax_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 			else:
-				print 'No prescription for scale cuts found. Using full datavector.'
+				if bin=='bin_1_1': print 'No prescription for scale cuts found. Using full datavector.'
 				lmin = 0. ; lmax = 1e7
 
 			scale_cut = (ell>lmin) & (ell<lmax)
@@ -288,6 +306,9 @@ class ClLikelihood(GaussianLikelihood):
 		self.bins_ee = []
 		self.bins_ne = []
 		self.bins_nn = []
+		self.bins_ke = []
+		self.bins_kn = []
+
 		if self.shear:
 			self.nzbin_shear = block[self.shear_cat, 'nzbin']
 
@@ -300,6 +321,21 @@ class ClLikelihood(GaussianLikelihood):
 			for i in xrange(self.nzbin_pos):
 				for j in xrange(self.nzbin_pos):
 					self.bins_nn.append((i,j))
+
+		# By definition the correlations involving CMB kappa have only
+		# 1 tomographic bin
+		if self.cmb_kappa:
+			self.bins_kk = [(0,0)]
+
+		if self.kappa_shear:
+			self.nzbin_shear = block[self.shear_cat, 'nzbin']
+			for i in xrange(self.nzbin_shear):
+				self.bins_ke.append((i,j))
+
+		if self.kappa_pos:
+			self.nzbin_pos = block[self.pos_cat, 'nzbin']
+			for i in xrange(self.nzbin_pos):
+				self.bins_kn.append((i,j))
 
 		if self.ggl:
 			self.nzbin_pos = block[self.pos_cat, 'nzbin']
