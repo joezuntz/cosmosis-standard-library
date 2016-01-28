@@ -209,7 +209,7 @@ class SpectrumCalulcator(object):
             #everything else is not done by default
             default = (spectrum==SpectrumType.ShearShear)
             name = spectrum.value.option_name()
-            print "Looking for", name
+
             try:
                 #first look for a string, e.g. redmagic-redmagic or similar (name of samples)
                 value = options.get_string(option_section, name)
@@ -360,6 +360,10 @@ class SpectrumCalulcator(object):
     def compute_spectra(self, block, spectrum):
         block[spectrum.name, 'ell'] = self.ell
         na, nb = spectrum.nbins()
+        if spectrum.is_autocorrelation():
+            block[spectrum.name, 'nbin'] = na
+        block[spectrum.name, 'nbin_a'] = na
+        block[spectrum.name, 'nbin_b'] = nb
         for i in xrange(na):
             #for auto-correlations C_ij = C_ji so we only do one of them.
             #for cross-correlations we must do both
