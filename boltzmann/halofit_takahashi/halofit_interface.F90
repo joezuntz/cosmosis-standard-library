@@ -129,15 +129,15 @@ function execute(block, config) result(status)
 
 	!Load requested k range, or use same range as linear P(k)
 	!if no kmin and kmax specified.
-	if (settings%kmin < 0.d0) then
-		settings%kmin = exp(PK%log_kh(1))
-	endif
-	if (settings%kmax < 0.d0) then
-		settings%kmax = exp(PK%log_kh(PK%num_k))
-	endif
-	nk = settings%nk
 	kmin = settings%kmin
 	kmax = settings%kmax
+	if (kmin < 0.d0) then
+		kmin = exp(PK%log_kh(1))
+	endif
+	if (kmax < 0.d0) then
+		kmax = exp(PK%log_kh(PK%num_k))
+	endif
+	nk = settings%nk
 
 	call NonLinear_GetNonLinRatios(PK)
 	
