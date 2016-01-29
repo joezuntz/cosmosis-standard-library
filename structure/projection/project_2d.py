@@ -298,8 +298,9 @@ class SpectrumCalulcator(object):
         #we needed for the spectra we want to do.  Their names are stored in the
         #kernels_A and kernels_B dictionaries.
         for kernel_name, kernel_dict in self.kernels_A.items():
-            #Get rid of any N(z) from the previous point in the chain
-            kernel_dict.clear()
+            #Check for any old kernels that should have been cleaned up by the
+            #clean
+            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
             #Load in the new kernel
             if self.verbose:
                 print "Loading kernel", kernel_name
@@ -309,8 +310,8 @@ class SpectrumCalulcator(object):
         #Often these will be the same groups of kernels, but not
         #always, so we may have to load them separately
         for kernel_name, kernel_dict in self.kernels_B.items():
-            #Again, remove anything from the previous chain step
-            kernel_dict.clear()
+            #Again, check for old kernels 
+            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
             #Most of the time we are cross-correlating
             #samples and the kernel will be the same for A and B
             #In that case just refer to the one we already loaded
@@ -375,8 +376,12 @@ class SpectrumCalulcator(object):
             
 
     def clean(self):
+        #need to manually delete power spectra we have loaded
+        for p in self.power.values():
+            limber.free_power(p)
         self.power.clear()
-        print "MEMORY LEAK" * 10
+
+        #spectra know how to delete themselves, in gsl_wrappers.py
         for name,kernels in self.kernels_A.items():
             kernels.clear()
         for kernels in self.kernels_B.values():
