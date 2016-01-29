@@ -181,8 +181,8 @@ int save_c_ell(c_datablock * block, const char * section,
 	for (int i=0; i<n_ell; i++){
 		double ell = lc->ell[i];
 		if (lc->xlog) ell = log(ell);
+		if (lc->ylog && (lc->status==LIMBER_STATUS_OK)) c_ell[i] = exp(c_ell[i]);
 		c_ell[i] = coeff*gsl_spline_eval(s, ell, NULL);
-		if (lc->ylog) c_ell[i] = exp(c_ell[i]);
 		
 	}
 

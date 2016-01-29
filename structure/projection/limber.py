@@ -13,7 +13,12 @@ class c_limber_config(ct.Structure):
         ("n_ell", ct.c_int),
         ("ell", ct.POINTER(ct.c_double)),
         ("prefactor", ct.c_double),
-    ]
+        ("status", ct.c_int),
+]
+
+LIMBER_STATUS_OK =  0
+LIMBER_STATUS_ZERO =  1
+LIMBER_STATUS_NEGATIVE =  2
 
 c_gsl_spline = ct.c_void_p
 
@@ -63,5 +68,12 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor):
     config.n_ell = len(ell)
     config.ell = np.ctypeslib.as_ctypes(ell)
     config.prefactor = prefactor
-    spline = GSLSpline(lib.limber_integral(ct.byref(config), WX, WY, P), xlog=xlog, ylog=ylog)
+    config.status = 0
+    spline_ptr = lib.limber_integral(ct.byref(config), WX, WY, P)
+    if config.status == LIMBER_STATUS_ZERO:
+        print "This one turned out to be zero somewhere."
+        ylog = False
+    elif config.status == LIMBER_STATUS_NEGATIVE:
+        raise ValueError("Negative value of the Limber integral.")
+    spline = GSLSpline(spline_ptr, xlog=xlog, ylog=ylog)
     return spline
