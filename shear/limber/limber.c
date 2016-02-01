@@ -70,7 +70,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	                 gsl_spline * WY, Interpolator2D * P)
 {
 
-	config->status = 0;
+	config->status = LIMBER_STATUS_OK;
 	// Get the appropriate ranges over which to integrate
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable
@@ -140,6 +140,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 					config->status = LIMBER_STATUS_ZERO;
 				}
 			}
+			// If none of the values are <= 0 then we are okay to go ahead and take the logs.
 			if (config->status == LIMBER_STATUS_OK){
 				for (int i_ell = 0; i_ell<config->n_ell; i_ell++) c_ell_vector[i_ell] = log(c_ell_vector[i_ell]);
 			}
