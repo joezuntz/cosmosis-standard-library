@@ -221,8 +221,11 @@ int save_c_ell(c_datablock * block, const char * section,
 	for (int i=0; i<n_ell; i++){
 		double ell = lc->ell[i];
 		if (lc->xlog) ell = log(ell);
-		c_ell[i] = coeff*gsl_spline_eval(s, ell, NULL);
-		if (lc->ylog) c_ell[i] = exp(c_ell[i]);
+		c_ell[i] = gsl_spline_eval(s, ell, NULL);
+		if (lc->ylog && (lc->status==LIMBER_STATUS_OK)){
+			c_ell[i] = exp(c_ell[i]);
+		}
+		c_ell[i]*=coeff;
 		
 	}
 
@@ -512,6 +515,8 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		// whereas for cross-spectra we do
 		int bin2_max = choose_bin2_max(spectrum_type, nbin, bin1);
 		for (int bin2=1; bin2<=bin2_max; bin2++){
+			// reset the status
+			lc.status = LIMBER_STATUS_OK;
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
 			if (is_mag) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
 			else coeff=1;
