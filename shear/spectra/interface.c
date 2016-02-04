@@ -127,6 +127,30 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 	return get_named_nchi_spline(block, wl_nz, bin, z, a_of_chi, chi_of_z);
 }
 
+int get_nchi_array(c_datablock * block, const char * nz_section,
+	 int bin, double * z, double z_max, gsl_spline * a_of_chi, gsl_spline * chi_of_z, 
+	  double * chi_out, int num_chi_out, double * nofchi_out)
+{
+	gsl_spline * nofchi_spline;
+	int status = 0;
+	double chi_max = gsl_spline_eval(chi_of_z, z_max, NULL);
+
+	nofchi_spline = get_named_nchi_spline(block, nz_section, bin, z, a_of_chi, chi_of_z);
+	//Now interpolate to output chi - if chi_out>chi, set to zero
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	for (int i_chi = 0; i_chi<num_chi_out; i_chi++){
+		if (chi_out[i_chi] <= chi_max){
+			nofchi_out[i_chi] = gsl_spline_eval(nofchi_spline, chi_out[i_chi], acc);
+		}
+		else {
+			nofchi_out[i_chi] = 0.;
+		}
+	}
+	printf("got nofchi_out\n");
+
+	gsl_spline_free(nofchi_spline);
+	return status;
+}
 
 gsl_spline * get_named_w_spline(c_datablock * block, const char * section, int bin, double * z,
 	double chi_max, gsl_spline * a_of_chi_spline)
@@ -165,6 +189,22 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 	return get_named_w_spline(block, wl_nz, bin, z, chi_max, a_of_chi_spline);
 }
 
+int get_wchi_array(c_datablock * block, const char * nz_section,
+	 int bin, double * z, double chi_max, gsl_spline * a_of_chi_spline, double * chi_out, 
+	 int nchi_out, double * wchi_out)
+{
+	// Do the main computation
+	gsl_spline * W = get_named_w_spline(block, nz_section, bin, z, chi_max, a_of_chi_spline);
+
+	//Now interpolate to output chi
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	for (int i_chi = 0; i_chi<nchi_out; i_chi++){
+		wchi_out[i_chi] = gsl_spline_eval(W, chi_out[i_chi], acc);
+	}
+
+	// tidy up bin-specific data
+	gsl_spline_free(W);
+}
 
 
 /*
