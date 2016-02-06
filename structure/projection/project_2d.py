@@ -373,6 +373,7 @@ class SpectrumCalulcator(object):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum.name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum.name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
+                block[spectrum.name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
             
 
     def clean(self):
