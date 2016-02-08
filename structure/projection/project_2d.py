@@ -366,13 +366,17 @@ class SpectrumCalulcator(object):
         block[spectrum.name, 'nbin_a'] = na
         block[spectrum.name, 'nbin_b'] = nb
         for i in xrange(na):
-            #for auto-correlations C_ij = C_ji so we only do one of them.
+            #for auto-correlations C_ij = C_ji so we calculate only one of them,
+            #but save both orderings to the block to account for different ordering
+            #conventions.
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum.name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum.name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
+                if spectrum.is_autocorrelation():
+                    block[spectrum.name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
             
 
     def clean(self):
