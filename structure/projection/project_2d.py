@@ -318,7 +318,7 @@ class SpectrumCalulcator(object):
             if kernel_name in self.kernels_A:
             #Loop through all the loaded N(z), W(z)
                 if self.verbose:
-                    print "Using cached ", kernel_name
+                    print "Already calculated ", kernel_name
                 for i,kernel in self.kernels_A[kernel_name].items():
                     kernel_dict[i] = kernel
             else:
