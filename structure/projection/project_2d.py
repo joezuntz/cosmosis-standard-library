@@ -29,11 +29,17 @@ class Spectrum(object):
     name = "?"
     prefactor_power = np.nan
 
-    def __init__(self, source, sample_a=names.wl_number_density, sample_b=names.wl_number_density):
+    def __init__(self, source, sample_a=names.wl_number_density, sample_b=names.wl_number_density, save_name=""):
         #caches of n(z), w(z), P(k,z), etc.
         self.source = source
         self.sample_a = sample_a
         self.sample_b = sample_b
+        self.save_name=save_name
+
+    def get_name(self):
+        if self.save_name:
+            return self.name+"_"+self.save_name
+        return self.name
 
     def nbins(self):
         na = len(self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a])
@@ -224,15 +230,29 @@ class SpectrumCalulcator(object):
                 pass
             else:
                 #now we are looking for things of the form
-                #shear-shear = euclid-ska
+                #shear-shear = euclid-ska:
                 #where we would now search for nz_euclid and nz_ska
                 values = value.split()
                 for value in values:
                     try:
                         kernel_a, kernel_b = value.split('-',1)
+                        #Optionally we can also name the spectrum, for example
+                        # shear-shear = ska-ska:radio
+                        # in which case the result will be saved into shear_cl_radio
+                        # instead of just shear_cl.
+                        # This will be necessary in the case that we run multiple spectra,
+                        # e.g. 
+                        # #shear-shear = euclid-ska:cross  euclid-euclid:optical  ska-ska:radio
+                        # would be needed to avoid clashes. 
+                        if ":" in kernel_b:
+                            kernel_b, save_name=kernel_b.split(":",1)
+                        else:
+                            save_name = ""
                         kernel_a = kernel_a.strip()
                         kernel_b = kernel_b.strip()
-                        self.req_spectra.append(spectrum.value(self, kernel_a, kernel_b))
+                        #The self in the line below is not a mistake - the source objects
+                        #for the spectrum class is the SpectrumCalculator itself
+                        self.req_spectra.append(spectrum.value(self, kernel_a, kernel_b, save_name))
                     except:
                         raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
 
@@ -240,7 +260,7 @@ class SpectrumCalulcator(object):
 
         print "Will project these spectra into 2D:"
         for spectrum in self.req_spectra:
-            print "    - ", spectrum.name
+            print "    - ", spectrum.get_name()
 
 
         #Decide which kernels we will need to save.
@@ -359,12 +379,13 @@ class SpectrumCalulcator(object):
 
 
     def compute_spectra(self, block, spectrum):
-        block[spectrum.name, 'ell'] = self.ell
+        spectrum_name = spectrum.get_name()
+        block[spectrum_name, 'ell'] = self.ell
         na, nb = spectrum.nbins()
         if spectrum.is_autocorrelation():
-            block[spectrum.name, 'nbin'] = na
-        block[spectrum.name, 'nbin_a'] = na
-        block[spectrum.name, 'nbin_b'] = nb
+            block[spectrum_name, 'nbin'] = na
+        block[spectrum_name, 'nbin_a'] = na
+        block[spectrum_name, 'nbin_b'] = nb
         for i in xrange(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
             #but save both orderings to the block to account for different ordering
@@ -373,10 +394,10 @@ class SpectrumCalulcator(object):
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
                 c_ell = spectrum.compute(block, self.ell, i, j)
-                self.outputs[spectrum.name+"_{}_{}".format(i,j)] = c_ell
-                block[spectrum.name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
+                self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
+                block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
                 if spectrum.is_autocorrelation():
-                    block[spectrum.name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
+                    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
             
 
     def clean(self):
@@ -397,7 +418,7 @@ class SpectrumCalulcator(object):
         self.load_kernels(block)
         self.load_power(block)
         for spectrum in self.req_spectra:
-            print "Computing spectrum:", spectrum.__class__.__name__
+            print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
             self.compute_spectra(block, spectrum)
         self.clean()
         return 0
