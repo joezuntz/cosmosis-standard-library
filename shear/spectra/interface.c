@@ -92,6 +92,65 @@ void * setup(c_datablock * options){
 	return config;
 }
 
+gsl_spline * linear_spline_from_arrays(int n, double * x, double *y)
+{
+	gsl_spline * output = gsl_spline_alloc(gsl_interp_linear, n);
+	assert (output!=NULL);
+	gsl_spline_init(output,x,y,n);
+	return output;
+}
+
+
+#define NZ_FORMAT_HISTOGRAM 1
+#define NZ_FORMAT_SAMPLE 2
+
+void nz_string_error_message(){
+	fprintf(stderr, "\nIf specifying n(z) format when loading, please use one of:\n");
+	fprintf(stderr, "format=histogram\n");
+	fprintf(stderr, "format=sample\n\n");	
+}
+
+// n(z) values come in two general forms.
+// Most n(z) codes generate histograms in small z bins, with zlow, zhigh.
+// This isn't a great model for n(z) of course - we don't really think that
+// the number density is really blocky like that for real.  So we also support
+// another mode where we take the z as sample values through which a spline should
+// be drawn.
+int detect_nz_format(block, section)
+{
+	char *nz_format_string=NULL;
+	int nz_format;
+	int status = 0;
+	bool has_format = c_datablock_has_value(block, section, "format");
+	if (has_format){
+		status |= c_datablock_get_string(block, section, "format", &nz_format_string);
+		if (nz_format_string==NULL){
+			nz_string_error_message();
+			status = 1;
+		}
+		if (!strcmp(nz_format_string), "histogram"){
+			nz_format = NZ_FORMAT_HISTOGRAM;
+		}
+		else if (!strcmp(nz_format_string), "sample"){
+			nz_format = NZ_FORMAT_SAMPLE;
+		}
+		else{
+			nz_string_error_message();
+			status = 1;
+		}
+
+		free(nz_format_string);
+		if (status){
+			return -1;
+		}
+	}
+	else{
+		nz_format = NZ_FORMAT_SAMPLE;	
+	}
+	return nz_format;
+}
+
+
 /*
 	Read z, N(z) values from the datablock and initialize a spline to
 	use in the Limber integral.
