@@ -68,7 +68,7 @@ function execute(block, config) result(status)
                 call compute_massfunction(PK%kh,PK%matpower(:,1),MassF,n+1)
                 status = datablock_put_double_array_1d(block,mass_function_section, "dndlnRh",MassF%dn_dlnRh)
                 status = datablock_put_double_array_1d(block,mass_function_section, "dndlnMh",MassF%dn_dlnMh)
-                !status = datablock_put_double_array_1d(block,mass_function_section, "M_h",MassF%R_h)
+                status = datablock_put_double_array_1d(block,mass_function_section, "M_h",MassF%R_h)
                 status = datablock_put_double_array_1d(block, mass_function_section, "R_h",MassF%M_h)
                 call deallocate_mf(MassF)
         end if
