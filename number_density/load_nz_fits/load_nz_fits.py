@@ -21,6 +21,11 @@ def ensure_starts_at_zero(z, nz):
     else:
         z_new = z
         nz_new = nz
+    #There are no galaxies at redshift zero.  Well actually there's exactly one
+    #galaxy at redshift zero, but we are unlikely to be including it in any of 
+    #our correlation functions.  So the integrals don't converge unless n(0)=0.
+    nz_new[:,0] = 0.0
+
     return z_new, nz_new
 
 
