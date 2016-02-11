@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include "limber.h"
 #include <math.h>
+#include "assert.h"
+#include "string.h"
 
 // Short-hand names for the sections we will
 // be looking at
@@ -116,7 +118,7 @@ void nz_string_error_message(){
 // the number density is really blocky like that for real.  So we also support
 // another mode where we take the z as sample values through which a spline should
 // be drawn.
-int detect_nz_format(block, section)
+int detect_nz_format(c_datablock * block, const char * section)
 {
 	char *nz_format_string=NULL;
 	int nz_format;
@@ -128,10 +130,10 @@ int detect_nz_format(block, section)
 			nz_string_error_message();
 			status = 1;
 		}
-		if (!strcmp(nz_format_string), "histogram"){
+		if (!strcmp(nz_format_string, "histogram")){
 			nz_format = NZ_FORMAT_HISTOGRAM;
 		}
-		else if (!strcmp(nz_format_string), "sample"){
+		else if (!strcmp(nz_format_string, "sample")){
 			nz_format = NZ_FORMAT_SAMPLE;
 		}
 		else{
