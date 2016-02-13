@@ -644,6 +644,7 @@ int execute(c_datablock * block, void * config_in)
 	status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nbin);
 	if(config->use_shear) status |= c_datablock_get_int(block, config->shear_survey, "nzbin", &nzbin_shear);
 	if(config->use_LSS) status |= c_datablock_get_int(block, config->LSS_survey, "nzbin", &nzbin_lss);
+	printf("Loaded n(z)s\n");
 
 	// Load z
 	status |= c_datablock_get_double_array_1d(block, config->shear_survey, "z", &z, &nz1);

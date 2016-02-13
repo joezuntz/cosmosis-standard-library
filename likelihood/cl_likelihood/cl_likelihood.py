@@ -82,13 +82,15 @@ class ClLikelihood(GaussianLikelihood):
 			self.extract_covariance()
 
                 # Get some parameters for this galaxy catalogue needed for the calculation
-		self.A_shear = np.inf
-		self.A_pos = np.inf
-		self.A_cmb = np.inf
+		self.A_ee = np.inf
+		self.A_nn = np.inf
+		self.A_kk = np.inf
 		if self.shear:
-			self.A_shear = options[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
-		if self.pos or self.ggl:
-			self.A_pos = options[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
+			self.A_ee = options[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		if self.pos:
+			self.A_nn = options[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		if self.ggl:
+			self.A_ne = min(self.A_ee, self.A_nn)
 		if self.cmb_kappa or self.kappa_shear or self.kappa_pos:
 			self.A_cmb = options[self.cmb_cat, 'area'] * (np.pi*np.pi)/(180*180)
 
@@ -124,11 +126,11 @@ class ClLikelihood(GaussianLikelihood):
 
 		# Do a consistency check with the theory vector to ensure the binning is the same
 		if self.shear:
-			self.ell_bins_shear = block[cl_sections["ee"], 'ell']
+			self.ell_bins_ee = block[cl_sections["ee"], 'ell']
 		if self.pos:
-			self.ell_bins_pos = block[cl_sections["nn"], 'ell']
+			self.ell_bins_nn = block[cl_sections["nn"], 'ell']
 		if self.ggl:
-			self.ell_bins_ggl = block[cl_sections["ne"], 'ell']
+			self.ell_bins_ne = block[cl_sections["ne"], 'ell']
 		#if len(self.spectra_theory) != len(self.spectra):
 		#	print 'Error: the selected redshift bin combinations in the theory vector are inconsistent with the data.'
 		#	exit()
@@ -153,11 +155,11 @@ class ClLikelihood(GaussianLikelihood):
 			print 'Calculating covariance matrix.'
 			# Get some parameters for this galaxy catalogue needed for the calculation
 			if self.shear:
-				self.dl_shear = block[cl_sections["ee"], 'l_bin_edges'][1:] - block[cl_sections["ee"], 'l_bin_edges'][:-1]
+				self.dl_ee = block[cl_sections["ee"], 'l_bin_edges'][1:] - block[cl_sections["ee"], 'l_bin_edges'][:-1]
 			if self.pos:
-				self.dl_pos = block[cl_sections["nn"], 'l_bin_edges'][1:] - block[cl_sections["nn"], 'l_bin_edges'][:-1]
+				self.dl_nn = block[cl_sections["nn"], 'l_bin_edges'][1:] - block[cl_sections["nn"], 'l_bin_edges'][:-1]
 			if self.ggl:
-				self.dl_ggl = block[cl_sections["ne"], 'l_bin_edges'][1:] - block[cl_sections["ne"], 'l_bin_edges'][:-1]
+				self.dl_ne = block[cl_sections["ne"], 'l_bin_edges'][1:] - block[cl_sections["ne"], 'l_bin_edges'][:-1]
 		nspec = len(self.spectra)
 		nl = self.nlbin
 		nt = self.n_elem
@@ -351,23 +353,24 @@ class ClLikelihood(GaussianLikelihood):
 				for j in xrange(self.nzbin_shear):
 					self.bins_ne.append((i,j))
 
-	def choose_prefactor(self, mode):
+	def choose_prefactor(self, mode, block):
 		# Get the relevant area. For the cross specta take the smaller of
-		# the two (assuming the surey footprints are entirely overlapping)
-		if mode[0]==mode[1]=="ee":
-			A = self.A_shear
-			ell = self.ell_bins_shear
-			dl = self.dl_shear
-		elif mode[0]==mode[1]=="nn":
-			A = self.A_pos
-			ell = self.ell_bins_pos
-			dl = self.dl_pos
-		elif ("n" in mode[0] and "e" in mode[0]) or ("n" in mode[1] and "e" in mode[1]):
-			A = min(self.A_shear, self.A_pos)
+		# the two (assuming the survey footprints are entirely overlapping)
+		if mode[0]==mode[1]:
+			A = getattr(self, "A_%s"%mode[0]) #self.A_shear
+			ell = getattr(self, "ell_bins_%s"%mode[0]) #self.ell_bins_shear
+			dl = getattr(self, "dl_%s"%mode[0]) #self.dl_shear
 
 		if "e" in string.join(mode) and "n" in string.join(mode):
-			ell = self.ell_bins_ggl
-			dl = self.dl_ggl
+			edges1 = block[cl_sections[mode[0]], "l_bin_edges"]
+			edges2 = block[cl_sections[mode[1]], "l_bin_edges"]
+			edges = np.array([x for x in edges1 if x in edges2])
+			if len(edges)==0:
+				return np.zeros_like(edges1[1:])
+			else:
+				ell = np.exp(np.log(edges[1:]*edges[:-1])/2.)
+				dl = edges[1:] - edges[:-1]
+				A = min(self.A_ee, self.A_nn)
 
 		return 2. * np.pi / ( ell * dl * A )
 
@@ -413,7 +416,7 @@ class ClLikelihood(GaussianLikelihood):
 			except:
 				sections.append( (cl_sections[ '%s%s' %(i[1],i[0]) ], True) )
 
-		p = self.choose_prefactor(mode)
+		p = self.choose_prefactor(mode, block)
 
 		e_lower, e_upper = self.get_binning(mode, block)
 		
@@ -498,7 +501,9 @@ class ClLikelihood(GaussianLikelihood):
 					exec "Cl%d = sp" %(sec)
 					
 				# Evaluate
-				m = p[l0] * (Cl0 * Cl1 + Cl2 * Cl3)
+				try:	m = p[l0] * (Cl0 * Cl1 + Cl2 * Cl3)
+				except:
+					pdb.set_trace()
 				if not np.isfinite(m): pdb.set_trace()
 
 				cov[y][x]+=m
