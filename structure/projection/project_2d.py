@@ -414,13 +414,15 @@ class SpectrumCalulcator(object):
         self.outputs.clear()
 
     def execute(self, block):
-        self.load_distance_splines(block)
-        self.load_kernels(block)
-        self.load_power(block)
-        for spectrum in self.req_spectra:
-            print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
-            self.compute_spectra(block, spectrum)
-        self.clean()
+        try:
+            self.load_distance_splines(block)
+            self.load_kernels(block)
+            self.load_power(block)
+            for spectrum in self.req_spectra:
+                print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
+                self.compute_spectra(block, spectrum)
+        finally:
+            self.clean()
         return 0
 
 
