@@ -22,9 +22,7 @@ typedef struct cl_to_xi_config {
 	double theta_max_user;
 	char * input_section;
 	char * output_section;
-	char * nz_section_A;
-	char * nz_section_B;
-	int auto_corr;
+	bool auto_corr;
 	corr_type_t corr_type;
 
 } cl_to_xi_config;
@@ -35,30 +33,30 @@ void * setup(c_datablock * options)
 	cl_to_xi_config * config = malloc(sizeof(cl_to_xi_config));
 	int corr_type;
 	int status = 0;
-	int auto_corr;
+	bool auto_corr;
 	//status |= c_datablock_get_int(options, OPTION_SECTION, "n_theta", 10, &(config->n_theta_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_min", 0.0, &(config->theta_min_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_max", 0.0, &(config->theta_max_user));
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
 	//optionally read n(z) sections (may be two for cross-correlations)
-	status |= c_datablock_get_string_default(options, OPTION_SECTION, "nz_section_name_A", wl_nz, &(config->nz_section_A));
-	status |= c_datablock_get_string_default(options, OPTION_SECTION, "nz_section_name_B", config->nz_section_A, &(config->nz_section_B));
 	status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
 	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
-	status |= c_datablock_get_int_default(options, OPTION_SECTION, "auto_corr", -1, &auto_corr);
+	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
 
 	config->corr_type = (corr_type_t)corr_type;
 
-	//If auto_corr is not given in options file, make a sensible choice - set to 0 if
-	//nz_section_A and nz_section_B are different, or if corr_type indicates ggl.
-	if (auto_corr == -1){
-		if (config->nz_section_A != config->nz_section_B){
-			auto_corr = 0;
-		}
-		if (corr_type == 2){
-			auto_corr = 0;
-		}
+	//If auto_corr is not given in options file, assume truen unless doing GGL.
+	if (corr_type==ggl){
+		printf("Because this is a GGL spectrum I'm not assuming it is an auto-correlation\n");		
+		printf("Not looking at what (if anything) you wrote in the ini file\n");
+		auto_corr = false;
+	}
+	else if (auto_corr){
+		printf("Assuming this in an auto-correlation. If this is not true set auto_corr=F\n");
+	}
+	else{
+		printf("You set auto_corr=F so I will not assume this is an auto-correlation and will do both pairs ij and ji\n");
 	}
 
 	config->auto_corr = auto_corr;
@@ -111,8 +109,8 @@ int execute(c_datablock * block, void * config_in)
 	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
 	// Load the number of redshift bins
-	status |= c_datablock_get_int(block, config->nz_section_A, "nbin", &num_z_bin_A);
-	status |= c_datablock_get_int(block, config->nz_section_B, "nbin", &num_z_bin_B);
+	status |= c_datablock_get_int(block, config->input_section, "nbin_a", &num_z_bin_A);
+	status |= c_datablock_get_int(block, config->input_section, "nbin_b", &num_z_bin_B);
 
 	if (status) {
 		fprintf(stderr, "Could not load nbin in C_ell -> xi\n");
@@ -141,7 +139,7 @@ int execute(c_datablock * block, void * config_in)
 	// Loop through bin combinations, loading ell,C_ell and computing xi+/-
 	int j_bin_start;
   for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
-  	if (config->auto_corr==1){
+  	if (config->auto_corr){
   		j_bin_start=i_bin;
   	}
   	else{
