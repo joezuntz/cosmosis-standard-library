@@ -116,12 +116,6 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// This particular function is used because that's what Matt Becker 
 		// found to work best.
 		double c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
-		// double abserr;
-		// double c_ell_qag;
-		// int qag_status = gsl_integration_qag(&F, data.chimin,data.chimax, 0.0, 1e-4, 2048, 6, workspace, &c_ell_qag, &abserr);
-		// printf("abserr = %le.   %le  %le   %le  %d\n", abserr, c_ell, c_ell_qag, (c_ell-c_ell_qag)/abserr, qag_status);
-		// c_ell = c_ell_qag;
-//Function: int gsl_integration_qag (const gsl_function * f, double a, double b, double epsabs, double epsrel, size_t limit, int key, gsl_integration_workspace * workspace, double * result, double * abserr)
 
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
