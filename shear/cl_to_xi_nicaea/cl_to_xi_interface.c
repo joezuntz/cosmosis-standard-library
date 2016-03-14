@@ -109,8 +109,15 @@ int execute(c_datablock * block, void * config_in)
 	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
 	// Load the number of redshift bins
-	status |= c_datablock_get_int(block, config->input_section, "nbin_a", &num_z_bin_A);
-	status |= c_datablock_get_int(block, config->input_section, "nbin_b", &num_z_bin_B);
+	if (c_datablock_has_value(block, config->input_section, "nbin_a")){
+		status |= c_datablock_get_int(block, config->input_section, "nbin_a", &num_z_bin_A);
+		status |= c_datablock_get_int(block, config->input_section, "nbin_b", &num_z_bin_B);
+	}
+	else{
+		status |= c_datablock_get_int(block, config->input_section, "nbin", &num_z_bin_A);
+		num_z_bin_B = num_z_bin_A;
+	}
+
 
 	if (status) {
 		fprintf(stderr, "Could not load nbin in C_ell -> xi\n");
