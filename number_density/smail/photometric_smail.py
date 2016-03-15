@@ -17,7 +17,6 @@ def photometric_error(z, Nz, sigma_z, bias):
 	for i in xrange(nz):
 		p = gaussian(z,z[i]-bias,sigma_z*(1+z[i]))
 		#Could add f_cat or other terms here.
-		#import pdb ; pdb.set_trace()
 		output[:,i] = p * Nz[i]
 	return output
 
@@ -43,8 +42,7 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 
 		# Normalise the n(z) in each redshift bin to 1 over the redshift range
 		# of the survey
-		ni*= 1.0/(ni.sum()*dz)							#ngal/(nbin*ni.sum()*dz)
-		#import pdb ; pdb.set_trace()
+		ni *= 1.0/(ni.sum()*dz)
 		assert(len(ni)==len(z))
 		NI.append(ni)
 	return NI
