@@ -55,7 +55,10 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
 	R1 = P_II_resample/P_nl
-	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+        if A!=0.0:
+	    b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+        else:
+	    b_I = 0.
 	r_I = P_GI_resample/P_II_resample *b_I
 
 	return P_II, P_GI, b_I, r_I
@@ -84,7 +87,10 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
 	R1 = P_II_resample/P_nl
-	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+	if A!=0.0:
+	    b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+        else:
+	    b_I = 0.
 	r_I = P_GI_resample/P_II_resample *b_I
 
 	return P_II, P_GI, b_I, r_I
@@ -144,10 +150,17 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 		P_II_resample[i] = np.exp(log_P_resample)
 		log_P_resample = np.interp(np.log(k_nl), np.log(k_lin), np.log(abs(P_GI[i])))
 		# preserve the sign of the resampled GI spectrum
-		P_GI_resample[i] = -1.*A/abs(A) * np.exp(log_P_resample)
+                if A!=0.0:
+		    P_GI_resample[i] = -1.*A/abs(A) * np.exp(log_P_resample)
+                else:
+                    P_GI_resample[i] = 0.
+
 
 	R1 = P_II_resample/P_nl
-	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+	if A!=0.0:
+	    b_I = np.sqrt(R1) * -1.0 * A/abs(A)
+        else:
+	    b_I = 0.
 	r_I = P_GI_resample/P_II_resample *b_I
 
 	return P_II, P_GI, b_I, r_I, k_lin
