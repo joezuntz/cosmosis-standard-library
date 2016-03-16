@@ -17,12 +17,8 @@ const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 typedef enum {shear_shear=0, matter=1, ggl=2} corr_type_t;
 
 typedef struct cl_to_xi_config {
-	int n_theta_user;
-	double theta_min_user;
-	double theta_max_user;
 	char * input_section;
 	char * output_section;
-	bool auto_corr;
 	corr_type_t corr_type;
 
 } cl_to_xi_config;
@@ -34,35 +30,13 @@ void * setup(c_datablock * options)
 	int corr_type;
 	int status = 0;
 	bool auto_corr;
-	//status |= c_datablock_get_int(options, OPTION_SECTION, "n_theta", 10, &(config->n_theta_user));
-	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_min", 0.0, &(config->theta_min_user));
-	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_max", 0.0, &(config->theta_max_user));
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
 	status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
 	//optionally read n(z) sections (may be two for cross-correlations)
 	status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
-	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
-	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
-
 	config->corr_type = (corr_type_t)corr_type;
-
-	//If auto_corr is not given in options file, assume truen unless doing GGL.
-	if (corr_type==ggl){
-		printf("Because this is a GGL spectrum I'm not assuming it is an auto-correlation\n");		
-		printf("Not looking at what (if anything) you wrote in the ini file\n");
-		auto_corr = false;
-	}
-	else if (auto_corr){
-		printf("Assuming this in an auto-correlation. If this is not true set auto_corr=F\n");
-	}
-	else{
-		printf("You set auto_corr=F so I will not assume this is an auto-correlation and will do both pairs ij and ji\n");
-	}
-
-	config->auto_corr = auto_corr;
-
 	if (status){
-		fprintf(stderr, "Please specify input_section_name and output_section_name in the cl_to_xi module.\n");
+		fprintf(stderr, "Please specify input_section_name, output_section_name, and corr_type=0,1, or 2 in the cl_to_xi module.\n");
 		exit(status);
 	}
 
@@ -145,17 +119,16 @@ int execute(c_datablock * block, void * config_in)
 
 	// Loop through bin combinations, loading ell,C_ell and computing xi+/-
 	int j_bin_start;
-  for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
-  	if (config->auto_corr){
-  		j_bin_start=i_bin;
-  	}
-  	else{
-  		j_bin_start=1;
-  	}
-  	for (int j_bin=j_bin_start; j_bin<=num_z_bin_B; j_bin++) {
+	bool found_any = false;
+	for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
+		for (int j_bin=1; j_bin<=num_z_bin_B; j_bin++) {
 			// read in C(l)
 			double * C_ell;
 			snprintf(name_in, 64, "bin_%d_%d",i_bin,j_bin);
+			if (!c_datablock_has_value(block, config->input_section, name_in)){
+				continue;
+			}
+			found_any=true;
 	    	status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
 			if (status) {
 				fprintf(stderr, "Could not load bin %d,%d in C_ell -> xi\n", i_bin, j_bin);
@@ -180,7 +153,7 @@ int execute(c_datablock * block, void * config_in)
 					break;
 				default:
 					printf("corr_type: %d\n", config->corr_type);
-					printf("ERROR: Invalid corr_type in cl_to_xi_interface\n");
+					printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
 					return 10;
 			}
 
@@ -275,6 +248,12 @@ int execute(c_datablock * block, void * config_in)
 			free(C_ell);
 			//fclose(f);
 		}
+	}
+	if (!found_any){
+		fprintf(stderr, "WARNING: I COULD NOT FIND ANY SPECTRA OF THE FORM \n");
+		fprintf(stderr, "xiplus_i_j, ximinus_i_j, wmatter_i_j, or tanshear_i_j.\n");
+		fprintf(stderr, "THIS IS ALMOST CERTAINLY AN ERROR.\n");
+		status = 1;
 	}
 	// Save theta values...check these are being calculated correctly at some point
 	double dlog_theta= (log_theta_max-log_theta_min)/((double)N_thetaH-1.0);
