@@ -68,6 +68,7 @@ class CFHTLensLikelihood(object):
         self.plus_only=plus_only
         self.cut_low_theta=cut_low_theta
         theta, self.data = load_data_vector(data_filename, self.plus_only, self.cut_low_theta)
+
         #Convert thetas from arcminutes to radians?? to match theory thetas
         self.theta = np.radians(theta/60.)
         #print 'theta bin mids',self.theta
@@ -134,6 +135,7 @@ class CFHTLensLikelihood(object):
                     xi_binned = self.interpolate_to_bin(theta_theory, xi_theory)
                     #build up longer vector of data
                     xi_vector.append(xi_binned)
+
             #flatten to single vector
             xi_vector = np.concatenate(xi_vector)
             assert xi_vector.shape == self.data.shape
@@ -146,6 +148,8 @@ class CFHTLensLikelihood(object):
             #xi_data is a dictionary containing all the bin pair data vectors
             xi_plus_vector = []
             xi_minus_vector = []
+            k=0
+
             #loop through the bins loading the theory data
             for i in xrange(1, n_z_bin+1):
                 for j in xrange(i, n_z_bin+1):
@@ -171,6 +175,12 @@ class CFHTLensLikelihood(object):
                     pylab.show()
                     '''
 
+                    assert len(self.theta)==len(xi_plus_binned)
+                    for t,xip in zip(self.theta, xi_plus_binned):
+                        print 'xip', i, j, t, xip
+                    for t,xim in zip(self.theta, xi_minus_binned):
+                        print 'xim', i, j, t, xim
+
                     #build up longer vector of data
                     xi_plus_vector.append(xi_plus_binned)
                     xi_minus_vector.append(xi_minus_binned)
@@ -181,6 +191,8 @@ class CFHTLensLikelihood(object):
             #print 'len(xi_plus_vector)', len(xi_plus_vector)
             #concatenate xi_plus_vector and xi_minus_vector to (hopefully) match form of data vector 
             xi_vector=np.concatenate((xi_plus_vector,xi_minus_vector))
+            np.savetxt("theory_vector_old.txt", xi_vector)
+            np.savetxt("data_vector_old.txt", self.data)
             #print 'len(xi_vector)', len(xi_vector)
             assert xi_vector.shape == self.data.shape
             #get chi2 and return log like
