@@ -21,15 +21,11 @@ def ensure_starts_at_zero(z, nz):
     else:
         z_new = z
         nz_new = nz
-    #There are no galaxies at redshift zero.  Well actually there's exactly one
-    #galaxy at redshift zero, but we are unlikely to be including it in any of 
-    #our correlation functions.  So the integrals don't converge unless n(0)=0.
-    nz_new[:,0] = 0.0
-
+        
     return z_new, nz_new
 
 
-def load_histogram_form(ext):
+def load_histogram_form(ext,upsampling):
     #Load the various z columns.
     #The cosmosis code is expecting something it can spline
     #so  we need to give it more points than this - we will
@@ -38,8 +34,7 @@ def load_histogram_form(ext):
     zlow = ext.data['Z_LOW']
     zhigh = ext.data['Z_HIGH']
 
-    upsampling = 10
-    z = np.linspace(zlow[0], zhigh[-1], len(zlow)*upsampling)
+    z = np.linspace(0.0, zhigh[-1], len(zlow)*upsampling)
     sample_bin = np.digitize(z, zlow)-1
 
     #First bin.
@@ -61,24 +56,29 @@ def load_histogram_form(ext):
     for col in nz:
         norm = np.trapz(col, z)
         col/=norm
+
     return z, nz
 
 
 def setup(options):
     nz_file = options.get_string(option_section, "nz_file")
     data_sets = options.get_string(option_section, "data_sets")
+    upsampling = options.get_int(option_section, "upsampling", 100)
     data_sets = data_sets.split()
     if not data_sets:
         raise RuntimeError("Option data_sets empty; please set the option data_sets=name1 name2 etc and I will search the fits file for nz_name2, nz_name2, etc.")
     
     print "Loading number density data from {0}:".format(nz_file)
+    print "I will up-sample - increase the density of n(z) points by a factor {}".format(upsampling)
+    print "to make a spline look more like a histogram. Set upsampling=1"
+    print "if you do not want this."
     F = pyfits.open(nz_file)
     data = {}
     for data_set in data_sets:
         name = "NZ_"+data_set.upper()
         print "    Looking at FITS extension {0}:".format(name)
         ext = F[name]
-        z, nz = load_histogram_form(ext)
+        z, nz = load_histogram_form(ext, upsampling)
         data[name] = (z, nz)
     return data
 
