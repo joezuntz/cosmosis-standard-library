@@ -22,32 +22,30 @@ def setup(options):
 		rmax = options[option_section, "rmax"]
 		dr = options[option_section, "dr"]		
 		R = np.arange(rmin,rmax,dr)
+	R = np.atleast_1d(R)
+	z = np.atleast_1d(z)
 	blockname = options[option_section, "matter_power"]
 	print "Sigmar(R,z) will be evaluated at:"
 	print "z = ", z
 	print "R = ", R
 	return (z, R, blockname)
 
-def powerspec(k,z, rbs):
-	return rbs.ev(k,z)
-	#[0]
-		
 def sigint(lnk,r,z,rbs):
 	k=np.exp(lnk)
 	x=k*r
 	w=3*(-x*np.cos(x)+np.sin(x))/x**3
-	tmp = w**2*k**3*powerspec(k,z,rbs)/(2*3.14159**2)
+	p = rbs.ev(k, z)
+	tmp = w**2*k**3*p/(2*3.14159**2)
 	return tmp
+
 
 def execute(block, config):
 	z, R, blockname = config 
 
-	zarray=block[blockname,"z"]
-	karray=block[blockname,"k_h"]
-	powerarray=block[blockname,"p_k"].reshape([np.size(zarray),np.size(karray)]).T
+	karray, zarray, powerarray = block.get_grid(blockname, "k_h", "z", "p_k")
+
 
 	rbs = RectBivariateSpline(karray,zarray,powerarray)
-
 	kmin_overall = np.log(karray.min())
 	kmax_overall = np.log(karray.max())
 
