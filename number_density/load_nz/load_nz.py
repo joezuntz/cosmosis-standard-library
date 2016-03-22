@@ -11,7 +11,6 @@ def setup(options):
 
 	data_full = np.loadtxt(filename).T
 
-        print "TESTING", non_tomographic
 	if des_fmt:
 		z=0.5*(data_full[0]+data_full[1])
 		nz=len(z)
