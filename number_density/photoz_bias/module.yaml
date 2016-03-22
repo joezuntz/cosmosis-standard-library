@@ -29,6 +29,7 @@ explanation: >
 
 params:
     mode: "String; 'multiplicative' or 'additive', depending on what kind of bias model you want"
+    sample: "String, optional; If set, look for n(z) in the section called sample, and error parameters in sample_errors"
 
 inputs:
     wl_number_density:
