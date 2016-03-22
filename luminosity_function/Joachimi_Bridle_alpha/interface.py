@@ -4,21 +4,19 @@ import luminosity_function as luminosity
 import numpy as np
 
 def setup(options):
-	#method = options[option_section, "method"].lower()
-	# For the moment we only have one method. It may or may not be useful to try implementing more here later. 
-	#if method not in ["jb"]:
-	#	raise ValueError('The method in the luminosity function module must'
-	#		'be either "JB" (Joachimi and Bridle 2010) or')
-	
-	survey = options[option_section, "sample"]
-	try:	binned_alpha = options[option_section, "binned_alpha"]
-	except:	binned_alpha = True
 
-	mag_lim = options[survey, "magnitude_limit"]
+	sample = options.get_string(option_section, "sample", default='')
+	binned_alpha = options.get_bool(option_section, "binned_alpha", default=True)
 
-	return (survey, binned_alpha, mag_lim )
+	if sample:
+		mag_lim = options[sample, "magnitude_limit"]
+	else:
+		mag_lim = options[option_section, "magnitude_limit"]
+
+	return (sample, binned_alpha, mag_lim )
 
 def execute(block, config):
+
 	ia = names.intrinsic_alignment_parameters
 	cos = names.cosmological_parameters
 	lum = names.galaxy_luminosity_function 
@@ -46,8 +44,10 @@ def execute(block, config):
 		alpha_bin, z_bar = luminosity.get_binned_alpha(block, survey, alpha, z)
 	
 		# Then write these to the datablock
-		block.put_double_array_1d(survey, 'alpha_binned', alpha_bin)
-		#block.put_double_array_1d(lum, 'z_binned', z_bar)
+                if len(alpha_bin)>1:
+			block.put_double_array_1d(survey, 'alpha_binned', alpha_bin)
+		else:
+			block.put_double(survey, 'alpha_binned', alpha_bin[0])
 		
 	return 0
 

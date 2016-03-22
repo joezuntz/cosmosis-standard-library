@@ -578,7 +578,14 @@ int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nzb
 	status|=c_datablock_put_double_array_1d(block, out_section, "ell", l, nl);
 
 	double *alpha;
-	status|=c_datablock_get_double_array_1d(block, config->LSS_survey, "alpha_binned", &alpha, &nbin);
+	if (nbin>1){
+		status|=c_datablock_get_double_array_1d(block, config->LSS_survey, "alpha_binned", &alpha, &nbin);}
+	else{
+		alpha = (double*)malloc(sizeof(double));
+		printf("Using nontomographic alpha.\n");
+		status|=c_datablock_get_double(block, config->LSS_survey, "alpha_binned", &alpha[0]);
+		}
+
 	if(status!=0){
 		printf("Error: could not find luminosity function slope. Please check it is saved to the survey survey used to calculate the LSS spectra.");
 		exit(1);
