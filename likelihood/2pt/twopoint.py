@@ -1,9 +1,3 @@
-"""
-This little library is the preliminary part of one dealing with
-the format for 2-point data described here: https://github.com/joezuntz/2point
-
-"""
-
 from astropy.io import fits
 from astropy.table import Table
 from enum34 import Enum
@@ -12,21 +6,9 @@ import numpy as np
 #FITS header keyword indicating 2-point data
 TWOPOINT_SENTINEL = "2PTDATA"
 NZ_SENTINEL = "NZDATA"
+COV_SENTINEL = "COVDATA"
+PRECISION_SENTINEL = "PRECDATA"
 
-fits=None
-def get_fits():
-    global fits
-    if fits is None:
-        try:
-            import astropy.io
-            fits = astropy.io.fits
-        except ImportError:
-            try:
-                import pyfits
-                fits = pyfits
-            except ImportError:
-                raise ImportError("To use the I/O featurs of the two point library/likelihood you need astropy or pyfits.  Install it with 'pip install astropy'.  Or your current version may not be working.")
-    return fits
 
 class Types(Enum):
     """
@@ -102,9 +84,8 @@ class NumberDensity(object):
         return N
 
     def to_fits(self):
-        fits = get_fits()
         header = fits.Header()
-        header['NZDATA']= True
+        header[NZ_SENTINEL]= True
         header['EXTNAME'] = self.name
 
         columns = [
@@ -192,9 +173,8 @@ class SpectrumMeasurement(object):
             angular_bin, value, angle, error)
 
     def to_fits(self):
-        fits = get_fits()
         header = fits.Header()
-        header['2PTDATA']= True
+        header[TWOPOINT_SENTINEL]= True
         header['EXTNAME']=self.name
         header['QUANT1'] = self.type1.value
         header['QUANT2'] = self.type2.value
@@ -216,40 +196,46 @@ class SpectrumMeasurement(object):
 
 
 
-class CovarianceMatrixInfo(object):
-    """Encapsulate a covariance matrix and indices in it"""
-    def __init__(self, name, names, starts, lengths, covmat):
-        super(CovarianceMatrixInfo, self).__init__()
+class MatrixInfo(object):
+    """Encapsulate a covariance or precision matrix and indices into it.
+
+    Most of the behaviour of precision and covariance matrices is the same:
+    we load, save, and index them in almost exactly the same way. So we define
+    that behaviour in a base class and use two subclasses for the specifics.
+
+    """
+    sentinel = None
+    def __init__(self, name, names, starts, lengths, matrix):
+        super(MatrixInfo, self).__init__()
         self.name = name
         self.names = names
         self.starts = starts
         self.lengths = lengths
-        self.covmat = covmat
-        self.diagonal = covmat.diagonal()
-
-    def get_error(self, name):
-        i = self.names.index(name)
-        start = self.starts[i]
-        end = start + self.lengths[i]
-        return self.diagonal[start:end]**0.5
+        self.matrix = matrix
+        self.diagonal = matrix.diagonal()
 
     def to_fits(self):
-        fits = get_fits()
         header = fits.Header()
-        header['COVDATA']= True
+        header[self.sentinel]= True
         header['EXTNAME'] = self.name
         for i,(start_index,name) in enumerate(zip(self.starts, self.names)):
             header['STRT_{}'.format(i)] = start_index
             header['NAME_{}'.format(i)] = name
-        extension=fits.ImageHDU(data=self.covmat, header=header)
+        extension=fits.ImageHDU(data=self.matrix, header=header)
         return extension
 
 
     @classmethod
     def from_fits(cls, extension):
+        if cls.sentinel is None:
+            raise RuntimeError("""Do not use the MatrixInfo class directly; use a 
+                subclass CovarianceMatrixInfo or PrecisionMatrixInfo.""")
         cov_name = extension.name
         covmat = extension.data
         header = extension.header
+        assert cls.sentinel in header, """Tried to load a matrix of type {}
+         from an extension {} but it does not contain that kind of data""".format(
+            cls.sentinel, cov_name)
         i = 0
         measurement_names = []
         start_indices = []
@@ -271,21 +257,36 @@ class CovarianceMatrixInfo(object):
 
         return cls(cov_name, measurement_names, start_indices, lengths, covmat)
 
+class CovarianceMatrixInfo(MatrixInfo):
+    sentinel=COV_SENTINEL
+    def get_error(self, name):
+        i = self.names.index(name)
+        start = self.starts[i]
+        end = start + self.lengths[i]
+        return self.diagonal[start:end]**0.5
+
+class PrecisionMatrixInfo(MatrixInfo):
+    sentinel=PRECISION_SENTINEL
 
 
 
 class TwoPointFile(object):
-    def __init__(self, spectra, kernels, windows, covmat_info):
+    def __init__(self, spectra, kernels, windows, covmat_info=None, precision_info=None):
         if windows is None:
             windows = {}
         self.spectra = spectra
         self.kernels = kernels
         self.windows = windows
         self.covmat_info = covmat_info
+        self.precision_info = precision_info
         if covmat_info:
-            self.covmat = covmat_info.covmat
+            self.covmat = covmat_info.matrix
         else:
-            self.covmat = None
+            self.matrix = None
+        if precision_info:
+            self.precision = precision_info.matrix
+        else:
+            self.precision = None
 
     def get_spectrum(self, name):
         spectra = [spectrum for spectrum in self.spectra if spectrum.name==name]
@@ -359,11 +360,13 @@ class TwoPointFile(object):
             self.covmat = self.covmat[mask,:][:,mask]
 
     def to_fits(self, filename, clobber=False):
-        fits = get_fits()
         hdus = [fits.PrimaryHDU()]
 
         if self.covmat_info is not None:
             hdus.append(self.covmat_info.to_fits())
+
+        if self.precision_info is not None:
+            hdus.append(self.precision_info.to_fits())
 
         for spectrum in self.spectra:
             if spectrum.windows!="SAMPLE":
@@ -380,8 +383,7 @@ class TwoPointFile(object):
 
 
     @classmethod
-    def from_fits(cls, filename, covmat_name="COVMAT"):
-        fits = get_fits()
+    def from_fits(cls, filename, covmat_name="COVMAT", precision_name=None):
         fitsfile = fits.open(filename)
         spectra = []
         kernels = {}
@@ -393,10 +395,16 @@ class TwoPointFile(object):
         #We can also use no covmat at all.
         if covmat_name is None:
             covmat_info = None
-            covmat = None
         else:
             extension = fitsfile[covmat_name]
             covmat_info = CovarianceMatrixInfo.from_fits(extension)
+
+        if precision_name is None:
+            precision_info = None
+            precision = None
+        else:
+            extension = fitsfile[precision_name]
+            precision_info = PrecisionMatrixInfo.from_fits(extension)
 
 
         #First load all the spectra in the file
@@ -423,7 +431,7 @@ class TwoPointFile(object):
                 windows[spectrum.windows] = cls._windows_from_fits(fitsfile[windows])
 
         #return a new TwoPointFile object with the data we have just loaded
-        return cls(spectra, kernels, windows, covmat_info)
+        return cls(spectra, kernels, windows, covmat_info, precision_info)
 
 
                 
