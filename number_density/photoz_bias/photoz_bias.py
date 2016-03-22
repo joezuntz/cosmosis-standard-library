@@ -6,14 +6,20 @@ MODES = ["multiplicative", "additive"]
 
 def setup(options):
 	mode = options[option_section, "mode"]
+	sample = options.get_string(option_section, "sample", "")
 	if mode not in MODES:
 		raise ValueError("mode for photoz must be one of: %r"%MODES)
-	return {"mode":mode}
+	return {"mode":mode, "sample":sample}
 
 def execute(block, config):
 	mode = config['mode']
-	pz = names.wl_number_density
-	biases = "wl_photoz_errors"
+	sample = config['sample']
+	if sample=="":
+		pz = names.wl_number_density
+		biases = "wl_photoz_errors"
+	else:
+		pz = sample
+		biases = sample+"_errors"
 	nbin = block[pz, "nbin"]
 	z = block[pz, "z"]
 	for i in xrange(1,nbin+1):
