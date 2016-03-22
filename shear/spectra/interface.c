@@ -484,8 +484,10 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 	limber_config lc;
 
 	int N1,N2;
+	printf("TESTING\n");
 	int status = get_binning(spectrum_type, nzbin_lss, nzbin_shear, &N1, &N2);
 
+    printf("TESTING\n");
 	gsl_spline * K1[N1];
 	gsl_spline * K2[N2];
 
@@ -493,6 +495,7 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 	status = choose_configuration(block, spectrum_type, &lc, config);
 	status |= choose_kernels(spectrum_type, nzbin_shear, nzbin_lss, W_shear, W_lss, Nchi_shear, Nchi_lss, K1, K2);
 
+	printf("TESTING\n");
 	// If any of these have gone wrong we quit
 	// after cleaning up any allocated memory
 	if (section==NULL) status = 1;
@@ -501,6 +504,7 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 		return status;
 	}
 
+	printf("TESTING\n");
 	// First save the ell values and number of redshift bins
 	status |= c_datablock_put_double_array_1d(block, section, "ell", lc.ell, lc.n_ell);
 	if (N1==N2){
@@ -512,6 +516,7 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 		status |= c_datablock_put_int(block, section, "nzbin_shear", nzbin_shear);
 	}
 
+	printf("TESTING\n");
 	// In addition to the Limber kernel, the magnification 
 	// spectra also require the slope of the luminosity 
 	// function at the limiting magnitude of the survey
@@ -519,16 +524,28 @@ int compute_spectra(c_datablock * block, int nzbin_shear, int nzbin_lss, spectru
 	int Nzbin, mag_switch;
 	if (spectrum_type==magnification_magnification || spectrum_type==matter_magnification ||
 	    spectrum_type==magnification_shear	       || spectrum_type==magnification_intrinsic){
-		status |= c_datablock_get_double_array_1d(block, config->LSS_survey, "alpha_binned", &alpha, &Nzbin);
+		if(nzbin_lss>1){
+			status |= c_datablock_get_double_array_1d(block, config->LSS_survey, "alpha_binned", &alpha, &Nzbin);}
+
+		else{
+			alpha = (double*)malloc(sizeof(double));
+			printf("Using nontomographic alpha.\n");
+			status |= c_datablock_get_double(block, config->LSS_survey, "alpha_binned", &alpha[0]);
+		}
+
 		mag_switch = 1;
 	}
 	else mag_switch = 0;
+
+
+	printf("TESTING %d\n", N1);
 
 	for (int bin1=1; bin1<=N1; bin1++){
 		// We also need to choose the max value of bin 2.
 		// For auto-spectra we don't compute both bin_i_j and bin_j_i,
 		// whereas for cross-spectra we do
 		int bin2_max = choose_bin2_max(spectrum_type, N2, bin1);
+		printf("%d %d\n", bin1, bin2_max);
 		for (int bin2=1; bin2<=bin2_max; bin2++){
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
 			if (mag_switch==1) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
