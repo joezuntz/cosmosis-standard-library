@@ -142,12 +142,21 @@ class SpectrumType(Enum):
         name = "magnification_cl"
         prefactor_power = 2
 
+    class PositionShear(Spectrum):
+        power_spectrum = PowerType.matter_galaxy
+        kernels = "N W"
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_power = 1
+
+    """
     class ShearPosition(Spectrum):
         power_spectrum = PowerType.matter_galaxy
         kernels = "W N"
         autocorrelation = False
         name = "shear_galaxy_cl"
         prefactor_power = 1
+    """
 
     class PositionIntrinsic(Spectrum):
         power_spectrum = PowerType.galaxy_intrinsic
