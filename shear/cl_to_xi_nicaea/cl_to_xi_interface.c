@@ -37,10 +37,27 @@ void * setup(c_datablock * options)
 	//status |= c_datablock_get_int(options, OPTION_SECTION, "n_theta", 10, &(config->n_theta_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_min", 0.0, &(config->theta_min_user));
 	//status |= c_datablock_get_double(options, OPTION_SECTION, "theta_max", 0.0, &(config->theta_max_user));
-	status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
-	status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
 	//optionally read n(z) sections (may be two for cross-correlations)
 	status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
+
+	if (corr_type==shear_shear){
+		status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
+		status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
+	}
+	else if (corr_type==ggl){
+		status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_shear_cl", &(config->input_section));
+		status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "galaxy_shear_xi", &(config->output_section));
+	}
+	else if (corr_type==matter){
+		status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_cl", &(config->input_section));
+		status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "galaxy_xi", &(config->output_section));
+	}
+	else{
+		fprintf(stderr, "Unknown corr_type in cl_to_xi (%d). It should be one of %d (shear-shear), %d (shear-galaxy) or %d (position-galaxy).\n",
+			corr_type,shear_shear,ggl,matter);
+	}
+
+
 	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
 
@@ -172,7 +189,7 @@ int execute(c_datablock * block, void * config_in)
 					break;
 				case matter:
 					tpstat = tp_w;
-					snprintf(name_xip, 64, "wmatter_%d_%d",i_bin,j_bin);
+					snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
 					break;
 				case ggl:
 					tpstat = tp_gt;
