@@ -169,7 +169,7 @@ int execute(c_datablock * block, void * config_in)
 					break;
 				case ggl:
 					tpstat = tp_gt;
-					snprintf(name_xip, 64, "tanshear_%d_%d",i_bin,j_bin);
+					snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
 					break;
 				default:
 					printf("corr_type: %d\n", config->corr_type);
