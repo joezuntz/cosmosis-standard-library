@@ -111,6 +111,7 @@ def get_class_outputs(block, c, config):
     ##
     c_ell_data =  c.raw_cl()
     ell = c_ell_data['ell']
+    ell = ell[2:]
 
     #Save the ell range
     block[cmb_cl, "ell"] = ell
@@ -121,7 +122,7 @@ def get_class_outputs(block, c, config):
 
     #Save each of the four spectra
     for s in ['tt','ee','te','bb']:
-        block[cmb_cl, s] = c_ell_data[s] * f
+        block[cmb_cl, s] = c_ell_data[s][2:] * f
 
 
 
