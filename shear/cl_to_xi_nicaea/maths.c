@@ -3,6 +3,8 @@
  * Martin Kilbinger 06/2008					*
  * ============================================================ */
 
+#include <assert.h>
+
 #ifdef __PLANCK__
 #include "HL2_likely/tools/maths.h"
 #else
@@ -1478,7 +1480,7 @@ void del_interTable2Dspline(interTable2Dspline **self)
    if (*self==NULL) return;
    sm2_free_vector((*self)->x, 1, (*self)->m);
    sm2_free_vector((*self)->y, 1, (*self)->n);
-   for (comp=0; comp<=NCOMP; comp++) {
+   for (comp=0; comp<NCOMP; comp++) {
       sm2_free_matrix((*self)->z[comp], 1, (*self)->m, 1, (*self)->n);
       sm2_free_matrix((*self)->z2[comp], 1, (*self)->m, 1, (*self)->n);
    }
@@ -1534,7 +1536,7 @@ void del_interTable2Dneq(interTable2Dneq **self)
    if (*self==NULL) return;
    sm2_free_vector((*self)->x, 1, (*self)->m);
    sm2_free_vector((*self)->y, 1, (*self)->n);
-   for (comp=0; comp<=NCOMP; comp++) {
+   for (comp=0; comp<NCOMP; comp++) {
       sm2_free_matrix((*self)->z[comp], 1, (*self)->m, 1, (*self)->n);
    }
    free(*self);
@@ -1544,6 +1546,8 @@ void del_interTable2Dneq(interTable2Dneq **self)
 double sm2_interpol2Dneq(interTable2Dneq *self, comp_t comp, double x0, double y0, error **err)
 {
    double rx, ry, z0, logk1, logk2, logT1, logT2;
+
+   assert (comp < 3);
 
    sm2_hunt(self->x, self->m, x0, &self->kx);
    sm2_hunt(self->y, self->n, y0, &self->ky);

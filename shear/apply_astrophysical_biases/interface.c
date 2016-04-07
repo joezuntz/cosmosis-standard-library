@@ -35,7 +35,6 @@ void * setup(c_datablock * options){
 
 	printf("%d\n", status_colour);
 	printf("%d \n", config->colour_switch);
-	
 
 	return config;
 }
@@ -46,7 +45,6 @@ int execute(c_datablock * block, void * config_in)
 
 	bias_config * config = (bias_config*) config_in;
 	biases b;
-
 	
 	status|=load_biases(block, &b, config);
 

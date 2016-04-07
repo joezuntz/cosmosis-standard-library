@@ -6,8 +6,12 @@ def setup(options):
 	filename = options[option_section, "filepath"]
 	des_fmt = options.get_bool(option_section,"des_fmt",default=False)
 	histogram = options.get_bool(option_section,"histogram",default=False)
+
 	output_section = options.get_string(option_section, "output_section", default=section_names.wl_number_density)
+	single_bin = options.get_int(option_section, "single_bin", default=-666)
+
 	data_full = np.loadtxt(filename).T
+
 	if des_fmt:
 		z=0.5*(data_full[0]+data_full[1])
 		nz=len(z)
@@ -17,7 +21,11 @@ def setup(options):
 		nz = len(data_full[0])
 		nbin = len(data_full)-1
 		z = data_full[0]
-		n_of_z = data_full[1:]
+		if single_bin!=-666:
+			n_of_z = data_full[single_bin]
+		    nbin = 1
+		else:
+			n_of_z = data_full[1:]
 
 	if histogram:
 		#in this case the sample z values are lower edges of
@@ -49,6 +57,7 @@ def execute(block, config):
 	block[output_section, 'nz'] = nz
 	block[output_section, 'nbin'] = nbin
 	block[output_section, 'z'] = z
+
 	for (bin, bin_n_of_z) in enumerate(n_of_z):
 		name = "bin_%d"%(bin+1)
 		block[output_section, name] =  bin_n_of_z
