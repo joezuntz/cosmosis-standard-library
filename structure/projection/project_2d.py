@@ -316,7 +316,10 @@ class SpectrumCalulcator(object):
         #convert Mpc to Mpc/h
         chi_distance *= h0
         
-        self.chi_star = block[names.distances, 'CHISTAR'] * h0
+        if block.has_value(names.distances, 'CHISTAR'):
+            self.chi_star = block[names.distances, 'CHISTAR'] * h0
+        else:
+            self.chi_star = None
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
@@ -376,6 +379,8 @@ class SpectrumCalulcator(object):
             elif kernel_type=="W":
                 kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
             elif kernel_type=="K":
+                if self.chi_star is None:
+                    raise ValueError("Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
                 kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
