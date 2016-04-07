@@ -441,7 +441,8 @@ class SpectrumCalulcator(object):
             self.load_kernels(block)
             self.load_power(block)
             for spectrum in self.req_spectra:
-                print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
+                if self.verbose:
+                    print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
                 self.compute_spectra(block, spectrum)
         finally:
             self.clean()
