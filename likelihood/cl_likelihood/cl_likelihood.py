@@ -1,6 +1,7 @@
 from gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names, option_section
 import cPickle as pickle
+import scipy.stats.mstats as mstats
 import numpy as np
 import string
 import pdb
@@ -26,12 +27,13 @@ import pdb
 
 
 
-cl_sections= {'ee':'galaxy_shape_cl', 'ne':'galaxy_position_shape_cross_cl', 'nn':'galaxy_position_cl'}
+cl_sections= {'ee':'galaxy_shape_cl', 'ne':'galaxy_position_shape_cross_cl', 'nn':'galaxy_position_cl',
+	'kk':'cmb_kappa_cl',
+	'ke':'kappa_shear_cross_cl',
+	'kn':'kappa_position_cross_cl'}
 
 class ClLikelihood(GaussianLikelihood):
 	constant_covariance=False
-	#one section name
-	#don't define section name when reading options
 	def __init__(self, options):
 
 		constcov = options.get_bool(option_section, 'fixed_covariance')
@@ -41,9 +43,13 @@ class ClLikelihood(GaussianLikelihood):
 		data_file = options.get_string(option_section, 'data')
 		self.shear_cat = options.get_string(option_section, 'shear_sample')
 		self.pos_cat = options.get_string(option_section, 'LSS_sample')
+		self.cmb_cat = options.get_string(option_section, 'CMB_sample', default="")
 		self.shear = options.get_bool(option_section, 'shear')
-		self.pos = options.get_bool(option_section, 'galaxy_clustering')
+		self.pos = options.get_bool(option_section, 'position')
 		self.ggl = options.get_bool(option_section, 'ggl')
+		self.cmb_kappa = options.get_bool(option_section, 'cmb_kappa', default=False)
+		self.kappa_shear = options.get_bool(option_section, 'kappa_shear', default=False)
+		self.kappa_pos = options.get_bool(option_section, 'kappa_position', default=False)
 
 		self.interpolate = options.get_bool(option_section, 'interpolate')
 
@@ -53,6 +59,9 @@ class ClLikelihood(GaussianLikelihood):
 		if self.shear:	self.spectra_to_use.append('ee')
 		if self.ggl:	self.spectra_to_use.append('ne')
 		if self.pos:	self.spectra_to_use.append('nn')
+		if self.cmb_kappa:	self.spectra_to_use.append('kk')
+		if self.kappa_shear:	self.spectra_to_use.append('ke')
+		if self.kappa_pos:	self.spectra_to_use.append('kn')
 
 		self.x_section = [cl_sections[sp] for sp in self.spectra_to_use]
 		self.x_name = 'l_bin_edges'
@@ -71,6 +80,19 @@ class ClLikelihood(GaussianLikelihood):
 		if self.constant_covariance:
 			self.covmat_file = covmat_file
 			self.extract_covariance()
+
+                # Get some parameters for this galaxy catalogue needed for the calculation
+		self.A_ee = np.inf
+		self.A_nn = np.inf
+		self.A_kk = np.inf
+		if self.shear:
+			self.A_ee = options[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		if self.pos:
+			self.A_nn = options[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
+		if self.ggl:
+			self.A_ne = min(self.A_ee, self.A_nn)
+		if self.cmb_kappa or self.kappa_shear or self.kappa_pos:
+			self.A_cmb = options[self.cmb_cat, 'area'] * (np.pi*np.pi)/(180*180)
 
 	def initialise_theory(self, block):
 		"""
@@ -103,10 +125,15 @@ class ClLikelihood(GaussianLikelihood):
 		# a spectrum type and a tuple of z bin indices for each C(l)
 
 		# Do a consistency check with the theory vector to ensure the binning is the same
-		self.l_bins = block[cl_sections[self.spectra[0][0]], 'ell']
-		if len(self.spectra_theory) != len(self.spectra):
-			print 'Error: the selected redshift bin combinations in the theory vector are inconsistent with the data.'
-			exit()
+		if self.shear:
+			self.ell_bins_ee = block[cl_sections["ee"], 'ell']
+		if self.pos:
+			self.ell_bins_nn = block[cl_sections["nn"], 'ell']
+		if self.ggl:
+			self.ell_bins_ne = block[cl_sections["ne"], 'ell']
+		#if len(self.spectra_theory) != len(self.spectra):
+		#	print 'Error: the selected redshift bin combinations in the theory vector are inconsistent with the data.'
+		#	exit()
 
 		# Set the datavector names now the binning is known
 		self.y_name = ['bin_%d_%d'%sp[1] for sp in self.spectra ]
@@ -127,15 +154,12 @@ class ClLikelihood(GaussianLikelihood):
 		else:	
 			print 'Calculating covariance matrix.'
 			# Get some parameters for this galaxy catalogue needed for the calculation
-			self.A_shear = block[self.shear_cat, 'area'] * (np.pi*np.pi)/(180*180)
-			self.A_pos = block[self.pos_cat, 'area'] * (np.pi*np.pi)/(180*180)
-			self.A = self.A_shear 
-			if (self.A_shear!=self.A_pos):
-				self.A = min(self.A_pos, self.A_shear)
-			self.l_bins_shear = self.l_bins
-			self.l_bins_pos = self.l_bins
-			self.dl = block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][1:] - block[cl_sections[self.spectra[0][0]], 'l_bin_edges'][:-1]
-
+			if self.shear:
+				self.dl_ee = block[cl_sections["ee"], 'l_bin_edges'][1:] - block[cl_sections["ee"], 'l_bin_edges'][:-1]
+			if self.pos:
+				self.dl_nn = block[cl_sections["nn"], 'l_bin_edges'][1:] - block[cl_sections["nn"], 'l_bin_edges'][:-1]
+			if self.ggl:
+				self.dl_ne = block[cl_sections["ne"], 'l_bin_edges'][1:] - block[cl_sections["ne"], 'l_bin_edges'][:-1]
 		nspec = len(self.spectra)
 		nl = self.nlbin
 		nt = self.n_elem
@@ -146,7 +170,7 @@ class ClLikelihood(GaussianLikelihood):
 		# block for each pair of spectra
 
 		i,j=0,0
-		k = np.zeros(nt)
+		k = np.zeros(nt).astype(int)
 		# Loop over the types of spectra e.g. ee, nn, ne 
 		# This should give a maximum of 9 combinations
 		for spect1 in [ x for x in self.spectra if x[1]==(0,0) ]:
@@ -155,10 +179,10 @@ class ClLikelihood(GaussianLikelihood):
 				m = self.compute_covariance_matrix( block, mode=[ spect1[0],spect2[0]] )
 				print 'Evaluated matrix %s%s' %(spect1[0],spect2[0]) 
 
+			
 				# Write to the appropriate block of the matrix
-				Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
-				
-
+				try: Cov[ k[i] : (k[i]+m.shape[0]), j : (j+m.shape[1]) ] += m
+				except: pdb.set_trace()
 				# Update indices
 				j+=m.shape[1]
 				k[i] += m.shape[0]
@@ -180,7 +204,7 @@ class ClLikelihood(GaussianLikelihood):
 		# Read the likelihood, add the normalisation factor and
 		# resave to the datablock
 		like = block["likelihoods", self.like_name+"_LIKE"]
-		like += p
+		like -= p
 		block.replace_double("likelihoods", self.like_name+"_LIKE", like)
 
 	def build_inverse_covariance(self, block):
@@ -201,10 +225,12 @@ class ClLikelihood(GaussianLikelihood):
 		print 'Loading datavector.'
 		cl_data_all = pickle.load(open(datafile, 'rb'))
 
-		try:
+		if "ell_shear" in cl_data_all.keys():
 			self.data_x = cl_data_all['ell_shear']
-		except:
+		elif "ell_pos" in cl_data_all.keys():
 			self.data_x = cl_data_all['ell_pos']
+		#elif "ell_cmb" in cl_data_all.keys():
+		#	self.data_x = cl_data_all['ell_cmb']
 
 		self.nlbin = len(self.data_x)
 
@@ -245,7 +271,7 @@ class ClLikelihood(GaussianLikelihood):
 				lmin= block[section, 'lmin_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 				lmax= block[section, 'lmax_%d_%d'%(spect[1][0]+1, spect[1][1]+1)]
 			else:
-				print 'No prescription for scale cuts found. Using full datavector.'
+				if bin=='bin_1_1': print 'No prescription for scale cuts found. Using full datavector.'
 				lmin = 0. ; lmax = 1e7
 
 			scale_cut = (ell>lmin) & (ell<lmax)
@@ -288,6 +314,9 @@ class ClLikelihood(GaussianLikelihood):
 		self.bins_ee = []
 		self.bins_ne = []
 		self.bins_nn = []
+		self.bins_ke = []
+		self.bins_kn = []
+
 		if self.shear:
 			self.nzbin_shear = block[self.shear_cat, 'nzbin']
 
@@ -301,6 +330,21 @@ class ClLikelihood(GaussianLikelihood):
 				for j in xrange(self.nzbin_pos):
 					self.bins_nn.append((i,j))
 
+		# By definition the correlations involving CMB kappa have only
+		# 1 tomographic bin
+		if self.cmb_kappa:
+			self.bins_kk = [(0,0)]
+
+		if self.kappa_shear:
+			self.nzbin_shear = block[self.shear_cat, 'nzbin']
+			for i in xrange(self.nzbin_shear):
+				self.bins_ke.append((i,j))
+
+		if self.kappa_pos:
+			self.nzbin_pos = block[self.pos_cat, 'nzbin']
+			for i in xrange(self.nzbin_pos):
+				self.bins_kn.append((i,j))
+
 		if self.ggl:
 			self.nzbin_pos = block[self.pos_cat, 'nzbin']
 			self.nzbin_shear = block[self.shear_cat, 'nzbin']
@@ -308,6 +352,42 @@ class ClLikelihood(GaussianLikelihood):
 			for i in xrange(self.nzbin_pos):
 				for j in xrange(self.nzbin_shear):
 					self.bins_ne.append((i,j))
+
+	def choose_prefactor(self, mode, block):
+		# Get the relevant area. For the cross specta take the smaller of
+		# the two (assuming the survey footprints are entirely overlapping)
+		if mode[0]==mode[1]:
+			A = getattr(self, "A_%s"%mode[0]) #self.A_shear
+			ell = getattr(self, "ell_bins_%s"%mode[0]) #self.ell_bins_shear
+			dl = getattr(self, "dl_%s"%mode[0]) #self.dl_shear
+
+		if "e" in string.join(mode) and "n" in string.join(mode):
+			edges1 = block[cl_sections[mode[0]], "l_bin_edges"]
+			edges2 = block[cl_sections[mode[1]], "l_bin_edges"]
+			edges = np.array([x for x in edges1 if x in edges2])
+			if len(edges)==0:
+				return np.zeros_like(edges1[1:])
+			else:
+				ell = np.exp(np.log(edges[1:]*edges[:-1])/2.)
+				dl = edges[1:] - edges[:-1]
+				A = min(self.A_ee, self.A_nn)
+
+		return 2. * np.pi / ( ell * dl * A )
+
+	def get_binning(self, mode, block):
+		# If they're the same the binning is strightforwards
+		if mode[0]==mode[1]:
+			edges = block[cl_sections[mode[0]], "l_bin_edges"]
+		# If they're not, then compare the two
+		else:
+			edges1 = block[cl_sections[mode[0]], "l_bin_edges"]
+			edges2 = block[cl_sections[mode[1]], "l_bin_edges"]
+
+			# If none of the multipoles sampled match up, there can be
+			# no covariance between these two spectra
+			edges = np.array([x for x in edges1 if x in edges2])
+
+		return edges[:-1], edges[1:]
 
 	def compute_covariance_matrix(self, block, mode):
 		""" 
@@ -336,8 +416,10 @@ class ClLikelihood(GaussianLikelihood):
 			except:
 				sections.append( (cl_sections[ '%s%s' %(i[1],i[0]) ], True) )
 
-		p = 2. * np.pi / ( self.l_bins * self.dl * self.A ) 
+		p = self.choose_prefactor(mode, block)
 
+		e_lower, e_upper = self.get_binning(mode, block)
+		
 		n_z_pair1 = len([i[1] for i in self.spectra if i[0]==mode[0]])
 		n_z_pair2 = len([i[1] for i in self.spectra if i[0]==mode[1]])
 		cov = np.zeros((n_z_pair1* self.nlbin, n_z_pair2* self.nlbin))
@@ -350,7 +432,8 @@ class ClLikelihood(GaussianLikelihood):
 		for i in self.spectra:
 			if i[0]==mode[0]:
 				if self.cuts:
-					l = np.argwhere((ell > block[cl_sections[mode[0]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[0]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
+					l = np.argwhere((ell > block[cl_sections[mode[0]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) &
+							(ell < block[cl_sections[mode[0]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
 				else:
 					l = np.argwhere((ell > 0) & (ell < 1e7 )).flatten()
 
@@ -360,7 +443,8 @@ class ClLikelihood(GaussianLikelihood):
 		for i in self.spectra:
 			if i[0]==mode[1]:
 				if self.cuts:
-					l = np.argwhere((ell > block[cl_sections[mode[1]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) & (ell < block[cl_sections[mode[1]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
+					l = np.argwhere((ell > block[cl_sections[mode[1]], 'lmin_%d_%d'%(i[1][0]+1, i[1][1]+1)]) &
+							(ell < block[cl_sections[mode[1]], 'lmax_%d_%d'%(i[1][0]+1, i[1][1]+1)]) ).flatten()
 				else:
 					l = np.argwhere((ell > 0) & (ell < 1e7 )).flatten()
 				for m in l: ell_1 += [(m, i[1])]
@@ -399,9 +483,27 @@ class ClLikelihood(GaussianLikelihood):
 					
 					# There's no need to apply scale cuts here as the structure 
 					# of ell_0 and ell_1 already take them into account
-					exec "Cl%d = block[sections[%d][0], 'bin_%d_%d'][%d]" %(sec,sec,1+a,1+b, l0)
+					ell = block[sections[sec][0]+'_UNBINNED', 'ell']
+
+					# Get correct spectrum
+					try:
+						sp = block[sections[sec][0]+'_UNBINNED', 'bin_%d_%d'%(1+a,1+b)]
+					except:
+						sp = block[sections[sec][0]+'_UNBINNED', 'bin_%d_%d'%(1+b, 1+a)]
+						
+
+					#import pdb ; pdb.set_trace()
+					# Get the correct binning
+					if len(e_lower)!=0 and len(e_upper)!=0:
+						sp = mstats.gmean(sp[(ell>e_lower[l0]) & (ell<e_upper[l0])])
+					else:
+						sp = 0.
+					exec "Cl%d = sp" %(sec)
+					
 				# Evaluate
-				m = p[l0] * (Cl0 * Cl1 + Cl2 * Cl3)
+				try:	m = p[l0] * (Cl0 * Cl1 + Cl2 * Cl3)
+				except:
+					pdb.set_trace()
 				if not np.isfinite(m): pdb.set_trace()
 
 				cov[y][x]+=m
