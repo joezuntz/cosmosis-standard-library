@@ -1,22 +1,9 @@
 #Code by Donnacha Kirk
-#Edited by Simon Samuroff 09/2015 
+#Edited by Simon Samuroff 07/2015 
 
 import numpy as np
-import pdb, matplotlib.pyplot as plt
-import cPickle as pi
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
-import pdb
-
-def setup(options):
-	dz = options.get_double(option_section, "dz", default=0.01)
-	survey = options.get_string(option_section, "survey")
-	try: 
-		cat_opt = options.get_string(option_section, "catastrophic_outliers")
-		cat_opt = {'mode': cat_opt, 'fcat': block[survey,'fcat'], 'dzcat': block[survey,'dzcat'],  'zcat0': block[survey,'zcat0'],  'zcat': block[survey,'zcat'],  'sigcat': block[survey,'sigcat'] }
-	except: cat_opt = None
-	
-	return (dz, survey, cat_opt)
 
 def gaussian(z,mu,sigma):
 	return np.exp(-0.5*(z-mu)**2/sigma**2) / np.sqrt(2*np.pi) / sigma
@@ -24,54 +11,13 @@ def gaussian(z,mu,sigma):
 def smail_distribution(z, alpha, beta, z0):
 	return (z**alpha) * np.exp(-(z/z0)**beta)
 
-def sigma_phot(sigma_z, alpha_z, z):
-	return sigma_z*(1+z)**alpha_z
-
-def photometric_error(z, Nz, sigma_z, alpha_z, bias, cat_opt):
-	# Calculates the n(zspec|zphot), assuming a Gaussian error distribution
-	# Also includes redistribution of probability due to catastrophic outliers
-	# See Hearin et al (2010) for the prescription used
+def photometric_error(z, Nz, sigma_z, bias):
 	nz = len(z)
 	output = np.zeros((nz,nz))
-
-	cat_mode = None
-	if cat_opt!=None:
-		cat_mode = cat_opt['mode']
-		fcat = cat_opt['fcat'] #0.05
-		dzcat = cat_opt['dzcat']  #0.129
-		zcat0= cat_opt['zcat0']  #0.65
-		zcat = cat_opt['zcat']  #0.5
-		sigcat= cat_opt['sigcat']  #0.1
-	dz = (z[1]-z[0])
-
-	Nz /= sum(Nz * (z[1]-z[0]))
-
 	for i in xrange(nz):
-		p = gaussian(z,z[i]-bias, sigma_phot(sigma_z, alpha_z, z[i]) )
-		
-		# Subtract some probability from a given region of the p(z)
-		if cat_opt!=None:
-			step=(dzcat/2.)-abs(z-zcat0)
-			step[step==0.0]=-1.0
-			step=0.5*(step/abs(step)+1.0)
-
-		# Define a Gaussian island of outliers, normalised to 
-		# the probability scattered from the affected region
-		if cat_mode=='island':
-			pcat = ((2.0*np.pi)**-0.5 / sigcat) * np.exp(-1.0*(z-zcat)**2 / (2.*sigcat*sigcat))
-			pcat = pcat * sum(step*fcat*p*dz) / sum(pcat*dz)
-			p = (1.-step*fcat)*p + pcat
-
-		# Or scatter it uniformly across all z
-		if cat_mode=='uniform':
-			p=(1.-step*fcat)*p + step*fcat/(z[-1]-z[0])
-		
-		# Normalise
-		p /= sum(p*(z[1]-z[0]))
-
-		output[:,i] = (p * Nz[i])
-
-	w = np.where((z>0.) & (z<0.511))[0]
+		p = gaussian(z,z[i]-bias,sigma_z*(1+z[i]))
+		#Could add f_cat or other terms here.
+		output[:,i] = p * Nz[i]
 	return output
 
 def find_bins(z, nz_true, nbin):
@@ -91,79 +37,196 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 	for low,high in zip(edges[:-1], edges[1:]):
 		w = np.where((z>low) & (z<high))[0]
 		# Sum over all possible ztrue
-		# Equivalent to marginalising p(zphot,ztrue) wrt ztrue
+		# Equivalent to marginalising p(zphot|ztrue) wrt ztrue
 		ni = z_prob_matrix[w,:].sum(axis=0)
 
 		# Normalise the n(z) in each redshift bin to 1 over the redshift range
 		# of the survey
-		ni*= 1.0/(ni.sum()*dz)							#ngal/(nbin*ni.sum()*dz)
+		ni *= 1.0/(ni.sum()*dz)
 		assert(len(ni)==len(z))
 		NI.append(ni)
 	return NI
 	
-def compute_nz(smail_dist, z, nbin, sigma_z, alpha_z, ngal, bias, cat_opt):
+
+def compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias):
 	#Set up Smail distribution of z vector as the distribution of true redshifts of the galaxies, n(ztrue)
-	nz_true = smail_dist #ribution(z, alpha, beta, z0)
+	nz_true = smail_distribution(z, alpha, beta, z0)
 
 	# Multiply that by a Gaussian to get the probability distribution of the measured photo-z for each true redshift p(zphot|ztrue)
 	# This gives a 2D probability distribution
-	z_prob_matrix = photometric_error(z, nz_true, sigma_z, alpha_z, bias, cat_opt)
+	z_prob_matrix = photometric_error(z, nz_true, sigma_z, bias)
 	edges = find_bins(z,nz_true,nbin)
 	bin_nz = compute_bin_nz(z_prob_matrix, z, edges, ngal)
 	return edges,bin_nz
+		
+def setup(options):
+	dz = options.get_double(option_section, "dz", default=0.01)
+	zmax = options.get_double(option_section, "zmax", default=4.0)
+	nbin = options.get_int(option_section, "nbin")
+	return (dz, zmax, nbin)
 
 def execute(block, config):
-	dz, survey = config[0:2]
-	# Keep the catastrophic outlier options together
-	cat_opt = config[2]
+	(dz, zmax, nbin) = config
+	#read fits file data
 	params = section_names.number_density_params
-	alpha = block[survey, "smail_alpha"]
-	beta = block[survey, "smail_beta"]
-	z0 = block[survey, "z0"]
-
-	sigma_z = block.get_double(survey, "sigz")
-	alpha_z = block.get_double(survey, "alpha_z")
-	bias = block.get(survey, "photoz_bias")
-	ngal = block.get_double(survey, "ngal")
-	zmax = block.get_double(survey, "zmax")
-	nbin = block.get_int(survey, "nzbin")
+	#import pdb ; pdb.set_trace()
+	alpha = block[params, "alpha"]
+	beta = block[params, "beta"]
+	z0 = block[params, "z0"]
+	sigma_z = block[params, "sigz"]
+	ngal = block[params, "ngal"]
+	bias = block.get(params, "bias")
 
 	
 	#Compute the redshift vector
-	z = np.arange(0.0,zmax+dz/2,dz)
+	z = np.arange(0,zmax+dz/2,dz)
 	
-	dist = smail_distribution(z, alpha, beta, z0)
 	#Run the main code for getting n(z) in bins
-	edges,bins = compute_nz(dist, z, nbin, sigma_z, alpha_z, ngal, bias, cat_opt)
+	edges,bins = compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias)
 
 	#Save the results
-	block[survey,"nz"] = len(z)
-	block[survey,"z"] = z
+	nz_section = section_names.wl_number_density
+	block[nz_section,"nbin"] = nbin
+	block[nz_section,"nz"] = len(z)
+	block[nz_section,"z"] = z
 
 	#Loop through the bins
 	for i,bin in enumerate(bins):
 		#The bin numbering starts at 1
 		b=i+1
-		name = "bin_%d" % b
+		name = "BIN_%d" % b
 		#Save the bin edges as parameters
-		block[survey,"edge_%d"%b] = edges[i]
+		block[nz_section,"EDGE_%d"%b] = edges[i]
 		#And save the bin n(z) as a column
-		block[survey, name] =  bin
+		block[nz_section, name] =  bin
 	#Also save the upper limit to the top bin
-	block[survey,"edge_%d"%(nbin+1)] = edges[-1]
-
-	#redmagic = pi.load(open('/home/sws/Desktop/redmagic_n_z_stacked_gaussian.p','rb'))
-	#pdb.set_trace()
-
-	#real=np.loadtxt('/home/sws/cosmosis/modules/modules/number_density/scaled_smail/data/nofz_svng16_06.06.15_skynet2sweight-True_mean_final_v16.txt')
-	#rz=(real.T[0]+real.T[1])/2.
-	#rbin1=real.T[2]/(real.T[2]*(rz[1]-rz[0])).sum()
-	#rbin2=real.T[3]/(real.T[3]*(rz[1]-rz[0])).sum()
-	#rbin3=real.T[4]/(real.T[4]*(rz[1]-rz[0])).sum()
+	block[nz_section,"EDGE_%d"%(nbin+1)] = edges[-1]
 
 	return 0
 		
+
 def cleanup(config):
 	#nothing to do here!  We just include this 
 	# for completeness
 	return 0
+	
+
+# function [n_z_tot ngals_bin pzpzs]=get_nofz_amarar06(s,z_vals,verb)
+# % n_z=z_vals.^alpha .* exp(-(z_vals/z_0).^beta);
+# % This convolves the n(z) distributions from get_nofz_equal_tophat
+# % with a Gaussian corresonding to s.deltaz
+# % NB. convolving n(z) is not quite the right thing to do, since it
+# % does not conserve the total number of galaxies at a given z
+# % In fact, should do some backwards thing. (Probably index kernel
+# % opposite?)
+# % Then it adds an outlier fraction.
+# %
+# % based on get_nofz_equal_th_photoz 
+# % SLB 27 Feb 2007
+# 
+# % set defaults
+# if (~exist('verb')) verb=0; end % verbosity level
+# if (~isfield(s,'verb')) s.verb=0; end
+# verb=max([s.verb verb]);
+# if (~isfield(s,'ng')) s.ng=1; end % arbitrary normalisation if not reqd
+# 
+# % make overall Smail et al n(z)
+# % n_z=z_vals.^alpha .* exp(-(z_vals/z_0).^beta);
+# n_z=z_vals.^s.alpha .* exp(-(z_vals/s.z_0).^s.beta);
+# 
+# % make P(z_phot|z_spec) on a 2d grid
+# nz=length(z_vals);
+# dz=z_vals(2)-z_vals(1); % should really check they are evenly spaced
+# pzpzs=zeros(nz,nz);
+# vbx=3;
+# for iz=1:nz
+#     z_t=z_vals(iz);
+#     if (verb>=vbx) clf; end
+#     
+#     % P_stat
+#     z_m=z_t;
+#     sigma_z=s.deltaz * (1+z_m); % red-shift errors are deltaz*(1+z)
+#     p_stat=(1/(sqrt(2*pi)*sigma_z))*exp(-(z_vals-z_m).^2 / (2*sigma_z^2));    
+#     %z_m_test=sum(z_vals.*p_stat)*dz, % assumes equally spaced z values
+#     %sqrt(sum(z_vals.^2.*p_stat)*dz- z_m_test^2), % I assume A2 should be this!?
+#     if (verb>=vbx) plot(z_vals,p_stat); end
+#     
+#     % P_cat_minus
+#     z_cat=z_t-s.Deltaz;
+#     sigma_z=s.deltaz * (1+z_cat); % red-shift errors are deltaz*(1+z)
+#     p_cat_minus=(1/(sqrt(2*pi)*sigma_z))*exp(-(z_vals-z_cat).^2 / (2*sigma_z^2));    
+#     %z_m_test=sum(z_vals.*p_cat_minus)*dz
+#     %sqrt(sum(z_vals.^2.*p_cat_minus)*dz-z_m_test^2)
+#     if (verb>=vbx)
+#         hold on
+#         plot(z_vals,p_cat_minus,'r-')
+#     end
+#     
+#     % P_cat_plus
+#     z_cat=z_t+s.Deltaz;
+#     sigma_z=s.deltaz * (1+z_cat); % red-shift errors are deltaz*(1+z)
+#     p_cat_plus=(1/(sqrt(2*pi)*sigma_z))*exp(-(z_vals-z_cat).^2 / (2*sigma_z^2));    
+#     %z_m_test=sum(z_vals.*p_cat_plus)*dz
+#     %sqrt(sum(z_vals.^2.*p_cat_plus)*dz-z_m_test^2)
+#     if (verb>=vbx) plot(z_vals,p_cat_plus,'g-'); end
+#     
+#     % add it all up
+#     p_tot=(1-s.fcat)*p_stat + s.fcat/2 * (p_cat_minus+p_cat_plus); % ?? must surely be a factor of 2 here?
+#     % normalise, in case e.g. p_cat_minus is outside range ????
+#     p_tot=p_tot/(sum(p_tot)*dz);
+#     if (verb>=vbx)
+#         plot(z_vals,p_tot,'k:')
+#         axis([0 3 0 6])
+#         pause(0.0001)
+#     end
+#     
+#     % get P(z_t,z_phot)=P(z_phot|z_t)*P(z_t)
+#     %    pzpzs(:,iz)=p_tot;
+#     pzpzs(:,iz)=p_tot*n_z(iz);
+# 
+# end
+# 
+# if (verb>=2)
+#     imagesc(pzpzs); colorbar; set(gca,'ydir','normal')
+# end
+# 
+# 
+# %% Now bin it
+# 
+# % find bin divisions
+# % normalise in a way that makes it easier to find z bin divisions
+# n_z_tmp = s.nbin* n_z/sum(n_z);
+# cn_z=cumsum(n_z_tmp);
+# % plot(z_vals,cn_z)
+# eps=1e-5;
+# z_cuts=interp1(cn_z,z_vals,1:(s.nbin-1));
+# z_cuts_l = [0 z_cuts];
+# z_cuts_u = [z_cuts max(z_vals)];
+# 
+# % cut up the z distribution
+# for ibin=1:s.nbin
+#     iz=find((z_vals>z_cuts_l(ibin))&(z_vals<z_cuts_u(ibin)));
+#     n_z_tot(:,ibin)=sum(pzpzs(iz,:),1);
+#     ngals_bin(ibin)=sum(n_z_tot(:,ibin));
+#     % normalise wrt chi later
+# end
+# ngals_bin=ngals_bin*s.ng/sum(ngals_bin);
+# 
+# % check everything
+# if (verb>=1)
+#     %clf
+#     for ibin=1:s.nbin
+#         if (mod(ibin,2)==1) col='r-'; else col='b--'; end
+#         plot(z_vals,n_z_tot(:,ibin),col)
+#         hold on
+#     end
+# end
+# 
+# % nomalise
+# for ibin=1:s.nbin
+#     norm_nz=sum(n_z_tot(:,ibin));
+#     n_z_tot(:,ibin)=n_z_tot(:,ibin)/norm_nz;
+# end
+# 
+# %debugging
+# ibin = ibin;

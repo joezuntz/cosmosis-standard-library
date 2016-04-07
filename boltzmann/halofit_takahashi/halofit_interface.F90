@@ -65,14 +65,14 @@ function setup(options) result(result)
 	type(halofit_settings), pointer :: settings
 	type(c_ptr) :: result
 	allocate(settings)
-	settings%kmin = 1.0d-04
-	settings%kmax = 1.0d+02
-	settings%nk = 200
 
+	!Set default kmin and kmax to -1. We'll later set to the k_min and
+	!k_max of the linear P(k), if not specified here
 	status = 0
-	status = status + datablock_get_double_default(options, option_section, "kmin", 1.0D-04, settings%kmin)
-	status = status + datablock_get_double_default(options, option_section, "kmax", 1.0D+02, settings%kmax)
+	status = status + datablock_get_double_default(options, option_section, "kmin", -1.0d0, settings%kmin)
+	status = status + datablock_get_double_default(options, option_section, "kmax", -1.0d0, settings%kmax)
 	status = status + datablock_get_int_default(options, option_section, "nk", 200, settings%nk)
+
 	if (status .ne. 0) then 
 		write(*,*) "Failed setup of halofit!", status
 		stop
@@ -118,11 +118,6 @@ function execute(block, config) result(status)
 		return
 	endif
 
-	!Load suggested output numbers or just use defaults
-	kmin = settings%kmin
-	kmax = settings%kmax
-	nk = settings%nk
-
 	
 	!Run halofit
 	status = load_matter_power(block,PK)
@@ -131,7 +126,19 @@ function execute(block, config) result(status)
 		status=3
 		return
 	endif
-	
+
+	!Load requested k range, or use same range as linear P(k)
+	!if no kmin and kmax specified.
+	kmin = settings%kmin
+	kmax = settings%kmax
+	if (kmin < 0.d0) then
+		kmin = exp(PK%log_kh(1))
+	endif
+	if (kmax < 0.d0) then
+		kmax = exp(PK%log_kh(PK%num_k))
+	endif
+	nk = settings%nk
+
 	call NonLinear_GetNonLinRatios(PK)
 	
 	!Copy the power spectrum so we can non-linearify it

@@ -2,6 +2,7 @@ name: FrankenEmu
 version: "2.0"
 purpose: "Emulate N-body simulations to compute nonlinear matter power"
 url: "http://www.hep.anl.gov/cosmology/CosmicEmu/emu.html"
+interface: interface.so
 attribution: [Suman Bhattacharya, Salman Habib, Katrin Heitmann, David Higdon, Juliana Kwan, Earl Lawrence, Christian Wagner, Brian Williams, Martin White]
 rules: ""
 cite:

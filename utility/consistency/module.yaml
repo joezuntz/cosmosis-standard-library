@@ -3,6 +3,7 @@ name: "consistent_parameters"
 version: "1.0"
 purpose: "Deduce missing cosmological parameters and check consistency"
 url: ""
+interface: consistency_interface.py
 attribution: [CosmoSIS Team]
 rules:
     "Please maintain attribution."

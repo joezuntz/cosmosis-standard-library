@@ -109,7 +109,7 @@ function execute(block,config) result(status)
 
 
 	status = status + datablock_get_double_default(block, halo, "A", 3.13D0, halo_as)
-	status = status + datablock_get_double_default(block, cosmo, "eta_0", 0.603D0, halo_eta0)
+	status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
 
 	if (status .ne. 0 ) then
 		write(*,*) "Error reading parameters for Mead code"

@@ -2,6 +2,7 @@ name: CRL_Eisenstein_Hu
 version: "1"
 purpose: Komatsu's CRL code to compute the power spectrum using EH fitting formula.
 url: "http://www.mpa-garching.mpg.de/~komatsu/crl/"
+interface: nowiggle_module.so
 attribution: [Komatsu-CRL]
 rules: ""
 cite:

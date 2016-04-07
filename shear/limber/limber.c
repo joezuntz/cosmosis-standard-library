@@ -3,7 +3,7 @@
 #include "limber.h"
 
 // This is a workspace size for the gsl integrator
-#define LIMBER_FIXED_TABLE_SIZE 1000
+#define LIMBER_FIXED_TABLE_SIZE 2048
 
 // data that is passed into the integrator
 // This is everything we need to compute the
@@ -69,6 +69,8 @@ static double integrand(double chi, void * data_void)
 gsl_spline * limber_integral(limber_config * config, gsl_spline * WX, 
 	                 gsl_spline * WY, Interpolator2D * P)
 {
+
+	config->status = LIMBER_STATUS_OK;
 	// Get the appropriate ranges over which to integrate
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable
@@ -99,6 +101,8 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_integration_glfixed_table *table = 
 	    gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
 
+	// gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+
 	// results of the integration go into these arrays.
 	double c_ell_vector[config->n_ell];
 	double ell_vector[config->n_ell];
@@ -112,18 +116,39 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// This particular function is used because that's what Matt Becker 
 		// found to work best.
 		double c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
+
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
-
-		// It is often useful to interpolate into the logs of the functions
-		// This is optional in the config
-		if (config->xlog) ell = log(ell);
-		if (config->ylog) c_ell = log(c_ell);
 
 		// Record the results into arrays
 		c_ell_vector[i_ell] = c_ell;
 		ell_vector[i_ell] = ell;
 	}
+
+		// It is often useful to interpolate into the logs of the functions
+		// This is optional in the config. We move this outside the main loop
+		// since we may have all zeros in the output
+		if (config->xlog) {
+			for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
+				ell_vector[i_ell] = log(ell_vector[i_ell]);
+			}
+		}
+		if (config->ylog){
+			for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
+				if (c_ell_vector[i_ell]<0){
+					config->status = LIMBER_STATUS_NEGATIVE;
+				}
+					// negative is worse than zero so only set to zero it not already negative
+				else if ((c_ell_vector[i_ell]==0) && (config->status<LIMBER_STATUS_ZERO)){
+					config->status = LIMBER_STATUS_ZERO;
+				}
+			}
+			// If none of the values are <= 0 then we are okay to go ahead and take the logs.
+			if (config->status == LIMBER_STATUS_OK){
+				for (int i_ell = 0; i_ell<config->n_ell; i_ell++) c_ell_vector[i_ell] = log(c_ell_vector[i_ell]);
+			}
+
+		}
 
 	// Create a spline of the arrays as the output
 	gsl_spline * output = gsl_spline_alloc(gsl_interp_akima, (size_t) config->n_ell);
@@ -133,6 +158,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_interp_accel_free(data.accelerator_x);
 	gsl_interp_accel_free(data.accelerator_y);
 	gsl_integration_glfixed_table_free(table);	
+	// gsl_integration_workspace_free(workspace);
 
 	// And that's it
 	return output;

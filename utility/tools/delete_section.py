@@ -9,7 +9,7 @@ def setup(options):
 
 def execute(block, config):
 	sections = config
-	for s in sections
+	for s in sections:
 		block._delete_section(s)
 	return 0
 

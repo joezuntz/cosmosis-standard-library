@@ -5,6 +5,10 @@ module camb_interface_tools
 
 	integer :: standard_lmax = 1200
 	real(dl) :: standard_kmax = 50.0
+	!Not the actual values camb uses; may involve
+	!extrapolation
+	real(8) :: standard_kmin
+	integer :: standard_nk
 	integer, parameter :: CAMB_MODE_ALL = 1
 	integer, parameter :: CAMB_MODE_CMB = 2
 	integer, parameter :: CAMB_MODE_BG  = 3
@@ -12,6 +16,8 @@ module camb_interface_tools
 
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
 	integer :: linear_nz = 401
+
+
 
 	integer :: k_eta_max_scalar = 2400
 	logical :: do_lensing, do_nonlinear, do_tensors
@@ -30,6 +36,8 @@ module camb_interface_tools
 	integer,  parameter :: default_massive_nu = 0
 	integer,  parameter :: default_sterile_neutrinos = 0
 	real(dl),  parameter :: default_kmax = 50.0
+	real(dl),  parameter :: default_kmin = -1.0 ! default is to use whatever camb this is sensible
+	integer, parameter :: default_nk = -1  ! default is to use whatever camb this is sensible
 
 	logical :: need_thermal_init
 
@@ -136,6 +144,14 @@ module camb_interface_tools
 		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 
 		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)
+		status = status + datablock_get_double_default(block, option_section,"kmin", default_kmin, standard_kmin)
+		status = status + datablock_get_int_default(block, option_section,"nk", default_nk, standard_nk)
+
+		!Either neither or both of nk, kmin must be set
+		if ((standard_nk<=0 .and. standard_kmin>0) .or. (standard_nk>0 .and. standard_kmin<=0)) then
+			write(*,*) "If you set either kmin or nk for camb then you must set both (and to a positive number)."
+			status = 1
+		endif
 
 
 		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
@@ -405,8 +421,9 @@ module camb_interface_tools
 		integer (cosmosis_status) :: status
 		Type(MatterPowerData) :: PK
 		integer nz, nk, iz, ik
+
 		real(8), allocatable, dimension(:) :: k, z
-		real(8), allocatable, dimension(:,:) :: P, T
+		real(8), allocatable, dimension(:,:) :: T
 
 		call Transfer_GetMatterPowerData(MT, PK, 1)
 
@@ -415,7 +432,6 @@ module camb_interface_tools
 
 		allocate(k(nk))
 		allocate(z(nz))
-		allocate(P(nk,nz))
 		allocate(T(nk,nz))
 
 		do ik=1,nk
@@ -428,8 +444,72 @@ module camb_interface_tools
 
 		do ik=1,nk
 			do iz=1,nz
-				P(ik,iz) = MatterPowerData_k(PK, k(ik), nz-iz+1)
 				T(ik,iz) = MT%TransferData(Transfer_cdm,ik,nz-iz+1)
+			enddo
+		enddo
+
+
+		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
+        	"k_h", k, "z", z, "delta_cdm", T)
+
+		if (status .ne. 0) then
+			write(*,*) "Failed to save transfer function in CAMB."
+		endif
+
+		deallocate(k, z, T)
+
+		!Now save the matter power
+		status = status + camb_interface_save_matter_power(block, PK)
+
+		call MatterPowerdata_Free(PK)
+	end function
+
+	function camb_interface_save_matter_power(block, PK) result(status)
+		integer (cosmosis_block) :: block
+		integer (cosmosis_status) :: status
+		Type(MatterPowerData) :: PK
+		integer nz, nk, iz, ik
+		real(8) :: log_kmin, log_kmax
+		real(8), allocatable, dimension(:) :: k, z
+		real(8), allocatable, dimension(:,:) :: P
+
+
+		! z values to use.  Use sample values from camb,
+		! which were set in the input
+		nz = CP%Transfer%num_redshifts
+		allocate(z(nz))
+		do iz=1,nz
+			z(iz) = CP%Transfer%Redshifts(nz-iz+1)
+		enddo
+
+
+		!k values.  Two cases. Either the user set in the
+		!input file and we use what they asked for, or they didn't
+		!and we just use whatever defaults camb chose.
+		!This latter one is for backwards compatibility.
+		if (standard_nk>0) then
+			nk = standard_nk			
+			log_kmin = log(standard_kmin)
+			log_kmax = log(standard_kmax)
+			allocate(k(nk))
+			do ik=1,nk
+				k(ik) = exp(log_kmin + (log_kmax-log_kmin)*(ik-1)/(nk-1))
+			enddo
+		else
+			nk = MT%num_q_trans
+			allocate(k(nk))
+			do ik=1,nk
+				k(ik) = MT%TransferData(Transfer_kh,ik,1)
+			enddo
+		endif
+
+
+		allocate(P(nk,nz))
+
+
+		do ik=1,nk
+			do iz=1,nz
+				P(ik,iz) = MatterPowerData_k(PK, k(ik), nz-iz+1)
 			enddo
 		enddo
 
@@ -437,18 +517,13 @@ module camb_interface_tools
         	"k_h", k, "z", z, "P_k", P)
 
 		if (status .ne. 0) then
-			write(*,*) "Failed to save transfer function in CAMB."
-		endif
-
-		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
-        	"k_h", k, "z", z, "delta_cdm", T)
-
-		if (status .ne. 0) then
 			write(*,*) "Failed to save matter power in CAMB."
 		endif
 
-		deallocate(k, z, P, T)
+		deallocate(k, z, P)
+
 	end function
+
 
 	
 	function camb_interface_save_da(params, block, save_density, save_thermal) result(status)
@@ -555,7 +630,7 @@ module camb_interface_tools
 
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
-			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Myr")
+			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Mpc")
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))

@@ -6,8 +6,9 @@ def setup(options):
 	filename = options[option_section, "filepath"]
 	des_fmt = options.get_bool(option_section,"des_fmt",default=False)
 	histogram = options.get_bool(option_section,"histogram",default=False)
-	sample = options.get_string(option_section,"sample", default="")
-        non_tomographic=options.get_bool(option_section,"non_tomographic",default=False)
+
+	output_section = options.get_string(option_section, "output_section", default=section_names.wl_number_density)
+	single_bin = options.get_int(option_section, "single_bin", default=-666)
 
 	data_full = np.loadtxt(filename).T
 
@@ -20,11 +21,11 @@ def setup(options):
 		nz = len(data_full[0])
 		nbin = len(data_full)-1
 		z = data_full[0]
-                if non_tomographic:
-		    n_of_z = data_full[0]
-                    nbin = 1
-                else:
-                    n_of_z = data_full[1:]
+		if single_bin!=-666:
+			n_of_z = data_full[single_bin]
+		    nbin = 1
+		else:
+			n_of_z = data_full[1:]
 
 	if histogram:
 		#in this case the sample z values are lower edges of
@@ -47,24 +48,19 @@ def setup(options):
 		norm = np.trapz(col, z)
 		col/=norm
 
-	print "Found %d samples and %d bins in redshift in file %s" % (nz, nbin, filename)
-	return (nz, nbin, z, n_of_z), sample
+	print "Found %d samples and %d bins in redshift in file %s" % (nbin, nz, filename)
+	return (nz, nbin, z, n_of_z, output_section)
 
 def execute(block, config):
-	(nz, nbin, z, n_of_z), sample = config
+	(nz, nbin, z, n_of_z, output_section) = config
 
-	if sample:
-		section = sample
-		bin_name = "nzbin"
-	else:
-		section = "wl_number_density"
-		bin_name = "nbin"
-	block[section, 'nz'] = nz
-	block[section, bin_name] = nbin
-	block[section, 'z'] = z
+	block[output_section, 'nz'] = nz
+	block[output_section, 'nbin'] = nbin
+	block[output_section, 'z'] = z
+
 	for (bin, bin_n_of_z) in enumerate(n_of_z):
 		name = "bin_%d"%(bin+1)
-		block[section, name] =  bin_n_of_z
+		block[output_section, name] =  bin_n_of_z
 
 	return 0
 
