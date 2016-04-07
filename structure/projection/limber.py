@@ -33,6 +33,8 @@ lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_
 lib.cmb_wl_kappa_kernel.restype = c_gsl_spline
 lib.cmb_wl_kappa_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline]
 
+lib.get_kernel_peak.restype = ct.c_double
+lib.get_kernel_peak.argtypes = [ct.c_void_p, ct.c_void_p, ct.c_int]
 
 lib.limber_integral.restype = c_gsl_spline
 lib.limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p]
@@ -69,6 +71,9 @@ def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
         raise ValueError("Could not load power spectrum from section {0} (k:{1} z:{2} p:{3})".format(section, k_name, z_name, p_name))
     return r
 
+def get_kernel_peak(WX, WY, nchi=100):
+    "Get chi of maximum of kernel"
+    return lib.get_kernel_peak(WX, WY, nchi)
 
 def limber(WX, WY, P, xlog, ylog, ell, prefactor):
     config = c_limber_config()

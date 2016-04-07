@@ -91,6 +91,10 @@ class Spectrum(object):
         c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block))
         return c_ell
 
+    def kernel_peak(self, block, bin1, bin2):
+        K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
+        K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
+        return limber.get_kernel_peak(K1, K2)
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -215,6 +219,7 @@ class SpectrumCalulcator(object):
     def __init__(self, options):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
+        self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
 
         #Get the list of spectra that we want to compute.
         #The full list
@@ -407,7 +412,10 @@ class SpectrumCalulcator(object):
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
                 if spectrum.is_autocorrelation():
                     block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
-            
+                if self.get_kernel_peaks:
+                    chi_peak=spectrum.kernel_peak(block, i, j)
+                    block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
+                    block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i+1,j+1)] = 60*np.degrees(1/chi_peak)
 
     def clean(self):
         #need to manually delete power spectra we have loaded

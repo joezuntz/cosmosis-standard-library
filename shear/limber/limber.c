@@ -62,6 +62,33 @@ static double integrand(double chi, void * data_void)
 
 }
 
+
+double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
+{
+  double chimin_x = limber_gsl_spline_min_x(WX);
+  double chimin_y = limber_gsl_spline_min_x(WY);
+  double chimax_x = limber_gsl_spline_max_x(WX);
+  double chimax_y = limber_gsl_spline_max_x(WY);
+  double chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
+  double chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
+  double dchi = (chimax - chimin)/n_chi;
+  double chi_peak = chimin;
+  double chi;
+  double kernel_val=0.;
+  double kernel_peak=0.;
+  for (int i_chi=0; i_chi<=n_chi; i_chi++){
+    chi=chimin+i_chi*dchi;
+    kernel_val = gsl_spline_eval(WX,chi,NULL) * gsl_spline_eval(WY,chi,NULL);
+    if (kernel_val>kernel_peak){
+      kernel_peak = kernel_val;
+      chi_peak = chi;
+    }
+  }
+  // printf("chi_peak = %f\n",chi_peak);
+  return chi_peak;
+}
+
+
 // The only function in this little library callable from the outside
 // world.  The limber_config structure is defined in limber.h but is fairly
 // obvious.  The splines and the interpolator need to be functions of 
