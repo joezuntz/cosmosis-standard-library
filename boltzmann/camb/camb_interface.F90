@@ -41,6 +41,10 @@ module camb_interface_tools
 
 	logical :: need_thermal_init
 
+	!From Vinicius Miranda, to expose accuracy settings
+	real(dl) :: acc_boost = 1.0_dl
+	logical :: high_acc_default = .false.
+
 
 	contains
 
@@ -183,6 +187,12 @@ module camb_interface_tools
  			endif
  		endif
  		
+	    !VM BEGINS
+	    status = status + datablock_get_double_default(block,option_section,"accuracy_boost",1.0_dl, acc_boost)
+	    AccuracyBoost = acc_boost
+	    status = status + datablock_get_logical_default(block,option_section,"high_accuracy_default",.false.,high_acc_default)
+	    HighAccuracyDefault = high_acc_default
+
 
 
 		!If noisy, report relevant params
@@ -191,6 +201,8 @@ module camb_interface_tools
 			if (mode .ne. CAMB_MODE_BG) write(*,*) "camb cmb_lmax = ", standard_lmax
 			write(*,*) "camb FeedbackLevel = ", FeedbackLevel
 			if (status .ne. 0) write(*,*) "Setup status: ", status
+			write(*,*) "accuracy boost = ", AccuracyBoost
+			write(*,*) "HighAccuracyDefault = ", HighAccuracyDefault
 		endif
 	end function camb_initial_setup
 
