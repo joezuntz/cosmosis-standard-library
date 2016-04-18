@@ -178,6 +178,18 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 	def build_covariance(self):
 		C = np.array(self.two_point_data.covmat)
+		r = self.options.get_int('covariance_realizations', default=0)
+		if r:
+			p = C.shape[0]
+			print "You set covariance_realizations={} in the 2pt likelihood parameter file".format(r)
+			print "So I will apply the Anderson-Hartlap correction to the covariance matrix"
+			print "The covariance matrix is {}x{}".format(p,p)
+			#This x is the inverse of the alpha used in the old code
+			#because that applied to the weight matrix not the covariance
+			x = (r - 1.0) / (r - p - 2.0)
+			print "So the correction scales the covariance matrix by (r - 1) / (r - n - 2) = {}".format(x)
+			C = C * x
+
 		return C
 		
 
