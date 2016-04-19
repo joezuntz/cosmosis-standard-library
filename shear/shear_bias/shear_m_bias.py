@@ -16,7 +16,7 @@ def setup(options):
 	#a different m for each tomographic bin, or F to get
 	#one global value
 	m_per_bin=options.get_bool(option_section,"m_per_bin",True)
-	survey=options.get_string(option_section,"survey")
+	survey=options.get_string(option_section,"survey","wl_photoz_error")
 	return m_per_bin, survey
 
 def execute(block, config):
