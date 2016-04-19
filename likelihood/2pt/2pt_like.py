@@ -178,18 +178,57 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 	def build_covariance(self):
 		C = np.array(self.two_point_data.covmat)
-		r = self.options.get_int('covariance_realizations', default=0)
-		if r:
+		r = self.options.get_int('covariance_realizations', default=-1)
+		self.sellentin = self.options.get_bool('sellentin', default=False)
+
+		if self.sellentin:
+			if not self.constant_covariance:
+				print
+				print "You asked for the Sellentin-Heavens correction to be applied"
+				print "But also asked for a non-constant (maybe Gaussian?) covariance"
+				print "matrix.  I think that probably suggests you have made a mistake"
+				print "somewhere unless you have thought about this quite carefully."
+				print
+			if r<0:
+				print
+				print "ERROR: You asked for the Sellentin-Heavens corrections"
+				print "by setting sellentin=T, but you did not set covariance_realizations"
+				print "If you want covariance_realizations=infinity you can use 0"
+				print "(unlikely, but it's also possible you were super-perverse and set it negative?)"
+				print
+				raise ValueError("Please set covariance_realizations for 2pt like. See message above.")
+			elif r==0:
+				print
+				print "NOTE: You asked for the Sellentin-Heavens corrections"
+				print "but set covariance_realizations=0. I am assuming you want"
+				print "the limit of an infinite number of realizations, so we will just go back"
+				print "to the original Gaussian model"
+				print
+				self.sellentin = False
+			else:
+				# use proper correction
+				self.covariance_realizations = r
+				print
+				print "You set sellentin=T so I will apply the Sellentin-Heavens correction"
+				print "for a covariance matrix estimated from Monte-Carlo simulations"
+				print "(you told us it was {} simulations in the ini file)".format(r)
+				print "This analytic marginalization converts the Gaussian distribution"
+				print "to a multivariate student's t distribution instead."
+				print
+
+		elif r>0:
+			#Just regular increase in covariance size, no Sellentin change.
 			p = C.shape[0]
-			print "You set covariance_realizations={} in the 2pt likelihood parameter file".format(r)
-			print "So I will apply the Anderson-Hartlap correction to the covariance matrix"
-			print "The covariance matrix is {}x{}".format(p,p)
 			#This x is the inverse of the alpha used in the old code
 			#because that applied to the weight matrix not the covariance
 			x = (r - 1.0) / (r - p - 2.0)
-			print "So the correction scales the covariance matrix by (r - 1) / (r - n - 2) = {}".format(x)
 			C = C * x
-
+			print
+			print "You set covariance_realizations={} in the 2pt likelihood parameter file".format(r)
+			print "So I will apply the Anderson-Hartlap correction to the covariance matrix"
+			print "The covariance matrix is nxn = {}x{}".format(p,p)
+			print "So the correction scales the covariance matrix by (r - 1) / (r - n - 2) = {}".format(x)
+			print
 		return C
 		
 
@@ -236,6 +275,43 @@ class TwoPointLikelihood(GaussianLikelihood):
 		#the data vector
 		theory = np.concatenate(theory)
 		return theory
+
+	def do_likelihood(self, block):
+		#Run the 
+		super(TwoPointLikelihood, self).do_likelihood(block)
+
+		if self.sellentin:
+			# The Sellentin-Heavens correction from arxiv 1511.05969
+			# accounts for a finite number of Monte-Carlo realizations
+			# being used to estimate the covariance matrix.
+
+			#Note that this invalidates the saved simulation used for
+			#the ABC sampler.  I can't think of a better way of doing this 
+			#than overwriting the whole things with NaNs - that will at 
+			#least make clear there is a problem somewhere and not
+			#yield misleading results.
+			block[names.data_vector, self.like_name + "_simulation"] = (
+				np.nan * block[names.data_vector, self.like_name + "_simulation"])
+
+			#It changes the Likelihood from Gaussian to a multivariate
+			#student's t distribution.  Here we will have to do a little
+			#hack and overwrite the stuff that the original Gaussian
+			#method did above
+			N = self.covariance_realizations
+			chi2 = block[names.data_vector, self.like_name+"_CHI2"]
+
+			#We might be using a cosmologically varying 
+			#covariance matrix, though I'm not sure what that would mean.
+			#There is a warning about this above.
+			if self.constant_covariance:
+				log_det = 0.0
+			else:
+				log_det = block[names.data_vector, self.like_name+"_LOG_DET"]
+
+			like = -0.5*log_det - 0.5*N*np.log(1+chi2/(N-1.))
+
+			# overwrite the log-likelihood
+			block[names.likelihoods, self.like_name+"_LIKE"] = like
 
 	def extract_spectrum_prediction(self, block, spectrum):
 		#We may need theory predictions for multiple different
