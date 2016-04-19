@@ -23,7 +23,7 @@ def setup(options):
 		z = data_full[0]
 		if single_bin!=-666:
 			n_of_z = data_full[single_bin]
-		    nbin = 1
+			nbin = 1
 		else:
 			n_of_z = data_full[1:]
 
