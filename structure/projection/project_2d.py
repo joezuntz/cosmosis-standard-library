@@ -216,6 +216,9 @@ class SpectrumType(Enum):
 
 
 class SpectrumCalulcator(object):
+    # It is useful to put this here so we can subclass to add new spectrum
+    # types, for example ones done with modified gravity changes.
+    spectrumType = SpectrumType
     def __init__(self, options):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
@@ -224,10 +227,10 @@ class SpectrumCalulcator(object):
         #Get the list of spectra that we want to compute.
         #The full list
         self.req_spectra = []
-        for spectrum in SpectrumType:
+        for spectrum in self.spectrumType:
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
-            default = (spectrum==SpectrumType.ShearShear)
+            default = (spectrum==self.spectrumType.ShearShear)
             name = spectrum.value.option_name()
 
             try:
