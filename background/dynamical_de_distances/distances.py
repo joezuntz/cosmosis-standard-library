@@ -31,7 +31,8 @@ def execute(block, config):
     else:
         de_params = (block[cosmo, 'w0'],block[cosmo, 'wa'])
 
-        if verbose: print "om,ol,ok,h0,de_params", omega_m,omega_lambda, omega_k ,h0,de_params
+    if verbose:
+        print "om,ol,ok,h0,de_params", omega_m,omega_lambda, omega_k ,h0,de_params
 
     DM = DistanceCalc(omega_m,omega_k,omega_lambda,wmodel,de_params,h0)
     z_array = np.arange(zmin,zmax+dz,dz)
