@@ -12,7 +12,10 @@ assumptions:
     - "Redshift distribution used correctly matches tomographic bins"
 
 explanation: >
-        "Several surveys are measuring the cosmic shear 2-pt correlation functions xi_+(theta) 
+        "
+        DEPRECATED: This module is not recommended for use any more; use the 2pt_like likelihood instead.
+
+        Several surveys are measuring the cosmic shear 2-pt correlation functions xi_+(theta) 
         and xi_minus(theta) of the gravitational lensing in tomographic redshift bins.
 
         This module calculates the likelihood of theoretical xi(theta) values
