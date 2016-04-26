@@ -23,7 +23,7 @@ LIMBER_STATUS_NEGATIVE =  2
 c_gsl_spline = ct.c_void_p
 
 dirname = os.path.split(__file__)[0]
-lib = ct.cdll.LoadLibrary(dirname + "/../../shear/spectra/interface.so")
+lib = ct.cdll.LoadLibrary(os.path.join(dirname, "../../shear/spectra/interface.so"))
 lib.get_named_w_spline.restype = c_gsl_spline
 lib.get_named_w_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_double, ct.c_void_p]
 
