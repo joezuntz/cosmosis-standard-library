@@ -13,6 +13,9 @@ assumptions:
 
 explanation: >
     "
+    DEPRECATED: You should use the module cosmosis-standard-library/structure/projection_ppf/project_2d_ppf.py instead.
+
+
     This variant of the wl_spectra module includes modified gravity
     via the phenomenological D(k,z) which modifies the lensing kernel.
     Compare equations 33 and 34 of http://arxiv.org/pdf/1109.4583v3.pdf
