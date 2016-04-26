@@ -1,0 +1,108 @@
+#This is a template for module description files
+name: project_2d
+version: 1.0
+purpose: Project 3D power spectra to 2D tomographic bins using the Limber approximation
+url: ""
+interface: project_2d.py
+attribution: [CosmoSIS Team]
+rules: []
+cite: []
+
+assumptions:
+    - "The Limber approximation is reasonable for the fields being integrated"
+    - "Flat sky approximation"
+    - "GR is assumed in various ways"
+
+explanation: >
+
+    The Limber approximation integrates a 3D power spectrum over the radial
+    direction to get a 2D angular power spectrum.  It is an approximation
+    which is only valid on smaller scales.
+
+    C_\ell =  A \int_0^{\chi_1} W_1(\chi) W_2(\chi) P(k=l/\chi, z(\chi)) / chi^2 d\chi
+
+    The full integral must integrate over k(\ell) also.
+    This module is a python interface to a Limber integrator written in C, and can 
+    generate a range of different spectra depending on what options you set.
+
+    It can generate spectra for any pair of
+        (Shear, Position, Intrinsic, Magnification, Cmbkappa)
+    though beware that for certain combinations and scales the Limber approximation will 
+    be inaccurate.
+
+    Depending which spectra you ask for, it will look for different input P(k) value:
+
+    Option name                      Input-3d-spectrum                  Default output name
+
+    shear-shear                       matter_power_nl                   shear_cl
+    shear-intrinsic                   matter_intrinsic_power            shear_cl_gi
+    intrinsic-intrinsic               intrinsic_power                   shear_cl_ii
+    position-position                 galaxy_power                      galaxy_cl
+    magnification-position            matter_galaxy_power               magnification_galaxy_cl
+    magnification-magnification       matter_power_nl                   magnification_cl
+    position-shear                    matter_galaxy_power               galaxy_shear_cl
+    position-intrinsic                galaxy_intrinsic_power            galaxy_intrinsic_cl
+    magnification-intrinsic           matter_intrinsic_power            magnification_intrinsic_cl
+    magnification-shear               matter_power_nl                   magnification_shear_cl
+    shear-cmbkappa                    matter_power_nl                   shear_cmbkappa_cl
+    cmbkappa-cmbkappa                 matter_power_nl                   cmbkappa_cl
+    intrinsic-cmbkappa                matter_intrinsic_power            intrinsic_cmbkappa_cl
+    position-cmbkappa                 matter_galaxy_power               galaxy_cmbkappa_cl
+
+    For each of the spectra listed above you can set a parameter in the parameter file 
+    to describe whether that term should be calculated and what input n(z) and output
+    names should be used for it.
+
+    You can set either:
+    shear-shear = T   ; to use the default wl_number_density n(z) section and save to default shear_cl
+    shear-shear = euclid-ska  ; to cross-correlate n(z) from nz_euclid and nz_ska sections, and save to shear_cl
+    shear-shear = red-red:shear_cl_red  ; to auto-correlate n(z) from the nz_red section and then save to shear_cl_red
+
+    If no spectra are chosen at all then only "shear-shear=T" is assumed.
+
+    The same forms can be used for all the other spectra, though note that the magnification spectra
+    also require information on the luminosity function.
+
+
+    Parts of this code and the underlying implementation of limber are based on cosmocalc:
+    https://bitbucket.org/beckermr/cosmocalc-public
+    This is a python version of the shear/spectra module with some attempt made to rationalize
+    the names of modules.
+
+params:
+    verbose: "Bool, default=F, print more output."
+    get_kernel_peaks: "Bool, default=F, save peak positions for the computed kernels"
+    ell_min: "Real, minimum ell value"
+    ell_max: "Real, maximum ell value"
+    n_ell: "Real, number of log-spaced C_ell values produced"
+    shear-shear: "String or Bool. See note in the explanation above for this and related parameters"
+
+inputs:
+    matter_power_nl:
+        NOTE: "Many inputs P(k) sections may be required depending on what C_ell spectra are requested - see above." 
+        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        z: "real 1D array, redshift of nonlinear spectrum samples"
+        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+    distances:
+        z: "Real 1D array, redshift samples of d_m"
+        a: "Real 1D array, scale factor samples of d_m"
+        d_m: "Real 1D array, comoving distance to sample points."
+    cosmological_parameters:
+        h0: "The Hubble parameter H0/100 km/s/Mpc"
+        chi_star: "Real. Only needed if doing CMB Kappa spectra."
+    wl_number_density:
+        NOTE: "A different section name to wl_number_density will be used depending on the options chose (see above)"
+        z: "Real 1D array, eedshift samples of binned n(z)"
+        nbin: "Integer, number of tomographic bins used"
+        bin_{i}: "Real 1D arrays, for i=1..nbin. n(z) samples for each tomographic bin."
+
+outputs:
+    shear_cl:
+        NOTE: "Various sections will have these outputs depending on the options chosen"
+        nbin_a: "integer, Number of tomographic bins for first of the two quantities correlated"
+        nbin_b: "integer, Number of tomographic bins for second of the two quantities correlated"
+        nbin: "integer, only if auto-correlation is calculated. Number of tomographic bins for the quantity (nbin=nbin_a=nbin_b)"
+        ell: "integer 1d array, values at which c_ell are calculated"
+        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations. C_ell calculated at corresponding ell."
+        chi_peak_{i}_{j}: "real, only if get_kernel_peaks=T. Peak of the n(z) or w(z) for this bin combination"
+        arcmin_per_Mpch_{i}_{j}: "real, only if get_kernel_peaks=T. Conversion factor from mpc/h to arcmin for this bin"
