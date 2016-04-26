@@ -63,7 +63,7 @@ def load_histogram_form(ext,upsampling):
 def setup(options):
     nz_file = options.get_string(option_section, "nz_file")
     data_sets = options.get_string(option_section, "data_sets")
-    upsampling = options.get_int(option_section, "upsampling", 100)
+    upsampling = options.get_int(option_section, "upsampling", 5)
     data_sets = data_sets.split()
     if not data_sets:
         raise RuntimeError("Option data_sets empty; please set the option data_sets=name1 name2 etc and I will search the fits file for nz_name2, nz_name2, etc.")
