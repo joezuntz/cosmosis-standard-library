@@ -1,11 +1,4 @@
-"""
-This file reads the type_table.txt file, which
-tells cosmosis the mapping between the names of 
-types of two-point function and the sections in cosmosis data blocks.
-
-This file is used by two others, the save_2pt module and the 2pt_like module
-"""
-
+from astropy.table import Table
 import os
 import numpy as np
 
@@ -13,12 +6,9 @@ import numpy as np
 def load_type_table():
     dirname = os.path.split(__file__)[0]
     table_name = os.path.join(dirname, "type_table.txt")
+    type_table = Table.read(table_name, format="ascii")
     table = {}
-    for line in open(table_name):
-        line=line.strip()
-        if line.startswith("#") or line=="":
-            continue
-        type1, type2, section, x, y = line.split()
+    for (type1, type2, section, x, y) in type_table:
         table[(type1,type2)] = (section, x, y)
     return table
 

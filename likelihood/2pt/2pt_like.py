@@ -1,23 +1,12 @@
-"""
-This is a general 2-point likelihood designed to connect
-cosmosis to the fits data format developed for the Dark
-Energy Survey 2-point data.
-
-At the moment it is designed to handle C_ell likelihoods 
-for shear, galaxy-galaxy lensing, and clustering in 
-photometric surveys, but its behaviour is general enough
-(with the possible exception of the covariance code) to
-be extended to other two-point analyses.
-
-"""
-
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
+from twopoint_cosmosis import theory_names, type_table
+from astropy.io import fits
 from scipy.interpolate import interp1d
 import numpy as np
 import twopoint
 import gaussian_covariance
-from twopoint_cosmosis import theory_names, type_table
+import os
 
 default_array = np.repeat(-1.0, 99)
 def is_default(x):
@@ -26,7 +15,28 @@ def is_default(x):
 def convert_nz_steradian(n):
     return n * (41253.0*60.*60.) / (4*np.pi)
 
+class SpectrumInterp(object):
+	def __init__(self,angle,spec):
+		if np.all(spec>0):
+			self.interp_func=interp1d(np.log(angle),np.log(spec),bounds_error=False)
+			self.interp_type='loglog'
+		elif np.all(spec<0):
+			self.interp_func=interp1d(np.log(angle),np.log(-spec),bounds_error=False)
+			self.interp_type='minus_loglog'
+		else:
+			self.interp_func=interp1d(np.log(angle),spec,bounds_error=False,fill_value=0.)
+			self.interp_type="log_ang"
 
+	def __call__(self,angle):
+		if self.interp_type=='loglog':
+			spec=np.exp(self.interp_func(np.log(angle)))
+		elif self.interp_type=='minus_loglog':
+			spec=-np.exp(self.interp_func(np.log(angle)))
+		else:
+			assert self.interp_type=="log_ang"
+			spec=self.interp_func(np.log(angle))
+		spec[np.isnan(spec)]==0.
+		return spec
 
 class TwoPointLikelihood(GaussianLikelihood):
 	like_name = "2pt"
@@ -43,7 +53,7 @@ class TwoPointLikelihood(GaussianLikelihood):
 	
 	def build_data(self):
 		filename = self.options.get_string('data_file')
-		self.do_plot = self.options.get_bool('do_plot', default=False)
+		self.save_plot_to = self.options.get_string('save_plot_to', default="")
 
 		if self.gaussian_covariance:
 			covmat_name = None
@@ -75,6 +85,10 @@ class TwoPointLikelihood(GaussianLikelihood):
 			print "Removing 2-point values with value=0.0"
 			self.two_point_data.mask_bad(0.0)
 
+		if self.options.get_bool("cut_cross", default=False):
+			print "Removing 2-point values from cross-bins"
+			self.two_point_data.mask_cross()
+
 
 		#All the names of two-points measurements that were found in the data
 		#file
@@ -89,13 +103,43 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 		#The ones we actually used. 
 		used_names = [spectrum.name for spectrum in self.two_point_data.spectra]
+		
+		#Check for scale cuts. In general, this is a minimum and maximum angle for
+		#each spectrum, for each redshift bin combination. Which is clearly a massive pain...
+		#but what can you do?
 
-		ell_max = self.options.get_double("ell_max", default=-1.0)
-		spectra_to_cut = self.options.get_string("spectra_to_cut", default="all")
-		if spectra_to_cut != "all":
-			spectra_to_cut = spectra_to_cut.split()
-		if ell_max>=0:
-			self.two_point_data.mask_scale(spectra_to_cut, max_scale=ell_max)
+		scale_cuts = {}
+		for name in used_names:
+			s = self.two_point_data.get_spectrum(name)
+			for b1,b2 in s.bin_pairs:
+				option_name = "angle_range_{}_{}_{}".format(name,b1,b2)
+				if self.options.has_value(option_name):
+					r = self.options.get_double_array_1d(option_name)
+					scale_cuts[(name,b1,b2)] = r
+
+		#Now check for completely cut bins
+		#example:
+		#cut_wtheta = 1,2  1,3  2,3
+		bin_cuts = []
+		for name in used_names:
+			s = self.two_point_data.get_spectrum(name)
+			option_name = "cut_{}".format(name)
+			if self.options.has_value(option_name):
+				cuts = self.options[option_name].split()
+				cuts = [eval(cut) for cut in cuts]
+				for b1,b2 in cuts:
+					bin_cuts.append((name, b1, b2))
+
+
+		if scale_cuts:
+			self.two_point_data.mask_scales(scale_cuts, bin_cuts)
+		else:
+			print "No scale cuts mentioned in ini file."
+		#spectra_to_cut = self.options.get_string("spectra_to_cut", default="all")
+		#if spectra_to_cut != "all":
+		#	spectra_to_cut = spectra_to_cut.split()
+		#if ell_max>=0:
+		#	self.two_point_data.mask_scale(spectra_to_cut, max_scale=ell_max)
 
 		#Info on which likelihoods we do and do not use
 		print "Found these data sets in the file:"
@@ -104,6 +148,19 @@ class TwoPointLikelihood(GaussianLikelihood):
 				print "    - ",name, "  [using in likelihood]"
 			else:
 				print "    - ",name, "  [not using in likelihood]"
+
+		#Convert all units to radians.  The units in cosmosis are all
+		#in radians, so this is the easiest way to compare them.
+		for spectrum in self.two_point_data.spectra:
+			if spectrum.is_real_space():
+				spectrum.convert_angular_units("rad")
+				#if self.options.get_bool("print physical scale",False):
+				#	section,_,_=theory_names(spectrum)
+				#	chi_peak = 
+				#	for ang in spectrum.angle:
+						
+				
+					
 
 		#build up the data vector from all the separate vectors.
 		#Just concatenation
@@ -120,19 +177,58 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 
 	def build_covariance(self):
-		C = np.array(self.two_point_data.covmat)		
-		r = self.options.get_int('covariance_realizations', default=0)
-		if r:
+		C = np.array(self.two_point_data.covmat)
+		r = self.options.get_int('covariance_realizations', default=-1)
+		self.sellentin = self.options.get_bool('sellentin', default=False)
+
+		if self.sellentin:
+			if not self.constant_covariance:
+				print
+				print "You asked for the Sellentin-Heavens correction to be applied"
+				print "But also asked for a non-constant (maybe Gaussian?) covariance"
+				print "matrix.  I think that probably suggests you have made a mistake"
+				print "somewhere unless you have thought about this quite carefully."
+				print
+			if r<0:
+				print
+				print "ERROR: You asked for the Sellentin-Heavens corrections"
+				print "by setting sellentin=T, but you did not set covariance_realizations"
+				print "If you want covariance_realizations=infinity you can use 0"
+				print "(unlikely, but it's also possible you were super-perverse and set it negative?)"
+				print
+				raise ValueError("Please set covariance_realizations for 2pt like. See message above.")
+			elif r==0:
+				print
+				print "NOTE: You asked for the Sellentin-Heavens corrections"
+				print "but set covariance_realizations=0. I am assuming you want"
+				print "the limit of an infinite number of realizations, so we will just go back"
+				print "to the original Gaussian model"
+				print
+				self.sellentin = False
+			else:
+				# use proper correction
+				self.covariance_realizations = r
+				print
+				print "You set sellentin=T so I will apply the Sellentin-Heavens correction"
+				print "for a covariance matrix estimated from Monte-Carlo simulations"
+				print "(you told us it was {} simulations in the ini file)".format(r)
+				print "This analytic marginalization converts the Gaussian distribution"
+				print "to a multivariate student's t distribution instead."
+				print
+
+		elif r>0:
+			#Just regular increase in covariance size, no Sellentin change.
 			p = C.shape[0]
-			print "You set covariance_realizations={} in the 2pt likelihood parameter file".format(r)
-			print "So I will apply the Anderson-Hartlap correction to the covariance matrix"
-			print "The covariance matrix is {}x{}".format(p,p)
 			#This x is the inverse of the alpha used in the old code
 			#because that applied to the weight matrix not the covariance
 			x = (r - 1.0) / (r - p - 2.0)
-			print "So the correction scales the covariance matrix by (r - 1) / (r - n - 2) = {}".format(x)
 			C = C * x
-
+			print
+			print "You set covariance_realizations={} in the 2pt likelihood parameter file".format(r)
+			print "So I will apply the Anderson-Hartlap correction to the covariance matrix"
+			print "The covariance matrix is nxn = {}x{}".format(p,p)
+			print "So the correction scales the covariance matrix by (r - 1) / (r - n - 2) = {}".format(x)
+			print
 		return C
 		
 
@@ -151,6 +247,7 @@ class TwoPointLikelihood(GaussianLikelihood):
 		angle = []
 		bin1 = []
 		bin2 = []
+		dataset_name = []
 
 		#Now we actually loop through our data sets
 		for spectrum in self.two_point_data.spectra:
@@ -159,6 +256,8 @@ class TwoPointLikelihood(GaussianLikelihood):
 			angle.append(angle_vector)
 			bin1.append(bin1_vector)
 			bin2.append(bin2_vector)
+			# dataset_name.append(np.repeat(spectrum.name, len(bin1_vector)))
+
 
 		#We also collect the ell or theta values.
 		#The gaussian likelihood code itself is not expecting these,
@@ -166,14 +265,53 @@ class TwoPointLikelihood(GaussianLikelihood):
 		angle = np.concatenate(angle)
 		bin1 = np.concatenate(bin1)
 		bin2 = np.concatenate(bin2)
+		# dataset_name = np.concatenate(dataset_name)
 		block[names.data_vector, self.like_name+"_angle"] = angle
 		block[names.data_vector, self.like_name+"_bin1"] = bin1
 		block[names.data_vector, self.like_name+"_bin2"] = bin2
+		# block[names.data_vector, self.like_name+"_name"] = dataset_name
 
 		#the thing it does want is the theory vector, for comparison with
 		#the data vector
 		theory = np.concatenate(theory)
 		return theory
+
+	def do_likelihood(self, block):
+		#Run the 
+		super(TwoPointLikelihood, self).do_likelihood(block)
+
+		if self.sellentin:
+			# The Sellentin-Heavens correction from arxiv 1511.05969
+			# accounts for a finite number of Monte-Carlo realizations
+			# being used to estimate the covariance matrix.
+
+			#Note that this invalidates the saved simulation used for
+			#the ABC sampler.  I can't think of a better way of doing this 
+			#than overwriting the whole things with NaNs - that will at 
+			#least make clear there is a problem somewhere and not
+			#yield misleading results.
+			block[names.data_vector, self.like_name + "_simulation"] = (
+				np.nan * block[names.data_vector, self.like_name + "_simulation"])
+
+			#It changes the Likelihood from Gaussian to a multivariate
+			#student's t distribution.  Here we will have to do a little
+			#hack and overwrite the stuff that the original Gaussian
+			#method did above
+			N = self.covariance_realizations
+			chi2 = block[names.data_vector, self.like_name+"_CHI2"]
+
+			#We might be using a cosmologically varying 
+			#covariance matrix, though I'm not sure what that would mean.
+			#There is a warning about this above.
+			if self.constant_covariance:
+				log_det = 0.0
+			else:
+				log_det = block[names.data_vector, self.like_name+"_LOG_DET"]
+
+			like = -0.5*log_det - 0.5*N*np.log(1+chi2/(N-1.))
+
+			# overwrite the log-likelihood
+			block[names.likelihoods, self.like_name+"_LIKE"] = like
 
 	def extract_spectrum_prediction(self, block, spectrum):
 		#We may need theory predictions for multiple different
@@ -219,7 +357,8 @@ class TwoPointLikelihood(GaussianLikelihood):
 					theory = block[section, y_name.format(b2,b1)]
 				else:
 					raise ValueError("Could not find theory prediction {} in section {}".format(y_name.format(b1,b2),section))
-				theory_spline = interp1d(angle_theory, theory)
+				#theory_spline = interp1d(angle_theory, theory)
+				theory_spline = SpectrumInterp(angle_theory, theory)
 				bin_data[(b1,b2)] = theory_spline
 				#This is a bit silly, and is a hack because the
 				#book-keeping is very hard.
@@ -237,7 +376,9 @@ class TwoPointLikelihood(GaussianLikelihood):
 		#to calculate covariances later
 		self.theory_splines[section] = bin_data
 
-		if self.do_plot:
+		if self.save_plot_to:
+			if not os.path.isdir(self.save_plot_to):
+				os.makedirs(self.save_plot_to)
 			import pylab
 			nbin = max(spectrum.nbin(), spectrum.nbin())
 			for b1 in xrange(1,nbin+1):
@@ -248,10 +389,10 @@ class TwoPointLikelihood(GaussianLikelihood):
 					pylab.loglog(angle_theory, bin_data[(b1,b2)](angle_theory))
 					xdata, ydata = spectrum.get_pair(b1, b2)
 					yerr = spectrum.get_error(b1, b2)
-					pylab.errorbar(xdata, ydata, yerr, fmt='+')
+					pylab.errorbar(xdata, ydata, yerr, fmt='o')
 					pylab.xlim(xdata.min(), xdata.max())
 					pylab.ylim(ydata.min(), ydata.max())
-			pylab.savefig("cmp_{}.pdf".format(spectrum.name))
+			pylab.savefig(os.path.join(self.save_plot_to,"{}.png".format(spectrum.name)))
 			pylab.close()
 
 			

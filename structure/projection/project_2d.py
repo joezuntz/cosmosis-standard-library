@@ -216,6 +216,9 @@ class SpectrumType(Enum):
 
 
 class SpectrumCalulcator(object):
+    # It is useful to put this here so we can subclass to add new spectrum
+    # types, for example ones done with modified gravity changes.
+    spectrumType = SpectrumType
     def __init__(self, options):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
@@ -224,10 +227,10 @@ class SpectrumCalulcator(object):
         #Get the list of spectra that we want to compute.
         #The full list
         self.req_spectra = []
-        for spectrum in SpectrumType:
+        for spectrum in self.spectrumType:
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
-            default = (spectrum==SpectrumType.ShearShear)
+            default = (spectrum==self.spectrumType.ShearShear)
             name = spectrum.value.option_name()
 
             try:
@@ -321,7 +324,10 @@ class SpectrumCalulcator(object):
         #convert Mpc to Mpc/h
         chi_distance *= h0
         
-        self.chi_star = block[names.distances, 'CHISTAR'] * h0
+        if block.has_value(names.distances, 'CHISTAR'):
+            self.chi_star = block[names.distances, 'CHISTAR'] * h0
+        else:
+            self.chi_star = None
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
@@ -381,6 +387,8 @@ class SpectrumCalulcator(object):
             elif kernel_type=="W":
                 kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
             elif kernel_type=="K":
+                if self.chi_star is None:
+                    raise ValueError("Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
                 kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
@@ -436,7 +444,8 @@ class SpectrumCalulcator(object):
             self.load_kernels(block)
             self.load_power(block)
             for spectrum in self.req_spectra:
-                print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
+                if self.verbose:
+                    print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
                 self.compute_spectra(block, spectrum)
         finally:
             self.clean()

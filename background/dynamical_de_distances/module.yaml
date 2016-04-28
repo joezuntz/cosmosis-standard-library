@@ -19,6 +19,9 @@ explanation: >
 params:
     verbose: "boolean, (default False)"
     w_model: "int, = 0 for (w0,wa), =1 for (w0,wa,ap), =2 for EDE model (w0,ode_e)(default 0)"
+    zmin: "real, default=0.0; The minimum redshift at which to calculate the distance"
+    zmax: "real, default=0.0; The maximum redshift at which to calculate the distance"
+    dz: "real, default=0.01; The spacing between output redshift samples"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
@@ -32,9 +35,6 @@ inputs:
         wa:  "real, equation of state parameter w(a) = w_0 + w_a*(1-a)  (default 0.0)"
         ap:  "real, pivot scale factor w(a) = w_0 + w_a*(ap-a)"
         ode_e:  "real, Early dark energy parameters "
-        
-        
-        
 
 outputs:
     distances:
