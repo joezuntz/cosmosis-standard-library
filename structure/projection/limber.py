@@ -33,6 +33,8 @@ lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_
 lib.cmb_wl_kappa_kernel.restype = c_gsl_spline
 lib.cmb_wl_kappa_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline]
 
+lib.shear_slice_kernel.restype = c_gsl_spline                                                                                                                   
+lib.shear_slice_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline, c_gsl_spline]
 
 lib.limber_integral.restype = c_gsl_spline
 lib.limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p]
@@ -52,10 +54,13 @@ def get_named_w_spline(block, section, bin, z, chi_max, a_of_chi):
     "Compute a shear kernel W(chi) spline"
     return GSLSpline(lib.get_named_w_spline(block._ptr, section, bin, z, chi_max, a_of_chi))
 
+def get_w_slice_spline(chi_max, z_source, a_of_chi, chi_of_z):
+    "Compute the CMB WL kernel W_cmb(chi) spline"
+    return GSLSpline(lib.shear_slice_kernel(chi_max, z_source, a_of_chi, chi_of_z))
+
 def get_cmb_kappa_spline(chi_max, chi_star, a_of_chi):
     "Compute the CMB WL kernel W_cmb(chi) spline"
     return GSLSpline(lib.cmb_wl_kappa_kernel(chi_max, chi_star, a_of_chi))
-
 
 def free_power(power):
     lib.destroy_interp_2d(power)
@@ -82,6 +87,7 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor):
     if config.status == LIMBER_STATUS_ZERO:
         ylog = False
     elif config.status == LIMBER_STATUS_NEGATIVE:
-        raise ValueError("Negative value of the Limber integral.")
+        ylog = False
+        #raise ValueError("Negative value of the Limber integral.")
     spline = GSLSpline(spline_ptr, xlog=xlog, ylog=ylog)
     return spline
