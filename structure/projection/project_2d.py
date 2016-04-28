@@ -86,7 +86,8 @@ class Spectrum(object):
 
         #The spline is done in log space if the spectrum never goes
         #negative, otherwise linear space.
-        xlog = ylog = self.autocorrelation
+        xlog = True
+        ylog = self.autocorrelation
         #Generate a spline
         c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block))
         return c_ell
@@ -105,6 +106,13 @@ class SpectrumType(Enum):
         kernels = "W W"
         autocorrelation = True
         name = names.shear_cl
+        prefactor_power = 2
+
+    class SliceSlice(Spectrum):
+        power_spectrum = PowerType.matter
+        kernels = "S S"
+        autocorrelation = True
+        name = "shear_cl_slice"
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
@@ -203,17 +211,17 @@ class SpectrumType(Enum):
 
 
 class SpectrumCalulcator(object):
-    def __init__(self, options):
+    def __init__(self, options, spectrum_type=SpectrumType):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
 
         #Get the list of spectra that we want to compute.
         #The full list
         self.req_spectra = []
-        for spectrum in SpectrumType:
+        for spectrum in spectrum_type:
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
-            default = (spectrum==SpectrumType.ShearShear)
+            default = (spectrum==spectrum_type.ShearShear)
             name = spectrum.value.option_name()
 
             try:
@@ -356,9 +364,15 @@ class SpectrumCalulcator(object):
 
         if kernel_type == "K":
             nbin = 1
+        elif kernel_type == "S":
+            import scipy.interpolate as interp
+            z_source = block[sample_name,'z'][1:]
+            print z_source
+            nbin = len(z_source)
         else:
             z = block[sample_name, 'z']
             nbin = block[sample_name, 'nbin']
+
 
         #Now load n(z) or W(z) for each bin in the range
         for i in xrange(nbin):
@@ -368,6 +382,9 @@ class SpectrumCalulcator(object):
                 kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
             elif kernel_type=="K":
                 kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
+            elif kernel_type=="S":
+                print z_source[i]
+                kernel_dict[i] = limber.get_w_slice_spline(self.chi_max, z_source[i], self.a_of_chi, self.chi_of_z)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
 
@@ -396,8 +413,8 @@ class SpectrumCalulcator(object):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
-                if spectrum.is_autocorrelation():
-                    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
+                #if spectrum.is_autocorrelation():
+                #    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
             
 
     def clean(self):
@@ -422,7 +439,6 @@ class SpectrumCalulcator(object):
             self.compute_spectra(block, spectrum)
         self.clean()
         return 0
-
 
 
 
