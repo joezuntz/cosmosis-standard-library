@@ -150,12 +150,21 @@ class SpectrumType(Enum):
         name = "magnification_cl"
         prefactor_power = 2
 
+    class PositionShear(Spectrum):
+        power_spectrum = PowerType.matter_galaxy
+        kernels = "N W"
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_power = 1
+
+    """
     class ShearPosition(Spectrum):
         power_spectrum = PowerType.matter_galaxy
         kernels = "W N"
         autocorrelation = False
         name = "shear_galaxy_cl"
         prefactor_power = 1
+    """
 
     class PositionIntrinsic(Spectrum):
         power_spectrum = PowerType.galaxy_intrinsic
@@ -431,13 +440,15 @@ class SpectrumCalulcator(object):
         self.outputs.clear()
 
     def execute(self, block):
-        self.load_distance_splines(block)
-        self.load_kernels(block)
-        self.load_power(block)
-        for spectrum in self.req_spectra:
-            print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
-            self.compute_spectra(block, spectrum)
-        self.clean()
+        try:
+            self.load_distance_splines(block)
+            self.load_kernels(block)
+            self.load_power(block)
+            for spectrum in self.req_spectra:
+                print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
+                self.compute_spectra(block, spectrum)
+        finally:
+            self.clean()
         return 0
 
 

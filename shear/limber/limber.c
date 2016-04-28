@@ -3,7 +3,7 @@
 #include "limber.h"
 
 // This is a workspace size for the gsl integrator
-#define LIMBER_FIXED_TABLE_SIZE 1000
+#define LIMBER_FIXED_TABLE_SIZE 2048
 
 // data that is passed into the integrator
 // This is everything we need to compute the
@@ -101,6 +101,8 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_integration_glfixed_table *table = 
 	    gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
 
+	// gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+
 	// results of the integration go into these arrays.
 	double c_ell_vector[config->n_ell];
 	double ell_vector[config->n_ell];
@@ -114,6 +116,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// This particular function is used because that's what Matt Becker 
 		// found to work best.
 		double c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
+
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
 
@@ -155,6 +158,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_interp_accel_free(data.accelerator_x);
 	gsl_interp_accel_free(data.accelerator_y);
 	gsl_integration_glfixed_table_free(table);	
+	// gsl_integration_workspace_free(workspace);
 
 	// And that's it
 	return output;
