@@ -71,7 +71,7 @@ def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
         raise ValueError("Could not load power spectrum from section {0} (k:{1} z:{2} p:{3})".format(section, k_name, z_name, p_name))
     return r
 
-def get_kernel_peak(WX, WY, nchi=100):
+def get_kernel_peak(WX, WY, nchi=500):
     "Get chi of maximum of kernel"
     return lib.get_kernel_peak(WX, WY, nchi)
 
