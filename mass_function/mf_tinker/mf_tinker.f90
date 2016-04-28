@@ -94,18 +94,23 @@
 !
 !-----------------------------------------------------------------------------
 MODULE mf_tinker
-
 contains
 
-DOUBLE PRECISION FUNCTION mf(lnnu)
+DOUBLE PRECISION FUNCTION mf(lnnu,zz)
 !!$ Halo multiplicity function per log(nu): 0.5*f(sigma), 
 !!$ where sigma=deltac/sqrt(nu).
 !!$ \int_{-infty}^infty mf(lnnu) dlnnu = 1 is NOT satisfied!
 !!$ Ref: Eq.(3) of Tinker et al. (2008)
   IMPLICIT none
-  DOUBLE PRECISION, intent(IN) :: lnnu
-  DOUBLE PRECISION :: nu,sigma
-  double precision :: Ap=0.186d0,a=1.47d0,b=2.57d0,c=1.19d0 ! Delta=200
+  DOUBLE PRECISION :: lnnu
+  DOUBLE PRECISION :: nu,sigma, alpha, Delta=200.
+  real(8):: zz
+  double precision :: Ap,a,b
+  double precision :: c=1.19d0 ! Delta=200
+  Ap=0.186d0*(1.+ zz)**(-0.14)
+  a=1.47d0*(1.+ zz)**(-0.06)
+  alpha=10.00**(-1.0*(0.75/(dlog10(Delta/75.)))**1.2)
+  b=2.57d0*(1.+ zz)**(-1.0*alpha)
   nu= exp(lnnu)
   sigma= 1.6865d0/dsqrt(nu)
   mf = 0.5d0*(Ap*((sigma/b)**(-a)+1d0)*dexp(-c/sigma**2d0))

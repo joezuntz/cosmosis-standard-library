@@ -33,7 +33,7 @@ function execute(block, config) result(status)
 	type(pk_settings) :: PK
 	type(massfunction) :: MassF
 	real(dl), dimension(:,:), allocatable ::  dm, dr
-	real(dl) :: deltam
+	real(dl) :: deltam,zz
 	real(dl), allocatable, dimension(:) :: k,m
 	integer iz,n
 
@@ -67,7 +67,8 @@ function execute(block, config) result(status)
 
         !save the z=0 output only
         if(settings%redshift_zero == 1) then
-                call compute_massfunction(PK%kh,PK%matpower(:,1),MassF,n+1)
+                zz=0.0
+                call compute_massfunction(PK%kh,PK%matpower(:,1),MassF,n+1,zz)
                 status = datablock_put_double_array_1d(block, mass_function_section, "dndlnRh",MassF%dn_dlnRh)
                 status = datablock_put_double_array_1d(block, mass_function_section, "dndlnMh",MassF%dn_dlnMh)
                 !status = datablock_put_double_array_1d(block, mass_function_section, "M_h",MassF%R_h)
@@ -78,7 +79,7 @@ function execute(block, config) result(status)
         ! dr and dm = mass functions at other redshifts
         if(settings%redshift_zero == 0) then
                 do iz=1,PK%num_z
-                        call compute_massfunction(PK%kh,PK%matpower(:,iz),MassF,n+1)
+                        call compute_massfunction(PK%kh,PK%matpower(:,iz),MassF,n+1,PK%redshifts(iz))
                         k = MassF%R_h
                         m = MassF%M_h
                         dr(:,iz) = MassF%dn_dlnRh

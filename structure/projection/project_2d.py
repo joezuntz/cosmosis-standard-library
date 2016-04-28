@@ -92,6 +92,10 @@ class Spectrum(object):
         c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block))
         return c_ell
 
+    def kernel_peak(self, block, bin1, bin2):
+        K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
+        K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
+        return limber.get_kernel_peak(K1, K2)
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -220,9 +224,11 @@ class SpectrumType(Enum):
 
 
 class SpectrumCalulcator(object):
+
     def __init__(self, options, spectrum_type=SpectrumType):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
+        self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
 
         #Get the list of spectra that we want to compute.
         #The full list
@@ -232,7 +238,6 @@ class SpectrumCalulcator(object):
             #everything else is not done by default
             default = (spectrum==spectrum_type.ShearShear)
             name = spectrum.value.option_name()
-
             try:
                 #first look for a string, e.g. redmagic-redmagic or similar (name of samples)
                 value = options.get_string(option_section, name)
@@ -324,7 +329,10 @@ class SpectrumCalulcator(object):
         #convert Mpc to Mpc/h
         chi_distance *= h0
         
-        self.chi_star = block[names.distances, 'CHISTAR'] * h0
+        if block.has_value(names.distances, 'CHISTAR'):
+            self.chi_star = block[names.distances, 'CHISTAR'] * h0
+        else:
+            self.chi_star = None
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
@@ -390,6 +398,8 @@ class SpectrumCalulcator(object):
             elif kernel_type=="W":
                 kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
             elif kernel_type=="K":
+                if self.chi_star is None:
+                    raise ValueError("Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
                 kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
             elif kernel_type=="S":
                 print z_source[i]
@@ -422,9 +432,12 @@ class SpectrumCalulcator(object):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
-                #if spectrum.is_autocorrelation():
-                #    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
-            
+                if spectrum.is_autocorrelation():
+                    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
+                if self.get_kernel_peaks:
+                    chi_peak=spectrum.kernel_peak(block, i, j)
+                    block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
+                    block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i+1,j+1)] = 60*np.degrees(1/chi_peak)
 
     def clean(self):
         #need to manually delete power spectra we have loaded
@@ -445,7 +458,8 @@ class SpectrumCalulcator(object):
             self.load_kernels(block)
             self.load_power(block)
             for spectrum in self.req_spectra:
-                print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
+                if self.verbose:
+                    print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
                 self.compute_spectra(block, spectrum)
         finally:
             self.clean()

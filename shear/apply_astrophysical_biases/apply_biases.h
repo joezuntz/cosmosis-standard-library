@@ -10,8 +10,6 @@ const char * mps = MATTER_POWER_LIN_SECTION;
 
 //Interpolator functions 
 Interpolator2D * init_interp_2d_akima_grid(double *x1, double *x2, double **y, int N1, int N2);
-Interpolator2D * interp_bg;
-Interpolator2D * interp_rg;
 void destroy_interp_2d(Interpolator2D * interp2d);
 double interp_2d(double x1, double x2, Interpolator2D * interp2d);
 
@@ -57,26 +55,26 @@ typedef struct biases {
 const char * choose_output_section(spectrum_type_t spectrum_type){
 	switch(spectrum_type){
 		case intrinsic_intrinsic:
-			return IA_SPECTRUM_II_SECTION;
+			return "IA_SPECTRUM_II";
 			break;
 		case mass_intrinsic:
-			return IA_SPECTRUM_GI_SECTION;
+			return "IA_SPECTRUM_GI";
 			break;
 		case galaxy_galaxy:
-			return MATTER_POWER_GAL_SECTION;
+			return "MATTER_POWER_GAL";
 			break;
 		case galaxy_mass:
-			return MATTER_POWER_GAL_MASS_SECTION;
+			return "MATTER_POWER_GAL_MASS";
 			break;
 		case galaxy_intrinsic:
-			return MATTER_POWER_GAL_INTRINSIC_SECTION;
+			return "MATTER_POWER_GAL_INTRINSIC";
 			break;
 		default:
 			return NULL;
 	}
 }
 
-const char * choose_spectrum_name(spectrum_type_t spectrum_type, bias_config * config, char * name){
+char * choose_spectrum_name(spectrum_type_t spectrum_type, bias_config * config, char * name){
 	switch(spectrum_type){
 		case intrinsic_intrinsic:
 			sprintf(name, "P_II");
@@ -114,6 +112,13 @@ const char * choose_spectrum_name(spectrum_type_t spectrum_type, bias_config * c
 		default:
 			return NULL;
 	}
+}
+
+void free_bias(double **a, int n){
+	int i;
+	for (i = 0; i < n; ++i) {
+		free(a[i]);}
+	free(a);
 }
 
 double apply_bias_coefficients(spectrum_type_t spectrum_type, biases * b, int j, int i){
@@ -174,6 +179,7 @@ int get_power_spectrum(c_datablock * block, spectrum_type_t spectrum_type, biase
 	}
 	status|=c_datablock_put_double_grid(block, section, kname, b->nk, b->k_h, zname, b->nz, b->z, spectrum_name, Pk);
 
+	free(Pk[0]);
 	free(Pk);
 
 	return status ;
@@ -199,7 +205,6 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 			snprintf(rI_name, 10, "r_I%s", config->colour);}
 
 		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), bI_name, &(b->b_I) );
-		printf("Loaded intrinsic alignment bias %d.\n", status);
 		status |= c_datablock_get_double_grid(block, "intrinsic_alignment_parameters", "k_h", &(b->nk), &(b->k_h), "z", &(b->nz), &(b->z), rI_name, &(b->r_I) );
 		if(config->verbosity > 1){ printf("Loaded intrinsic alignment bias %d.\n", status); }
 	} 
@@ -222,6 +227,8 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, bg_name, &b_g );
 		status |= c_datablock_get_double_grid(block, "bias_field", "k_h", &nk_g, &k_h_g, "z", &nz_g, &z_g, rg_name, &r_g );
 
+		Interpolator2D * interp_bg;
+		Interpolator2D * interp_rg;
 		interp_bg = init_interp_2d_akima_grid(k_h_g, z_g, b_g, nk_g, nz_g);
 		interp_rg = init_interp_2d_akima_grid(k_h_g, z_g, r_g, nk_g, nz_g);
 
@@ -242,6 +249,10 @@ int load_biases(c_datablock * block, biases * b, bias_config * config ){
 
 		destroy_interp_2d(interp_bg);
 		destroy_interp_2d(interp_rg);
+		free_bias(b_g, nk_g);
+		free_bias(r_g, nk_g); 
+		free(k_h_g);
+		free(z_g);
 
 		if(config->verbosity > 1){ printf("Loaded galaxy bias.\n"); }
 	}
@@ -275,12 +286,16 @@ int get_all_spectra(c_datablock * block, biases * b, bias_config * config){
 }
 
 void free_memory(biases *b, bias_config * config){
+	printf("Freeing memory.\n");
 	if (config->intrinsic_alignments){
-		free(b->b_I);
-		free(b->r_I);}
+		free_bias(b->b_I, b->nk);
+		free_bias(b->r_I, b->nk);}
 	if (config->galaxy_bias){
+		free(b->b_g[0]);
+		free(b->r_g[0]);
 		free(b->b_g);
 		free(b->r_g);}
 	free(b->P_nl);
 	free(b->k_h);
+	free(b->z);
 }

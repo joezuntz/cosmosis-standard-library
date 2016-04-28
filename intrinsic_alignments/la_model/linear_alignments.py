@@ -36,7 +36,7 @@ def resample_power(P1, P2, k1, k2):
 
 #in units of rho_crit0
 C1_RHOCRIT = compute_c1_baseline()
-print "C1_RHOCRIT = ", C1_RHOCRIT
+#print "C1_RHOCRIT = ", C1_RHOCRIT
 
 
 def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
@@ -64,9 +64,8 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 	P_GI_resample = resample_power(P_nl, P_GI, k_nl, k_lin)
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
-	R1 = P_II_resample/P_nl
-	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
-	r_I = P_GI_resample/P_II_resample *b_I
+	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
+	r_I = P_GI/P_II * b_I
 
 	return P_II, P_GI, b_I, r_I, k_nl
 
@@ -91,6 +90,36 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	P_GI = np.zeros_like(P_nl)
 	for i in xrange(nz):
 		P_GI[i] = F[i] * P_nl[i]
+
+
+	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
+	R1 = P_II/P_nl
+	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
+	r_I = P_GI/P_II * b_I
+
+	return P_II, P_GI, b_I, r_I, k_nl
+
+def linear(z_lin, k_lin, P_lin, A, Omega_m):
+	# What was used in CFHTLens and Maccrann et al.
+	#extrapolate our linear power out to high redshift
+	z0 = np.where(z_nl==0)[0][0]
+	nz = len(z_nl)
+
+	ksmall = np.argmin(k_nl)
+	
+	growth = (P_lin[:,ksmall] / P_lin[z0,ksmall])**0.5
+
+	F = - A * C1_RHOCRIT * Omega_m / growth
+
+	# intrinsic-intrinsic term
+	P_II = np.zeros_like(P_lin)
+
+	for i in xrange(nz):
+		P_II[i,:] = F[i]**2 * P_lin[i,:] 
+
+	P_GI = np.zeros_like(P_lin)
+	for i in xrange(nz):
+		P_GI[i] = F[i] * P_lin[i]
 
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
@@ -144,13 +173,11 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 
 	# Finally calculate the IA and stochastic bias terms from the power spectra
-
-
 	P_II_resample = resample_power(P_nl, P_II, k_nl, k_lin)
 	P_GI_resample = resample_power(P_nl, P_GI, k_nl, k_lin)
 
 	R1 = P_II_resample/P_nl
-	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
-	r_I = P_GI_resample/P_II_resample *b_I
+	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
+	r_I = P_GI_resample/P_II_resample * b_I
 
 	return P_II, P_GI, b_I, r_I, k_lin

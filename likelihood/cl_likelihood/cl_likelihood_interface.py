@@ -3,21 +3,34 @@ import cl_likelihood
 import numpy as np
 import pdb
 
+#TODO
+## TO INCLUDE CMB KAPPA
+#- Add kappa as additional observable with 1 tomographic bin
+#- Read and interpolate noise from Tommaso to each ell
+#- Read 1 extra survey: area, ell bins
+#- Add override option to use given area rather than the smallest survey
+
+
+
 def setup(options):
 
 	import cl_likelihood as cll
 	like = cll.ClLikelihood(options)
 
-	cuts = options.get_bool(option_section, 'scale_cuts')
+	cuts = options.get_bool(option_section, 'scale_cuts', default=False)
 
+	shear_sample = options.get_string(option_section, 'shear_sample', default="")
+	pos_sample = options.get_string(option_section, 'LSS_sample', default="")
+	cmb_sample = options.get_string(option_section, 'cmb_sample', default="")
 
-	shear_sample = options.get_string(option_section, 'shear_sample')
-	pos_sample = options.get_string(option_section, 'LSS_sample')
 	auto = options.get_bool(option_section, 'auto_zbins')
 	cross = options.get_bool(option_section, 'cross_zbins')
 
-	try: save_dir = options.get_string(option_section, 'output')
-	except: save_dir = None
+	override_area = options.get_bool(option_section, 'override_area', default=False)
+	if override_area:
+		area = options.get_double(option_section, 'area')
+
+	save_dir = options.get_string(option_section, 'output', default="")
 
 	config = [shear_sample, pos_sample, cuts], like, save_dir
 
@@ -28,6 +41,7 @@ def execute(block, config):
 	options, like, output = config
 	shear_cat = options[0]
 	pos_cat = options[1]
+#	cmb_cat = options[2]
 	cuts = options[2]
 
 	# First apply scale cuts
@@ -40,13 +54,12 @@ def execute(block, config):
 
 	if like.constant_covariance:
 		like.build_inverse_covariance(block)
-	#import pdb ; pdb.set_trace()
 
 	# Do the likelihood calculation
 	like.do_likelihood(block)
 	#like.normalise_likelihood(block)
 
-	if output!=None:
+	if output:
 		np.savetxt(output, like.cov)
 		print 'Saving covariance matrix to %s'%output
 
