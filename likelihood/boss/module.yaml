@@ -1,7 +1,7 @@
 #This is a template for module description files
 name: BOSS
 version: "1303.4486"
-purpose: Compute the likelihood of supplied fsigma8(z=0.57), H(z=0.57), D_a(z=0.57), omegamh2, bsigma8(z=0.57)         
+purpose: "Compute the likelihood of supplied fsigma8(z=0.57), H(z=0.57), D_a(z=0.57), omegamh2, bsigma8(z=0.57)"
 url: "http://www.sdss3.org"
 interface: boss_rsd.py
 attribution: [SDSS-III BOSS Team]
@@ -11,6 +11,7 @@ cite:
 assumptions:
     - "SDSS-III CMASS DR9 dataset"
     - "When using mode = 1 CAMB must be run to output distance parameters and sigma8"
+    - "The transfer function must be scale-independent to use this simple formulation: no MG, massive nu, for example."
 
 explanation: >
         "This module calculates the likelihood using the CMASS only results from 
