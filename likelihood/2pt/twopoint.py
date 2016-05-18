@@ -528,7 +528,7 @@ class TwoPointFile(object):
     def from_fits(cls, filename, covmat_name="COVMAT"):
         fitsfile = fits.open(filename)
         spectra = []
-        kernels = {}
+        kernels = []
         windows = {}
 
         #Load the covariance matrix from the file, typically stored as
@@ -553,10 +553,12 @@ class TwoPointFile(object):
         #Each spectrum needs kernels, usually some n(z).
         #These were read from headers when we loaded the 2pt data above above.
         #Now we are loading those kernels into a dictionary
+        known_kernels = []
         for spectrum in spectra:
             for kernel in (spectrum.kernel1, spectrum.kernel2):
-                if kernel not in kernels:
-                    kernels[kernel] = NumberDensity.from_fits(fitsfile[kernel])
+                if kernel not in known_kernels:
+                    kernels.append(NumberDensity.from_fits(fitsfile[kernel]))
+                    known_kernels.append(kernel)
 
         #We might also require window functions W(ell) or W(theta). It's also possible
         #that we just use a single sample value of ell or theta instead.
