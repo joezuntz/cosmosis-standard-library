@@ -63,7 +63,6 @@ class Spectrum(object):
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
         return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
-
     def prefactor(self, block):
         if self.prefactor_power == 0:
             return 1.0
@@ -75,7 +74,6 @@ class Spectrum(object):
     def magnification_prefactor(self, block, bin):
         alpha = block[names.galaxy_luminosity_function, "alpha_binned"]
         return alpha[bin]
-
 
     def compute(self, block, ell, bin1, bin2):
         #Get the required kernels
@@ -432,8 +430,8 @@ class SpectrumCalulcator(object):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
-                if spectrum.is_autocorrelation():
-                    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
+                #if spectrum.is_autocorrelation():
+                #    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
                 if self.get_kernel_peaks:
                     chi_peak=spectrum.kernel_peak(block, i, j)
                     block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
@@ -472,4 +470,3 @@ def setup(options):
 
 def execute(block, config):
     return config.execute(block)
-    

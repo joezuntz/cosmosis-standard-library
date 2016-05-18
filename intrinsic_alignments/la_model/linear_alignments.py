@@ -102,7 +102,7 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 def linear(z_lin, k_lin, P_lin, A, Omega_m):
 	# What was used in CFHTLens and Maccrann et al.
 	#extrapolate our linear power out to high redshift
-	z0 = np.where(z_nl==0)[0][0]
+	z0 = np.where(z_lin==0)[0][0]
 	nz = len(z_nl)
 
 	ksmall = np.argmin(k_nl)
