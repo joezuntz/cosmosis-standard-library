@@ -102,10 +102,10 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 def linear(z_lin, k_lin, P_lin, A, Omega_m):
 	# What was used in CFHTLens and Maccrann et al.
 	#extrapolate our linear power out to high redshift
-	z0 = np.where(z_nl==0)[0][0]
-	nz = len(z_nl)
+	z0 = np.where(z_lin==0)[0][0]
+	nz = len(z_lin)
 
-	ksmall = np.argmin(k_nl)
+	ksmall = np.argmin(k_lin)
 	
 	growth = (P_lin[:,ksmall] / P_lin[z0,ksmall])**0.5
 
@@ -123,11 +123,11 @@ def linear(z_lin, k_lin, P_lin, A, Omega_m):
 
 
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
-	R1 = P_II/P_nl
+	R1 = P_II/P_lin
 	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
 	r_I = P_GI/P_II *b_I
 
-	return P_II, P_GI, b_I, r_I, k_nl
+	return P_II, P_GI, b_I, r_I, k_lin
 
 
 def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omega_m):

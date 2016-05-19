@@ -63,15 +63,16 @@ def load_histogram_form(ext,upsampling):
 def setup(options):
     nz_file = options.get_string(option_section, "nz_file")
     data_sets = options.get_string(option_section, "data_sets")
-    upsampling = options.get_int(option_section, "upsampling", 5)
+    upsampling = options.get_int(option_section, "upsampling", 1)
     data_sets = data_sets.split()
     if not data_sets:
         raise RuntimeError("Option data_sets empty; please set the option data_sets=name1 name2 etc and I will search the fits file for nz_name2, nz_name2, etc.")
     
     print "Loading number density data from {0}:".format(nz_file)
-    print "I will up-sample - increase the density of n(z) points by a factor {}".format(upsampling)
-    print "to make a spline look more like a histogram. Set upsampling=1"
-    print "if you do not want this."
+    if upsampling>1:
+        print "I will up-sample - increase the density of n(z) points by a factor {}".format(upsampling)
+        print "to make a spline look more like a histogram. Set upsampling=1"
+        print "if you do not want this."
     F = pyfits.open(nz_file)
     data = {}
     for data_set in data_sets:

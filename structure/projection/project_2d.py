@@ -418,8 +418,6 @@ class SpectrumCalulcator(object):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
-                if spectrum.is_autocorrelation():
-                    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
                 if self.get_kernel_peaks:
                     chi_peak=spectrum.kernel_peak(block, i, j)
                     block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
