@@ -13,7 +13,7 @@ assumptions:
     - "Flat sky approximation"
     - "GR is assumed in various ways"
 
-explanation: >
+explanation: |
 
     The Limber approximation integrates a 3D power spectrum over the radial
     direction to get a 2D angular power spectrum.  It is an approximation
