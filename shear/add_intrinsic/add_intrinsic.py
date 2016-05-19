@@ -32,7 +32,8 @@ def execute(block, config):
         #so in case useful, save the GG term to shear_cl_gg
         block[names.shear_cl_gg,'ell']=block[names.shear_cl, 'ell']
         for i in xrange(nbin_shear):
-            for j in xrange(i,nbin_shear):
+            for j in xrange(0,i+1): #,nbin_shear):
+                print i,j
                 bin_ij = 'bin_{0}_{1}'.format(i+1,j+1)
                 bin_ji = 'bin_{1}_{0}'.format(i+1,j+1)
                 block[names.shear_cl_gg, bin_ij]=block[names.shear_cl, bin_ij]
