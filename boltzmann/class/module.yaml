@@ -17,7 +17,7 @@ assumptions:
     - The LCDM model
     - Various choices for approximations and implementations of the Boltzmann and related equations
 
-explanation: >
+explanation: |
     
     CLASS is one of the standard cosmology codes for evolving perturbations
     in the primordial universe into CMB and other power spectra, as

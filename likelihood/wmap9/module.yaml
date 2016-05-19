@@ -15,7 +15,7 @@ cite:
 assumptions:
     - "WMAP 9 year data"
 
-explanation: >
+explanation: |
     "The Wilkinson Microwave Anisotropy Probe measured the temperature
     and polarization of the CMB over the full sky in the K, Ka, Q, V, and W
     microwave bands.  

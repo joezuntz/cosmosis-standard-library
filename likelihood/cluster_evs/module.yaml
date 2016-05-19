@@ -9,7 +9,7 @@ cite:
     - "Harrison and Coles, MNRAS 421 2012"
 assumptions:
     - "FRW cosmological model"
-explanation: >
+explanation: |
     Computes the likelihood of the largest observed cluster near
     the specified redshift range being M_max, as loaded from the datablock, 
     given the mass function.

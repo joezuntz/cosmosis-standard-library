@@ -11,7 +11,7 @@ assumptions:
     - "Gaussian likelihood of shear xi"
     - "Redshift distribution used correctly matches tomographic bins"
 
-explanation: >
+explanation: |
         "
         DEPRECATED: This module is not recommended for use any more; use the 2pt_like likelihood instead.
 

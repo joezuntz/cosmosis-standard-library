@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Gaussian window in redshift"
 
-explanation: >
+explanation: |
     "This very simple module sets up fixed redshift n(z) bins for weak lensing.
      We should probably upgrade it to take the redshift and sigma from the 
      sampling instead of the ini file."

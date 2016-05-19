@@ -11,7 +11,7 @@ cite: ["http://arxiv.org/abs/0810.5129"]
 assumptions:
     - "Input C_ell sufficiently well-sampled over standard pre-defined range"
 
-explanation: >
+explanation: |
     "
     The correlation functions are related to the spectra via Bessel functions:
     xi_{(+/-)}(theta) = \int_0^\infty C_\ell J_{(0,4)}(\ell \theta) \ell d\ell / 2\pi

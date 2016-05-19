@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "n(z) file first column = z, others = bin n(z)"
 
-explanation: >
+explanation: |
     "This simple module just loads a set of n(z) for different bins from a
     fixed file and provides it as-is.  The n(z) are normalized before being saved."
 

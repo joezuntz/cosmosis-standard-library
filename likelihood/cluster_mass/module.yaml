@@ -9,7 +9,7 @@ cite:
      - "Santos et al. 2011 "
      - "Harrison & Coles 2012 "
 assumptions: []
-explanation: >
+explanation: |
     "This small module was written for CosmoSIS.
         The Extreme Value statistics module (evs) should be run in the pipeline prior to this module.
     "

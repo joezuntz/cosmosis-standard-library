@@ -15,7 +15,7 @@ assumptions:
     - "CAMB or other CMB code must be set up to do lensing and include high k modes"
     - "BICEP2 2014-03-14 dataset"
 
-explanation: >
+explanation: |
     "The 2014 BICEP2 results are a detection of cosmological B-modes
     on the scales that indicate a primordial gravitational wave bump.
 

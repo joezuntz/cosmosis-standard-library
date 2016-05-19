@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Spectra scale quadratically with sigma_8"
 
-explanation: >
+explanation: |
     Boltzmann codes like CAMB and CLASS typically take a primordial power spectrum
     amplitude A_s as an input parameter defining the amplitude of cosmic structure
     fluctutations.

@@ -12,7 +12,7 @@ assumptions:
     - "Data is provided in FITS extensions NZ_{NAME}"
     - "There are various subtleties to do with the sampling and form of the n(z) data"
 
-explanation: >
+explanation: |
     "This module is designed to work with the number density part of the FITS
     files described in:
     http://github.com/joezuntz/2point/

@@ -10,7 +10,7 @@ cite: []
 assumptions:
     - Linear extrapolation in log-space of P(k); this is not a great approximation
 
-explanation: >
+explanation: |
   It is sometimes useful to extend matter power spectra P(k) to high values
   of k. These values are unphysical but are useful for numerical stability.
 

@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - ""
 
-explanation: >
+explanation: |
     "
     Measurement of the matter power spectrum from real data relies on the visible positions and shapes of galaxies.
     Real galaxies offer a window onto the underlying mass distribution but an imperfect one. Due to a variety of 

@@ -13,7 +13,7 @@ cite:
 assumptions:
     - "3-parameter bias model from Clerkin et al l 2014"
 
-explanation: >
+explanation: |
     "The GTD bias model provides a benchmark expression for 
     the redshift evolution of galaxy bias on large scales. 
     This is crucial for rigorous comparison or combination 
