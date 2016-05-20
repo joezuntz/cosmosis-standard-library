@@ -13,7 +13,7 @@ cite:
 assumptions:
     - "Strong lensing modelling details."
 
-explanation: >
+explanation: |
     "
     The likelihood of a strong lensing time-delay system as
     modelled in http://arxiv.org/pdf/1306.4732v2.pdf

@@ -9,7 +9,7 @@ cite:
     - "Mantz et al., MNRAS, 440:2077 (2014)"
     - "http://arxiv.org/abs/1402.6212"
 assumptions: ""
-explanation: >
+explanation: |
     Cluster gas mass fractions are a standard quantity whose value is related
     to the cosmic baryon mass fraction and whose apparent evolution depends
     on the expansion of the Universe.

@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "The Limber integral is valid on the scales in question"
 
-explanation: >
+explanation: |
     "
     DEPRECATED: You should use the module cosmosis-standard-library/structure/projection/project_2d.py instead.
 

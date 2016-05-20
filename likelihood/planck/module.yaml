@@ -20,7 +20,7 @@ assumptions:
     - "Highly accurate CMB calculations are required"
     - "In the high-ell regime models for the foregrounds and secondary anisotropies are assumed"
 
-explanation: >
+explanation: |
     "The Planck space telescope has provided the most powerful current
      CMB data from quadrupole to sub-degree scales.
 

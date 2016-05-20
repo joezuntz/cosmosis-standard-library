@@ -10,7 +10,7 @@ cite:
     - "Huterer, D., Turner, M.S. 2001. Phys. Rev. D64:123527"
     - "Wetterich, C. 2004 Physics Letters B, Volume 594"
 assumptions:
-explanation: >
+explanation: |
     "This small module was written for CosmoSIS. This module computes the angular diameter distance, luminosity distance,
     and distance modulus for three different parametrisations of dark energy. w = w0 +(1-a)wa, w = w0+(ap-a)wa and and 2 parameter
     EDE w(a) model from Wetterich 2004."

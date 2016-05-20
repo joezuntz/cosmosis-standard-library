@@ -14,7 +14,7 @@ assumptions:
     - "SALT2 used to fit light curves"
     - "Akima interpolation between mu(z) samples"
 
-explanation: >
+explanation: |
     "This JLA code uses 731 supernovae from the JLA SDSS-II/SNLS3 sample 
     to get a likelihood of a given theory mu(z).
 

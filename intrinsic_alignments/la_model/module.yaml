@@ -11,7 +11,7 @@ cite: ["MNRAS 424 3 1647 (2012)", "New J Phys 9 12 444 (2007)"]
 assumptions:
     - "Uses one of three models for how matter power is turned into intrinsic alignments"
 
-explanation: >
+explanation: |
     "
     Intrinsic alignment refers to the extent to which galaxies align in the sky,
     before any alignment induced by gravitational lensing.  It is a systematic

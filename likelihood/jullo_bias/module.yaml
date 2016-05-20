@@ -11,7 +11,7 @@ cite:
 assumptions:
     - "COSMOS survey galaxy samples"
 
-explanation: >
+explanation: |
     Galaxy bias refers to the relative density of galaxies compared to underlying dark matter,
     and can be a function of scale and/or redshift.
 

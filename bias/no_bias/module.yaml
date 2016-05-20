@@ -10,7 +10,7 @@ cite: []
 assumptions:
     - "Unit galaxy bias; at all scales and redshifts galaxies perfectly trace dark matter"
 
-explanation: >
+explanation: |
     "Galaxy bias relates the distribution of galaxies to the underlying (dark) matter
     field whose skeleton they trace.
 

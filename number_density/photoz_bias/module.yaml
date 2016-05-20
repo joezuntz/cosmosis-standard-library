@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Simple photo-z bias models: n(z) -> n(z-b) or n(z*(1-b))"
 
-explanation: >
+explanation: |
     Photometric redshift distributions can contain biases - the actual distribution
     of galaxies in a survey can be different to the estimated one.
 

@@ -11,7 +11,7 @@ assumptions:
     - "A Gaussian likelihood approximation for two-point measurements"
     - "Data supplied in a specific file format"
 
-explanation: >
+explanation: |
     "This module implements a general likelihood of tomographic 2-point measuremnts
     of various quantities, including galaxy density, cosmic shear, intrinsic alignments,
     CMB lensing, and the various cross powers between these.

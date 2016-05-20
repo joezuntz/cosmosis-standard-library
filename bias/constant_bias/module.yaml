@@ -10,7 +10,7 @@ cite: []
 assumptions:
     - "Galaxy bias constant with k and z"
 
-explanation: >
+explanation: |
     "Galaxy bias relates the distribution of galaxies to the underlying (dark) matter
     field whose skeleton they trace.
 

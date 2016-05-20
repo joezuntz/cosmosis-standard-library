@@ -11,7 +11,7 @@ cite: ["http://arxiv.org/abs/1505.07833v1"]
 assumptions:
     - "Halo model and particular extensions described in referenced paper"
 
-explanation: >
+explanation: |
 
     In the non-linear regime (high k; small scales) predicting the matter 
     power spectrum is extremely challenging, as the simple predictability
