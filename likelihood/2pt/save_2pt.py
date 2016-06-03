@@ -239,7 +239,7 @@ def covmat_from_block(block, spectra, sky_area, number_density_shear_bin, number
             M.append(MI)
         C.append(M)
     C = np.vstack([np.hstack(CI) for CI in C])
-    info = twopoint.CovarianceMatrixInfo("COVMAT", names, starts, lengths, C)
+    info = twopoint.CovarianceMatrixInfo("COVMAT", names, lengths, C)
     return info
 
 
@@ -259,12 +259,12 @@ def execute(block, config):
         print " - saving shear_cl"
         spectra.append(s)
 
-    if block.has_section("shear_galaxy_cl"):
-        name = "shear_galaxy_cl"
-        types = (twopoint.Types.galaxy_shear_emode_fourier, twopoint.Types.galaxy_position_fourier)
-        kernels = (shear_nz, position_nz)        
+    if block.has_section("galaxy_shear_cl"):
+        name = "galaxy_shear_cl"
+        types = (twopoint.Types.galaxy_position_fourier, twopoint.Types.galaxy_shear_emode_fourier)
+        kernels = (position_nz, shear_nz)        
         s = spectrum_measurement_from_block(block, name, name, types, kernels, ell_sample)
-        print " - saving shear_galaxy_cl"
+        print " - saving galaxy_shear_cl"
         spectra.append(s)
 
     if block.has_section("galaxy_cl"):
@@ -280,10 +280,13 @@ def execute(block, config):
     if not spectra:
         raise ValueError("Sorry - I couldn't find any shear_cl, shear_galaxy_cl, or galaxy_cl to save.")
 
-    kernels = {
-        shear_nz: nz_from_block(block, shear_nz), 
-        position_nz: nz_from_block(block, position_nz)
-    }
+
+    kernels = []
+    if block.has_section(names.shear_cl) or block.has_section("galaxy_shear_cl"):
+        kernels.append(nz_from_block(block, shear_nz))
+    if (block.has_section("galaxy_cl") or block.has_section("galaxy_shear_cl")) and (shear_nz!=position_nz):
+        kernels.append(nz_from_block(block, position_nz))
+    
     windows = []
 
     data = twopoint.TwoPointFile(spectra, kernels, windows, covmat_info)
