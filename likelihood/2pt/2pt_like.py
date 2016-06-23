@@ -35,7 +35,6 @@ class SpectrumInterp(object):
 		else:
 			assert self.interp_type=="log_ang"
 			spec=self.interp_func(np.log(angle))
-		spec[np.isnan(spec)]==0.
 		return spec
 
 class TwoPointLikelihood(GaussianLikelihood):
