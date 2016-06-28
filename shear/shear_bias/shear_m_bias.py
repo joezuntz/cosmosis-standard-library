@@ -9,18 +9,18 @@ assuming model values of the multplicative factor m, either per bin or for all b
 """
 from cosmosis.datablock import names, option_section
 
-cal_section = names.shear_calibration_parameters
-
 def setup(options):
 	#This is an option - can set m_per_bin = T to get
 	#a different m for each tomographic bin, or F to get
 	#one global value
 	m_per_bin=options.get_bool(option_section,"m_per_bin",True)
-	return m_per_bin
+	cl_sec=options.get_string(option_section, "cl_section", default=names.shear_cl)
+	cal_section=options.get_string(option_section, "cal_section", default=names.shear_calibration_parameters)
+	return m_per_bin, cl_sec, cal_section
 
 def execute(block, config):
 
-	m_per_bin=config
+	m_per_bin, cl_sec, cal_section=config
 	if not m_per_bin:
 		m0=block[cal_section, "m0"]
 
