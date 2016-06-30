@@ -11,8 +11,10 @@ cite: []
 assumptions:
     - "The Limber integral is valid on the scales in question"
 
-explanation: >
+explanation: |
     "
+    DEPRECATED: You should use the module cosmosis-standard-library/structure/projection/project_2d.py instead.
+
     The Limber approximation integrates a 3D power spectrum over the radial
     direction to get a 2D angular power spectrum.  It is an approximation
     which is only valid on smaller scales.

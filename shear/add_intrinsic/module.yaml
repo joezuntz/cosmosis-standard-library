@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Linear sum of C_ell for IA components"
 
-explanation: >
+explanation: |
     Observerd shape spectra contain a sum of intrinsic and shear spectra, and the
     cross-correlation between them.  This module adds together these components,
     accounting for the fact that C_GI != C_IG for two bins

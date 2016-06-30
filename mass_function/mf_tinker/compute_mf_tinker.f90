@@ -10,17 +10,18 @@ MODULE compute_mf_tinker
   USE interface_tools
   IMPLICIT none
   double precision :: deltac=1.6865d0,dndlnRh,dndlnMh
+  
 
         contains
 
-        SUBROUTINE compute_massfunction(k,p,MassF,nr)
+        SUBROUTINE compute_massfunction(k,p,MassF,nr,zz)
                 USE linearpk
                 USE sigma
                 USE interface_tools
                 double precision :: lnnu,dlnnudlnRh,Mh
                 double precision :: lnsigma2,dlnsigma2dlnRh
                 real :: Rh,lnRh
-                real(dl) :: step
+                real(dl) :: step,zz
                 integer :: int_lnRh
                 integer :: n, nr,ii,nn
                 real(dl),  dimension(:) :: k
@@ -48,7 +49,7 @@ MODULE compute_mf_tinker
                         lnnu = 2d0*dlog(deltac)-dble(lnsigma2) ! ln(nu)
                         dlnnudlnRh = -dble(dlnsigma2dlnRh)     ! dln(nu)/dlnRh
                         Rh=exp(lnRh) ! h^-1 Mpc
-                        dndlnRh = (3d0/4d0/3.1415926535d0)*dlnnudlnRh*mf(lnnu)/dble(Rh)**3d0
+                        dndlnRh = (3d0/4d0/3.1415926535d0)*dlnnudlnRh*mf(lnnu,zz)/dble(Rh)**3d0
                         dndlnMh = dndlnRh/3d0 ! in units of h^3 Mpc^-3
                         Mh = (4d0*3.1415926535d0/3d0)*2.775d11*Rh**3d0 ! in units of omega_matter h^-1 M_solar
                         MassF%R_h(ii) = Rh

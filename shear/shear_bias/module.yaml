@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Simple multiplicative shear bias model: C^{ij}_ell -> (1+m_i)(1+m_j) C^{ij}_ell"
 
-explanation: >
+explanation: |
     Errors in cosmic shear measurement can lead to a multiplicative factor
     scaling the observed shear spectra.
 

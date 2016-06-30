@@ -1,0 +1,69 @@
+#This is a template for module description files
+name: apply_astrophysical_biases
+version: "1.0"
+purpose: "Apply various astrophysical biases to the matter power spectrum P(k,z)"
+url: ""
+interface: interface.so
+attribution: [CosmoSIS team, Simon Samuroff]
+rules: ""
+cite: []
+
+assumptions:
+    - ""
+
+explanation: |
+    "
+    Measurement of the matter power spectrum from real data relies on the visible positions and shapes of galaxies.
+    Real galaxies offer a window onto the underlying mass distribution but an imperfect one. Due to a variety of 
+    astrophysical processes in their formation and interaction history, the visible mass of galaxies is offset from
+    the dark matter. Additionally, the precise relationship between their shapes and the total mass is dependent on 
+    the details of how galaxies obtain intrinsic ellipticities. One can parameterise ignorance of these processes 
+    using a series of scale and time dependent biases, which map the matter power spectrum onto the observable
+    fields.   
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+    intrinsic_alignments: "Bool; calculate intrisic alignment spectra? (Default: True)"
+    galaxy_bias: "Bool; calculate galaxy position spectra? (Default: True)"
+    verbosity: "Integer; parameter setting the level of terminal output (Default: 1)"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    matter_power_nl:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"
+    intrinsic_alignment_parameters:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        b_I: "real 2d array; intrinsic alignment bias"
+        r_I: "real 2d array; stochastic intrinsic alignment bias"
+    bias_field:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        b_g: "real 2d array; galaxy bias"
+        r_g: "real 2d array; stochastic galaxy bias"
+
+outputs:
+    ia_spectrum_ii:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        P_II: "real 2d array; intrinsic-intrinsic shape spectrum at samples in (Mpc/h)^{-3}"
+    ia_spectrum_gi:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        P_GI: "real 2d array; mass-intrinsic shape spectrum at samples in (Mpc/h)^{-3}"
+    matter_power_gal_mass:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        P_k: "real 2d array; galaxy position-mass spectrum at samples in (Mpc/h)^{-3}"
+    matter_power_gal:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        P_k: "real 2d array; galaxy position-position spectrum at samples in (Mpc/h)^{-3}"
+    matter_power_gal_intrinsic:
+        z: "real vector; redshift values of P(k,z) samples"
+        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
+        P_k: "real 2d array; Fourier space correlation between galaxy position and intrinsic shape in (Mpc/h)^{-3}"

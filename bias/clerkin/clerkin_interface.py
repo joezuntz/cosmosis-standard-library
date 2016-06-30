@@ -7,13 +7,17 @@ modes = ["power","bias","both"]
 def setup(options):
 	model = options[option_section, "model"].lower()
 	mode = options[option_section, "mode"].lower()
+	color = options.getstring(option_section, "color", default="")
 	if model not in models:
 		raise ValueError("The Clerkin module requires a model chosen from: %r" % models)
 	if mode not in modes:
 		raise ValueError("The Clerkin module requires a mode, chosen from: %r" % modes)
-	return model, mode
+	if color!='':
+		color = '_'+color
 
-def execute_power(block, model):
+	return model, mode, color
+
+def execute_power(block, model, color):
 
 	#Get matter power
 	k, z, P = block.get_grid(names.matter_power_nl, "k_h", "z", "p_k")
@@ -54,11 +58,12 @@ def execute_power(block, model):
 	if (P_out<0).any():
 		print "Negative P: ", P_out.min()
 		return 1
-
-	block.put_grid("matter_power_gal", "z", z, "k_h", k, "p_k", P_out.T)
+	
+	block.put_grid("matter_power_gal", "z", z, "k_h", k, "p_k"+color, P_out.T)
 
 	return 0
-def execute_bias(block, model):
+
+def execute_bias(block, model, color):
 	if model=="gtd":
 		#Get growth
 		z1 = block[names.growth_parameters,'z']
@@ -68,8 +73,16 @@ def execute_bias(block, model):
 		b0 = block['bias_parameters', 'b0']
 		c = block['bias_parameters', 'c']
 		b = clerkin.gtd_bias(z1, growth_z, alpha, b0, c)
-		block[names.bias_field, "z"] = z1
-		block[names.bias_field, "b"] = b
+
+		nk = len(block['matter_power_nl', 'k_h'])
+		bias = np.array([np.array(b) for i in range(nk)])
+		#bias = bias.swapaxes(0,1)
+		
+		k_h = block['matter_power_nl', 'k_h']
+		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "b_g"+color,  bias)
+		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "r_g"+color, np.ones_like(bias) )
+
+		#import pdb ; pdb.set_trace()
 
 	elif model=="q":
 		k = np.logspace(-6, 2, 500)	
@@ -77,7 +90,7 @@ def execute_bias(block, model):
 		A = block['bias_parameters', 'A']
 		b = clerkin.q_bias(k, Q, A)
 		block[names.bias_field, "k"] = k
-		block[names.bias_field, "b"] = b
+		block[names.bias_field, "b"+color] = b
 
 	elif model=='q-gtd':
 		z1 = block[names.growth_parameters,'z']
@@ -98,22 +111,23 @@ def execute_bias(block, model):
 		for i in xrange(nk):
 			for j in xrange(nz):
 				b[i, j] = b_k[i]*b_z[j]
-		block.put_grid(names.bias_field, "k_h", k, "z", z1, "b", b)
+
+		block.put_grid(names.bias_field, "k_h", k, "z", z1, "b"+color, b)
 	return 0
 
-def execute_both(block, model):
-	status = execute_bias(block, model)
+def execute_both(block, model, color):
+	status = execute_bias(block, model, color)
 	if status: return status
-	return execute_power(block, model)
+	return execute_power(block, model, color)
 
 def execute(block, config):
-	model,mode = config
+	model,mode,color = config
 	if mode=="bias":
-		return execute_bias(block, model)
+		return execute_bias(block, model, color)
 	elif mode=="power":
-		return execute_power(block, model)
+		return execute_power(block, model, color)
 	elif mode=="both":
-		return execute_both(block, model)
+		return execute_both(block, model, color)
 	else:
 		raise ValueError("Unknown mode in Clerkin")
 

@@ -22,7 +22,7 @@ planck: $(PLANCK_DIR)
 	cd $(PLANCK_DIR) && $(MAKE) cosmosis && $(MAKE) install_cosmosis
 
 planck_interface.so: planck planck_interface.c
-	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c -lclik $(LDFLAGS) 
+	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c -lclik $(LDFLAGS) $(RPATH_FLAGS)
 
 clean:
 	rm -rf *.o *.so *.dSYM

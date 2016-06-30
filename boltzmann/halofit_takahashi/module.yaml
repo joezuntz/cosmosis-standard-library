@@ -14,7 +14,7 @@ cite:
 assumptions:
     - Fitting formula from Takahashi et al applies only to LCDM
 
-explanation: >
+explanation: |
     Halofit is a fitting function based on simulations which models
     the non-linear matter-power spectrum by scaling the linear one.
 

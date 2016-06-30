@@ -25,11 +25,12 @@ def execute(block, config):
 		m0=block[cal_section, "m0"]
 
 	cl_sec=names.shear_cl
-	n_z_bins=block[names.wl_number_density,"nbin"]
+	n_a=block[cl_sec,"nbin_a"]
+	n_b=block[cl_sec,"nbin_b"]
 
 	#Loop through bin pairs
-	for i in xrange(1,n_z_bins+1):
-		for j in xrange(i,n_z_bins+1):
+	for i in xrange(1,n_a+1):
+		for j in xrange(i,n_b+1):
 
 			#Get existing C_ell
 			cl_name="bin_%d_%d"%(j,i)

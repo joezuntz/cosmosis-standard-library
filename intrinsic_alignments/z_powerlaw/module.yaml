@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Modify the intrinsic alignment power spectra to have a power-law dependence in (1+z)"
 
-explanation: >
+explanation: |
     "
     Basic models of intrinsic alignments assume a specific simple evolution with redshift.
     This module takes an existing model of the IA power spectra and modifies them by giving

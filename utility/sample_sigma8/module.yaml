@@ -1,15 +1,17 @@
 #This is a template for module description files
 name: "sigma8_rescale"
 version: "1.0"
+interface: sigma8_rescale.py
 purpose: "Rescale structure measures to use a specified sigma_8"
 url: ""
+interface: sigma8_rescale.py
 attribution: ["Susana Fernandez", "Jack Elvin-Poole"]
 rules: []
 cite: []
 assumptions:
     - "Spectra scale quadratically with sigma_8"
 
-explanation: >
+explanation: |
     Boltzmann codes like CAMB and CLASS typically take a primordial power spectrum
     amplitude A_s as an input parameter defining the amplitude of cosmic structure
     fluctutations.
@@ -20,7 +22,7 @@ explanation: >
     perfectly equivalent.
 
     This module enables you to sample over sigma_8 while still passing A_s into a
-    Boltzmann code.  It does this by using an input value sigma_8_input, which can
+    Boltzmann code.  It does this by using an input value sigma8_input, which can
     be sampled over, and a fixed fiducial A_s value.  After the Boltzmann code is run
     and sigma_8 for the fiducial amplitude calculated, the CMB and matter power spectra
     are scaled by (sigma8_input**2)/(sigma8_boltzmann**2), and sigma_8 is overwritten.
@@ -31,7 +33,7 @@ params: {}
 inputs:
     cosmological_parameters:
         sigma_8:  "real, late time amplitude sigma_8 as output from CAMB or another Boltzmann code"
-        sigma_8_input:  "real, The desired sigma_8, usually from the sampler"
+        sigma8_input:  "real, The desired sigma_8, usually from the sampler"
         A_s:  "real, The fixed fiducial primordial amplitude"
     cmb_cl:
         TT: "real 1D array, CMB TT power spectrum"

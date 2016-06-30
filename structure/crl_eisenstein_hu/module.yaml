@@ -2,6 +2,7 @@ name: CRL_Eisenstein_Hu
 version: "1"
 purpose: Komatsu's CRL code to compute the power spectrum using EH fitting formula.
 url: "http://www.mpa-garching.mpg.de/~komatsu/crl/"
+interface: nowiggle_module.so
 attribution: [Komatsu-CRL]
 rules: ""
 cite:
@@ -10,7 +11,7 @@ cite:
 assumptions:
     - "DEPENDENCIES: You need to run a module to compute the growth rate before this one."
 
-explanation: >
+explanation: |
         "This module uses Eiichiro Komatsu's CRL code to calculate the power spectrum
         without BAO in it following Eisenstein and Hu, ApJ, 496, 605 (1998). 
         This is faster but less accurate than a Boltzmann code like CAMB.

@@ -14,7 +14,7 @@ assumptions:
     - "Bias fixed with redshift (if included)"
     - "Galaxies evenly divided between bins"
 
-explanation: >
+explanation: |
     "This module takes inputs that specify the underlying spectroscopic (true) redshift
     distribution of the galaxies in the survey.  It then convolves this with a photometric
     error sigma(z) = sigma_0 (1+z) and optionally biases it.  It computes bin edges in the

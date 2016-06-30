@@ -15,7 +15,7 @@ assumptions:
     - wCDM background evolution
     - Other camb assumptions
 
-explanation: >
+explanation: |
     See the CAMB module for a general introduction to CAMB.
 
     MGCAMB is a modified version of CAMB in which the linearized 

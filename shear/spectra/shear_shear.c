@@ -117,3 +117,39 @@ gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z,
 }
 
 
+
+
+gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a_of_chi)
+{
+
+	int n_chi = NGLT;
+	double chi_min = 0.0;
+	int error_status = 0;
+	// The evaluation points separation, and set up the integrator
+	double delta_chi = (chi_max-chi_min)/ (n_chi - 1);
+
+	double W[n_chi];
+	double Chi[n_chi];
+
+	// Loop through samples to be evenly spaced in chi
+	for(int i=0; i<n_chi; i++)
+	{
+		// Get chi at this evaluation point
+		double chi = delta_chi * i;
+		Chi[i] = chi;
+		double a;
+		int err = gsl_spline_eval_e(a_of_chi, chi, NULL, &a);
+		if (err) {error_status=1; break;} 
+		// and calculate the integral
+		W[i] = (chi/a) * (chi_star-chi)/chi_star;
+	}
+
+	// Convert the static vectors into a spline and return
+	gsl_spline * output;
+	if (error_status) output = NULL;
+	else output = spline_from_arrays(n_chi, Chi, W);
+
+	// Finish
+	return output;
+}
+

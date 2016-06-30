@@ -1,0 +1,43 @@
+#This is a template for module description files
+name: planck2015_simple
+version: 2
+purpose: Simplified Likelihood function of CMB from Planck 2015 TT TE EE data
+url: ""
+interface: planck2015_simple.py
+attribution: [The Planck Collaboration (Data), CosmoSIS Team (Code)]
+rules: "Please cite the appropriate Planck paper"
+cite: []
+
+assumptions:
+    - "Highly accurate CMB calculations are required"
+    - "In the high-ell regime models for the foregrounds and secondary anisotropies are assumed"
+
+explanation: |
+    "See the Planck2015 module for general information about Planck.
+
+    This module provides a greatly simplified form of the Planck likelihood supplied
+    in plik_lite_v18_TT.clik, which should not be used for high-precision cosmology
+    but should be alright for e.g. Fisher matrix forecasting.
+
+    It turns the data in that file into just a Gaussian likelihood, ignoring the nuisance
+    parameter.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    data_file: (String; default=data.txt) Text file containing ell in col 1 and TT TE and EE in col 2 (no ell(ell+1) factor)
+    covmat_file: (String; default=covmat.txt) Numpy format file containing covariance matrix
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cmb_cl:
+        ell: Integer vector of angular frequencies for CMB spectra
+        tt: Double vector of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
+        ee: Double vector of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+        te: Double vector of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+
+
+outputs:
+    likelihoods:
+        planck2014_simple_like: (real; only if data_1 specified) Log-likelihood from first file

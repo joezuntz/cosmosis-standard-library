@@ -3,6 +3,7 @@ name: "jla"
 version: "3"
 purpose: "Supernova likelihood for SDSS-II/SNLS3"
 url: "http://supernovae.in2p3.fr/sdss_snls_jla/ReadMe.html"
+interface: jla.so
 attribution: [Marc Betoule]
 rules:
     ""
@@ -13,7 +14,7 @@ assumptions:
     - "SALT2 used to fit light curves"
     - "Akima interpolation between mu(z) samples"
 
-explanation: >
+explanation: |
     "This JLA code uses 731 supernovae from the JLA SDSS-II/SNLS3 sample 
     to get a likelihood of a given theory mu(z).
 

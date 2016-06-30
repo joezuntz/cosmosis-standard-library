@@ -14,7 +14,7 @@ assumptions:
     - "Tinker mass function"
     - "Require P(k,z) from CAMB or otherwise"
 
-explanation: >
+explanation: |
         "This module calculates the Tinker et al. mass function given the linear matter power spectrum."
         
 params:

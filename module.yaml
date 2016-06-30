@@ -3,6 +3,7 @@ name: ""
 version: ""
 purpose: ""
 url: ""
+interface: ""
 attribution: []
 rules:
     ""
@@ -13,7 +14,7 @@ cite:
 assumptions:
     - ""
 
-explanation: >
+explanation: |
     ""
 
 # List of parameters that can go in the params.ini file in the section for this module    

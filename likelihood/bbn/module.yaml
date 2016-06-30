@@ -11,7 +11,7 @@ cite:
 assumptions:
     - "Standard model of Big-Bang nucleosynthesis"
 
-explanation: >
+explanation: |
     "This small module was written for CosmoSIS.
 
     Measurements of the abundances of light elements D, 3He, 4He, and 7Li

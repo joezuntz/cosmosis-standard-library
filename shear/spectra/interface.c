@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include "limber.h"
 #include <math.h>
+#include "assert.h"
+#include "string.h"
 
 // Short-hand names for the sections we will
 // be looking at
@@ -92,11 +94,70 @@ void * setup(c_datablock * options){
 	return config;
 }
 
+gsl_spline * linear_spline_from_arrays(int n, double * x, double *y)
+{
+	gsl_spline * output = gsl_spline_alloc(gsl_interp_linear, n);
+	assert (output!=NULL);
+	gsl_spline_init(output,x,y,n);
+	return output;
+}
+
+
+#define NZ_FORMAT_HISTOGRAM 1
+#define NZ_FORMAT_SAMPLE 2
+
+void nz_string_error_message(){
+	fprintf(stderr, "\nIf specifying n(z) format when loading, please use one of:\n");
+	fprintf(stderr, "format=histogram\n");
+	fprintf(stderr, "format=sample\n\n");	
+}
+
+// n(z) values come in two general forms.
+// Most n(z) codes generate histograms in small z bins, with zlow, zhigh.
+// This isn't a great model for n(z) of course - we don't really think that
+// the number density is really blocky like that for real.  So we also support
+// another mode where we take the z as sample values through which a spline should
+// be drawn.
+int detect_nz_format(c_datablock * block, const char * section)
+{
+	char *nz_format_string=NULL;
+	int nz_format;
+	int status = 0;
+	bool has_format = c_datablock_has_value(block, section, "format");
+	if (has_format){
+		status |= c_datablock_get_string(block, section, "format", &nz_format_string);
+		if (nz_format_string==NULL){
+			nz_string_error_message();
+			status = 1;
+		}
+		if (!strcmp(nz_format_string, "histogram")){
+			nz_format = NZ_FORMAT_HISTOGRAM;
+		}
+		else if (!strcmp(nz_format_string, "sample")){
+			nz_format = NZ_FORMAT_SAMPLE;
+		}
+		else{
+			nz_string_error_message();
+			status = 1;
+		}
+
+		free(nz_format_string);
+		if (status){
+			return -1;
+		}
+	}
+	else{
+		nz_format = NZ_FORMAT_SAMPLE;	
+	}
+	return nz_format;
+}
+
+
 /*
 	Read z, N(z) values from the datablock and initialize a spline to
 	use in the Limber integral.
 */
-gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
+gsl_spline * get_named_nchi_spline(c_datablock * block, const char * section, int bin, double *z,
 	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
 {
 	int status = 0;
@@ -105,7 +166,7 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 	char name[20];
 	snprintf(name, 20, "bin_%d", bin);
 
-    status |= c_datablock_get_double_array_1d(block, wl_nz, name, &N, &n);
+    status |= c_datablock_get_double_array_1d(block, section, name, &N, &n);
     double Chi[n];
 
     for (int i=0; i<n; i++){
@@ -121,11 +182,38 @@ gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
 
 }
 
-/*
-	Read z, N(z) values from the datablock and initialize a spline
-   	of the lensing kernel W to use in the Limber integral.
-*/
-gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
+gsl_spline * get_nchi_spline(c_datablock * block, int bin, double *z,
+	gsl_spline * a_of_chi, gsl_spline * chi_of_z)
+{
+	return get_named_nchi_spline(block, wl_nz, bin, z, a_of_chi, chi_of_z);
+}
+
+int get_nchi_array(c_datablock * block, const char * nz_section,
+	 int bin, double * z, double z_max, gsl_spline * a_of_chi, gsl_spline * chi_of_z, 
+	  double * chi_out, int num_chi_out, double * nofchi_out)
+{
+	gsl_spline * nofchi_spline;
+	int status = 0;
+	double chi_max = gsl_spline_eval(chi_of_z, z_max, NULL);
+
+	nofchi_spline = get_named_nchi_spline(block, nz_section, bin, z, a_of_chi, chi_of_z);
+	//Now interpolate to output chi - if chi_out>chi, set to zero
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	for (int i_chi = 0; i_chi<num_chi_out; i_chi++){
+		if (chi_out[i_chi] <= chi_max){
+			nofchi_out[i_chi] = gsl_spline_eval(nofchi_spline, chi_out[i_chi], acc);
+		}
+		else {
+			nofchi_out[i_chi] = 0.;
+		}
+	}
+	printf("got nofchi_out\n");
+
+	gsl_spline_free(nofchi_spline);
+	return status;
+}
+
+gsl_spline * get_named_w_spline(c_datablock * block, const char * section, int bin, double * z,
 	double chi_max, gsl_spline * a_of_chi_spline)
 {
 	char name[20];
@@ -135,7 +223,7 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 
 	// Load n(z)
 	snprintf(name, 20, "bin_%d", bin);
-	status |= c_datablock_get_double_array_1d(block, wl_nz, name, &n_of_z,
+	status |= c_datablock_get_double_array_1d(block, section, name, &n_of_z,
 		&nz1);
 
 	// Make a spline from n(z)
@@ -151,6 +239,35 @@ gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
 	return W;
 }
 
+
+/*
+	Read z, N(z) values from the datablock and initialize a spline
+   	of the lensing kernel W to use in the Limber integral.
+*/
+gsl_spline * get_w_spline(c_datablock * block, int bin, double * z,
+	double chi_max, gsl_spline * a_of_chi_spline)
+{
+	return get_named_w_spline(block, wl_nz, bin, z, chi_max, a_of_chi_spline);
+}
+
+int get_wchi_array(c_datablock * block, const char * nz_section,
+	 int bin, double * z, double chi_max, gsl_spline * a_of_chi_spline, double * chi_out, 
+	 int nchi_out, double * wchi_out)
+{
+	// Do the main computation
+	gsl_spline * W = get_named_w_spline(block, nz_section, bin, z, chi_max, a_of_chi_spline);
+
+	//Now interpolate to output chi
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	for (int i_chi = 0; i_chi<nchi_out; i_chi++){
+		wchi_out[i_chi] = gsl_spline_eval(W, chi_out[i_chi], acc);
+	}
+
+	// tidy up bin-specific data
+	gsl_spline_free(W);
+}
+
+
 /*
 	Save an angular power spectrum to the datablock (for a single pair of z bins).
 */
@@ -165,8 +282,11 @@ int save_c_ell(c_datablock * block, const char * section,
 	for (int i=0; i<n_ell; i++){
 		double ell = lc->ell[i];
 		if (lc->xlog) ell = log(ell);
-		c_ell[i] = coeff*gsl_spline_eval(s, ell, NULL);
-		if (lc->ylog) c_ell[i] = exp(c_ell[i]);
+		c_ell[i] = gsl_spline_eval(s, ell, NULL);
+		if (lc->ylog && (lc->status==LIMBER_STATUS_OK)){
+			c_ell[i] = exp(c_ell[i]);
+		}
+		c_ell[i]*=coeff;
 		
 	}
 
@@ -456,6 +576,8 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		// whereas for cross-spectra we do
 		int bin2_max = choose_bin2_max(spectrum_type, nbin, bin1);
 		for (int bin2=1; bin2<=bin2_max; bin2++){
+			// reset the status
+			lc.status = LIMBER_STATUS_OK;
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
 			if (is_mag) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
 			else coeff=1;

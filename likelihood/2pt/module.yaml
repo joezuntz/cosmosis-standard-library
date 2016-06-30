@@ -1,0 +1,72 @@
+name: "2pt"
+version: "1"
+purpose: "Generic 2-point measurement Gaussian likelihood"
+url: ""
+interface: 2pt_like.py
+attribution: ["CosmoSIS Team", "Niall Maccrann"]
+rules: "None."
+cite: []
+
+assumptions:
+    - "A Gaussian likelihood approximation for two-point measurements"
+    - "Data supplied in a specific file format"
+
+explanation: |
+    "This module implements a general likelihood of tomographic 2-point measuremnts
+    of various quantities, including galaxy density, cosmic shear, intrinsic alignments,
+    CMB lensing, and the various cross powers between these.
+
+    Since this is a very general problem and there are a great many different configurations
+    of such data, this module relies on data being in the self-describing format that 
+    is discussed here: https://github.com/joezuntz/2point/
+    This format attempts to unambiguously describe the various aspects of a tomographic
+    two-point measurement to the point where its likelhood can be generated automatically.
+
+    This module looks up theory measurements in specific sections depending what kind
+    of measurement is used. To add more data types to the file please see type_table.txt.
+
+
+
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    data_file: "string. Filename of the 2pt format FITS file to use."
+    data_sets: "string, default 'all'. Space-separated list of which data sets from within the file to use for likelihoods."
+    covmat_name: "string, default 'COVMAT'. Name of the covariance matrix extension to use in the data file."
+    angle_range_{dataset}_{i}_{j}: "String, pair of real numbers. If set, for the given data set and pair of bins, cut down the data used to this angular range  (min and max)"
+    cut_{dataset}: "String, Space-separated list of i,j pairs. (no spaces within the pair, just betwen them, e.g. cut_lss = 1,2  1,1  3,4.  Remove this bin from the likelihood."
+    covariance_realizations: "Integer, default=-1. If >0, assume that the Covariance matrix was estimated from a set of MC simulations and should thus have the Anderson-Hartlapp factor applied to increase its size. If zero, assume infinite number of realizations."
+    sellentin: "Bool, default=F. If set, use the Sellentin-Heavens 2016 change to the likelihood to account for this distribution of the covariance estimates. This changes the likelihood to a student's-t form. Note that this invalidates the simulated data sets used for the ABC sampler."
+    save_plot_to: "string. If set, save various plots to the named directory. May not work on all systems."
+    like_name: "string, default '2pt'. The name of the likelihood to save."
+    kind: "string, default='cubic'. The interpolation to do into the theory splines. See scipy.interpolate.interp1d."
+    gaussian_covariance: "bool, default=F, C_ell likelihoods only. Generate a Gaussian covariance matrix for the data."
+    survey_area: "real. if gaussian_covariance=T, the sky area of the survey"
+    number_density_shear_bin: "real. If gaussian_covariance=T, the number of galaxies per bin in the WL data"
+    number_density_lss_bin: "real. If gaussian_covariance=T, the number of galaxies per bin in the LSS data"
+    sigma_e_bin: "real. If gaussian_covariance=T, the standard deviation of the intrinsic shape noise in the WL data"
+
+
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    section:
+        NOTE: "The name of both the section depends on the data type used from the file. It might be galaxy_cl or shear_cl, for example."
+        ell: "If a Fourier-space measurement is used, the angular wave-number of the predicted theory curves."
+        theta: "If a real-space measurement is used, the angle in radians of the predicted theory curves."
+        bin_{i}_{j}: "For various i,j depending what is found in the file, the theory predictions for this value. For example, C_ell or xi(theta)"
+
+outputs:
+    likelihoods:
+        2pt_like: "Gaussian likelihood value. Name can be changed in parameter file (see above) for this and the other outputs below."
+    data_vector:
+        2pt_data: "The full vector of data points used in the likelihood"
+        2pt_theory: "The full vector of theory points used in the likelihood" 
+        2pt_covariance: "The covariance matrix used"
+        2pt_inverse_covariance: "The inverse covariance matrix (precision matrix) used."
+        2pt_simulation: "A simulated data set from the given theory and covariance matrix."
+        2pt_angle: "The angular scale used for each data point."
+        2pt_bin1: "The first bin index used for each data point"
+        2pt_bin2: "The second bin index used for each data point"

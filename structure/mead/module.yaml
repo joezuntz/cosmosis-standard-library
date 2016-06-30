@@ -1,0 +1,64 @@
+#This is a template for module description files
+name: mead
+version: 1.0
+purpose: Uses an extended Halo model to compute non-linear and baryonic power
+url: "https://github.com/alexander-mead/hmcode"
+interface: mead_interface.so
+attribution: [Alexander Mead]
+rules: []
+cite: ["http://arxiv.org/abs/1505.07833v1"]
+
+assumptions:
+    - "Halo model and particular extensions described in referenced paper"
+
+explanation: |
+
+    In the non-linear regime (high k; small scales) predicting the matter 
+    power spectrum is extremely challenging, as the simple predictability
+    of the linear regime no longer applies.
+
+    The Halo model is a formalism for making predictions in this regime.
+    It models structure as a collection of randomly-positioned (overlapping) blobs of
+    matter with a specified radial density profile (for example the NFW profile).
+    The correlation function of matter is then the sum of the correlation within a 
+    halo, and the correlation between halos.  The distribution of the masses and radii
+    of the halos then specifies a particular realization of the model.
+
+    Mead et al present an optimized variant of the Halo Model, designed to produce
+    accurate matter power spectra well into the non-linear regime for a wide
+    range of cosmological models. It is designed to fit hydrodynamical simulations
+    like the OWLS set of models, and thus account for both non-linear evolution
+    and 
+
+    The model has two free input parameters (though these are set to fiducial values
+    if they are not otherwise specified).  See Table 2 in Mead et al for the meaning
+    of these new parameters.
+
+    Please contact Alexander Mead if you have any difficulties with the code/models itself.
+    (Though the CosmoSIS team are of course happy to help with connecting the code 
+    into CosmoSIS pipelines).
+
+params:
+    zmin: "Real, min redshift to save output P(k,z)"
+    zmax: "Real, max redshift to save P(k,z)"
+    nz:   "Integer, number of redshift samples in P(k,z)"
+    kmin: "Real, min wavenumber to save output P(k,z), in Mpc/h"
+    kmax: "Real, max wavenumber to save P(k,z), in Mpc/h"
+    nk:   "Integer, number of wavenumber samples in P(k,z)"
+
+inputs:
+    cosmological_parameters:
+        omega_b:  "real, baryon density fraction today"
+        omega_m:  "real, total matter density fraction today"
+        omega_lambda:  "real, dark energy density fraction today"
+        h0:  "real, little h Hubble parameter  (H0 / (100 km/s/Mpc))"
+        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0."
+        w:  "real, w(z=0) equation of state of dark energy (default -1.0)"
+    halo_model_parameters:
+        A: "real, default=3.13, Minimum halo concentration"
+        eta_0: "real, default=0.603, Halo bloating parameter constant term"
+outputs:
+    matter_power_nl:
+        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        z: "real 1D array, redshift of nonlinear spectrum samples"
+        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
