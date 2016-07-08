@@ -34,20 +34,35 @@ def load_histogram_form(ext,upsampling):
     zlow = ext.data['Z_LOW']
     zhigh = ext.data['Z_HIGH']
 
-    z = np.linspace(0.0, zhigh[-1], len(zlow)*upsampling)
-    sample_bin = np.digitize(z, zlow)-1
-
     #First bin.
     i=1
     bin_name = 'BIN{0}'.format(i)
-
-    #Load the n(z) columns, bin1, bin2, ...
     nz = []
-    while bin_name in ext.data.names:
-        col = ext.data[bin_name][sample_bin]
-        nz.append(col)
-        i+=1
+
+    if upsampling==1:
+        z = ext.data['Z_MID']
+        #First bin.
+        i=1
         bin_name = 'BIN{0}'.format(i)
+
+        #Load the n(z) columns, bin1, bin2, ...
+        while bin_name in ext.data.names:
+            col = ext.data[bin_name]
+            nz.append(col)
+            i+=1
+            bin_name = 'BIN{0}'.format(i)
+
+    else:
+
+        z = np.linspace(0.0, zhigh[-1], len(zlow)*upsampling)
+        sample_bin = np.digitize(z, zlow)-1
+
+        #Load the n(z) columns, bin1, bin2, ...
+        while bin_name in ext.data.names:
+            col = ext.data[bin_name][sample_bin]
+            nz.append(col)
+            i+=1
+            bin_name = 'BIN{0}'.format(i)
 
     nbin = len(nz)
     print "        Found {0} bins".format(nbin)
