@@ -3,6 +3,7 @@ name: apply_astrophysical_biases
 version: "1.0"
 purpose: "Apply various astrophysical biases to the matter power spectrum P(k,z)"
 url: ""
+interface: interface.so
 attribution: [CosmoSIS team, Simon Samuroff]
 rules: ""
 cite: []
@@ -10,7 +11,7 @@ cite: []
 assumptions:
     - ""
 
-explanation: >
+explanation: |
     "
     Measurement of the matter power spectrum from real data relies on the visible positions and shapes of galaxies.
     Real galaxies offer a window onto the underlying mass distribution but an imperfect one. Due to a variety of 

@@ -23,11 +23,16 @@ class PowerType(Enum):
 
 
 class Spectrum(object):
+    autocorrelation = False
+    #These should make it more obvious if the values are not overwritten by subclasses
     power_spectrum = "?"
     kernels = "??"
-    autocorrelation = False
     name = "?"
     prefactor_power = np.nan
+    #the default is no magnification. If the two fields are magnification terms
+    #that should pick up factors of 2 alpha_i - 1
+    #then subclasses should include 1 and/or 2 in this.
+    magnification_prefactors = {}
 
     def __init__(self, source, sample_a=names.wl_number_density, sample_b=names.wl_number_density, save_name=""):
         #caches of n(z), w(z), P(k,z), etc.
@@ -63,17 +68,31 @@ class Spectrum(object):
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
         return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
-    def prefactor(self, block):
+
+    def prefactor(self, block, bin1, bin2):
         if self.prefactor_power == 0:
+            #This should be okay for the magnification terms
+            #since none of those have prefactor_power==0
             return 1.0
         c_kms = 299792.4580
         omega_m = block[names.cosmological_parameters, "omega_m"]
         shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
-        return shear_scaling**self.prefactor_power
-    
+        f = shear_scaling**self.prefactor_power
+        if 1 in self.magnification_prefactors:
+            f *= self.magnification_prefactor(block, bin1)
+        if 2 in self.magnification_prefactors:
+            f *= self.magnification_prefactor(block, bin2)
+        return f
+
+    #Some spectra include a magnification term for one or both bins.
+    #In those cases an additional term from the galaxy luminosity
+    #function is included in the prefactor. 
     def magnification_prefactor(self, block, bin):
-        alpha = block[names.galaxy_luminosity_function, "alpha_binned"]
-        return alpha[bin]
+        #Need to move this so that it references a particular
+        #galaxy sample not the generic galaxy_luminosity_function
+        alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
+        return 2*alpha[bin]-1
+
 
     def compute(self, block, ell, bin1, bin2):
         #Get the required kernels
@@ -84,16 +103,18 @@ class Spectrum(object):
 
         #The spline is done in log space if the spectrum never goes
         #negative, otherwise linear space.
-        xlog = True
-        ylog = self.autocorrelation
+        xlog = ylog = self.autocorrelation
         #Generate a spline
-        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block))
+        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2))
         return c_ell
 
     def kernel_peak(self, block, bin1, bin2):
         K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
         return limber.get_kernel_peak(K1, K2)
+
+
+
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -108,13 +129,6 @@ class SpectrumType(Enum):
         kernels = "W W"
         autocorrelation = True
         name = names.shear_cl
-        prefactor_power = 2
-
-    class SliceSlice(Spectrum):
-        power_spectrum = PowerType.matter
-        kernels = "S S"
-        autocorrelation = True
-        name = "shear_cl_slice"
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
@@ -144,13 +158,17 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "magnification_galaxy_cl"
         prefactor_power = 1    
+        magnification_prefactors = (1,)
 
+    #
     class MagnificationMagnification(Spectrum):
         power_spectrum = PowerType.matter
         kernels = "W W"
         autocorrelation = True
         name = "magnification_cl"
         prefactor_power = 2
+        magnification_prefactors = (1,2)
+
 
     class PositionShear(Spectrum):
         power_spectrum = PowerType.matter_galaxy
@@ -158,15 +176,6 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
-
-    """
-    class ShearPosition(Spectrum):
-        power_spectrum = PowerType.matter_galaxy
-        kernels = "W N"
-        autocorrelation = False
-        name = "shear_galaxy_cl"
-        prefactor_power = 1
-    """
 
     class PositionIntrinsic(Spectrum):
         power_spectrum = PowerType.galaxy_intrinsic
@@ -181,13 +190,15 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "magnification_intrinsic_cl"
         prefactor_power = 1
-       
+        magnification_prefactors = (1,)
+
     class MagnificationShear(Spectrum):
         power_spectrum = PowerType.matter
         kernels = "W W"
         autocorrelation = False
         name = "magnification_shear_cl"
         prefactor_power = 1
+        magnification_prefactors = (1,)
 
     class ShearCmbkappa(Spectrum):
         power_spectrum = PowerType.matter
@@ -222,8 +233,10 @@ class SpectrumType(Enum):
 
 
 class SpectrumCalulcator(object):
-
-    def __init__(self, options, spectrum_type=SpectrumType):
+    # It is useful to put this here so we can subclass to add new spectrum
+    # types, for example ones done with modified gravity changes.
+    spectrumType = SpectrumType
+    def __init__(self, options):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
@@ -231,11 +244,12 @@ class SpectrumCalulcator(object):
         #Get the list of spectra that we want to compute.
         #The full list
         self.req_spectra = []
-        for spectrum in spectrum_type:
+        for spectrum in self.spectrumType:
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
-            default = (spectrum==spectrum_type.ShearShear)
+            default = (spectrum==self.spectrumType.ShearShear)
             name = spectrum.value.option_name()
+
             try:
                 #first look for a string, e.g. redmagic-redmagic or similar (name of samples)
                 value = options.get_string(option_section, name)
@@ -379,15 +393,9 @@ class SpectrumCalulcator(object):
 
         if kernel_type == "K":
             nbin = 1
-        elif kernel_type == "S":
-            import scipy.interpolate as interp
-            z_source = block[sample_name,'z'][1:]
-            print z_source
-            nbin = len(z_source)
         else:
             z = block[sample_name, 'z']
             nbin = block[sample_name, 'nbin']
-
 
         #Now load n(z) or W(z) for each bin in the range
         for i in xrange(nbin):
@@ -399,9 +407,6 @@ class SpectrumCalulcator(object):
                 if self.chi_star is None:
                     raise ValueError("Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
                 kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
-            elif kernel_type=="S":
-                print z_source[i]
-                kernel_dict[i] = limber.get_w_slice_spline(self.chi_max, z_source[i], self.a_of_chi, self.chi_of_z)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
 
@@ -430,8 +435,6 @@ class SpectrumCalulcator(object):
                 c_ell = spectrum.compute(block, self.ell, i, j)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
-                #if spectrum.is_autocorrelation():
-                #    block[spectrum_name, 'bin_{}_{}'.format(j+1,i+1)] = c_ell(self.ell)
                 if self.get_kernel_peaks:
                     chi_peak=spectrum.kernel_peak(block, i, j)
                     block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
@@ -465,8 +468,10 @@ class SpectrumCalulcator(object):
 
 
 
+
 def setup(options):
     return SpectrumCalulcator(options)
 
 def execute(block, config):
     return config.execute(block)
+    

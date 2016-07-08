@@ -1,0 +1,58 @@
+#This is a template for module description files
+name: load_nz_fits
+version: 1
+purpose: Load a number density n(z) from a FITS file
+url: ""
+interface: load_nz_fits.py
+attribution: [CosmoSIS Team]
+rules: "If you use a file from a particular survey you should cite that survey"
+cite: []
+
+assumptions:
+    - "Data is provided in FITS extensions NZ_{NAME}"
+    - "There are various subtleties to do with the sampling and form of the n(z) data"
+
+explanation: |
+    "This module is designed to work with the number density part of the FITS
+    files described in:
+    http://github.com/joezuntz/2point/
+
+    High-precision analyses of two-point measurements require knowing *precisely* what
+    is meant by a given n(z) analysis.  Most of the CosmoSIS standard library modules
+    downstream of this one assume that the n(z) specifies sample points in a smooth
+    curve, since that seems most physical.  Most photo-z codes, on the other hand,
+    provide data in the form of histograms, with small bins in z having a constant
+    assumed n(z) within them.
+
+    The actual difference between these two forms is 
+    usually well within the systematic errors associated with photometric
+    redshift estimation, so if you're doing a realistic analysis the difference should
+    be washed out.  But for code comparison exercises where you are trying to ensure 
+    0.1% level differences they are very large. 
+
+    The parameter 'upsampling' in this module is designed to address this. Higher upsampling
+    values add new sample points in between the existing ones, so that the two forms
+    look much closer.
+
+    A proper solution to this, where we use splines the parts of the code that actually
+    use the n(z) that understand the histogram form, is in our roadmap.
+
+    "
+
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    filepath: "String; absolute or relative path to an n(z) file"
+    des_fmt: "Bool, default=F; use the DES format n(z) with columns zmin, zmax, nz1, nz2..."
+    histogram: "Bool, default=F; Assume that the given z values are lower edges of histogram bins, not sample points."
+    upsampling: "Integer, default=5. The number of sample points output for each one in the file. n(z) is assumed flat between them. See notes above."
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs: {}
+
+outputs:
+    wl_number_density:
+        nz: "Integer; number of redshift samples"
+        nbin: "Integer; number of bins"
+        z: "Real vector; redshift sample values"
+        bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."

@@ -23,7 +23,7 @@ LIMBER_STATUS_NEGATIVE =  2
 c_gsl_spline = ct.c_void_p
 
 dirname = os.path.split(__file__)[0]
-lib = ct.cdll.LoadLibrary(dirname + "/../../shear/spectra/interface.so")
+lib = ct.cdll.LoadLibrary(os.path.join(dirname, "../../shear/spectra/interface.so"))
 lib.get_named_w_spline.restype = c_gsl_spline
 lib.get_named_w_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_double, ct.c_void_p]
 
@@ -32,10 +32,6 @@ lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_
 
 lib.cmb_wl_kappa_kernel.restype = c_gsl_spline
 lib.cmb_wl_kappa_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline]
-
-
-lib.shear_slice_kernel.restype = c_gsl_spline                                                                                                                   
-lib.shear_slice_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline, c_gsl_spline]
 
 lib.get_kernel_peak.restype = ct.c_double
 lib.get_kernel_peak.argtypes = [ct.c_void_p, ct.c_void_p, ct.c_int]
@@ -69,10 +65,6 @@ def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
 def get_named_w_spline(block, section, bin, z, chi_max, a_of_chi):
     "Compute a shear kernel W(chi) spline"
     return GSLSpline(lib.get_named_w_spline(block._ptr, section, bin, z, chi_max, a_of_chi))
-
-def get_w_slice_spline(chi_max, z_source, a_of_chi, chi_of_z):
-    "Compute the CMB WL kernel W_cmb(chi) spline"
-    return GSLSpline(lib.shear_slice_kernel(chi_max, z_source, a_of_chi, chi_of_z))
 
 def get_cmb_kappa_spline(chi_max, chi_star, a_of_chi):
     "Compute the CMB WL kernel W_cmb(chi) spline"
@@ -118,6 +110,5 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor):
         ylog = False
     elif config.status == LIMBER_STATUS_NEGATIVE:
         ylog = False
-        #raise ValueError("Negative value of the Limber integral.")
     spline = GSLSpline(spline_ptr, xlog=xlog, ylog=ylog)
     return spline

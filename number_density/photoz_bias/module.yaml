@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "Simple photo-z bias models: n(z) -> n(z-b) or n(z*(1-b))"
 
-explanation: >
+explanation: |
     Photometric redshift distributions can contain biases - the actual distribution
     of galaxies in a survey can be different to the estimated one.
 
@@ -30,6 +30,7 @@ explanation: >
 params:
     mode: "String; 'multiplicative' or 'additive', depending on what kind of bias model you want"
     sample: "String, optional; If set, look for n(z) in the section called sample, and error parameters in sample_errors"
+    bias_section: "String, optional; If set, look for input parameters in this named section instead of wl_photoz_errors. If not set but sample is set, look in sample_errors"
 
 inputs:
     wl_number_density:
@@ -41,4 +42,4 @@ inputs:
 
 outputs:
     wl_number_density:
-        bin_i: Real vectors; for i=1..nbin. Modified n(z) estimates
+        bin_i: Real vectors; for i=1..nbin. Modified n(z) estimates replaced old value

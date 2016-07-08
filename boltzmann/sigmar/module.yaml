@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "minimal assumptions; sigma computed directly from P(k,z)"
 
-explanation: >
+explanation: |
     "sigma(R,z) is the variance of cosmic density fluctuations on scales
     down to 8 Mpc/h.
 

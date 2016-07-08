@@ -3,6 +3,7 @@ name: wl_spectra
 version: "1.0"
 purpose: "Compute various weak lensing C_ell from P(k,z) with the Limber integral"
 url: ""
+interface: interface.so
 attribution: [CosmoSIS team, Matt Becker]
 rules: ""
 cite: []
@@ -10,8 +11,10 @@ cite: []
 assumptions:
     - "The Limber integral is valid on the scales in question"
 
-explanation: >
+explanation: |
     "
+    DEPRECATED: You should use the module cosmosis-standard-library/structure/projection/project_2d.py instead.
+
     The Limber approximation integrates a 3D power spectrum over the radial
     direction to get a 2D angular power spectrum.  It is an approximation
     which is only valid on smaller scales.

@@ -11,7 +11,7 @@ cite:
 assumptions:
     - "FRW cosmological model"
     - "Riess et al data set"
-explanation: >
+explanation: |
     "This small module was written for CosmoSIS.
 
     Supernova type IA measurements are a standard(izable) candle 

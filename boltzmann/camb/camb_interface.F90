@@ -672,7 +672,7 @@ module camb_interface_tools
 			distance(i) = HofZ(z(i))
 		enddo
 		status = status + datablock_put_double_array_1d(block, dist, "H", distance)
-		status = status + datablock_put_metadata(block, dist, "H", "unit", "Mpc/c")
+		status = status + datablock_put_metadata(block, dist, "H", "unit", "1.0/Mpc")
 
 		!if (density) then
 		!	status = status + datablock_put_double_array_1d(block, dist, "RHO", rho)

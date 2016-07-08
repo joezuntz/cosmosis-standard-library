@@ -13,7 +13,7 @@ assumptions:
     - "CMB shift parameter as in LCDM"
     - "WMAP9 measurement of parameter"
 
-explanation: >
+explanation: |
     "The full WMAP likelihood is slow and requires a full Boltzmann
     integration (also slow) to get the CMB spectra.
 

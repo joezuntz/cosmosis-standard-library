@@ -63,7 +63,7 @@ class NumberDensity(object):
     produce histogram type data sets (that is, they look like step functions between each bin),
     that is what this form assumes.
     """
-    def __init__(self, name, zlow, z, zhigh, nzs):
+    def __init__(self, name, zlow, z, zhigh, nzs, ngal=None, sigma_e=None):
         self.name=name
         self.zlow = zlow
         self.z = z
@@ -74,11 +74,14 @@ class NumberDensity(object):
         else:
             self.nsample = 0
         self.nzs = nzs
+        self.ngal = ngal
+        self.sigma_e = sigma_e
 
     @classmethod
     def from_fits(cls, extension):
         #load in the n(z) data
         data = extension.data
+        header = extension.header
 
         z = data['Z_MID']
         zlow = data['Z_LOW']
@@ -86,13 +89,29 @@ class NumberDensity(object):
         i = 1
         name = 'BIN{}'.format(i)
         nzs = []
+        sigma_e = []
+        ngal = []
         while name in data.names:
             nz = data[name]
             nzs.append(nz)
+            ngal.append(header.get('NGAL_{}'.format(i)))
+            sigma_e.append(header.get('SIG_E_{}'.format(i)))
             i+=1 
             name = 'BIN{}'.format(i)
 
-        N = cls(extension.name, zlow, z, zhigh, nzs)
+        if all(x is None for x in sigma_e):
+            sigma_e = None
+        else:
+            assert not any(x is None for x in sigma_e), "Please specify all or none of the SIG_E_ in your n(z) section {}".format(extension.name)
+            sigma_e = np.array(sigma_e)
+
+        if all(x is None for x in ngal):
+            ngal = None
+        else:
+            assert not any(x is None for x in ngal), "Please specify all or none of the NGAL in your n(z) section {}".format(extension.name)
+            ngal = np.array(ngal)
+
+        N = cls(extension.name, zlow, z, zhigh, nzs, ngal=ngal, sigma_e=sigma_e)
 
         return N
 
@@ -110,6 +129,18 @@ class NumberDensity(object):
         for i in xrange(self.nbin):
             name = "BIN{}".format(i+1)
             columns.append(fits.Column(name=name, array=self.nzs[i], format='D'))
+
+        if self.sigma_e is not None:
+            for i in xrange(self.nbin):
+                name = "SIG_E_{}".format(i+1)
+                header[name] = self.sigma_e[i]
+
+        if self.ngal is not None:
+            for i in xrange(self.nbin):
+                name = "NGAL_{}".format(i+1)
+                header[name] = self.ngal[i]
+
+
 
         extension = fits.BinTableHDU.from_columns(columns, header=header)
         return extension        
@@ -528,7 +559,7 @@ class TwoPointFile(object):
     def from_fits(cls, filename, covmat_name="COVMAT"):
         fitsfile = fits.open(filename)
         spectra = []
-        kernels = {}
+        kernels = []
         windows = {}
 
         #Load the covariance matrix from the file, typically stored as
@@ -553,10 +584,12 @@ class TwoPointFile(object):
         #Each spectrum needs kernels, usually some n(z).
         #These were read from headers when we loaded the 2pt data above above.
         #Now we are loading those kernels into a dictionary
+        known_kernels = []
         for spectrum in spectra:
             for kernel in (spectrum.kernel1, spectrum.kernel2):
-                if kernel not in kernels:
-                    kernels[kernel] = NumberDensity.from_fits(fitsfile[kernel])
+                if kernel not in known_kernels:
+                    kernels.append(NumberDensity.from_fits(fitsfile[kernel]))
+                    known_kernels.append(kernel)
 
         #We might also require window functions W(ell) or W(theta). It's also possible
         #that we just use a single sample value of ell or theta instead.

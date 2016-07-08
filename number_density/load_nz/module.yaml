@@ -11,7 +11,7 @@ cite: []
 assumptions:
     - "n(z) file first column = z, others = bin n(z)"
 
-explanation: >
+explanation: |
     "This simple module just loads a set of n(z) for different bins from a
     fixed file and provides it as-is.  The n(z) are normalized before being saved."
 
@@ -20,13 +20,14 @@ params:
     filepath: "String; absolute or relative path to an n(z) file"
     des_fmt: "Bool, default=F; use the DES format n(z) with columns zmin, zmax, nz1, nz2..."
     histogram: "Bool, default=F; Assume that the given z values are lower edges of histogram bins, not sample points."
+    output_section: "String, default ''wl_number_density''. The section to which to save the output."
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs: {}
 
 outputs:
-    wl_number_density:
-        nz: "Integer; number of redshift samples"
+    output_section:
+        nz: "Integer; number of redshift samples. By default all these will go in wl_number_density."
         nbin: "Integer; number of bins"
         z: "Real vector; redshift sample values"
         bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."

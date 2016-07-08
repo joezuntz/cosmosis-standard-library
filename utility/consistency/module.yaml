@@ -15,7 +15,7 @@ assumptions:
     - "Second pass: tries omega_nu=0"
     - "Third pass: tries omega_nu=0 and omega_k=0"
 
-explanation: >
+explanation: |
     "There are various ways of parameterizing cosmologies with different advantages
     in different contexts.  This module takes a set of cosmological parameters and
     tries to use them to deduce the remaining parameters.  For example, if you specify

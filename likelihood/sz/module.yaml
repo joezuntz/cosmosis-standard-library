@@ -14,7 +14,7 @@ assumptions:
     - "Flat LCDM"
     - "Tinker et al halo distribution"
 
-explanation: >
+explanation: |
     "This small module was written for CosmoSIS.
 
     CMB data like that from Planck can be used to make counts of clusters using

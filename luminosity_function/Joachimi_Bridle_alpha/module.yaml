@@ -12,7 +12,7 @@ assumptions:
     - "The galaxy luminosity function is well approximated by the fitting function of Blake & Bridle (2005)."
     - "The limiting r-band magnitude r_lim>16.9 "
 
-explanation: >
+explanation: |
     "
     The gradient of the cumulative galaxy luminosity function \alpha is sensitive to both redshift and magnitude limit of the survey 
     considered. Joachimi & Bridle (2010) extend the fitting function of Blake & Bridle (2005) to obtain a polynomial \alpha(z, r_lim) 

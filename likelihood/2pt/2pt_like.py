@@ -35,10 +35,16 @@ class SpectrumInterp(object):
 		else:
 			assert self.interp_type=="log_ang"
 			spec=self.interp_func(np.log(angle))
-		spec[np.isnan(spec)]==0.
 		return spec
 
 class TwoPointLikelihood(GaussianLikelihood):
+	# This is a sub-class of the class GaussianLikelihood
+	# which can be found in the file ${COSMOSIS_SRC_DIR}/cosmosis/gaussian_likelihood.py
+	# That super-class implements the generic behaviour that all Gaussian likelihoods
+	# follow - the basic form of the likelihoods, inverting covariance matrices, saving
+	# results, etc.  This sub-clas does the parts that are specific to this 2-pt 
+	# likelihood - loading data from a file, getting the specific theory prediction
+	# to which to compare it, etc.
 	like_name = "2pt"
 
 	def __init__(self, options):

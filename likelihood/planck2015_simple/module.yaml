@@ -12,7 +12,7 @@ assumptions:
     - "Highly accurate CMB calculations are required"
     - "In the high-ell regime models for the foregrounds and secondary anisotropies are assumed"
 
-explanation: >
+explanation: |
     "See the Planck2015 module for general information about Planck.
 
     This module provides a greatly simplified form of the Planck likelihood supplied

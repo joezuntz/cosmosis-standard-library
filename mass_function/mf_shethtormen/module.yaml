@@ -11,7 +11,7 @@ cite:
 assumptions:
     - "CAMB must be run to output linear matter Pk"
 
-explanation: >
+explanation: |
         "This module calculates the Sheth-Tormen mass function given the linear matter power spectrum."
         
 params:

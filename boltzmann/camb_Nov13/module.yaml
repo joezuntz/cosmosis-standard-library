@@ -13,7 +13,7 @@ cite:
 assumptions:
     - The wLCDM model
 
-explanation: >
+explanation: |
     The Code for Anisotropies in the Microwave Background, in equations_ppf mode
 
     CAMB is the standard cosmology code for evolving perturbations

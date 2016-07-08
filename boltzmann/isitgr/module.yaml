@@ -13,7 +13,7 @@ cite:
 assumptions:
     - The modified gravity phenomenological model described in the referenced papers
 
-explanation: >
+explanation: |
     ISiTGR, the Integrated Software in Testing General Relativity, is
     a set of modifications to CAMB and CosmoMC which implement a set of modified
     gravity models where the perturbed metric quantities phi and psi are

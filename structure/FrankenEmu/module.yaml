@@ -13,7 +13,7 @@ cite:
 assumptions: 
     - "LCDM in the form of the Coyote Universe simulations"
 
-explanation: >
+explanation: |
         "
         FrankenEmu is an emulator designed to interpolate among a collection
         of numerical N-body simulations called the Coyote Universe.
