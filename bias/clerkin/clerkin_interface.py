@@ -7,7 +7,7 @@ modes = ["power","bias","both"]
 def setup(options):
 	model = options[option_section, "model"].lower()
 	mode = options[option_section, "mode"].lower()
-	color = options.getstring(option_section, "color", default="")
+	color = options.get_string(option_section, "color", default="")
 	if model not in models:
 		raise ValueError("The Clerkin module requires a model chosen from: %r" % models)
 	if mode not in modes:
