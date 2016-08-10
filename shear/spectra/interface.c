@@ -313,7 +313,8 @@ const char * choose_output_section(spectrum_type_t spectrum_type,
 			return SHEAR_CL_II_SECTION;
 			break;
 		case shear_shear: // config->shear_shear
-			return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
+		        //return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
+		        return SHEAR_CL_SECTION;
 			break;
 		case matter_shear: // config->ggl_spectra
 			return "ggl_cl";
@@ -791,10 +792,10 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
 		PK_II = load_interpolator_chi(
-			block, chi_of_z_spline, ia, "k_h", "z", "P_II");
+			block, chi_of_z_spline, "intrinsic_power", "k_h", "z", "p_k");
 
 		PK_GI = load_interpolator_chi(
-			block, chi_of_z_spline, ia, "k_h", "z", "P_GI");
+			block, chi_of_z_spline, "matter_intrinsic_power", "k_h", "z", "p_k");
 
 		if (PK_II==NULL) return 2;
 		if (PK_GI==NULL) return 3;

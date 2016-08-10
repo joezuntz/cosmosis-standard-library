@@ -24,9 +24,13 @@ def execute(block, config):
 	if not m_per_bin:
 		m0=block[cal_section, "m0"]
 
-	cl_sec=names.shear_cl
-	n_a=block[cl_sec,"nbin_a"]
-	n_b=block[cl_sec,"nbin_b"]
+        cl_sec=names.shear_cl
+	if block.has_value(cl_sec, "nbin_a"):
+	    n_a=block[cl_sec,"nbin_a"]
+	    n_b=block[cl_sec,"nbin_b"]
+	else:
+            n_a=block[cl_sec,"nbin"]
+	    n_b=n_a
 
 	#Loop through bin pairs
 	for i in xrange(1,n_a+1):
