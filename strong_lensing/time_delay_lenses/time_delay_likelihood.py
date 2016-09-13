@@ -80,7 +80,7 @@ class TimeDelayLikelihood(object):
 class RXJ1131(TimeDelayLikelihood):
 	def __init__(self):
 		z_d=0.295
-		z_s=0.658
+		z_s=0.654
 		lambda_d=1388.8
 		mu_d=6.4682
 		sigma_d=0.20560
@@ -91,8 +91,8 @@ class B1608(TimeDelayLikelihood):
 		z_d = 0.6304
 		z_s = 1.394
 		lambda_d = 4000.0
-		mu_d = 7.053
-		sigma_d = 0.2282
+		mu_d = 7.0531
+		sigma_d = 0.22824
 		super(B1608,self).__init__("B1608", z_d, z_s, lambda_d, mu_d, sigma_d)
 
 
