@@ -9,6 +9,8 @@ def setup(options):
 		like = B1608()
 	elif lens_name.upper() == "RXJ1131":
 		like = RXJ1131()
+	elif lens_name.upper() == "HE0435":
+		like = HE0435()
 	elif lens_name=="mock":
 		try:
                         fname = options[option_section, "filename"]
