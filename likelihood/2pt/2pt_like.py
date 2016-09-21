@@ -391,15 +391,25 @@ class TwoPointLikelihood(GaussianLikelihood):
 				for b2 in xrange(1,nbin+1):
 					if (b1,b2) not in bin_data:
 						continue
-					pylab.subplot(nbin, nbin, (b1-1)*nbin+b2)
-					pylab.loglog(angle_theory, bin_data[(b1,b2)](angle_theory))
+					# pylab.subplot(nbin, nbin, (b1-1)*nbin+b2)
+					y_theory = bin_data[(b1,b2)](angle_theory)
+					x_theory = np.degrees(angle_theory)*60
+					pylab.plot(x_theory, y_theory)
 					xdata, ydata = spectrum.get_pair(b1, b2)
+					print "FIXME: Assuming units in pipeline are radians.  Prob true but check!"
+					ymin = 0.1*bin_data[(b1,b2)](xdata).min()
+					ymax = 10*bin_data[(b1,b2)](xdata).max()
+					xplot = np.degrees(xdata)*60
 					yerr = spectrum.get_error(b1, b2)
-					pylab.errorbar(xdata, ydata, yerr, fmt='o')
-					pylab.xlim(xdata.min(), xdata.max())
-					pylab.ylim(ydata.min(), ydata.max())
-			pylab.savefig(os.path.join(self.save_plot_to,"{}.png".format(spectrum.name)))
-			pylab.close()
+					pylab.errorbar(xplot, ydata, yerr, fmt='o')
+					pylab.yscale('log', nonposy='clip')
+					pylab.xscale('log', nonposy='clip')
+					pylab.xlim(xmin=xplot.min(), xmax=xplot.max())
+					pylab.ylim(ymin=ymin, ymax=ymax)
+					pylab.xlabel("theta")
+					pylab.ylabel("{} {},{}".format(spectrum.name, b1, b2))
+					pylab.savefig(os.path.join(self.save_plot_to,"{}_{}_{}.png".format(spectrum.name, b1, b2)))
+					pylab.close()
 
 			
 		#Return the whole collection as an array
