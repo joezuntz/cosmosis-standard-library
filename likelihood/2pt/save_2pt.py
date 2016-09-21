@@ -20,11 +20,27 @@ import gaussian_covariance
 def setup(options):
     # ell range of output - all assumed the same, with log-spacing and 
     # no window functions
-    ell_min = options.get_double(option_section, "ell_min")
-    ell_max = options.get_double(option_section, "ell_max")
-    n_ell = options.get_int(option_section, "n_ell")
-    ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
+    real_space = options.get_bool(option_section, "real_space", False)
+    make_covariance = options.get_bool(option_section, "make_covariance", True)
 
+    config = {"real_space":real_space, "make_covariance":make_covariance}
+
+    if real_space:
+        theta_min = options.get_double(option_section, "theta_min")
+        theta_max = options.get_double(option_section, "theta_max")
+        n_theta = options.get_int(option_section, "n_theta")
+        theta = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta+1, endpoint=True)
+        a = theta[:-1]
+        b = theta[1:]
+        theta = 2./3. * (b**3-a**3)/(b**2-a**2)
+        config['theta'] = theta
+        print theta
+    else:        
+        ell_min = options.get_double(option_section, "ell_min")
+        ell_max = options.get_double(option_section, "ell_max")
+        n_ell = options.get_int(option_section, "n_ell")
+        ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
+        
 
     def get_arr(x):
         a = options[option_section, x]
@@ -32,23 +48,24 @@ def setup(options):
             a = np.array([a])
         return a
 
-    number_density_shear_bin = get_arr("number_density_shear_bin")
-    number_density_lss_bin = get_arr("number_density_lss_bin")
-    sigma_e_bin = get_arr("sigma_e_bin")
-    survey_area = options[option_section, "survey_area"] * (np.pi*np.pi)/(180*180)
+    if make_covariance:
+        config['number_density_shear_bin'] = get_arr("number_density_shear_bin")
+        config['number_density_lss_bin'] = get_arr("number_density_lss_bin")
+        config['sigma_e_bin'] = get_arr("sigma_e_bin")
+        config['survey_area'] = options[option_section, "survey_area"] * (np.pi*np.pi)/(180*180)
 
     #names n(z) sections in the datablock, to be saved with the same name
     #to the FITS file output
-    shear_nz = options.get_string(option_section, "shear_nz_name").upper()
-    position_nz = options.get_string(option_section, "position_nz_name").upper()
+    config['shear_nz'] = options.get_string(option_section, "shear_nz_name").upper()
+    config['position_nz'] = options.get_string(option_section, "position_nz_name").upper()
 
     #name of the output file and whether to overwrite it.
-    filename = options.get_string(option_section, "filename")
-    clobber = options.get_bool(option_section, "clobber", False)
+    config['filename'] = options.get_string(option_section, "filename")
+    config['clobber'] = options.get_bool(option_section, "clobber", False)
 
-    return [ell, filename, shear_nz, position_nz, clobber, number_density_shear_bin, number_density_lss_bin, sigma_e_bin, survey_area]
+    return config
 
-def spectrum_measurement_from_block(block, section_name, output_name, types, kernels, ell_sample):
+def spectrum_measurement_from_block(block, section_name, output_name, types, kernels, angle_sample, real_space):
 
     #The dictionary type_table stores the codes used in the FITS files for
     #the types of spectrum
@@ -58,19 +75,26 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     # for cross correlations we must save bin_ji as well as bin_ij.
     # but not for auto-correlations. Also the numbers of bins can be different
     is_auto = (types[0] == types[1])
-    if is_auto:
+    if block.has_value(section_name, "nbin"):
         nbin_a = block[section_name, "nbin"]
     else:
         nbin_a = block[section_name, "nbin_a"]
         nbin_b = block[section_name, "nbin_b"]
 
+
     #This is the ell values that have been calculated by cosmosis, not to
     #be confused with the ell values at which we want to save the results
     #(which is ell_sample)
-    ell = block[section_name, "ell"]
+    if real_space:
+        # This is in radians
+        theory_angle = block[section_name, "theta"]
+        angle_sample_radians = np.radians(angle_sample/60.)
+    else:
+        theory_angle = block[section_name, "ell"]
+        angle_sample_radians = angle_sample
 
     #This is the length of the sample values
-    n_ell_sample = len(ell_sample)
+    n_angle_sample = len(angle_sample)
 
 
     #The fits format stores all the measurements
@@ -92,13 +116,14 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
 
             #Load and interpolate from the block
             cl = block[section_name, bin_format.format(i+1,j+1)]
-            cl_sample = interp1d(ell, cl)(ell_sample)
+            #Convert arcmin to radians for the interpolation
+            cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
             #Build up on the various vectors that we need
-            bin1.append(np.repeat(i+1, n_ell_sample))
-            bin2.append(np.repeat(j+1, n_ell_sample))
+            bin1.append(np.repeat(i+1, n_angle_sample))
+            bin2.append(np.repeat(j+1, n_angle_sample))
             value.append(cl_sample)
-            angular_bin.append(np.arange(n_ell_sample))
-            angle.append(ell_sample)
+            angular_bin.append(np.arange(n_angle_sample))
+            angle.append(angle_sample)
 
     #Convert all the lists of vectors into long single vectors
     bin1 = np.concatenate(bin1)
@@ -111,8 +136,13 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     #At the moment we only support this window function
     windows = "SAMPLE"
 
+    if real_space:
+        angle_unit = "arcmin"
+    else:
+        angle_unit = None
     #Build the output object type reqired.
-    s = twopoint.SpectrumMeasurement(output_name, bins, types, kernels, windows, angular_bin, value, angle=angle)
+    s = twopoint.SpectrumMeasurement(output_name, bins, types, kernels, windows, 
+        angular_bin, value, angle=angle, angle_unit=angle_unit)
     return s
 
 
@@ -127,15 +157,16 @@ def nz_from_block(block, nz_name):
     print "To properly fix this I will have to do a bit more work."
     print
     print
-    z = block[nz_name, "z"]
+    section_name = "NZ_"+nz_name 
+    z = block[section_name, "z"]
     zlow = z
     dz = z[1]-z[0]
     zhigh = z+dz
     z = zlow+0.5*dz
-    nbin = block[nz_name, "nbin"]
+    nbin = block[section_name, "nbin"]
     nzs = []
     for i in xrange(nbin):
-        nz = block[nz_name, "bin_{}".format(i+1)]
+        nz = block[section_name, "bin_{}".format(i+1)]
         nzs.append(nz)
 
     return twopoint.NumberDensity(nz_name, zlow, z, zhigh, nzs)
@@ -246,45 +277,105 @@ def covmat_from_block(block, spectra, sky_area, number_density_shear_bin, number
 
 
 def execute(block, config):
-    ell_sample, filename, shear_nz, position_nz, clobber, number_density_shear_bin, number_density_lss_bin, sigma_e_bin, survey_area = config
+    real_space = config['real_space']
+    fourier_space = not real_space
+    if real_space:
+        angle_sample = config['theta']
+    else:
+        angle_sample = config['ell']
+
+    filename = config['filename']
+    shear_nz = config['shear_nz']
+    position_nz = config['position_nz']
+    clobber = config['clobber']
+
+    make_covariance = config['make_covariance']
+    if make_covariance:
+        number_density_shear_bin = config['number_density_shear_bin']
+        number_density_lss_bin = config['number_density_lss_bin']
+        sigma_e_bin = config['sigma_e_bin']
+        survey_area = config['survey_area']
+
     print "Saving two-point data to {}".format(filename)
 
     spectra = []
 
-    if block.has_section(names.shear_cl):
+    need_source_nz = False
+    need_lens_nz = False
+    if fourier_space and block.has_section(names.shear_cl):
         name = "shear_cl"
         types = (twopoint.Types.galaxy_shear_emode_fourier, twopoint.Types.galaxy_shear_emode_fourier)
         kernels = (shear_nz, shear_nz)
-        s = spectrum_measurement_from_block(block, name, name, types, kernels, ell_sample)
+        s = spectrum_measurement_from_block(block, name, name, types, kernels, angle_sample, real_space)
         print " - saving shear_cl"
+        need_source_nz = True
         spectra.append(s)
 
-    if block.has_section("galaxy_shear_cl"):
+    if fourier_space and block.has_section("galaxy_shear_cl"):
         name = "galaxy_shear_cl"
-        types = (twopoint.Types.galaxy_position_fourier, twopoint.Types.galaxy_shear_emode_fourier)
+        types = (twopoint.Types.galaxy_position_fourier, twopoint.Types.galaxy_shear_emode_fourier,)
         kernels = (position_nz, shear_nz)        
-        s = spectrum_measurement_from_block(block, name, name, types, kernels, ell_sample)
+        s = spectrum_measurement_from_block(block, name, name, types, kernels, angle_sample, real_space)
         print " - saving galaxy_shear_cl"
+        need_source_nz = True
+        need_lens_nz = True
         spectra.append(s)
 
-    if block.has_section("galaxy_cl"):
+    if fourier_space and block.has_section("galaxy_cl"):
         name = "galaxy_cl"
         types = (twopoint.Types.galaxy_position_fourier, twopoint.Types.galaxy_position_fourier)
         kernels = (position_nz, position_nz)
-        s = spectrum_measurement_from_block(block, name, name, types, kernels, ell_sample)
+        s = spectrum_measurement_from_block(block, name, name, types, kernels, angle_sample, real_space)
         print " - saving galaxy_cl"
+        need_lens_nz = True
         spectra.append(s)
 
-    covmat_info = covmat_from_block(block, spectra, survey_area, number_density_shear_bin, number_density_lss_bin, sigma_e_bin)
+    if real_space and block.has_section("shear_xi"):
+        types = (twopoint.Types.galaxy_shear_plus_real, twopoint.Types.galaxy_shear_plus_real)
+        kernels = (shear_nz, shear_nz)
+        s = spectrum_measurement_from_block(block, "shear_xi", "xip", types, kernels, angle_sample, real_space)
+        print " - saving xi_plus"
+        need_source_nz = True
+        spectra.append(s)
+
+        name = "shear_xi"
+        types = (twopoint.Types.galaxy_shear_minus_real, twopoint.Types.galaxy_shear_minus_real)
+        kernels = (shear_nz, shear_nz)
+        s = spectrum_measurement_from_block(block, "shear_xi", "xim", types, kernels, angle_sample, real_space)
+        need_source_nz = True
+        print " - saving xi_minus"
+        spectra.append(s)
+
+    if real_space and block.has_section("galaxy_shear_xi"):
+        types = (twopoint.Types.galaxy_position_real, twopoint.Types.galaxy_shear_plus_real)
+        kernels = (position_nz, shear_nz)
+        s = spectrum_measurement_from_block(block, "galaxy_shear_xi", "gammat", types, kernels, angle_sample, real_space)
+        print " - saving gammat"
+        need_source_nz = True
+        need_lens_nz = True
+        spectra.append(s)
+
+    if real_space and block.has_section("galaxy_xi"):
+        types = (twopoint.Types.galaxy_position_real, twopoint.Types.galaxy_position_real)
+        kernels = (position_nz, position_nz)
+        s = spectrum_measurement_from_block(block, "galaxy_xi", "wtheta", types, kernels, angle_sample, real_space)
+        print " - saving wtheta"
+        need_lens_nz = True
+        spectra.append(s)
+
+    if make_covariance:
+        covmat_info = covmat_from_block(block, spectra, survey_area, number_density_shear_bin, number_density_lss_bin, sigma_e_bin)
+    else:
+        covmat_info = None
 
     if not spectra:
-        raise ValueError("Sorry - I couldn't find any shear_cl, shear_galaxy_cl, or galaxy_cl to save.")
+        raise ValueError("Sorry - I couldn't find any spectra to save.")
 
 
     kernels = []
-    if block.has_section(names.shear_cl) or block.has_section("galaxy_shear_cl"):
+    if need_source_nz:
         kernels.append(nz_from_block(block, shear_nz))
-    if (block.has_section("galaxy_cl") or block.has_section("galaxy_shear_cl")) and (shear_nz!=position_nz):
+    if need_lens_nz and (shear_nz!=position_nz):
         kernels.append(nz_from_block(block, position_nz))
     
     windows = []
