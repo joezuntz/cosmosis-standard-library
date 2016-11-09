@@ -232,7 +232,7 @@ class SpectrumType(Enum):
 
 
 
-class SpectrumCalulcator(object):
+class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
     # types, for example ones done with modified gravity changes.
     spectrumType = SpectrumType
@@ -501,7 +501,7 @@ class SpectrumCalulcator(object):
 
 
 def setup(options):
-    return SpectrumCalulcator(options)
+    return SpectrumCalculator(options)
 
 def execute(block, config):
     return config.execute(block)
