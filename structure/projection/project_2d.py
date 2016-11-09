@@ -241,57 +241,8 @@ class SpectrumCalulcator(object):
         self.verbose = options.get_bool(option_section, "verbose", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
 
-        #Get the list of spectra that we want to compute.
-        #The full list
-        self.req_spectra = []
-        for spectrum in self.spectrumType:
-            #By default we just do the shear-shear spectrum.
-            #everything else is not done by default
-            default = (spectrum==self.spectrumType.ShearShear)
-            name = spectrum.value.option_name()
-
-            try:
-                #first look for a string, e.g. redmagic-redmagic or similar (name of samples)
-                value = options.get_string(option_section, name)
-            except BlockError:
-                #or try a bool
-                value = options.get_bool(option_section, name, default=default)
-            if isinstance(value, bool) and value:
-                self.req_spectra.append(spectrum.value(self))
-                #Now we just look for the wl_number_density section.
-                #though we may change this
-            elif isinstance(value, bool):
-                pass
-            else:
-                #now we are looking for things of the form
-                #shear-shear = euclid-ska:
-                #where we would now search for nz_euclid and nz_ska
-                values = value.split()
-                for value in values:
-                    try:
-                        kernel_a, kernel_b = value.split('-',1)
-                        #Optionally we can also name the spectrum, for example
-                        # shear-shear = ska-ska:radio
-                        # in which case the result will be saved into shear_cl_radio
-                        # instead of just shear_cl.
-                        # This will be necessary in the case that we run multiple spectra,
-                        # e.g. 
-                        # #shear-shear = euclid-ska:cross  euclid-euclid:optical  ska-ska:radio
-                        # would be needed to avoid clashes. 
-                        if ":" in kernel_b:
-                            kernel_b, save_name=kernel_b.split(":",1)
-                        else:
-                            save_name = ""
-                        kernel_a = kernel_a.strip()
-                        kernel_b = kernel_b.strip()
-                        #The self in the line below is not a mistake - the source objects
-                        #for the spectrum class is the SpectrumCalculator itself
-                        self.req_spectra.append(spectrum.value(self, kernel_a, kernel_b, save_name))
-                    except:
-                        raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
-
-
-
+        # Check which spectra we are requested to calculate
+        self.parse_requested_spectra(options)
         print "Will project these spectra into 2D:"
         for spectrum in self.req_spectra:
             print "    - ", spectrum.get_name()
@@ -318,7 +269,6 @@ class SpectrumCalulcator(object):
         for spectrum in self.req_spectra:
             self.req_power.add(spectrum.power_spectrum)
 
-
         self.power = {}
         self.outputs = {}
 
@@ -329,6 +279,87 @@ class SpectrumCalulcator(object):
         n_ell = options.get_int(option_section, "n_ell")
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
 
+    def parse_requested_spectra(self, options):
+        #Get the list of spectra that we want to compute.
+        #The full list
+        self.req_spectra = []
+        any_spectra_option_found = False
+        for spectrum in self.spectrumType:
+            #By default we just do the shear-shear spectrum.
+            #everything else is not done by default
+            name = spectrum.value.option_name()
+
+            try:
+                value = options[option_section, name]
+            #if value is not set at all, skip
+            except BlockError:
+                continue
+
+            # If we find any of the options set then record that
+            any_spectra_option_found = True
+
+            # There are various ways a user can describe the spectra:
+            # True/False, to use the default section names
+            # string of form  euclid-lsst
+            #  (one pair of n(z) samples to correlate,
+            #   output in the default section)
+            #  euclid-lsst:cross  euclid-euclid:auto
+            #  (one or more pairs, output in the named section)
+
+            if isinstance(value, bool):
+                if value:
+                    self.req_spectra.append(spectrum.value(self))
+                continue
+
+            #Otherwise it must be a string - enforce this.
+            if not isinstance(value, str):
+                raise ValueError("Unknown form of value for option {} in project_2d: {}".format(name, value))
+
+            value = value.strip()
+            if not value:
+                raise ValueError("Empty value for option {} in project_2d.".format(name))
+
+
+            #now we are looking for things of the form
+            #shear-shear = euclid-ska[:name]  
+            #where we would now search for nz_euclid and nz_ska
+            values = value.split()
+            for value in values:
+                try:
+                    kernel_a, kernel_b = value.split('-',1)
+                    #Optionally we can also name the spectrum, for example
+                    # shear-shear = ska-ska:radio
+                    # in which case the result will be saved into shear_cl_radio
+                    # instead of just shear_cl.
+                    # This will be necessary in the case that we run multiple spectra,
+                    # e.g. 
+                    # #shear-shear = euclid-ska:cross  euclid-euclid:optical  ska-ska:radio
+                    # would be needed to avoid clashes. 
+                    if ":" in kernel_b:
+                        kernel_b, save_name=kernel_b.split(":",1)
+                    else:
+                        save_name = ""
+                    kernel_a = kernel_a.strip()
+                    kernel_b = kernel_b.strip()
+                    #The self in the line below is not a mistake - the source objects
+                    #for the spectrum class is the SpectrumCalculator itself
+                    self.req_spectra.append(spectrum.value(self, kernel_a, kernel_b, save_name))
+                except:
+                    raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
+
+        #If no other spectra are specified, just do the shear-shear spectrum.
+        if not any_spectra_option_found:
+            print
+            print "No spectra requested in the parameter file so I will "
+            print "Assume you just want shear-shear."
+            print
+            self.req_spectra.append(self.spectrumType.ShearShear.value(self))
+        elif not self.req_spectra:
+            print
+            print "You switched off all the spectra in the parameter file" 
+            print "for project_2d.  I will go along with this and just do nothing,"
+            print "but if you get a crash later this is probably why."
+            print
 
     def load_distance_splines(self, block):
         #Extract some useful distance splines
