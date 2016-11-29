@@ -431,15 +431,19 @@ class SpectrumCalculator(object):
         #Now load n(z) or W(z) for each bin in the range
         for i in xrange(nbin):
             if kernel_type=="N":
-                kernel_dict[i] = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
+                kernel = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
             elif kernel_type=="W":
-                kernel_dict[i] = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
+                kernel = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
             elif kernel_type=="K":
                 if self.chi_star is None:
                     raise ValueError("Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
-                kernel_dict[i] = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
+                kernel = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
+            if kernel is None:
+                raise ValueError("Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(kernel_name, kernel_type, i+1))
+            kernel_dict[i] = kernel
+
 
 
     def load_power(self, block):

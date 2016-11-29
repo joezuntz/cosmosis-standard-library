@@ -69,7 +69,7 @@ class GSLSpline(object):
         return spline_ptr
 
     def __del__(self):
-        if gsl is not None:
+        if gsl is not None and self._ptr is not None:
             gsl.gsl_spline_free(self._ptr)
 
 
