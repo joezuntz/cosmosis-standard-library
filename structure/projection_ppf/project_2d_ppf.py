@@ -11,7 +11,7 @@ vanilla_dir = os.path.join(dirname, os.path.pardir, 'projection')
 sys.path.append(vanilla_dir)
 
 #Now we have the path to import this
-from project_2d  import SpectrumCalulcator, Enum, PowerType, Spectrum, limber
+from project_2d  import SpectrumCalculator, Enum, PowerType, Spectrum, limber
 
 class PowerTypePPF(Enum):
     ppf_modified_matter = "ppf_modified_matter"
@@ -27,7 +27,7 @@ class SpectrumTypePPF(Enum):
 
 
 
-class SpectrumCalculatorPPF(SpectrumCalulcator):
+class SpectrumCalculatorPPF(SpectrumCalculator):
     spectrumType = SpectrumTypePPF
     defaultSpectra=[spectrumType.ShearShear]
 
