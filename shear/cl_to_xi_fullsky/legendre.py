@@ -5,14 +5,14 @@ def get_legfactors_00(ells, thetas):
     n_ell, n_theta = len(ells), len(thetas)
     legfacs = np.zeros((n_theta, n_ell))
     for it,t in enumerate(thetas):
-        legfacs[it] = 2*(ells+1)*lpn(ells[-1],np.cos(t))[0] / 4./np.pi
+        legfacs[it] = (2*ells+1)*lpn(ells[-1],np.cos(t))[0] / 4./np.pi
     legfacs[:,0] = 0.
     return legfacs
 
 def get_legfactors_02(ells, thetas):
     n_ell, n_theta = len(ells), len(thetas)
     legfacs = np.zeros((n_theta, n_ell))
-    ell_factor = 2 * (ells+1) / 4. / np.pi / ells / (ells + 1)
+    ell_factor = (2*ells+1) / 4. / np.pi / ells / (ells + 1)
     ell_factor[0] = 0.
     for it,t in enumerate(thetas):
         P2l = P2l_rec_norm(ells, np.cos(t))
