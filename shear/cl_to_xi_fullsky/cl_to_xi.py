@@ -1,5 +1,4 @@
 import numpy as np
-import pylab
 import scipy.interpolate as interp
 from legendre import *
 from numpy import pi,cos,sin,sqrt
