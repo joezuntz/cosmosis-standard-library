@@ -46,5 +46,5 @@ def execute(block, config):
             for j in xrange(nbin_shear):
                 bin_ij = 'bin_{0}_{1}'.format(i+1,j+1)
                 #bin_ji = 'bin_{1}_{0}'.format(i+1,j+1)
-                block["galaxy_shear_cl", bin_ij] += block[names.shear_cl_gi, bin_ij]
+                block["galaxy_shear_cl", bin_ij] += block["galaxy_intrinsic_cl", bin_ij]
     return 0
