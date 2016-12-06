@@ -311,6 +311,8 @@ function execute(block,config) result(status)
 		status = 1
 	endif
 
+	call CAMB_cleanup()
+
 end function execute
 
 
