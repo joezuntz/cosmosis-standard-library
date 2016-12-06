@@ -6,7 +6,7 @@ include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 export
 
 USER_CXXFLAGS += -I${GSL_INC}
-USER_LDFLAGS += -lcosmosis -L${GSL_LIB} -lgslcblas -lgsl
+USER_LDFLAGS += -lcosmosis -L${GSL_LIB}  -lgsl -lgslcblas
 
 #For python, leave this as is.  For C/C++/Fortran, 
 #comment the first line and uncomment the second:
