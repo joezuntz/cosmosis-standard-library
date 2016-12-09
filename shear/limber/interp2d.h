@@ -38,5 +38,10 @@ void destroy_interp_2d(Interpolator2D * interp2d);
 double interp_2d(double x1, double x2, Interpolator2D * interp2d);
 Interpolator2D * load_interp_2d_file(const char * filename, int N1, int N2);
 
+double interp_2d_xmin(Interpolator2D * interp2d);
+double interp_2d_xmax(Interpolator2D * interp2d);
+double interp_2d_ymin(Interpolator2D * interp2d);
+double interp_2d_ymax(Interpolator2D * interp2d);
+
 
 #endif

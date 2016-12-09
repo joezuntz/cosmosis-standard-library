@@ -107,6 +107,26 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	double chimin_y = limber_gsl_spline_min_x(WY);
 	double chimax_x = limber_gsl_spline_max_x(WX);
 	double chimax_y = limber_gsl_spline_max_x(WY);
+
+
+	// One commong cause of an opaque GSL error
+	// is when P(k,z) is not calculated to high enough
+	// z for the given W_i(z).  Check for that here.
+	double power_chimax = interp_2d_ymax(P);
+
+	if (power_chimax<chimax_x || power_chimax < chimax_y){
+		fprintf(stderr,
+		 "Power spectrum in Limber integral does not go"
+		 "to high enough redshift (distance) for given n(z)\n"
+		 "max chi(z) for first bin  = %lf\n"
+		 "max chi(z) for second bin = %lf\n"
+		 "max chi(z) for power      = %lf\n",
+		 chimax_x, chimax_y, power_chimax);
+		config->status = LIMBER_STATUS_ERROR;
+		return NULL;
+
+	}
+
 	// Take the smallest range since we want both the
 	// splines to be valid there.
 	// This range as well as all the data needed to compute
