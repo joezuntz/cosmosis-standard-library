@@ -56,6 +56,8 @@ class GSLSpline(object):
         "Build a spline from either two numpy x and y arrays or a single void pointer"
         if y is None:
             self._ptr = x
+            if x is None:
+                raise ValueError("Tried to wrap a null pointer in GSLSpline")
         else:
             self._ptr = self._make_spline(x, y, spline_type)
         self.xlog = xlog
