@@ -107,6 +107,9 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	double chimin_y = limber_gsl_spline_min_x(WY);
 	double chimax_x = limber_gsl_spline_max_x(WX);
 	double chimax_y = limber_gsl_spline_max_x(WY);
+
+
+
 	// Take the smallest range since we want both the
 	// splines to be valid there.
 	// This range as well as all the data needed to compute

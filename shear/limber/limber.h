@@ -14,6 +14,7 @@
 #define LIMBER_STATUS_OK 0
 #define LIMBER_STATUS_ZERO 1
 #define LIMBER_STATUS_NEGATIVE 2
+#define LIMBER_STATUS_ERROR 3
 
 // These are the options you can set for
 // the Limber integrator.
