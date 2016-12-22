@@ -137,7 +137,7 @@ class TwoPointLikelihood(GaussianLikelihood):
 					bin_cuts.append((name, b1, b2))
 
 
-		if scale_cuts:
+		if scale_cuts or bin_cuts:
 			self.two_point_data.mask_scales(scale_cuts, bin_cuts)
 		else:
 			print "No scale cuts mentioned in ini file."

@@ -40,7 +40,7 @@ def setup(options):
         ell_max = options.get_double(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
         ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
-        
+
 
     def get_arr(x):
         a = options[option_section, x]
@@ -62,6 +62,26 @@ def setup(options):
     #name of the output file and whether to overwrite it.
     config['filename'] = options.get_string(option_section, "filename")
     config['clobber'] = options.get_bool(option_section, "clobber", False)
+
+    scale_cuts = {}
+    bin_cuts = []
+    range_token = "angle_range_"
+    cut_token = "cut_"
+    for _,key in options.keys(option_section):
+        if key.startswith(range_token):
+            bits = key[len(range_token):].split("_")
+            name = "_".join(bits[:-2])
+            bin1 = int(bits[-2])
+            bin2 = int(bits[-1])
+            scale_cuts[(name,bin1,bin2)] = options.get_double_array_1d(option_section, key)
+        elif key.startswith(cut_token):
+            name = key[len(cut_token):]
+            cuts = options[option_section, key].split()
+            cuts = [eval(cut) for cut in cuts]
+            for b1,b2 in cuts:
+                bin_cuts.append((name, b1, b2))
+    config['bin_cuts'] = bin_cuts
+    config['scale_cuts'] = scale_cuts
 
     return config
 
@@ -381,6 +401,13 @@ def execute(block, config):
     windows = []
 
     data = twopoint.TwoPointFile(spectra, kernels, windows, covmat_info)
+    
+    #Apply cuts
+    scale_cuts = config['scale_cuts']
+    bin_cuts = config['bin_cuts']
+    if scale_cuts or bin_cuts:
+        data.mask_scales(scale_cuts, bin_cuts)
+
     data.to_fits(filename, clobber=clobber)
 
     return 0
