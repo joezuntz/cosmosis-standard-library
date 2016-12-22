@@ -168,7 +168,11 @@ class Consistency(object):
 		self.reset()
 		self.parameters.update(parameters)
 		for name,value in defaults:
-			self.parameters[name] = value
+			if not isnan(self.parameters.get(name, nan)):
+				if self.verbose:
+					print "Not using default value for {} as it is already specified".format(name)
+			else:
+				self.parameters[name] = value
 
 		self.cached_relations = []
 
@@ -191,7 +195,7 @@ class Consistency(object):
 			#In that case we must never have fully specified the model
 			#Invalidate the cache - it did not work
 			self.cached_relations = []
-			raise UnderSpecifiedModel("Model under-specified - I could not compute"
+			raise UnderSpecifiedModel("Model under-specified - I could not compute "
 				"these values: %r"%unspecified)
 		#output results
 		return self.parameters.copy()
