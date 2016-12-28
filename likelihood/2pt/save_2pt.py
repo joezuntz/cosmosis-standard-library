@@ -26,20 +26,30 @@ def setup(options):
     config = {"real_space":real_space, "make_covariance":make_covariance}
 
     if real_space:
-        theta_min = options.get_double(option_section, "theta_min")
-        theta_max = options.get_double(option_section, "theta_max")
-        n_theta = options.get_int(option_section, "n_theta")
-        theta = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta+1, endpoint=True)
-        a = theta[:-1]
-        b = theta[1:]
-        theta = 2./3. * (b**3-a**3)/(b**2-a**2)
+        if options.has_value(option_section, "theta"):
+            theta = options.get_double_array_1d(option_section, "theta")
+        else:
+            theta_min = options.get_double(option_section, "theta_min")
+            theta_max = options.get_double(option_section, "theta_max")
+            n_theta = options.get_int(option_section, "n_theta")
+            theta = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta+1, endpoint=True)
+            a = theta[:-1]
+            b = theta[1:]
+            theta = 2./3. * (b**3-a**3)/(b**2-a**2)
         config['theta'] = theta
+        print "Saving at these theta values:"
         print theta
-    else:        
-        ell_min = options.get_double(option_section, "ell_min")
-        ell_max = options.get_double(option_section, "ell_max")
-        n_ell = options.get_int(option_section, "n_ell")
-        ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
+    else:
+        if options.has_value(option_section, "ell"):
+            ell = options.get_double_array_1d(option_section, "ell")
+        else:
+            ell_min = options.get_double(option_section, "ell_min")
+            ell_max = options.get_double(option_section, "ell_max")
+            n_ell = options.get_int(option_section, "n_ell")
+            ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
+        config['ell'] = ell
+        print "Saving at these ell values:"
+        print ell
 
 
     def get_arr(x):
