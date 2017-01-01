@@ -78,15 +78,7 @@ def execute(block, config):
             else:
                 continue
             cl_interp = SpectrumInterp(ell, c_ell)
-            #theta_hankel = block["galaxy_xi","theta"]
-            #w_hankel = (block["galaxy_xi","bin_%d_%d"%(i,j)])
-            w = cl_to_xi_func(block, output_section, i, j, cl_interp, thetas, legfacs)
-            #print w
-            #w_full = cl_to_xi_precomp(cl_interp, thetas, legfacs, ell_max=ell_max)
-            #w_hankel=SpectrumInterp(theta_hankel,w_hankel)(thetas)
-            #print np.degrees(thetas)*60.
-            #print w_full/w_hankel
-            block[output_section, "bin_%d_%d"%(i,j)] = w
+            cl_to_xi_func(block, output_section, i, j, cl_interp, thetas, legfacs)
     return 0
 
 def cleanup(config):
