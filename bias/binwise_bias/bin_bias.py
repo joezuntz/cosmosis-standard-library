@@ -25,7 +25,7 @@ def execute(block, options):
     #We may be doing per-bin biases or a single global value
     if perbin:
         #per-bin - use b0,b1,b2, ...
-        biases = [block["bin_bias", "b%d"%pos_bin] for pos_bin in xrange(n_z_bins_pos)]
+        biases = [block["bin_bias", "b%d"%pos_bin] for pos_bin in xrange(1,n_z_bins_pos+1)]
     else:
         #all the same - just use b0
         biases = [block["bin_bias", "b0"] for pos_bin in xrange(n_z_bins_pos)]
