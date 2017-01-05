@@ -55,17 +55,19 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
 	("ombh2", "omega_b*h0*h0"),
 	("omch2", "omega_c*h0*h0"),
 	("omnuh2", "omega_nu*h0*h0"),
-	("omch2", "ommh2-ombh2"),
-	("ommh2", "omch2+ombh2"),
+	("omch2", "ommh2-ombh2-omnuh2"),
+	("ommh2", "omch2+ombh2+omnuh2"),
+	("omnuh2", "ommh2-ombh2-omch2"),
 	("baryon", "omega_b/omega_m"),
 	("omega_b", "omega_m*baryon_fraction"),
 	("omega_m", "omega_b/baryon_fraction"),
 	("baryon_fraction", "ombh2/ommh2"),
 	("ombh2", "ommh2*baryon_fraction"),
 	("ommh2", "ombh2/baryon_fraction"),
-	("omega_m", "omega_b+omega_c"),
-	("omega_b", "omega_m-omega_c"),
-	("omega_c", "omega_m-omega_b"),
+	("omega_m", "omega_b+omega_c+omega_nu"),
+	("omega_b", "omega_m-omega_c-omega_nu"),
+	("omega_c", "omega_m-omega_b-omega_nu"),
+	("omega_nu", "omega_m-omega_b-omega_c"),
 	("h0", "(ommh2/omega_m)**0.5"),
 	("h0", "(ombh2/omega_b)**0.5"),
 	("h0", "(omch2/omega_c)**0.5"),
@@ -74,10 +76,9 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
 	# ("h0", "(omnuh2/omega_nu)**0.5"),
 	("h0","hubble/100"),
 	("hubble", "h0*100"),
-	("omega_lambda", "1-omega_m-omega_k-omega_nu"),
-	("omega_m", "1-omega_lambda-omega_k-omega_nu"),
-	("omega_k", "1-omega_m-omega_lambda-omega_nu"),
-	("omega_nu", "1-omega_m-omega_lambda-omega_k"),
+	("omega_lambda", "1-omega_m-omega_k"),
+	("omega_m", "1-omega_lambda-omega_k"),
+	("omega_k", "1-omega_m-omega_lambda"),
 ]
 
 COSMOLOGY_POSSIBLE_DEFAULTS = [
@@ -234,6 +235,9 @@ class Consistency(object):
 			if not allclose(current_value, value):
 				#Invalidate the cache so that next time things still go wrong
 				self.cached_relations = []
+				if self.verbose:
+					print "Calculated %s = %g from %s" % (name, value, function)
+					print "But also value was already found as %s" % current_value
 				raise OverSpecifiedModel("Model over-specified and consistency relations failed"
 					"for parameter %s (values %g and %g)"%(name,current_value,value))
 
