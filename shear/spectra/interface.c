@@ -705,11 +705,6 @@ int execute(c_datablock * block, void * config_in)
 	// Load chi(z)
 	status |= c_datablock_get_double_array_1d(block, dist, "d_m", &chi, &nz2);
 
-	// Reverse ordering so a is increasing - that is what
-	// gsl_spline wants
-	reverse(a, nz2);
-	reverse(chi, nz2);
-
 	// Convert chi from Mpc to Mpc/h
 	double h0=0.0;
 	status |= c_datablock_get_double(block, cosmo, "h0", &h0);

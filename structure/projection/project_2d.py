@@ -364,9 +364,16 @@ class SpectrumCalculator(object):
     def load_distance_splines(self, block):
         #Extract some useful distance splines
         #have to copy these to get into C ordering (because we reverse them)
-        z_distance = block[names.distances, 'z'][::-1].copy()
-        a_distance = block[names.distances, 'a'][::-1].copy()
-        chi_distance = block[names.distances, 'd_m'][::-1].copy()
+        z_distance = block[names.distances, 'z']
+        a_distance = block[names.distances, 'a']
+        chi_distance = block[names.distances, 'd_m']
+        if z_distance[1]<z_distance[0]:
+            z_distance = z_distance[::-1].copy()
+            a_distance = a_distance[::-1].copy()
+            chi_distance = chi_distance[::-1].copy()
+
+
+
         h0 = block[names.cosmological_parameters, "h0"]
 
         #convert Mpc to Mpc/h

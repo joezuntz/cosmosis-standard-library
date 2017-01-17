@@ -136,17 +136,6 @@ int execute(c_datablock * block, emu_options * config) {
         "p_k", PK);
 
     if (config->do_distances){
-        // put the distances in chronological order
-        // for consistency with camb
-        reverse(a,config->nz);
-        reverse(z,config->nz);
-        reverse(d_a,config->nz);
-        reverse(d_m,config->nz);
-        reverse(h_z,config->nz);
-        reverse(d_l,config->nz);
-        reverse(mu,config->nz);
-
-
         const char * dist = DISTANCES_SECTION;
         status |= c_datablock_put_double_array_1d(block, dist, "z", z, config->nz);
         status |= c_datablock_put_double_array_1d(block, dist, "a", a, config->nz);

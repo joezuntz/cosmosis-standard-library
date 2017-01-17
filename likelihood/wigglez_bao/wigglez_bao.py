@@ -43,8 +43,6 @@ def execute(block, config):
 
 	#Interpolate into the theory at the 
 	#observed redshifts
-	z = z[::-1]
-	dv = dv[::-1]
 	dv_predicted = np.interp(z_data, z, dv)
 
 	#If required, print out some info
