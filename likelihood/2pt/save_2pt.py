@@ -181,18 +181,23 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
 def nz_from_block(block, nz_name):
     print
     print
+    print "*************************************************************************************"
     print "Saving n(z) from the block to file."
     print "A quick warning - we are assuming things about the n(z) that may not be quite right."
     print "Converting from splines to histograms."
     print "To properly fix this I will have to do a bit more work."
     print
+    print "*************************************************************************************"
+    print "ANOTHER WARNING: this has recently changed to hopefully be slightly better"
+    print "It may be different to your previous results."
+    print "*************************************************************************************"
+    print
     print
     section_name = "NZ_"+nz_name 
     z = block[section_name, "z"]
-    zlow = z
-    dz = z[1]-z[0]
+    dz = 0.5*(z[1]-z[0])
+    zlow = z-dz
     zhigh = z+dz
-    z = zlow+0.5*dz
     nbin = block[section_name, "nbin"]
     nzs = []
     for i in xrange(nbin):
