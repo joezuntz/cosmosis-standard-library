@@ -90,6 +90,8 @@ load_interpolator_chi_function(c_datablock * block, gsl_spline * chi_of_z_spline
 	if (status) return NULL;
 	Interpolator2D * interp = init_interp_2d_akima_grid(k, z, P, nk, nz);
 	deallocate_2d_double(&P, nk);
+	free(k);
+	free(z);
 	return interp;
 }
 

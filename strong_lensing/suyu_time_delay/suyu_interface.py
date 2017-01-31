@@ -27,8 +27,8 @@ def setup(options):
 def execute(block, config):
 	likelihood=config
 
-	z_m = block[names.distances, "z"][::-1]
-	d_m = block[names.distances, "d_m"][::-1]
+	z_m = block[names.distances, "z"]
+	d_m = block[names.distances, "d_m"]
 	omega_k = block[names.cosmological_parameters, "omega_k"]
 	H0 = block[names.cosmological_parameters, "hubble"]
 	comovingDistance = lambda z: np.interp(z, z_m, d_m)

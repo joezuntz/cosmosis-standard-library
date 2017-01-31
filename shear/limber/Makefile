@@ -29,7 +29,7 @@ $(LIB): $(OBJS)
 .PHONY : clean
 
 clean: 
-	rm -rf *.o $(LIBNAME) $(LIBNAME).dSYM $(EXEC) $(EXEC).dSYM $(SHLIBNAME) $(SHLIBNAME).dSYM
+	rm -rf *.o $(LIB) $(LIBNAME) $(LIBNAME).dSYM $(EXEC) $(EXEC).dSYM $(SHLIBNAME) $(SHLIBNAME).dSYM
 
 test:
 	@echo Alas, shear/limber has no tests

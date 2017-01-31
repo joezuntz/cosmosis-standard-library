@@ -7,6 +7,7 @@ MODES = ["multiplicative", "additive"]
 def setup(options):
 	mode = options[option_section, "mode"]
 	sample = options.get_string(option_section, "sample", "")
+	interpolation = options.get_string(option_section, "interpolation", "cubic")
 	bias_section = options.get_string(option_section, "bias_section", "")
 	if sample=="":
 		pz=names.wl_number_density
@@ -18,11 +19,12 @@ def setup(options):
 		bias_section = sample+"_errors"
 	if mode not in MODES:
 		raise ValueError("mode for photoz must be one of: %r"%MODES)
-	return {"mode":mode, "sample":pz, "bias_section":bias_section}
+	return {"mode":mode, "sample":pz, "bias_section":bias_section, "interpolation":interpolation}
 
 def execute(block, config):
 	mode = config['mode']
 	pz = config['sample']
+	interpolation = config['interpolation']
 	biases = config['bias_section']
 	nbin = block[pz, "nbin"]
 	z = block[pz, "z"]
@@ -30,7 +32,7 @@ def execute(block, config):
 		bin_name = "bin_%d" % i
 		nz = block[pz, bin_name]
 		bias = block[biases, "bias_%d"%i]
-		f = interp1d(z, nz, kind='cubic', fill_value = 0.0, bounds_error=False)
+		f = interp1d(z, nz, kind=interpolation, fill_value = 0.0, bounds_error=False)
 		if mode=="multiplicative":
 			nz_biased = f(z*(1-bias))
 		elif mode=="additive":

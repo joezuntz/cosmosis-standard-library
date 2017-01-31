@@ -41,10 +41,10 @@ def execute(block, config):
     da = map(DM.d_a,z_array)
     dl = map(DM.d_l,z_array)
              
-    block[dist,'d_l'] = dl[::-1] # reverse order to match output from camb
-    block[dist,'d_a'] = da[::-1]
-    block[dist, 'mu'] = mu[::-1]
-    block[dist, 'z'] = z_array[::-1]
+    block[dist,'d_l'] = dl
+    block[dist,'d_a'] = da
+    block[dist, 'mu'] = mu
+    block[dist, 'z'] = z_array
     return 0
 
 def cleanup(config):

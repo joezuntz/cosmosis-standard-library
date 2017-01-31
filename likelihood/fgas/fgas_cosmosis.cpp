@@ -90,7 +90,7 @@ extern "C" {
     options->get_val<int>(Clusters::sectionName, "numdatasets", Clusters::Ndatasets);
     if (Clusters::Ndatasets > 9) Clusters::tantrum("Error in fgas module: numdatasets >= 10 is not supported. This is easy to fix, but we're lazy. See fgas_cosmosis.cpp.");
     std::string datafile, key;
-    char buffer[2]; // NB size
+    char buffer[3]; // NB size
     for (int i=0; i<Clusters::Ndatasets; ++i) {
       sprintf(buffer, "%d", i+1);
       key = std::string("dataset") + std::string(buffer);
@@ -152,7 +152,7 @@ extern "C" {
     if (status) return failure;
     const int Nlensing = 12; // TODO: make this less stupid
     std::string key;
-    char buffer[2]; // NB size
+    char buffer[3]; // NB size
     for (int j=0; j<Nlensing; ++j) {
       sprintf(buffer, "%d", j+1);
       key = std::string("cl_lnMwl_") + std::string(buffer);

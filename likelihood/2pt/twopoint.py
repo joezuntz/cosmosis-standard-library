@@ -3,13 +3,12 @@ import astropy.units
 from astropy.table import Table
 from enum34 import Enum
 import numpy as np
-
+import copy
 #FITS header keyword indicating 2-point data
 TWOPOINT_SENTINEL = "2PTDATA"
 NZ_SENTINEL = "NZDATA"
 COV_SENTINEL = "COVDATA"
 window_types=["SAMPLE","CLBP"]
-
 
 
 #Please do not add things to this list
@@ -21,7 +20,25 @@ ANGULAR_UNIT_TYPES=[
 ]
 ANGULAR_UNITS={unit.name:unit for unit in ANGULAR_UNIT_TYPES}
 
+def sample_cov(xi_arrays,mode='full'):
+    """mode should be full, subsample or jk"""
+    nsample,npoints=xi_arrays.shape
+    Cov=np.zeros((npoints,npoints))
+    Corr=np.zeros_like(Cov)
 
+    xi_mean=np.mean(xi_arrays, axis=0)
+    for i in range(npoints):
+        for j in range(npoints):
+            Cov[i,j]=np.sum((xi_arrays[:,i]-xi_mean[i])*(xi_arrays[:,j]-xi_mean[j]))/nsample
+    #This is the covariance in a patch of size A/nsample. Assume Cov ~ 1/A so Cov=Cov/nsample
+    if mode=='subsample':
+        Cov /= nsample
+    elif mode=="jk":
+        Cov *= (nsample-1)
+    for i in range(npoints):
+        for j in range(npoints):
+            Corr[i,j] = Cov[i,j]/np.sqrt(Cov[i,i]*Cov[j,j])  
+    return Cov, Corr
 
 class Types(Enum):
     """
@@ -51,6 +68,8 @@ class Types(Enum):
                 return T
 
 
+def dummy_kernel(name):
+    return NumberDensity(name, np.zeros(10), np.zeros(10), np.zeros(10), [np.zeros(10)])
 
 class NumberDensity(object):
     """
@@ -365,9 +384,54 @@ class CovarianceMatrixInfo(object):
             lengths.append(covmat.shape[0])
         return cls(cov_name, measurement_names, lengths, covmat)
 
+    @classmethod
+    def from_spec_lists(cls, spec_lists, cov_name, mode='full'):
+        """Often the covariance will be computed by measuring the statistic(s) in question
+        on many simulated realisations of the dataset. This function takes a list of such 
+        measurements, *each one a list SpectrumMeasurement objects*, computes the mean and covariance, and
+        returns the mean as a list of SpectrumMeasurements, and the covariance as a CovarianceMatrixInfo
+        object. mode should be one of full, subsample or jackknife"""
+        #first check that spec_lists is a list of lists, and that there are at least 2
+        print 'spec_lists',spec_lists
+        try:
+            spec_lists[1][0]
+        except Exception as e:
+            print "spec_lists should be a list of lists with at least two elements"
+            raise(e)
+            
+        #Get measurement names and lengths from first element of spec_lists
+        num_spec=len(spec_lists[0])
+        names=[s.name for s in spec_lists[0]]
+        lengths=[len(s.value) for s in spec_lists[0]]
+        
+        #Now loop through all realisations, building up list of numpy arrays of raw measurements
+        n_real = len(spec_lists)
+        spec_arrays = []
+        for i_real in range(n_real):
+            spec_array = []
+            #check this realisation has right number,type,length of spectra 
+            for i_spec in range(num_spec):
+                assert spec_lists[i_real][i_spec].name == names[i_spec]
+                assert len(spec_lists[i_real][i_spec].value) == lengths[i_spec]
+                spec_array+=list(spec_lists[i_real][i_spec].value)
+            spec_arrays.append(np.array(spec_array))
+        
+        #Now compute covariance
+        spec_arrays=np.array(spec_arrays)
+        cov_values,_ = sample_cov(spec_arrays, mode=mode)
+        mean_spec_values = np.mean(spec_arrays, axis=0)
 
+        #make list of mean 2pt specs by copying spec_lists[0] and replacing value column
+        mean_spec = copy.copy(spec_lists[0])
+        index_start=0
+        for i_spec in range(num_spec):
+            end = index_start+lengths[i_spec]
+            inds=np.arange(index_start,index_start+lengths[i_spec])
+            index_start=end
+            mean_spec[i_spec].value = mean_spec_values[inds]
 
-
+        return cls(cov_name, names, lengths, cov_values), mean_spec
+        
 class TwoPointFile(object):
     def __init__(self, spectra, kernels, windows, covmat_info):
         if windows is None:
@@ -393,7 +457,14 @@ class TwoPointFile(object):
             return spectra[0]
 
     def get_kernel(self, name):
-        return self.kernels[name]
+        kernels = [kernel for kernel in self.kernels if kernel.name==name]
+        n = len(kernels)
+        if n==0:
+            raise ValueError("Kernel with name %s not found in file"%name)
+        elif n>1:
+            raise ValueError("Multiple kernel with name %s found in file"%name)
+        else:
+            return kernels[0]
 
     def _mask_covmat(self, masks):
         #Also cut down the covariance matrix accordingly
@@ -463,14 +534,16 @@ class TwoPointFile(object):
         masks = []
         #go through the spectra and covmat, masking out the bad values.
         for spectrum in self.spectra:
+            mask = np.ones(len(spectrum.value),dtype=bool)
             if (spectra_to_cut!="all") and (spectrum.name not in spectra_to_cut):
-                continue
-            #nb this will not work for NaN!
-            mask = (spectrum.angle > min_scale) & (spectrum.angle < max_scale) 
-            spectrum.apply_mask(mask)            
-            print "Masking {} values in {} because they had ell or theta outside ({},{})".format(mask.size-mask.sum(), spectrum.name, min_scale, max_scale)
-            #record the mask vector as we will need it to mask the covmat
-            masks.append(mask)
+                masks.append(mask)
+            else:
+                #nb this will not work for NaN!
+                mask = (spectrum.angle > min_scale) & (spectrum.angle < max_scale) 
+                spectrum.apply_mask(mask)            
+                print "Masking {} values in {} because they had ell or theta outside ({},{})".format(mask.size-mask.sum(), spectrum.name, min_scale, max_scale)
+                #record the mask vector as we will need it to mask the covmat
+                masks.append(mask)
 
         if masks:
             self._mask_covmat(masks)
@@ -584,12 +657,9 @@ class TwoPointFile(object):
         #Each spectrum needs kernels, usually some n(z).
         #These were read from headers when we loaded the 2pt data above above.
         #Now we are loading those kernels into a dictionary
-        known_kernels = []
-        for spectrum in spectra:
-            for kernel in (spectrum.kernel1, spectrum.kernel2):
-                if kernel not in known_kernels:
-                    kernels.append(NumberDensity.from_fits(fitsfile[kernel]))
-                    known_kernels.append(kernel)
+        for extension in fitsfile:
+            if extension.header.get(NZ_SENTINEL):
+                kernels.append(NumberDensity.from_fits(extension))
 
         #We might also require window functions W(ell) or W(theta). It's also possible
         #that we just use a single sample value of ell or theta instead.

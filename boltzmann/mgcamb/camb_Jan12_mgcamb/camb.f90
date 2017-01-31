@@ -232,13 +232,17 @@
       
           Cls = 0
           do l=2, lmax
-             if (CP%WantScalars .and. l<= CP%Max_l) then
-             Cls(l,1:2) = Cl_scalar(l, in,  C_Temp:C_E)
-             Cls(l,4) = Cl_scalar(l, in,  C_Cross)
-             end if
-             if (CP%WantTensors .and. l <= CP%Max_l_tensor) then
-                Cls(l,1:4) = Cls(l,1:4) + Cl_tensor(l, in,  CT_Temp:CT_Cross)
-             end if
+              if (CP%WantScalars .and. l<= CP%Max_l) then
+                  if (CP%DoLensing) then
+                      if (l<=lmax_lensed) Cls(l,1:4) = Cl_lensed(l, in, CT_Temp:CT_Cross)
+                  else
+                      Cls(l,1:2) = Cl_scalar(l, in,  C_Temp:C_E)
+                      Cls(l,4) = Cl_scalar(l, in,  C_Cross)
+                  endif
+              end if
+              if (CP%WantTensors .and. l <= CP%Max_l_tensor) then
+                  Cls(l,1:4) = Cls(l,1:4) + Cl_tensor(l, in,  CT_Temp:CT_Cross)
+              end if
           end do
           if (GC_conventions) then
              Cls(:,2:3) = Cls(:,2:3)/2

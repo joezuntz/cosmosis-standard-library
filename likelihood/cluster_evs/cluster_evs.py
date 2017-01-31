@@ -61,8 +61,8 @@ def execute(block, config):
 	#Cosmological distances
 	omega_matter = block[cosmo, 'omega_m']
 	h0 = block[cosmo, 'h0']
-	z_da = block[dist,"z"][::-1]
-	da_array = block[dist,"d_a"][::-1]
+	z_da = block[dist,"z"]
+	da_array = block[dist,"d_a"]
 	interp_da = UnivariateSpline(z_da,da_array)
 
 	#Mass function

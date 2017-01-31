@@ -235,11 +235,11 @@ int execute(c_datablock * block, void * config_in)
     	p_projected_data d;
     	d.cl_table = cl_table;
     	//d.f = f;
-			if (neg_vals == 0) {
+		if (neg_vals == 0) {
 		    tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max,
 				       tpstat, &P_projected_loglog, i_bin, j_bin, &err);
-			}
-			else if (neg_vals == n_ell){
+		}
+		else if (neg_vals == n_ell){
 		  	tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max,
 				    tpstat, &P_projected_loglog, i_bin, j_bin, &err);
 		  	double xip_orig,xim_orig;
@@ -251,22 +251,22 @@ int execute(c_datablock * block, void * config_in)
 		    		xi[1][i] =-1*xim_orig;
 					}
 		  	}
-			}
-			else {
+		}
+		else {
 		    tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max,
 				       tpstat, &P_projected_logl, i_bin, j_bin, &err);
-			}
-			//Now save to block
-			c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
-			c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
-			c_datablock_put_double_array_1d(block, config->output_section, name_xip,
-		                  xi[0], N_thetaH);
-			if (config->corr_type == shear_shear) {
-				c_datablock_put_double_array_1d(block, config->output_section, name_xim,
-                  	xi[1], N_thetaH);
-			}
-			free(C_ell);
-			//fclose(f);
+		}
+		//Now save to block
+		c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
+		c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
+		c_datablock_put_double_array_1d(block, config->output_section, name_xip,
+		              xi[0], N_thetaH);
+		if (config->corr_type == shear_shear) {
+			c_datablock_put_double_array_1d(block, config->output_section, name_xim,
+				xi[1], N_thetaH);
+		}
+		free(C_ell);
+		del_interTable(&d.cl_table);
 		}
 	}
 	if (!found_any){
@@ -288,11 +288,11 @@ int execute(c_datablock * block, void * config_in)
 	//Include units
 	c_datablock_put_metadata(block, config->output_section, "theta", "unit", "radians");
 
-
 	//Clean up
 
 	for (int i=0; i<count; i++) free(xi[i]);
 	free(xi);
+	free(ell);
 
 	return status;
 }

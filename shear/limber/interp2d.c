@@ -253,3 +253,21 @@ Interpolator2D * init_interp_2d_akima_grid_function(double *x1, double *x2, doub
 {
   return init_interp_2d_grid_function(x1, x2, y, N1, N2, gsl_interp_akima, function, args);
 }
+
+
+
+double interp_2d_xmin(Interpolator2D * interp2d){
+  return interp2d->x1[0];
+}
+
+double interp_2d_xmax(Interpolator2D * interp2d){
+  return interp2d->x1[interp2d->N1-1];
+}
+
+double interp_2d_ymin(Interpolator2D * interp2d){
+  return interp2d->x2[0];
+}
+
+double interp_2d_ymax(Interpolator2D * interp2d){
+  return interp2d->x2[interp2d->N2-1];
+}

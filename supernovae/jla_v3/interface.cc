@@ -77,6 +77,12 @@ void * setup(cosmosis::DataBlock * options){
 	return (void*) calculator;
 }
 
+void cleanup(void * config){
+
+	auto calculator = (JLALikelihood*) config;
+	delete calculator;
+}
+
 gsl_spline * spline_from_vectors(std::vector<double> &x, std::vector<double> &y)
 {
 	int n = x.size();
