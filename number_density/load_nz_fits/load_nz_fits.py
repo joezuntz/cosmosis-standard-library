@@ -91,9 +91,15 @@ def setup(options):
     F = pyfits.open(nz_file)
     data = {}
     for data_set in data_sets:
-        name = "NZ_"+data_set.upper()
-        print "    Looking at FITS extension {0}:".format(name)
-        ext = F[name]
+        try:
+            name = "NZ_"+data_set.upper()
+            print "    Looking at FITS extension {0}:".format(name)
+            ext = F[name]
+        except KeyError:
+            name = "nz_"+data_set.lower()
+            print "    Looking at FITS extension {0}:".format(name)
+            ext = F[name]
+                
         z, nz = load_histogram_form(ext, upsampling)
         data[name] = (z, nz)
     return data
