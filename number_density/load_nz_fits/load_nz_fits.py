@@ -79,6 +79,8 @@ def setup(options):
     nz_file = options.get_string(option_section, "nz_file")
     data_sets = options.get_string(option_section, "data_sets")
     upsampling = options.get_int(option_section, "upsampling", 1)
+    prefix_extension = options.get_bool(option_section, "prefix_extension", True)
+    prefix_section = options.get_bool(option_section, "prefix_section", True)
     data_sets = data_sets.split()
     if not data_sets:
         raise RuntimeError("Option data_sets empty; please set the option data_sets=name1 name2 etc and I will search the fits file for nz_name2, nz_name2, etc.")
@@ -92,16 +94,17 @@ def setup(options):
     data = {}
     for data_set in data_sets:
         try:
-            name = "NZ_"+data_set.upper()
+            name = "NZ_"+data_set.upper() if prefix_extension else data_set.upper()
             print "    Looking at FITS extension {0}:".format(name)
             ext = F[name]
         except KeyError:
-            name = "nz_"+data_set.lower()
+            name = "nz_"+data_set.lower() if prefix_extension else data_set.lower()
             print "    Looking at FITS extension {0}:".format(name)
             ext = F[name]
-                
+        
+        section = "NZ_"+data_set.upper() if prefix_section else data_set.upper()
         z, nz = load_histogram_form(ext, upsampling)
-        data[name] = (z, nz)
+        data[section] = (z, nz)
     return data
 
 
