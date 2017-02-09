@@ -112,21 +112,21 @@ if __name__ == '__main__':
 	lambda_d=1388.8
 	mu_d=6.4682
 	sigma_d=0.20560
-	RXJ=TimeDelayLikelihood(z_d, z_s, lambda_d, mu_d, sigma_d)
+	RXJ=TimeDelayLikelihood("RXJ1131", z_d, z_s, lambda_d, mu_d, sigma_d)
 
 	z_d = 0.6304
 	z_s = 1.394
 	lambda_d = 4000.0
 	mu_d = 7.053
 	sigma_d = 0.2282
-	B1608=TimeDelayLikelihood(z_d, z_s, lambda_d, mu_d, sigma_d)
+	B1608=TimeDelayLikelihood("B1608", z_d, z_s, lambda_d, mu_d, sigma_d)
 		
 	z_d = 0.4546
 	z_s = 1.693
 	lambda_d = 653.9
 	mu_d = 7.5793
 	sigma_d = 0.10312
-	HE0435=TimeDelayLikelihood(z_d, z_s, lambda_d, mu_d, sigma_d)	
+	HE0435=TimeDelayLikelihood("HE0435", z_d, z_s, lambda_d, mu_d, sigma_d)	
 
 	H0_values = np.arange(40.0, 100.0, 0.1)
 	rxj_likes = np.zeros_like(H0_values)
@@ -145,8 +145,12 @@ if __name__ == '__main__':
 	rxj_likes-=np.nanmax(rxj_likes)
 	b1608_likes-=np.nanmax(b1608_likes)
 	he0435_likes-=np.nanmax(he0435_likes)
+	
+	tdsl_likes=rxj_likes+b1608_likes+he0435_likes
+	tdsl_likes-=np.nanmax(tdsl_likes)
 
 	pylab.plot(H0_values, np.exp(rxj_likes))
 	pylab.plot(H0_values, np.exp(b1608_likes))
 	pylab.plot(H0_values, np.exp(he0435_likes))
+	pylab.plot(H0_values, np.exp(tdsl_likes), "black")
 	pylab.show()

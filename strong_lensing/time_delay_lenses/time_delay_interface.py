@@ -1,5 +1,5 @@
 from cosmosis.datablock import names, option_section
-from time_delay_likelihood import TimeDelayLikelihood, B1608, RXJ1131
+from time_delay_likelihood import TimeDelayLikelihood, B1608, RXJ1131, HE0435
 import numpy as np
 
 def setup(options):
