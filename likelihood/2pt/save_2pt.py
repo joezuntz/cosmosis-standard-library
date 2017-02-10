@@ -13,9 +13,8 @@ from scipy.interpolate import interp1d
 import twopoint
 from twopoint_cosmosis import type_table
 import gaussian_covariance
-
-
-
+twopt_like=__import__('2pt_like')  #don't start .py files with a number!
+SpectrumInterp = twopt_like.SpectrumInterp
 
 def setup(options):
     # ell range of output - all assumed the same, with log-spacing and 
@@ -147,7 +146,9 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
             #Load and interpolate from the block
             cl = block[section_name, bin_format.format(i+1,j+1)]
             #Convert arcmin to radians for the interpolation
-            cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
+            cl_interp = SpectrumInterp(theory_angle, cl)
+            cl_sample = cl_interp(angle_sample_radians)
+            #cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
             #Build up on the various vectors that we need
             bin1.append(np.repeat(i+1, n_angle_sample))
             bin2.append(np.repeat(j+1, n_angle_sample))
