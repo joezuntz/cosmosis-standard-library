@@ -4,7 +4,7 @@ version: 1
 purpose: ""
 url: ""
 interface: time_delay_interface.py
-attribution: ["Suyu et al data"]
+attribution: ["Bonvin et al, MNRAS, 465, 4, p.4914-4930"]
 rules:
     ""
 cite:
