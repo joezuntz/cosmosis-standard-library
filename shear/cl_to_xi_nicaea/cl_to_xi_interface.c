@@ -48,6 +48,7 @@ void * setup(c_datablock * options)
 	}
 	else {
 	  fprintf(stderr, "Unknown filter type in cl_to_xi (%d).\n",filter_type);
+	  status = 1;
 	}
 
 	if (corr_type==shear_shear){
@@ -73,6 +74,7 @@ void * setup(c_datablock * options)
 	}
 	else{
 	  fprintf(stderr, "Unknown corr_type in cl_to_xi (%d). It should be one of %d (shear-shear), %d (shear-galaxy) or %d (position-galaxy).\n",corr_type,shear_shear,ggl,matter);
+	  status = 1;
 	}
 
 	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
