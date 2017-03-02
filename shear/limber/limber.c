@@ -111,7 +111,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
         gsl_integration_workspace * W;
 	W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
 	reltol = 0.0001;
-	abstol = 0.000001;
+	abstol = 0.00001;
 
 
 	// Take the smallest range since we want both the
