@@ -107,11 +107,14 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	double chimin_y = limber_gsl_spline_min_x(WY);
 	double chimax_x = limber_gsl_spline_max_x(WX);
 	double chimax_y = limber_gsl_spline_max_x(WY);
-	double c_ell, error, reltol, abstol;
-        gsl_integration_workspace * W;
+	double c_ell, error;
+	gsl_integration_workspace * W;
 	W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
-	reltol = 0.001;
-	abstol = 0.00001;
+	double reltol = config->relative_tolerance;
+	double abstol = config->absolute_tolerance;
+	// double reltol = 0.001;
+	// double abstol = 0.00001;
+	// printf("TOLS: %le %le\n",reltol,abstol);
 
 
 	// Take the smallest range since we want both the

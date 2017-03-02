@@ -186,6 +186,11 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
 
 
+	// We just fix these for now.
+	lc->relative_tolerance = 1e-3;
+	lc->absolute_tolerance = 1e-5;
+
+
 	//Scalings
 
 	// This scaling value is the bit that goes in front

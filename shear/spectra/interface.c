@@ -374,6 +374,10 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 		lc->ylog=false;
 	}
 
+	// We just fix these for now.
+	lc->relative_tolerance = 1e-3;
+	lc->absolute_tolerance = 1e-5;
+
 	// Now we need to set up the ell range we wish to compute.
 	// We need the number of ell values and the ell min and max.
 	lc->n_ell = config->n_ell;

@@ -14,6 +14,8 @@ class c_limber_config(ct.Structure):
         ("ell", ct.POINTER(ct.c_double)),
         ("prefactor", ct.c_double),
         ("status", ct.c_int),
+        ("absolute_tolerance", ct.c_double),
+        ("relative_tolerance", ct.c_double),
 ]
 
 LIMBER_STATUS_OK =  0
@@ -97,7 +99,7 @@ def get_kernel_peak(WX, WY, nchi=500):
     "Get chi of maximum of kernel"
     return lib.get_kernel_peak(WX, WY, nchi)
 
-def limber(WX, WY, P, xlog, ylog, ell, prefactor):
+def limber(WX, WY, P, xlog, ylog, ell, prefactor, rel_tol=1e-3, abs_tol=1e-5):
     config = c_limber_config()
     config.xlog = xlog
     config.ylog = ylog
@@ -105,6 +107,8 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor):
     config.ell = np.ctypeslib.as_ctypes(ell)
     config.prefactor = prefactor
     config.status = 0
+    config.absolute_tolerance = abs_tol
+    config.relative_tolerance = rel_tol
     spline_ptr = lib.limber_integral(ct.byref(config), WX, WY, P)
     if config.status == LIMBER_STATUS_ZERO:
         ylog = False

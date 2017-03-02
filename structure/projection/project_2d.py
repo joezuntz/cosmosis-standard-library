@@ -94,7 +94,7 @@ class Spectrum(object):
         return 2*alpha[bin]-1
 
 
-    def compute(self, block, ell, bin1, bin2):
+    def compute(self, block, ell, bin1, bin2, relative_tolerance=1e-3, absolute_tolerance=1e-5):
         #Get the required kernels
         #maybe get from rescaled version of existing spectra
         P = self.source.power[self.power_spectrum]
@@ -105,7 +105,8 @@ class Spectrum(object):
         #negative, otherwise linear space.
         xlog = ylog = self.autocorrelation
         #Generate a spline
-        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2))
+        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2), 
+            rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         return c_ell
 
     def kernel_peak(self, block, bin1, bin2):
@@ -278,6 +279,8 @@ class SpectrumCalculator(object):
         ell_max = options.get_double(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
+        self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 1e-5)
+        self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1e-3)
 
     def parse_requested_spectra(self, options):
         #Get the list of spectra that we want to compute.
@@ -474,7 +477,7 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
-                c_ell = spectrum.compute(block, self.ell, i, j)
+                c_ell = spectrum.compute(block, self.ell, i, j, relative_tolerance=self.relative_tolerance, absolute_tolerance=self.absolute_tolerance)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
                 if self.get_kernel_peaks:
