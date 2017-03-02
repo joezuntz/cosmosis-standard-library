@@ -1,9 +1,10 @@
 #include "stdio.h"
 #include "gsl/gsl_integration.h"
+#include "gsl/gsl_errno.h"
 #include "limber.h"
 
 // This is a workspace size for the gsl integrator
-#define LIMBER_FIXED_TABLE_SIZE 2048
+#define LIMBER_FIXED_TABLE_SIZE 4096
 
 // data that is passed into the integrator
 // This is everything we need to compute the
@@ -88,6 +89,30 @@ double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
   return chi_peak;
 }
 
+static
+void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
+	double abstol, double reltol, gsl_integration_glfixed_table *table, gsl_integration_workspace * W, 
+	double * c_ell, double * error){
+
+	// Deactivate error handling - if this one fails we will fall back to a more reliable but slower integrator
+	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
+
+	// Try the fast but flaky integrator.
+	int status = gsl_integration_qag(F, chimin, chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, c_ell, error);
+
+	// Restore the old error handler
+	gsl_set_error_handler(old_handler); 
+
+	// If the fast integrator failed fall back to the old one.
+	if (status){
+		IntegrandData * data = (IntegrandData*) F->params;
+		double ell = data->ell;
+		fprintf(stderr, "Falling back to the old integrator for ell=%lf\n", ell);
+		*c_ell = gsl_integration_glfixed(F,chimin,chimax,table);
+	}
+
+}
+
 
 // The only function in this little library callable from the outside
 // world.  The limber_config structure is defined in limber.h but is fairly
@@ -135,8 +160,11 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_function F;
 	F.function = integrand;
 	F.params = &data;
-	//gsl_integration_glfixed_table *table = 
-	//    gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+
+	// The workspace for the fallback integrator.
+	// Hopefully this is unnecessary
+	gsl_integration_glfixed_table *table = 
+	   gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
 
 	//gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(2048);
 
@@ -154,8 +182,11 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// found to work best.
 		//c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
 		// New function still attributable to the legacy of Matt Becker's integrator wisdom.
-		gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, &c_ell, &error);
+		// gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, table, &c_ell, &error);
 		//printf("%d %f %f\n",i_ell,c_ell_old,c_ell);
+		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+			abstol, reltol, table, W, 
+			&c_ell, &error);
 
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
@@ -197,7 +228,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	// Tidy up
 	gsl_interp_accel_free(data.accelerator_x);
 	gsl_interp_accel_free(data.accelerator_y);
-	//gsl_integration_glfixed_table_free(table);	
+	gsl_integration_glfixed_table_free(table);	
 	gsl_integration_workspace_free(W);
 
 	// And that's it
