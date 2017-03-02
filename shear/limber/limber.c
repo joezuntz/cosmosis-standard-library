@@ -107,7 +107,10 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	double chimin_y = limber_gsl_spline_min_x(WY);
 	double chimax_x = limber_gsl_spline_max_x(WX);
 	double chimax_y = limber_gsl_spline_max_x(WY);
-
+	double c_ell, error, tol;
+        //gsl_integration_workspace * W;
+	//W = gsl_integration_workspace_alloc(2048);
+	//tol = 0.00001;
 
 
 	// Take the smallest range since we want both the
@@ -131,7 +134,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_integration_glfixed_table *table = 
 	    gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
 
-	// gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+	gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(2048);
 
 	// results of the integration go into these arrays.
 	double c_ell_vector[config->n_ell];
@@ -145,7 +148,9 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// Perform the main integration.
 		// This particular function is used because that's what Matt Becker 
 		// found to work best.
-		double c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
+		//c_ell = gsl_integration_glfixed(&F,data.chimin,data.chimax,table);
+		gsl_integration_qag(&F, data.chimin, data.chimax, 0.00001, 0.0001, 2048, GSL_INTEG_GAUSS61, workspace, &c_ell, &error);
+		//printf("%d %f %f\n",i_ell,c_ell_old,c_ell);
 
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
@@ -188,7 +193,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	gsl_interp_accel_free(data.accelerator_x);
 	gsl_interp_accel_free(data.accelerator_y);
 	gsl_integration_glfixed_table_free(table);	
-	// gsl_integration_workspace_free(workspace);
+	gsl_integration_workspace_free(workspace);
 
 	// And that's it
 	return output;
