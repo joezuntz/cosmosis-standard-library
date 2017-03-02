@@ -110,7 +110,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	double c_ell, error, reltol, abstol;
         gsl_integration_workspace * W;
 	W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
-	reltol = 0.0001;
+	reltol = 0.001;
 	abstol = 0.00001;
 
 
