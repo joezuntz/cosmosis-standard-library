@@ -16,15 +16,15 @@ def convert_nz_steradian(n):
     return n * (41253.0*60.*60.) / (4*np.pi)
 
 class SpectrumInterp(object):
-	def __init__(self,angle,spec):
+	def __init__(self,angle,spec,bounds_error=True):
 		if np.all(spec>0):
-			self.interp_func=interp1d(np.log(angle),np.log(spec),bounds_error=False)
+			self.interp_func=interp1d(np.log(angle),np.log(spec),bounds_error=bounds_error,fill_value=-np.inf)
 			self.interp_type='loglog'
 		elif np.all(spec<0):
-			self.interp_func=interp1d(np.log(angle),np.log(-spec),bounds_error=False)
+			self.interp_func=interp1d(np.log(angle),np.log(-spec),bounds_error=bounds_error,fill_value=-np.inf)
 			self.interp_type='minus_loglog'
 		else:
-			self.interp_func=interp1d(np.log(angle),spec,bounds_error=False,fill_value=0.)
+			self.interp_func=interp1d(np.log(angle),spec,bounds_error=bounds_error,fill_value=0.)
 			self.interp_type="log_ang"
 
 	def __call__(self,angle):
@@ -372,7 +372,11 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 			#use our spline - interpolate to this ell or theta value
 			#and add to our list
-			theory = theory_spline(angle)
+			try:
+				theory = theory_spline(angle)
+			except ValueError:
+				raise ValueError("""Tried to get theory prediction for {} {}, but ell or theta value ({}) was out of range.
+					"Maybe increase the range when computing/projecting or check units?""".format(section,y_name.format(b1,b2),angle))
 			theory_vector.append(theory)
 			angle_vector.append(angle)
 			bin1_vector.append(b1)
