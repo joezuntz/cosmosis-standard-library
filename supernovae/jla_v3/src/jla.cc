@@ -150,9 +150,12 @@ void JLALikelihood::configure(Configuration &config)
       if (fid)
         lcpars.push_back(SN);
     }
+
+  scriptmcut = config.scriptmcut;
    
   if (verbosity > 1)
     cout << "Read " << lcpars.size() << " SNe in file " << config.data_file << endl;
+
 
 
 }
