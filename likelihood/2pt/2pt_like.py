@@ -141,19 +141,19 @@ class TwoPointLikelihood(GaussianLikelihood):
 			self.two_point_data.mask_scales(scale_cuts, bin_cuts)
 		else:
 			print "No scale cuts mentioned in ini file."
-		#spectra_to_cut = self.options.get_string("spectra_to_cut", default="all")
-		#if spectra_to_cut != "all":
-		#	spectra_to_cut = spectra_to_cut.split()
-		#if ell_max>=0:
-		#	self.two_point_data.mask_scale(spectra_to_cut, max_scale=ell_max)
+
 
 		#Info on which likelihoods we do and do not use
 		print "Found these data sets in the file:"
+		total_data_points = 0
 		for name in all_names:
+			data_points = len(self.two_point_data.get_spectrum(name))
 			if name in used_names:
-				print "    - ",name, "  [using in likelihood]"
+				print "    - {}  {} data points after cuts {}".format(name,  data_points, "  [using in likelihood]")
+				total_data_points += data_points
 			else:
-				print "    - ",name, "  [not using in likelihood]"
+				print "    - {}  {} data points after cuts {}".format(name, data_points , "  [not using in likelihood]")
+		print "Total data points used = {}".format(total_data_points)
 
 		#Convert all units to radians.  The units in cosmosis are all
 		#in radians, so this is the easiest way to compare them.
