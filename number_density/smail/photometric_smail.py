@@ -70,7 +70,10 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
         assert(len(ni)==len(z))
         NI.append(ni)
     return NI
-    
+
+def smail_distribution(z, alpha, beta, z0):
+       return (z**alpha) * np.exp(-(z/z0)**beta)
+
 
 def compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias):
     #Set up Smail distribution of z vector as the distribution of true redshifts of the galaxies, n(ztrue)
