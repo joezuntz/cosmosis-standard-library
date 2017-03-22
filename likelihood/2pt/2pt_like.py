@@ -146,8 +146,12 @@ class TwoPointLikelihood(GaussianLikelihood):
 		#Info on which likelihoods we do and do not use
 		print "Found these data sets in the file:"
 		total_data_points = 0
+		final_names =  [spectrum.name for spectrum in self.two_point_data.spectra]
 		for name in all_names:
-			data_points = len(self.two_point_data.get_spectrum(name))
+			if name in final_names:
+				data_points = len(self.two_point_data.get_spectrum(name))
+			else:
+				data_points = 0
 			if name in used_names:
 				print "    - {}  {} data points after cuts {}".format(name,  data_points, "  [using in likelihood]")
 				total_data_points += data_points
