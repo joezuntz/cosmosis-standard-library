@@ -174,6 +174,9 @@
 
     if (CP%WantCls) call SetkValuesForSources
 
+    if (global_error_flag/=0) return
+
+
     if (CP%WantTransfer) call InitTransfer
 
     !***note that !$ is the prefix for conditional multi-processor compilation***
@@ -845,6 +848,8 @@
             call Ranges_Add_delta(Evolve_q, q_cmb, qmax, dksmooth, IsLog = .true.)
         end if
     end if
+
+    if (global_error_flag .ne. 0) return
 
     call Ranges_GetArray(Evolve_q, .false.)
 
