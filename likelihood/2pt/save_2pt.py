@@ -232,12 +232,13 @@ class ObservedClGetter(object):
         #We extract relevant bits from the block and spline them
         #for output
         name_ij = value_name.format(i,j)
+        section_name_ij = '{}_{}'.format(section, name_ij)
 
         if name_ij in self.splines:
-            spline = self.splines[name_ij]
+            spline = self.splines[section_name_ij]
         else:
             spline = self.make_spline(block, A, B, i, j, ell)
-            self.splines[name_ij] = spline
+            self.splines[section_name_ij] = spline
 
         obs_c_ell = spline(ell)
 
@@ -270,7 +271,7 @@ class ObservedClGetter(object):
         elif block.has_value(section, name_ji) and A==B:
             theory = block[section, name_ji]
         else:
-            raise ValueError("Could not find theory prediction {} in section {}".format(value_name.format(i,j), section))
+            raise ValueError("Could not find theory prediction {} in section {}".format(name_ij, section))
 
         spline = interp1d(angle, theory)
         return spline
