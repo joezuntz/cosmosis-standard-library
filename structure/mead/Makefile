@@ -23,4 +23,4 @@ clean:
 
 libhmcode.a: HMcode.f90
 	$(FC) $(FFLAGS) -c  $+ $(LDFLAGS)
-	$(AR) rc $@ hmcode.o
+	$(AR) rc $@ HMcode.o
