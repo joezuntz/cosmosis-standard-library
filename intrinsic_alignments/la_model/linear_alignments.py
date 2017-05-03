@@ -67,7 +67,7 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
 	r_I = P_GI/P_II * b_I
 
-	return P_II, P_GI, b_I, r_I, k_nl
+	return P_II, P_GI, b_I, r_I, k_nl, z_nl
 
 def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	# What was used in CFHTLens and Maccrann et al.
@@ -97,7 +97,7 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
 	r_I = P_GI/P_II * b_I
 
-	return P_II, P_GI, b_I, r_I, k_nl
+	return P_II, P_GI, b_I, r_I, k_nl, z_nl
 
 def linear(z_lin, k_lin, P_lin, A, Omega_m):
 	# What was used in CFHTLens and Maccrann et al.
@@ -127,7 +127,7 @@ def linear(z_lin, k_lin, P_lin, A, Omega_m):
 	b_I = np.sqrt(R1) * -1.0 * A/abs(A)
 	r_I = P_GI/P_II *b_I
 
-	return P_II, P_GI, b_I, r_I, k_lin
+	return P_II, P_GI, b_I, r_I, k_lin, z_lin
 
 
 def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omega_m):
@@ -180,4 +180,4 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
 	r_I = P_GI_resample/P_II_resample * b_I
 
-	return P_II, P_GI, b_I, r_I, k_lin
+	return P_II, P_GI, b_I, r_I, k_lin, z_lin
