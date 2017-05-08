@@ -1031,7 +1031,7 @@
             Src(EV%q_ix,1:SourceNum,j) = 0
         else
             call GaugeInterface_EvolveTens(EV,tau,yt,tauend,tol1,ind,c,wt)
-
+            if (global_error_flag/=0) return
             call outputt(EV,yt,EV%nvart,j,tau,Src(EV%q_ix,CT_Temp,j),&
             Src(EV%q_ix,CT_E,j),Src(EV%q_ix,CT_B,j))
         end if
