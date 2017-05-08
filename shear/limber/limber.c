@@ -102,11 +102,12 @@ void setup_integration_workspaces(){
 }
 
 
-
-
 static
 void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
 	double abstol, double reltol, double * c_ell, double * error){
+
+	// Only one warning per process
+	static int fallback_warning_given = 0;
 
 	// Deactivate error handling - if this one fails we will fall back to a more reliable but slower integrator
 	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
@@ -121,7 +122,10 @@ void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chim
 	if (status){
 		IntegrandData * data = (IntegrandData*) F->params;
 		double ell = data->ell;
-		fprintf(stderr, "Falling back to the old integrator for ell=%lf\n", ell);
+		if (fallback_warning_given==0){
+			fprintf(stderr, "Falling back to the old integrator for ell=%lf (status=%d)\n", ell,status);
+			fallback_warning_given=1;
+		}
 		*c_ell = gsl_integration_glfixed(F,chimin,chimax,table);
 	}
 
