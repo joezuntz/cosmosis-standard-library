@@ -22,10 +22,11 @@ def execute(block, config):
 
     #read alpha from ia_section values section
     alpha = block[ia_section,'alpha']
+    z0    = block.get_double(ia_section,'z0',default=0.0)
     _,z_grid=np.meshgrid(k,z)
 
     #Construct and apply redshift scaling
-    z_scaling=(1+z_grid)**alpha
+    z_scaling=((1+z_grid)/(1+z0))**alpha
     p_ii*=z_scaling**2
     p_mi*=z_scaling
 
