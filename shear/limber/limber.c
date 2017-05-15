@@ -102,7 +102,7 @@ double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
   return chi_peak;
 }
 
-<<<<<<< HEAD
+
 static double sigma_crit_integrand(double chi,  void * data_void)
 {
   IntegrandData * data = (IntegrandData*) data_void;
