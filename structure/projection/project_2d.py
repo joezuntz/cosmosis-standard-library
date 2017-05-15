@@ -109,10 +109,13 @@ class Spectrum(object):
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         return c_ell
 
-    def kernel_peak(self, block, bin1, bin2):
+    def kernel_peak(self, block, bin1, bin2, a_of_chi):
         K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
-        return limber.get_kernel_peak(K1, K2)
+        chi_peak = limber.get_kernel_peak(K1, K2)
+        a_peak = a_of_chi(chi_peak)
+        z_peak = 1./a_peak - 1
+        return chi_peak, z_peak
 
 
 
@@ -481,8 +484,9 @@ class SpectrumCalculator(object):
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
                 if self.get_kernel_peaks:
-                    chi_peak=spectrum.kernel_peak(block, i, j)
+                    chi_peak, z_peak=spectrum.kernel_peak(block, i, j, self.a_of_chi)
                     block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
+                    block[spectrum_name, "z_peak_{}_{}".format(i+1,j+1)] = z_peak
                     block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i+1,j+1)] = 60*np.degrees(1/chi_peak)
 
     def clean(self):

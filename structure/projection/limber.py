@@ -55,11 +55,11 @@ ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, c_power_scaling_function, ct
 lib.interp_2d.restype = ct.c_double
 lib.interp_2d.argtypes = [ct.c_double, ct.c_double, ct.c_void_p]
 
-
 lib.destroy_interp_2d.restype = None
 lib.destroy_interp_2d.argtypes = [ct.c_void_p]
 
-
+lib.sigma_crit.restype = None
+lib.sigma_crit.argtypes = [ct.c_void_p, ct.c_void_p, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double)]
 
 def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
     return GSLSpline(lib.get_named_nchi_spline(block._ptr, section, nbin, z, a_of_chi, chi_of_z))
@@ -98,6 +98,14 @@ def load_power_chi_function(block, chi_of_z, section, k_name, z_name, p_name, fu
 def get_kernel_peak(WX, WY, nchi=500):
     "Get chi of maximum of kernel"
     return lib.get_kernel_peak(WX, WY, nchi)
+
+def get_sigma_crit(WX, WY):
+    sigma_crit = ct.c_double(0.)
+    chi_weighted = ct.c_double(0.)
+    print 'calling sigma_crit'
+    lib.sigma_crit(WX, WY, ct.byref(sigma_crit), ct.byref(chi_weighted))
+    print 'got sigma_crit'
+    return sigma_crit.value, chi_weighted.value
 
 def limber(WX, WY, P, xlog, ylog, ell, prefactor, rel_tol=1e-3, abs_tol=1e-5):
     config = c_limber_config()

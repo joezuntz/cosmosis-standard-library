@@ -20,6 +20,19 @@ typedef struct IntegrandData{
 	gsl_interp_accel * accelerator_y;
 } IntegrandData;
 
+// data that is passed into the integrator
+// This is everything we need to compute the
+// integrand
+typedef struct SigmaCritIntegrandData{
+	double chimin;
+	double chimax;
+	gsl_spline * WX;
+	gsl_spline * WY;
+	gsl_interp_accel * accelerator_x;
+	gsl_interp_accel * accelerator_y;
+} SigmaCritIntegrandData;
+
+
 // These two convenience functions
 // peer into the internals of the gsl_spline.
 // This is probably a bit naughty, since they could
@@ -79,7 +92,7 @@ double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
   double kernel_peak=0.;
   for (int i_chi=0; i_chi<=n_chi; i_chi++){
     chi=chimin+i_chi*dchi;
-    kernel_val = gsl_spline_eval(WX,chi,NULL) * gsl_spline_eval(WY,chi,NULL);
+    kernel_val = gsl_spline_eval(WX,chi,NULL) * gsl_spline_eval(WY,chi,NULL) / chi / chi;
     if (kernel_val>kernel_peak){
       kernel_peak = kernel_val;
       chi_peak = chi;
@@ -89,8 +102,94 @@ double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
   return chi_peak;
 }
 
-static
-void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
+static double sigma_crit_integrand(double chi,  void * data_void)
+{
+  IntegrandData * data = (IntegrandData*) data_void;
+  // Return 0 if outside range, for convenience.                                                                                                                            
+  // Important to ensure that ranges are wide enough.                                                                                                                       
+  if(chi < data->chimin || chi > data->chimax) return 0.0;
+
+  // Get W^X(chi) and W^Y(chi)                                                                                                                                              
+  double wx = gsl_spline_eval(data->WX,chi,data->accelerator_x);
+  double wy;
+  // A short-cut - if the two splines are the same we do not need to                                                                                                        
+  // do the interpolation twice                                                                                                                                             
+  if (data->WX==data->WY) wy = wx;
+  else wy = gsl_spline_eval(data->WY,chi,data->accelerator_y);
+  if (wx==0 || wy==0) return 0.0;
+
+  double result = wx * wy / chi;
+  return result;
+}
+
+static double sigma_crit_chi_integrand(double chi, void * data_void)
+{
+  IntegrandData * data = (IntegrandData*) data_void;
+  // Return 0 if outside range, for convenience.                                                                                                                            
+  // Important to ensure that ranges are wide enough.                                                                                                                       
+  if(chi < data->chimin || chi > data->chimax) return 0.0;
+
+  // Get W^X(chi) and W^Y(chi)                                                                                                                                              
+  double wx = gsl_spline_eval(data->WX,chi,data->accelerator_x);
+  double wy;
+  // A short-cut - if the two splines are the same we do not need to                                                                                                        
+  // do the interpolation twice                                                                                                                                             
+  if (data->WX==data->WY) wy = wx;
+  else wy = gsl_spline_eval(data->WY,chi,data->accelerator_y);
+  if (wx==0 || wy==0) return 0.0;
+  double result = wx * wy;
+  return result;
+    }
+
+
+void sigma_crit(gsl_spline * WX, gsl_spline * WY, double * sigma_crit, double * chi_mean)
+{
+	SigmaCritIntegrandData data;
+
+
+	double sigma_crit_value;
+	double chimin_x = limber_gsl_spline_min_x(WX);
+	double chimin_y = limber_gsl_spline_min_x(WY);
+	double chimax_x = limber_gsl_spline_max_x(WX);
+	double chimax_y = limber_gsl_spline_max_x(WY);
+
+	// Set up the workspace and inputs to the integrator.
+	// Not entirely sure what the table is.
+	gsl_function F;
+	F.function = sigma_crit_integrand;
+	F.params = &data;
+
+	// The workspace for the integrator.
+	gsl_integration_glfixed_table *table = 
+	   gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+
+	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
+	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
+	data.WX = WX;
+	data.WY = WY;
+	data.accelerator_x = gsl_interp_accel_alloc();
+	data.accelerator_y = gsl_interp_accel_alloc();
+
+	printf("Doing sigma_crit integral\n");
+
+	sigma_crit_value = gsl_integration_glfixed(&F, data.chimin, data.chimax, table);
+	*sigma_crit = sigma_crit_value;
+
+	printf("Sigma_crit: %f\n",sigma_crit_value);
+	
+	F.function = sigma_crit_chi_integrand;
+	*chi_mean = gsl_integration_glfixed(&F, data.chimin, data.chimax, table);
+	*chi_mean /= sigma_crit_value;
+
+	printf("chi_mean: %f\n",*chi_mean);	
+
+	// Tidy up
+	gsl_interp_accel_free(data.accelerator_x);
+	gsl_interp_accel_free(data.accelerator_y);
+	gsl_integration_glfixed_table_free(table);	
+}
+
+static void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
 	double abstol, double reltol, gsl_integration_glfixed_table *table, gsl_integration_workspace * W, 
 	double * c_ell, double * error){
 
