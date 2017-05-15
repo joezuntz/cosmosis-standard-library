@@ -102,6 +102,7 @@ double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
   return chi_peak;
 }
 
+<<<<<<< HEAD
 static double sigma_crit_integrand(double chi,  void * data_void)
 {
   IntegrandData * data = (IntegrandData*) data_void;
@@ -189,9 +190,26 @@ void sigma_crit(gsl_spline * WX, gsl_spline * WY, double * sigma_crit, double * 
 	gsl_integration_glfixed_table_free(table);	
 }
 
-static void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
-	double abstol, double reltol, gsl_integration_glfixed_table *table, gsl_integration_workspace * W, 
-	double * c_ell, double * error){
+
+gsl_integration_workspace * W = NULL;
+gsl_integration_glfixed_table *table = NULL;
+
+void setup_integration_workspaces(){
+	if (W==NULL){
+		W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+	}
+	if (table==NULL){
+		table = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+	}
+}
+
+
+static
+void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
+	double abstol, double reltol, double * c_ell, double * error){
+
+	// Only one warning per process
+	static int fallback_warning_given = 0;
 
 	// Deactivate error handling - if this one fails we will fall back to a more reliable but slower integrator
 	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
@@ -206,11 +224,17 @@ static void limber_gsl_fallback_integrator(gsl_function * F, double chimin, doub
 	if (status){
 		IntegrandData * data = (IntegrandData*) F->params;
 		double ell = data->ell;
-		fprintf(stderr, "Falling back to the old integrator for ell=%lf\n", ell);
+		if (fallback_warning_given==0){
+			fprintf(stderr, "Falling back to the old integrator for ell=%lf (status=%d)\n", ell,status);
+			fallback_warning_given=1;
+		}
 		*c_ell = gsl_integration_glfixed(F,chimin,chimax,table);
 	}
 
 }
+
+
+
 
 
 // The only function in this little library callable from the outside
@@ -232,8 +256,11 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	double chimax_x = limber_gsl_spline_max_x(WX);
 	double chimax_y = limber_gsl_spline_max_x(WY);
 	double c_ell, error;
-	gsl_integration_workspace * W;
-	W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+
+	// Workspaces for the main and falback integrators.
+	// Static, so only allocated once as it has a fixed size.
+	setup_integration_workspaces();
+
 	double reltol = config->relative_tolerance;
 	double abstol = config->absolute_tolerance;
 	// double reltol = 0.001;
@@ -260,11 +287,6 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	F.function = integrand;
 	F.params = &data;
 
-	// The workspace for the fallback integrator.
-	// Hopefully this is unnecessary
-	gsl_integration_glfixed_table *table = 
-	   gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
-
 	//gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(2048);
 
 	// results of the integration go into these arrays.
@@ -284,8 +306,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 		// gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, table, &c_ell, &error);
 		//printf("%d %f %f\n",i_ell,c_ell_old,c_ell);
 		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
-			abstol, reltol, table, W, 
-			&c_ell, &error);
+			abstol, reltol, &c_ell, &error);
 
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
@@ -327,8 +348,10 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	// Tidy up
 	gsl_interp_accel_free(data.accelerator_x);
 	gsl_interp_accel_free(data.accelerator_y);
-	gsl_integration_glfixed_table_free(table);	
-	gsl_integration_workspace_free(W);
+
+	// These two are not deallocated because they are static and only initialized once.
+	// gsl_integration_glfixed_table_free(table);	
+	// gsl_integration_workspace_free(W);
 
 	// And that's it
 	return output;

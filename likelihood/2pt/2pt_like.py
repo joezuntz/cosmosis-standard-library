@@ -16,15 +16,15 @@ def convert_nz_steradian(n):
     return n * (41253.0*60.*60.) / (4*np.pi)
 
 class SpectrumInterp(object):
-	def __init__(self,angle,spec):
+	def __init__(self,angle,spec,bounds_error=True):
 		if np.all(spec>0):
-			self.interp_func=interp1d(np.log(angle),np.log(spec),bounds_error=False)
+			self.interp_func=interp1d(np.log(angle),np.log(spec),bounds_error=bounds_error,fill_value=-np.inf)
 			self.interp_type='loglog'
 		elif np.all(spec<0):
-			self.interp_func=interp1d(np.log(angle),np.log(-spec),bounds_error=False)
+			self.interp_func=interp1d(np.log(angle),np.log(-spec),bounds_error=bounds_error,fill_value=-np.inf)
 			self.interp_type='minus_loglog'
 		else:
-			self.interp_func=interp1d(np.log(angle),spec,bounds_error=False,fill_value=0.)
+			self.interp_func=interp1d(np.log(angle),spec,bounds_error=bounds_error,fill_value=0.)
 			self.interp_type="log_ang"
 
 	def __call__(self,angle):
@@ -141,19 +141,23 @@ class TwoPointLikelihood(GaussianLikelihood):
 			self.two_point_data.mask_scales(scale_cuts, bin_cuts)
 		else:
 			print "No scale cuts mentioned in ini file."
-		#spectra_to_cut = self.options.get_string("spectra_to_cut", default="all")
-		#if spectra_to_cut != "all":
-		#	spectra_to_cut = spectra_to_cut.split()
-		#if ell_max>=0:
-		#	self.two_point_data.mask_scale(spectra_to_cut, max_scale=ell_max)
+
 
 		#Info on which likelihoods we do and do not use
 		print "Found these data sets in the file:"
+		total_data_points = 0
+		final_names =  [spectrum.name for spectrum in self.two_point_data.spectra]
 		for name in all_names:
-			if name in used_names:
-				print "    - ",name, "  [using in likelihood]"
+			if name in final_names:
+				data_points = len(self.two_point_data.get_spectrum(name))
 			else:
-				print "    - ",name, "  [not using in likelihood]"
+				data_points = 0
+			if name in used_names:
+				print "    - {}  {} data points after cuts {}".format(name,  data_points, "  [using in likelihood]")
+				total_data_points += data_points
+			else:
+				print "    - {}  {} data points after cuts {}".format(name, data_points , "  [not using in likelihood]")
+		print "Total data points used = {}".format(total_data_points)
 
 		#Convert all units to radians.  The units in cosmosis are all
 		#in radians, so this is the easiest way to compare them.
@@ -372,7 +376,11 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 			#use our spline - interpolate to this ell or theta value
 			#and add to our list
-			theory = theory_spline(angle)
+			try:
+				theory = theory_spline(angle)
+			except ValueError:
+				raise ValueError("""Tried to get theory prediction for {} {}, but ell or theta value ({}) was out of range.
+					"Maybe increase the range when computing/projecting or check units?""".format(section,y_name.format(b1,b2),angle))
 			theory_vector.append(theory)
 			angle_vector.append(angle)
 			bin1_vector.append(b1)

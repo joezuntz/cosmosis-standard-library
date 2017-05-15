@@ -1,0 +1,38 @@
+name: "Riess16"
+version: "2016"
+purpose: "Likelihood of hubble parameter H0 from Riess et al 2.4% supernova sample"
+url: "http://iopscience.iop.org/article/10.3847/0004-637X/826/1/56/pdf"
+interface: riess11.py
+attribution: [Riess et al (measurement), CosmoSIS team (code)]
+rules: "None."
+cite:
+    - "Riess et al, ApJ, 826, 56, 31 (2016)"
+assumptions:
+    - "FRW cosmological model"
+    - "Riess et al 2016 data set"
+explanation: |
+    "This small module was written for CosmoSIS.
+
+    Supernova type IA measurements are a standard(izable) candle 
+    that can be used to probe the relation between luminosity distance 
+    and redshift.  At low redshifts this directly probes the Hubble parameter,
+    H0.
+
+    The Riess et al 2.4% solution measurement of H0 is used in this module.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    mean: "float, replace the standard value measurement h = 0.7324 with a custom one for simulations (default 0.7324)"
+    sigma: "float, replace the standard value error on h of 0.0174 with a custom one (default 0.0174)"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cosmological_parameters:
+        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+
+outputs:
+    likelihoods:
+        RIESS16_LIKE: "Gaussian likelihood value of supplied parameters"
+

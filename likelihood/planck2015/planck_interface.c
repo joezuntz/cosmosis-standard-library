@@ -147,7 +147,7 @@ int extract_c_ell(c_datablock * block, int n_cl,
 		}
 		if (nread<lmax-1){
 			fprintf(stderr, "Could not get enough C_ell values for %s (read lmax=%d but needed lmax=%d).  May need to adjust lmax.\n", 
-				package_names[i], nread+1, lmax_by_type[i], status);
+				package_names[i], nread+1, lmax_by_type[i]);
 			status = 1;
 			return status;
 		}

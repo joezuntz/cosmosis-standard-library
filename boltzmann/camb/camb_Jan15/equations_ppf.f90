@@ -585,6 +585,10 @@
 
     call dverk(EV,EV%TensEqsToPropagate, derivst,tau,y,tauend,tol1,ind,c,EV%nvart,w)
 
+    if (ind==-3) then
+        call GlobalError('Dverk error -3 for GaugeInterface_EvolveTens', error_evolution)
+    end if
+
 
     end subroutine GaugeInterface_EvolveTens
 

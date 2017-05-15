@@ -3,10 +3,11 @@ import os
 import ctypes as ct
 import numpy as np
 import limber
-from gsl_wrappers import GSLSpline
+from gsl_wrappers import GSLSpline, NullSplineError
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
 import re
+import sys
 
 
 
@@ -243,6 +244,7 @@ class SpectrumCalculator(object):
     def __init__(self, options):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
+        self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
 
         # Check which spectra we are requested to calculate
@@ -428,6 +430,7 @@ class SpectrumCalculator(object):
 
 
 
+
     def load_kernel(self, block, kernel_name, kernel_dict):
         #the name is of the form N_SAMPLENAME or W_SAMPLENAME, or K_SAMPLENAME
         kernel_type = kernel_name[0]
@@ -505,7 +508,15 @@ class SpectrumCalculator(object):
     def execute(self, block):
         try:
             self.load_distance_splines(block)
-            self.load_kernels(block)
+            try:
+                self.load_kernels(block)
+            except NullSplineError:
+                sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
+                sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
+                sys.stderr.write("consistent then you may wish to look into it in more detail. Set fata_errors=T to do so.\n")
+                if self.fatal_errors:
+                    raise
+                return 1
             self.load_power(block)
             for spectrum in self.req_spectra:
                 if self.verbose:
