@@ -16,12 +16,10 @@ class PowerType(Enum):
     matter = "matter_power_nl" #special case
     galaxy = "galaxy_power"
     intrinsic = "intrinsic_power"
+    intrinsic = "intrinsic_power_bb"
     matter_galaxy = "matter_galaxy_power"
     matter_intrinsic = "matter_intrinsic_power"
     galaxy_intrinsic = "galaxy_intrinsic_power"
-
-
-
 
 class Spectrum(object):
     autocorrelation = False
@@ -143,11 +141,25 @@ class SpectrumType(Enum):
         name = names.shear_cl_gi
         prefactor_power = 1
 
+    class ShearIntrinsic(Spectrum):
+        power_spectrum = PowerType.matter_intrinsic
+        kernels = "W N"
+        autocorrelation = False
+        name = names.shear_cl_gi
+        prefactor_power = 1
+
     class IntrinsicIntrinsic(Spectrum):
         power_spectrum = PowerType.intrinsic
         kernels = "N N"
         autocorrelation = True
         name = names.shear_cl_ii
+        prefactor_power = 0
+
+    class IntrinsicbIntrinsicb(Spectrum):
+        power_spectrum = PowerType.intrinsic_bb
+        kernels = "N N"
+        autocorrelation = True
+        name = names.shear_cl_ii_bb
         prefactor_power = 0
 
     class PositionPosition(Spectrum):

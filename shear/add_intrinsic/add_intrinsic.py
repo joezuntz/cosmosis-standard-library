@@ -29,7 +29,8 @@ def execute(block, config):
 
     if do_shear_shear:
         #for shear-shear, we're replacing 'shear_cl' (the GG term) with GG+GI+II...
-        #so in case useful, save the GG term to shear_cl_gg
+        #so in case useful, save the GG term to shear_cl_gg.
+        #also check for a b-mode contribution from IAs
         block[names.shear_cl_gg,'ell']=block[names.shear_cl, 'ell']
         for i in xrange(nbin_shear):
             for j in xrange(0,i+1):
@@ -41,6 +42,8 @@ def execute(block, config):
                     + block[names.shear_cl_gi, bin_ij]  # The two GI terms
                     + block[names.shear_cl_gi, bin_ji]
                 )
+                if block.has_section("shear_cl_ii_bb"):
+                    block["shear_cl_bb", bin_ij] = block["shear_cl_ii_bb", bin_ij]
     if do_position_shear:
         for i in xrange(nbin_pos):
             for j in xrange(nbin_shear):
