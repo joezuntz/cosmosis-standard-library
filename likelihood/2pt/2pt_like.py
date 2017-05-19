@@ -60,6 +60,12 @@ class TwoPointLikelihood(GaussianLikelihood):
 	def build_data(self):
 		filename = self.options.get_string('data_file')
 		self.save_plot_to = self.options.get_string('save_plot_to', default="")
+		suffix = self.options.get_string('suffix', default="")
+		if section_suffix:
+			self.suffix = "_" + suffix
+		else:
+			self.suffix = suffix
+
 
 		if self.gaussian_covariance:
 			covmat_name = None
@@ -330,6 +336,12 @@ class TwoPointLikelihood(GaussianLikelihood):
 		#block we expect to find these - mapping spectrum types
 		#to block names
 		section, x_name, y_name = theory_names(spectrum)
+
+		# To handle multiple different data sets we allow a suffix
+		# to be applied to the section names, so that we can look up
+		# e.g. "shear_cl_des" instead of just "shear_cl".
+		section += self.suffix
+
 
 		#We need the angle (ell or theta depending on the spectrum)
 		#for the theory spline points - we will be interpolating
