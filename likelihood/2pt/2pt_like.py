@@ -61,7 +61,7 @@ class TwoPointLikelihood(GaussianLikelihood):
 		filename = self.options.get_string('data_file')
 		self.save_plot_to = self.options.get_string('save_plot_to', default="")
 		suffix = self.options.get_string('suffix', default="")
-		if section_suffix:
+		if suffix:
 			self.suffix = "_" + suffix
 		else:
 			self.suffix = suffix
