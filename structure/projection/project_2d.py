@@ -246,6 +246,7 @@ class SpectrumCalculator(object):
         self.verbose = options.get_bool(option_section, "verbose", False)
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
+        self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -428,6 +429,19 @@ class SpectrumCalculator(object):
                 #If not already cached we will have to load it freshly
                 self.load_kernel(block, kernel_name, kernel_dict)
 
+    def save_kernels(self, block, zmax):
+        z = np.arange(0.0, zmax, 0.001)
+        for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
+            section = "kernel_"+kernel_name
+            block[section, "z"] = z
+            for bin_i, kernel in kernel_dict.items():
+                print kernel_name, bin_i
+                key = "bin_{}".format(bin_i)
+                if not block.has_value(section, key):
+                    nz = kernel(z)
+                    print nz[-10:]
+                    block[section,key] = nz
+
 
 
 
@@ -459,7 +473,6 @@ class SpectrumCalculator(object):
             if kernel is None:
                 raise ValueError("Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(kernel_name, kernel_type, i+1))
             kernel_dict[i] = kernel
-
 
 
     def load_power(self, block):
@@ -517,6 +530,8 @@ class SpectrumCalculator(object):
                 if self.fatal_errors:
                     raise
                 return 1
+            if self.save_kernel_zmax>0:
+                self.save_kernels(block, self.save_kernel_zmax)
             self.load_power(block)
             for spectrum in self.req_spectra:
                 if self.verbose:
