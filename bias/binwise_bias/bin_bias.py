@@ -28,13 +28,10 @@ def execute(block, options):
             sys.stderr.write("ERROR: The bin_bias module could not find any of galaxy_cl, galaxy_shear_cl, galaxy_shear_xi, or galaxy_xi to bias\n")
             return 1
 
-    print 'n_z_bins_pos',n_z_bins_pos
-    if not apply_to_cl:
-        print 'applying to xis'
     
     #We may be doing per-bin biases or a single global value
     if perbin:
-        #per-bin - use b0,b1,b2, ...
+        #per-bin - use b1,b2,b3, ...
         biases = [block["bin_bias", "b%d"%pos_bin] for pos_bin in xrange(1,n_z_bins_pos+1)]
     else:
         #all the same - just use b0
