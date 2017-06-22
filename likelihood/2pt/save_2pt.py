@@ -196,13 +196,23 @@ def nz_from_block(block, nz_name):
     print
     section_name = "NZ_"+nz_name 
     z = block[section_name, "z"]
-    dz = 0.5*(z[1]-z[0])
+    dz = 0.5*(z[10]-z[9])
     zlow = z-dz
     zhigh = z+dz
+    if zlow[0]<0:
+        zlow = zlow[1:]
+        z = z[1:]
+        zhigh=zhigh[1:]
+        cut=True
+    else:
+        cut=False
+    assert zlow[0]>0
     nbin = block[section_name, "nbin"]
     nzs = []
     for i in xrange(nbin):
         nz = block[section_name, "bin_{}".format(i+1)]
+        if cut:
+            nz=nz[1:]
         nzs.append(nz)
 
     return twopoint.NumberDensity(nz_name, zlow, z, zhigh, nzs)
