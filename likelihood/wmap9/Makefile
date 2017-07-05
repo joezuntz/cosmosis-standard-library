@@ -10,7 +10,7 @@ endif
 
 F90    = ${FC}
 INCS = -I$(CFITSIO_INC) 
-LIBS = -L ${LAPACK_LIB} -llapack -lblas -L ${CFITSIO_LIB} -lcfitsio
+LIBS = ${LAPACK_LINK} -L ${CFITSIO_LIB} -lcfitsio
 
 FFLAGS+=-DWMAP9_DATA_DIR='"$(WMAP_DATA_DIR)/"'
 
