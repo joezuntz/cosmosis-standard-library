@@ -141,13 +141,6 @@ class SpectrumType(Enum):
         name = names.shear_cl_gi
         prefactor_power = 1
 
-    class ShearIntrinsic(Spectrum):
-        power_spectrum = PowerType.matter_intrinsic
-        kernels = "W N"
-        autocorrelation = False
-        name = names.shear_cl_gi
-        prefactor_power = 1
-
     class IntrinsicIntrinsic(Spectrum):
         power_spectrum = PowerType.intrinsic
         kernels = "N N"
