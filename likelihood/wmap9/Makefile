@@ -4,13 +4,13 @@ ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),)
 $(error To compile the WMAP 9-year likelihood you must activate the UPS package cfitsio or set the environment variables CFITSIO_INC and CFITSIO_LIB)
 endif
 
-ifeq ($(LAPACK_LIB),)
-$(error To compile the WMAP 9-year likelihood you must activate the UPS package LAPACK or set the environment variable LAPACK_LIB)
+ifeq ($(LAPACK_LINK),)
+$(error To compile the WMAP 9-year likelihood you must activate the UPS package LAPACK or set the environment variable LAPACK_LINK)
 endif
 
 F90    = ${FC}
 INCS = -I$(CFITSIO_INC) 
-LIBS = -L ${LAPACK_LIB} -llapack -lblas -L ${CFITSIO_LIB} -lcfitsio
+LIBS = ${LAPACK_LINK} -L ${CFITSIO_LIB} -lcfitsio
 
 FFLAGS+=-DWMAP9_DATA_DIR='"$(WMAP_DATA_DIR)/"'
 
