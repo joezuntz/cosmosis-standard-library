@@ -58,7 +58,7 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
 	("omch2", "ommh2-ombh2-omnuh2"),
 	("ommh2", "omch2+ombh2+omnuh2"),
 	("omnuh2", "ommh2-ombh2-omch2"),
-	("baryon", "omega_b/omega_m"),
+	("baryon_fraction", "omega_b/omega_m"),
 	("omega_b", "omega_m*baryon_fraction"),
 	("omega_m", "omega_b/baryon_fraction"),
 	("baryon_fraction", "ombh2/ommh2"),
