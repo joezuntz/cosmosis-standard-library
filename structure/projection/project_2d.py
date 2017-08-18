@@ -435,16 +435,15 @@ class SpectrumCalculator(object):
                 self.load_kernel(block, kernel_name, kernel_dict)
 
     def save_kernels(self, block, zmax):
-        z = np.arange(0.0, zmax, 0.001)
+        z = np.linspace(0.0, zmax, 1000)
+        chi = self.chi_of_z(z)
         for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
             section = "kernel_"+kernel_name
             block[section, "z"] = z
             for bin_i, kernel in kernel_dict.items():
-                print kernel_name, bin_i
                 key = "bin_{}".format(bin_i)
                 if not block.has_value(section, key):
-                    nz = kernel(z)
-                    print nz[-10:]
+                    nz = kernel(chi)
                     block[section,key] = nz
 
 
