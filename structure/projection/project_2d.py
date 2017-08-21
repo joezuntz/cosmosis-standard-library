@@ -440,6 +440,7 @@ class SpectrumCalculator(object):
         for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
             section = "kernel_"+kernel_name
             block[section, "z"] = z
+            block[section, "chi"] = chi
             for bin_i, kernel in kernel_dict.items():
                 key = "bin_{}".format(bin_i)
                 if not block.has_value(section, key):
