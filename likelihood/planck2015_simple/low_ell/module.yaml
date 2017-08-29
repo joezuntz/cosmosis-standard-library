@@ -1,0 +1,43 @@
+#This is a template for module description files
+name: planck2015_lowl
+version: 1
+purpose: Planck 2015 commander likelihood made suitable for Fisher foreacasts
+url: ""
+interface: planck2015_lowl.so
+attribution: [The Planck Collaboration (Data+Code), CosmoSIS Team (Code)]
+rules: "Please cite the appropriate Planck paper"
+cite: []
+
+assumptions:
+    - "CMB calculations up to 2<=ell<=29 (by default)"
+
+explanation: |
+    "See the Planck2015 module for general information about Planck.
+
+    This module provides the low-ell TT counterpart to the module in the directory above.
+    Unlike that module it is not actually a sim
+
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    gaussfile: (String, default=${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/data/commander_rc2_v1.1_l2_29_B.clik/clik/lkl_0/_external) Path to sigma.fits data file
+    lmin: (Integer; default=2) Lowest ell value to use
+    lmin: (Integer; default=29) Highest ell value to use
+    delta_l: (Integer; default=29)  Width of banded covariance matrix
+    handle: (Integer; default=1)  If using multiple different sigma.fits, select index to use for this one
+
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cmb_cl:
+        ell: Integer vector of angular frequencies for CMB spectra
+        tt: Double vector of temperature spectra in l*(l+1) C_ell / uK^2
+
+outputs:
+    likelihoods:
+        planck2015_lowl_like: (real) Log-likelihood of low-ell Planck data
+    data_vector:
+        planck_2015_lowl_theory: (real 1D) Theory prediction for the Gaussianized low-ell spectrum (does not look like a TT power spectrum any more!)
+        planck_2015_lowl_inverse_covariance: (real 2D) Covariance matrix for the likelihood
