@@ -59,7 +59,7 @@ def execute_power(block, model, color):
 		print "Negative P: ", P_out.min()
 		return 1
 	
-	block.put_grid("matter_power_gal", "z", z, "k_h", k, "p_k"+color, P_out.T)
+	block.put_grid("galaxy_power", "z", z, "k_h", k, "p_k"+color, P_out.T)
 
 	return 0
 
