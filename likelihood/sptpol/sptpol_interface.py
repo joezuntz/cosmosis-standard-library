@@ -27,8 +27,8 @@ class SPTPolLikelihood(GaussianLikelihood):
         beamerr_file  = options.get_string("beam_errors", DEFAULT_BEAMERRS)
         windows_dir  = options.get_string("windows", DEFAULT_WINDOWS)
 
-        if (not os.path.exists('DATASET_DIR')) and (cov_filename==DEFAULT_COVMAT or windows_dir==DEFAULT_WINDOWS):
-            raise ValueError("Please see the file {}/readme.txt for details on downloading the SPTpol data".format(ROOT_DIR))
+        if (not os.path.exists(DATASET_DIR)) and (cov_filename==DEFAULT_COVMAT or windows_dir==DEFAULT_WINDOWS):
+            raise ValueError("Please see the file {}/readme.txt for details on downloading the SPTpol data ({} does not exist)".format(ROOT_DIR))
 
 
         self.spt_data = sptpol_like.SPTPolData(data_filename, cov_filename, self.use_te, self.use_ee)
