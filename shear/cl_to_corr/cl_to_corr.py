@@ -76,8 +76,6 @@ class Transformer(object):
         self.lower = lower
         self.upper = upper
 
-        print "rnages =", self.theta_min, self.theta_max
-
         nc = 0.5*(n+1)
         log_ellmin = np.log(ell_min)
         log_ellmax = np.log(ell_max)
@@ -133,8 +131,6 @@ class CosmosisTransformer(Transformer):
         theta_min = options.get_double(option_section, "theta_min", DEFAULT_THETA_MIN)
         theta_max = options.get_double(option_section, "theta_max", DEFAULT_THETA_MAX)
 
-        print "here", theta_min, theta_max
-
         self.input_name = "bin_{}_{}"
         self.output_name = "bin_{}_{}"
 
@@ -173,7 +169,6 @@ class XiTransformer(object):
         self.xim = CosmosisTransformer(TRANSFORM_XIM, *args, **kwargs)
         self.xip.output_name = "xiplus_{}_{}"
         self.xim.output_name = "ximinus_{}_{}"
-        print self.xip.output_section
 
     def __call__(self, block):
         self.xip(block)
@@ -196,7 +191,6 @@ def setup(options):
 
 def execute(block, config):
     transformer = config
-    print transformer
     transformer(block)
     return 0
 
