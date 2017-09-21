@@ -31,8 +31,11 @@ def resample_power(k_new, k_old, P_old):
 	nz = P_old.shape[0]
 	P_new = np.zeros((nz,nk))
 	for i in xrange(nz):
-		p_i = np.interp(np.log(k_new), np.log(k_old), np.log(abs(P_old[i])))
-		P_new[i] = np.exp(p_i) * np.sign(P_old[i][0])
+		if (P_old[i]==0).all():
+			P_new[i] = np.zeros(nk)
+		else:
+			p_i = np.interp(np.log(k_new), np.log(k_old), np.log(abs(P_old[i])))
+			P_new[i] = np.exp(p_i) * np.sign(P_old[i][0])
 	return P_new
 
 
@@ -179,4 +182,4 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
 	r_I = P_GI_resample/P_II_resample * b_I
 
-	return P_II, P_GI, b_I, r_I, k_lin, z_lin
+	return P_II_resample, P_GI_resample, b_I, r_I, k_nl, z_nl
