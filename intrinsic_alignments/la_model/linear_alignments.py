@@ -25,13 +25,15 @@ def compute_c1_baseline():
 	f = C1_SI * rho_crit_0
 	return f
 
-def resample_power(P1, P2, k1, k2):
-	"Linearly resample P2 into the k values from P1. z values assumed equal"
-	P_resampled = np.zeros_like(P1)
-	nz = P1.shape[1]
+def resample_power(k_new, k_old, P_old):
+	"Log-Linearly resample P1[z,k1] onto k2. z values assumed equal"
+	nk = len(k_new)
+	nz = P_old.shape[0]
+	P_new = np.zeros((nz,nk))
 	for i in xrange(nz):
-		p_i = np.interp(np.log(k1), np.log(k2), np.log(abs(P2[i])))
-		P_resampled[i] = np.exp(p_i) * np.sign(P2[i])
+		p_i = np.interp(np.log(k_new), np.log(k_old), np.log(abs(P_old[i])))
+		P_new[i] = np.exp(p_i) * np.sign(P_old[i][0])
+	return P_new
 
 
 #in units of rho_crit0
@@ -60,10 +62,8 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 		growth = (P_nl[i,ksmall] / P_nl[z0,ksmall])**0.5
 		P_GI[i] = f * P_nl[i] / growth
 
-	P_II_resample = resample_power(P_nl, P_II, k_nl, k_lin)
-	P_GI_resample = resample_power(P_nl, P_GI, k_nl, k_lin)
-
 	# Finally calculate the intrinsic and stochastic bias terms from the power spectra
+	R1 = P_II/P_nl
 	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
 	r_I = P_GI/P_II * b_I
 
@@ -162,8 +162,7 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	P_lin = P_lin[:, ikstart:ikend] 			 
 	k_lin = k_lin[ikstart:ikend]
 
-	P_nl_resample = resample_power(P_nl, P, k_nl, k_lin)
-
+	P_nl_resample = resample_power(k_lin, k_nl, P_nl)
 
 	growth = np.zeros_like(P_lin)
 	ksmall = np.argmin(k_lin)
@@ -173,8 +172,8 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 	P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 
 	# Finally calculate the IA and stochastic bias terms from the power spectra
-	P_II_resample = resample_power(P_nl, P_II, k_nl, k_lin)
-	P_GI_resample = resample_power(P_nl, P_GI, k_nl, k_lin)
+	P_II_resample = resample_power(k_nl, k_lin, P_II)
+	P_GI_resample = resample_power(k_nl, k_lin, P_GI)
 
 	R1 = P_II_resample/P_nl
 	b_I = -1.0 * np.sqrt(R1) * np.sign(A)
