@@ -26,6 +26,7 @@ class Rosenbrock(object):
     def __call__(self, p):
         return self.loglikelihood(p)
 
+
 def setup(options):
     a1 = options.get_double(option_section, "a1", default=100.)
     a2 = options.get_double(option_section, "a2", default=20.)

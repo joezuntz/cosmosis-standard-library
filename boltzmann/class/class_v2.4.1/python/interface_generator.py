@@ -43,7 +43,7 @@ NAMING_CONVENTION = {
                   'function': 'nonlinear'},
     'output': {'python': 'output',
                'function': 'output'},
-    }
+}
 
 
 def main():
@@ -77,13 +77,13 @@ def main():
 
     # First write the first non automatic bits
     output_file.write(
-        SPACING+'ctypedef char FileArg[40]\n' +
-        SPACING+'ctypedef char* ErrorMsg\n' +
-        SPACING+'cdef struct precision:\n' +
-        2*SPACING+'ErrorMsg error_message\n\n' +
-        SPACING+'cdef int _FAILURE_\n' +
-        SPACING+'cdef int _FALSE_\n' +
-        SPACING+'cdef int _TRUE_\n')
+        SPACING + 'ctypedef char FileArg[40]\n' +
+        SPACING + 'ctypedef char* ErrorMsg\n' +
+        SPACING + 'cdef struct precision:\n' +
+        2 * SPACING + 'ErrorMsg error_message\n\n' +
+        SPACING + 'cdef int _FAILURE_\n' +
+        SPACING + 'cdef int _FALSE_\n' +
+        SPACING + 'cdef int _TRUE_\n')
 
     for header in headers:
         extract_headers(header, structs, output_file, logger)
@@ -127,7 +127,7 @@ def extract_headers(header, structs, output_file, logger):
                         output_file.write(
                             SPACING + 'cdef enum %s:\n' % enum_name)
                         for elem in enum_members:
-                            output_file.write(2*SPACING + elem + '\n')
+                            output_file.write(2 * SPACING + elem + '\n')
                         output_file.write('\n')
                 elif in_enum:
                     if line.find('};') != -1:
@@ -135,11 +135,12 @@ def extract_headers(header, structs, output_file, logger):
                         output_file.write(
                             SPACING + 'cdef enum %s:\n' % enum_name)
                         for elem in enum_members:
-                            output_file.write(2*SPACING + elem + '\n')
+                            output_file.write(2 * SPACING + elem + '\n')
                         output_file.write('\n')
                     else:
                         if line.strip() != '':
-                            enum_members.append(line.split()[0].strip().strip(','))
+                            enum_members.append(
+                                line.split()[0].strip().strip(','))
             if line.find("struct ") != -1 and not main_struct_finished:
                 in_struct = True
                 # Recover the name
@@ -163,8 +164,8 @@ def extract_headers(header, structs, output_file, logger):
                         continue
                     logger.debug(
                         "potentially non empty line: %s" % line.strip())
-                    #elif line.find('/**') != -1 or line.find('*/') != -1:
-                        #continue
+                    # elif line.find('/**') != -1 or line.find('*/') != -1:
+                    # continue
                     if line.find(';') == -1 and not comment_partially_recovered:
                         logger.debug("--> Discarded")
                         continue
@@ -205,7 +206,7 @@ def extract_headers(header, structs, output_file, logger):
                                 # Check if enum
                                 if var_type == 'enum':
                                     enum_name, var_name = var_name.split()
-                                    var_type += ' '+enum_name
+                                    var_type += ' ' + enum_name
                                 structs[struct_name][var_name] = [
                                     var_type, var_stars]
                             else:
@@ -228,18 +229,18 @@ def extract_headers(header, structs, output_file, logger):
                                     ''.join([var_stars, var_type]), var_doc))
 
                         if not multiple_var:
-                            output_file.write(2*SPACING+' '.join(
+                            output_file.write(2 * SPACING + ' '.join(
                                 [elem for elem in [var_type, var_stars, var_name]
-                                 if elem])+'\n')
+                                 if elem]) + '\n')
                         else:
                             for var in all_vars:
-                                output_file.write(2*SPACING+' '.join(
+                                output_file.write(2 * SPACING + ' '.join(
                                     [elem for elem in [var_type, var_stars, var]
-                                     if elem])+'\n')
+                                     if elem]) + '\n')
 
                     if comment_partially_recovered:
                         logger.debug("--> Accepted")
-                        var_doc += ' '+line.strip()
+                        var_doc += ' ' + line.strip()
                         if var_doc[-2:] == '*/':
                             comment_partially_recovered = False
                             var_doc = var_doc[:-2].replace('\\f$', '$').strip()
@@ -258,15 +259,16 @@ def extract_headers(header, structs, output_file, logger):
                     if line.find('(') != -1:
                         in_function = True
                         logger.debug("Found a function")
-                        func_type, func_name = line.split('(')[0].strip().split()
+                        func_type, func_name = line.split(
+                            '(')[0].strip().split()
                         logger.debug('%s %s' % (func_name, func_type))
                         func_param = []
 
-                        if func_name == structs[struct_name]['function']+'_init':
+                        if func_name == structs[struct_name]['function'] + '_init':
                             logger.info("found the init function")
                             in_init = True
                             structs[struct_name]['init'] = [func_name]
-                        output_file.write(SPACING+'%s %s(' % (
+                        output_file.write(SPACING + '%s %s(' % (
                             func_type, func_name))
                     elif in_function:
                         # recover the signature of the function
@@ -279,7 +281,7 @@ def extract_headers(header, structs, output_file, logger):
                         elif line.find('*') != -1:
                             # Taking into account with or without spaces
                             temp = ''.join(line.strip(',').split())
-                            last_star = len(temp)-temp[::-1].find('*')
+                            last_star = len(temp) - temp[::-1].find('*')
                             func_param.append(temp[:last_star])
                         elif line.find(')') == -1:
                             if line != '':
@@ -294,7 +296,7 @@ def extract_headers(header, structs, output_file, logger):
                     elif line.find('}') != -1:
                         output_file.write('\n')
                         in_function_definitions = False
-            #print line.strip()
+            # print line.strip()
 
 
 def create_wrapper_class(struct_name, struct, of, logger):
@@ -303,13 +305,13 @@ def create_wrapper_class(struct_name, struct, of, logger):
     of.write('cdef class %s:\n' % (
         NAMING_CONVENTION[struct_name]['python'].capitalize()))
 
-    ## recover the number of additional arguments:
+    # recover the number of additional arguments:
     init_name, argument_names = struct['init'][0], struct['init'][1:]
 
     for companion in argument_names:
-        of.write(SPACING+'cdef %s _%s\n' % (companion, companion))
-        #logger.info("structure: %s, python name: %s" % (
-            #companion, NAMING_CONVENTION[companion]['python']))
+        of.write(SPACING + 'cdef %s _%s\n' % (companion, companion))
+        # logger.info("structure: %s, python name: %s" % (
+        # companion, NAMING_CONVENTION[companion]['python']))
     of.write('\n')
 
     # Define the array variables for all needed
@@ -320,13 +322,13 @@ def create_wrapper_class(struct_name, struct, of, logger):
             if value[1]:
                 array_variables.append(key)
                 variables.append(key)
-                of.write(SPACING+'cdef np.ndarray %s_arr\n' % key)
+                of.write(SPACING + 'cdef np.ndarray %s_arr\n' % key)
             else:
                 variables.append(key)
     of.write('\n')
 
     # write the init
-    of.write(SPACING+'def __init__(self')
+    of.write(SPACING + 'def __init__(self')
     for companion in argument_names:
         of.write(", %s py_%s" % (
             NAMING_CONVENTION[companion]['python'].capitalize(), companion))
@@ -334,47 +336,47 @@ def create_wrapper_class(struct_name, struct, of, logger):
 
     # pointing the pointers where they belong
     for companion in argument_names:
-        of.write(2*SPACING+"self._%s = py_%s._%s\n" % (
+        of.write(2 * SPACING + "self._%s = py_%s._%s\n" % (
             companion, companion, companion))
 
     # Writing the call to structname_init()
-    of.write(2*SPACING+'%s_init(\n' % struct_name)
+    of.write(2 * SPACING + '%s_init(\n' % struct_name)
     for companion in argument_names:
-        of.write(3*SPACING+'&(self._%s),\n' % companion)
-    of.write(3*SPACING+'&(self._%s))\n\n' % struct_name)
+        of.write(3 * SPACING + '&(self._%s),\n' % companion)
+    of.write(3 * SPACING + '&(self._%s))\n\n' % struct_name)
 
-    #of.write(2*SPACING+'%s_init(&(self._%s))\n\n' % (
-        #struct_name, struct_name))
+    # of.write(2*SPACING+'%s_init(&(self._%s))\n\n' % (
+    # struct_name, struct_name))
     for array in array_variables:
-        of.write(2*SPACING+'# Wrapping %s\n' % array)
-        of.write(2*SPACING+'%s_wrapper = ArrayWrapper()\n' % array)
+        of.write(2 * SPACING + '# Wrapping %s\n' % array)
+        of.write(2 * SPACING + '%s_wrapper = ArrayWrapper()\n' % array)
         of.write(
-            2*SPACING+"%s_wrapper.set_data(%d, '%s', "
+            2 * SPACING + "%s_wrapper.set_data(%d, '%s', "
             "<void*> self._%s.%s)\n" % (
                 array, 2, struct[array].strip('*'), struct_name, array))
         of.write(
-            2*SPACING+'self.%s_arr = np.array(%s_wrapper, '
+            2 * SPACING + 'self.%s_arr = np.array(%s_wrapper, '
             'copy=False)\n' % (
                 array, array))
-        of.write(2*SPACING+'self.%s_arr.base = '
+        of.write(2 * SPACING + 'self.%s_arr.base = '
                  '<PyObject*> %s_wrapper\n' % (
                      array, array))
-        of.write(2*SPACING+'Py_INCREF(%s_wrapper)\n\n' % array)
+        of.write(2 * SPACING + 'Py_INCREF(%s_wrapper)\n\n' % array)
     #raise NotImplementedError('multiple init are not supported')
 
     # Write the properties
     for key in variables:
-        of.write(SPACING+'property %s:\n' % key)
+        of.write(SPACING + 'property %s:\n' % key)
         if key not in array_variables:
-            of.write(2*SPACING+'def __get__(self):\n')
-            of.write(3*SPACING+'return self._%s.%s\n' % (struct_name, key))
-            of.write(2*SPACING+'def __set__(self, rhs):\n')
-            of.write(3*SPACING+'self._%s.%s = rhs\n' % (struct_name, key))
+            of.write(2 * SPACING + 'def __get__(self):\n')
+            of.write(3 * SPACING + 'return self._%s.%s\n' % (struct_name, key))
+            of.write(2 * SPACING + 'def __set__(self, rhs):\n')
+            of.write(3 * SPACING + 'self._%s.%s = rhs\n' % (struct_name, key))
         else:
-            of.write(2*SPACING+'def __get__(self):\n')
-            of.write(3*SPACING+'return self.%s_arr\n' % key)
-            of.write(2*SPACING+'def __set__(self, rhs):\n')
-            of.write(3*SPACING+'self.%s_arr[:] = rhs\n' % key)
+            of.write(2 * SPACING + 'def __get__(self):\n')
+            of.write(3 * SPACING + 'return self.%s_arr\n' % key)
+            of.write(2 * SPACING + 'def __set__(self, rhs):\n')
+            of.write(3 * SPACING + 'self.%s_arr[:] = rhs\n' % key)
         of.write('\n')
 
     # Add blank lines
@@ -449,18 +451,18 @@ def create_logger():
     """Nothing"""
 
     logger = logging.getLogger('simple_example')
-    #logger.setLevel(logging.DEBUG)
+    # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
     # create console handler and set level to debug
     console_handler = logging.StreamHandler()
-    #console_handler.setLevel(logging.DEBUG)
+    # console_handler.setLevel(logging.DEBUG)
     console_handler.setLevel(logging.INFO)
 
     # create formatter
-    #formatter = logging.Formatter(
-        #"%(asctime)s %(module)s: L%(lineno) 4s %(funcName) 15s"
-        #" | %(levelname) -10s  --> %(message)s")
+    # formatter = logging.Formatter(
+    #"%(asctime)s %(module)s: L%(lineno) 4s %(funcName) 15s"
+    #" | %(levelname) -10s  --> %(message)s")
     formatter = colorlog.ColoredFormatter(
         "%(asctime)s %(module)s: L%(lineno) 4s %(blue)s%(funcName) 15s%(reset)s"
         " | %(log_color)s%(levelname) -10s  --> %(message)s%(reset)s",
@@ -481,6 +483,7 @@ def create_logger():
     logger.addHandler(console_handler)
 
     return logger
+
 
 if __name__ == "__main__":
     sys.exit(main())

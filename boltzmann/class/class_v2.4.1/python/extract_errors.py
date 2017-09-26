@@ -1,3 +1,4 @@
+from __future__ import print_function
 # From the dumped stdout and stderr of a nosetests test_class.py, extract all
 # the failed steps.
 # Usage: python extract_errors.py output
@@ -21,21 +22,21 @@ def main(path):
         start = 0
         for index, line in enumerate(text):
             if line.find('------------------') != -1:
-                if text[index+2].find('----------------') != -1:
-                    stop = index-1
+                if text[index + 2].find('----------------') != -1:
+                    stop = index - 1
                     # Check that an error is contained
                     if stop > 0:
-                        for i in range(start, stop+1):
+                        for i in range(start, stop + 1):
                             if text[i].startswith('E'):
                                 contains_error = True
                     if contains_error:
-                        print 'Found an error'
-                        for i in range(start, stop+1):
-                            print text[i],
+                        print('Found an error')
+                        for i in range(start, stop + 1):
+                            print(text[i], end=' ')
                             destination.write(text[i])
                     start = index
                     contains_error = False
-                elif text[index+2].find('=================') != -1:
+                elif text[index + 2].find('=================') != -1:
                     break
                 else:
                     pass
@@ -43,7 +44,7 @@ def main(path):
 
 
 if __name__ == "__main__":
-    print sys.argv
+    print(sys.argv)
     if len(sys.argv) != 2:
         print('Please specify the output file to analyse')
         exit()

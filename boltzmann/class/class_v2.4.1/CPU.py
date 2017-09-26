@@ -30,6 +30,7 @@ cosmo_mini_toolbox, available under GPLv3 at
 https://github.com/JesusTorrado/cosmo_mini_toolbox
 
 """
+from __future__ import print_function
 # System imports
 import os
 import sys
@@ -122,8 +123,8 @@ def plot_CLASS_output(files, x_axis, y_axis, ratio=False, printing='',
 
     """
     # Define the python script name, and the pdf path
-    python_script_path = files[0]+'.py'
-    pdf_path = files[0]+'.pdf'
+    python_script_path = files[0] + '.py'
+    pdf_path = files[0] + '.pdf'
 
     # The variable text will contain all the lines to be printed in the end to
     # the python script path, joined with newline characters. Beware of the
@@ -219,7 +220,7 @@ def plot_CLASS_output(files, x_axis, y_axis, ratio=False, printing='',
                     ax.set_xscale('planck')
                 text += [plot_line]
 
-            legend.extend([roots[index]+': '+elem for elem in y_axis])
+            legend.extend([roots[index] + ': ' + elem for elem in y_axis])
 
         ax.legend(legend, loc='best')
         text += ["",
@@ -293,19 +294,21 @@ def plot_CLASS_output(files, x_axis, y_axis, ratio=False, printing='',
                 axis = ref[:, x_index_ref]
                 reference = ref[:, ref_curve_names.index(selec)]
                 #plt.loglog(current[:, x_index], current[:, names.index(selec)])
-                #plt.show()
-                #interpolated = splrep(current[:, x_index],
-                                      #current[:, names.index(selec)])
+                # plt.show()
+                # interpolated = splrep(current[:, x_index],
+                # current[:, names.index(selec)])
                 interpolated = InterpolatedUnivariateSpline(current[:, x_index],
-                                      current[:, names.index(selec)])
+                                                            current[:, names.index(selec)])
                 if scale == 'lin':
-                    #ax.plot(axis, splev(ref[:, x_index_ref],
-                                        #interpolated)/reference-1)
-                    ax.plot(axis, interpolated(ref[:, x_index_ref])/reference-1)
+                    # ax.plot(axis, splev(ref[:, x_index_ref],
+                                        # interpolated)/reference-1)
+                    ax.plot(axis, interpolated(
+                        ref[:, x_index_ref]) / reference - 1)
                 elif scale == 'loglin':
-                    #ax.semilogx(axis, splev(ref[:, x_index_ref],
-                                            #interpolated)/reference-1)
-                    ax.semilogx(axis, interpolated(ref[:, x_index_ref])/reference-1)
+                    # ax.semilogx(axis, splev(ref[:, x_index_ref],
+                                            # interpolated)/reference-1)
+                    ax.semilogx(axis, interpolated(
+                        ref[:, x_index_ref]) / reference - 1)
                 elif scale == 'loglog':
                     raise InputError(
                         "loglog plot is not available for ratios")
@@ -346,8 +349,8 @@ def plot_CLASS_output(files, x_axis, y_axis, ratio=False, printing='',
     # Write to the python file all the issued commands. You can then reproduce
     # the plot by running "python output/something_cl.dat.py"
     with open(python_script_path, 'w') as python_script:
-        print 'Creating a python script to reproduce the figure'
-        print '--> stored in %s' % python_script_path
+        print('Creating a python script to reproduce the figure')
+        print('--> stored in %s' % python_script_path)
         python_script.write('\n'.join(text))
 
     # If the use wants to print the figure to a file
@@ -427,10 +430,10 @@ def extract_headers(header_path):
 
     # Count the number of columns in the file, and recover their name. Thanks
     # Thomas Tram for the trick
-    indices = [i+1 for i in range(len(header)) if
+    indices = [i + 1 for i in range(len(header)) if
                header.startswith(':', i)]
     num_columns = len(indices)
-    long_names = [header[indices[i]:indices[(i+1)]-3].strip() if i < num_columns-1
+    long_names = [header[indices[i]:indices[(i + 1)] - 3].strip() if i < num_columns - 1
                   else header[indices[i]:].strip()
                   for i in range(num_columns)]
 
@@ -442,7 +445,7 @@ def extract_headers(header_path):
 
 
 def main():
-    print '~~~ Running CPU, a CLASS Plotting Utility ~~~'
+    print('~~~ Running CPU, a CLASS Plotting Utility ~~~')
     parser = CPU_parser()
     # Parse the command line arguments
     args = parser.parse_args()
@@ -486,7 +489,7 @@ def main():
     # performed. If asked to be divided, the ratio is shown - whether a need
     # for interpolation arises or not.
     if args.ratio and args.scale == 'loglog':
-        print "Defaulting to loglin scale"
+        print("Defaulting to loglin scale")
         args.scale = 'loglin'
 
     plot_CLASS_output(args.files, args.x_axis, args.y_axis,
@@ -540,7 +543,7 @@ class PlanckScale(mscale.ScaleBase):
             FixedLocator(
                 np.concatenate((np.arange(2, 10),
                                 np.arange(10, 50, 10),
-                                np.arange(floor(change/100), 2500, 100)))))
+                                np.arange(floor(change / 100), 2500, 100)))))
 
     def get_transform(self):
         """
@@ -570,17 +573,17 @@ class PlanckScale(mscale.ScaleBase):
                 self._handle_nonpos = _clip_nonpos
 
         def transform_non_affine(self, a):
-            lower = a[np.where(a<=change)]
-            greater = a[np.where(a> change)]
+            lower = a[np.where(a <= change)]
+            greater = a[np.where(a > change)]
             if lower.size:
-                lower = self._handle_nonpos(lower * 10.0)/10.0
+                lower = self._handle_nonpos(lower * 10.0) / 10.0
                 if isinstance(lower, ma.MaskedArray):
                     lower = ma.log10(lower)
                 else:
                     lower = np.log10(lower)
-                lower = factor*lower
+                lower = factor * lower
             if greater.size:
-                greater = (factor*np.log10(change) + (greater-change))
+                greater = (factor * np.log10(change) + (greater - change))
             # Only low
             if not(greater.size):
                 return lower
@@ -599,15 +602,15 @@ class PlanckScale(mscale.ScaleBase):
         has_inverse = True
 
         def transform_non_affine(self, a):
-            lower = a[np.where(a<=factor*np.log10(change))]
-            greater = a[np.where(a> factor*np.log10(change))]
+            lower = a[np.where(a <= factor * np.log10(change))]
+            greater = a[np.where(a > factor * np.log10(change))]
             if lower.size:
                 if isinstance(lower, ma.MaskedArray):
-                    lower = ma.power(10.0, lower/float(factor))
+                    lower = ma.power(10.0, lower / float(factor))
                 else:
-                    lower = np.power(10.0, lower/float(factor))
+                    lower = np.power(10.0, lower / float(factor))
             if greater.size:
-                greater = (greater + change - factor*np.log10(change))
+                greater = (greater + change - factor * np.log10(change))
             # Only low
             if not(greater.size):
                 return lower
@@ -618,6 +621,7 @@ class PlanckScale(mscale.ScaleBase):
 
         def inverted(self):
             return PlanckTransform()
+
 
 # Finished. Register the scale!
 mscale.register_scale(PlanckScale)

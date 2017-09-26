@@ -3,19 +3,20 @@ from cosmosis.gaussian_likelihood import SingleValueGaussianLikelihood
 
 
 class Riess11Likelihood(SingleValueGaussianLikelihood):
-	# The mean and standard deviation of the Riess11 measurements.
-	# The user can over-ride these in the ini file if desired
-	mean = 0.738
-	sigma = 0.024
+    # The mean and standard deviation of the Riess11 measurements.
+    # The user can over-ride these in the ini file if desired
+    mean = 0.738
+    sigma = 0.024
 
-	#The value (either chosen by the sampler or computed
-	#somewhere in the pipeline) that this Likelihood uses.
-	#If we needed to operate on a derived quantity we could
-	#have redefined the method block_theory_points instead
-	section = names.cosmological_parameters
-	name = "h0"
+    # The value (either chosen by the sampler or computed
+    # somewhere in the pipeline) that this Likelihood uses.
+    # If we needed to operate on a derived quantity we could
+    # have redefined the method block_theory_points instead
+    section = names.cosmological_parameters
+    name = "h0"
 
-	#Where we should save the likelihood
-	like_name = "riess"
+    # Where we should save the likelihood
+    like_name = "riess"
+
 
 setup, execute, cleanup = Riess11Likelihood.build_module()

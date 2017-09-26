@@ -2,6 +2,7 @@
 MultiGaussian_likelihood.py: a test problem for our samplers.
 We sample a 10 dimensional gaussian.
 """
+from __future__ import print_function
 import os
 import sys
 import numpy as np
@@ -11,7 +12,7 @@ from cosmosis.datablock import option_section
 from cosmosis.datablock import BlockError
 
 
-params= section_names.test_parameters
+params = section_names.test_parameters
 likes = section_names.likelihoods
 
 
@@ -29,9 +30,10 @@ class MultiGaussian(object):
             np.savetxt("demos/means%dD.out" % (self.NDIM,), self.means)
 
         if covariances.lower() == "identity":
-            cov = np.identity(self.NDIM)*0.1
+            cov = np.identity(self.NDIM) * 0.1
         elif covariances is None:
-            cov = 0.5 - np.random.rand(self.NDIM**2).reshape((self.NDIM, self.NDIM))
+            cov = 0.5 - np.random.rand(self.NDIM **
+                                       2).reshape((self.NDIM, self.NDIM))
             cov = np.triu(cov)
             cov += cov.T - np.diag(cov.diagonal())
             cov = np.dot(cov, cov)
@@ -58,26 +60,28 @@ class MultiGaussian(object):
 def setup(options):
     try:
         means = options[option_section, "means_filename"]
-        print "Existing means (%s) will be used" % means
+        print("Existing means (%s) will be used" % means)
     except BlockError:
         means = None
-        print "new means will be generated"
+        print("new means will be generated")
 
     try:
         covariances = options[option_section, "cov_filename"]
-        print "Existing covariances (%s) will be used" % covariances
+        print("Existing covariances (%s) will be used" % covariances)
     except BlockError:
         covariances = None
-        print "new covariance matrix will be generated"
+        print("new covariance matrix will be generated")
 
     return MultiGaussian(means, covariances)
 
+
 def execute(block, mg):
-    x = [block[params, "MG%d" % (i,)] for i in range(1,mg.NDIM+1)]
+    x = [block[params, "MG%d" % (i,)] for i in range(1, mg.NDIM + 1)]
     block[likes, "MULTIGAUSSIAN_LIKE"] = mg.lnprob(x)
     return 0
 
+
 def cleanup(config):
-# nothing to do here!  We just include this
-# for completeness
+    # nothing to do here!  We just include this
+    # for completeness
     return 0

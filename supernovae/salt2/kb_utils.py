@@ -7,7 +7,8 @@ STR_META = ['BAND']
 INT_COLS = ['NID', 'EXPNUM', 'CHIP', 'FAKEID', 'GALID', 'SAMEHOST', 'OBJID',
             'REJECT', 'FILTER', 'NPOS0', 'NPOS1', 'NPOS2', 'NNEG0', 'NNEG1',
             'NNEG2',  'REJECT', 'ERR', 'TILE', 'NSTAR']
-STR_COLS = ['BAND','CID']
+STR_COLS = ['BAND', 'CID']
+
 
 def dict_to_ndarray(d):
     """Convert a dictionary of lists (of equal length) to a structured
@@ -15,14 +16,14 @@ def dict_to_ndarray(d):
 
     # first convert all lists to 1-d arrays, in order to let numpy
     # figure out the necessary size of the string arrays.
-    for key in d: 
+    for key in d:
         d[key] = np.array(d[key])
 
     # Determine dtype of output array.
     dtypelist = []
     for key in d:
         dtypelist.append((key, d[key].dtype))
-    
+
     # Initialize ndarray and then fill it.
     firstkey = d.keys()[0]
     col_len = len(d[firstkey])
@@ -31,6 +32,7 @@ def dict_to_ndarray(d):
         result[key] = d[key]
 
     return result
+
 
 def read_datafile(filename, default_tablename=None, output_ndarray=False):
     """Read a data file with this (newline-independent) format:
@@ -48,7 +50,7 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
     filename : str
         Filename of object to read.
     default_tablename : str
-        
+
     Returns
     -------
     meta : OrderedDict
@@ -57,8 +59,8 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
         The data.
     """
 
-    meta = OrderedDict() # initialize structure to hold metadata.
-    tables = {} # initialize structure to hold data.
+    meta = OrderedDict()  # initialize structure to hold metadata.
+    tables = {}  # initialize structure to hold data.
 
     infile = open(filename, 'r')
     words = infile.read().split()
@@ -73,7 +75,7 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
         if word.startswith('NVAR'):
             nvar = int(words[i + 1])
 
-            #Infer table name. The name will be used to designate a data row.
+            # Infer table name. The name will be used to designate a data row.
             if '_' in word:
                 pos = word.find('_') + 1
                 tablename = word[pos:].rstrip(':')
@@ -108,14 +110,14 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
             for j, colname in enumerate(table.keys()):
                 table[colname].append(words[i + 1 + j])
             i += nvar + 1
-        
+
         # Otherwise, we are reading metadata or some comment
         # If the word ends with ":", it is metadata.
         elif word[-1] == ':':
             name = word[:-1]  # strip off the ':'
             if len(words) >= i + 2:
                 meta[name] = words[i + 1]
-            else: 
+            else:
                 meta[name] = None
             i += 2
         else:
@@ -124,20 +126,23 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
 
     # Convert Values in metadata
     for key, val in meta.iteritems():
-        if key in INT_META: meta[key] = int(val)
-        elif key in STR_META: pass
-        else: meta[key] = float(val)
+        if key in INT_META:
+            meta[key] = int(val)
+        elif key in STR_META:
+            pass
+        else:
+            meta[key] = float(val)
 
     # Convert values in columns
     for tablename, table in tables.iteritems():
         for key in table.keys():
             if key in INT_COLS:
-                table[key] = [int(float(x)) for x in table[key]] # HACK
+                table[key] = [int(float(x)) for x in table[key]]  # HACK
             elif key in STR_COLS:
                 pass
             else:
                 table[key] = [float(x) for x in table[key]]
-                
+
     # Convert tables to ndarrays
     if output_ndarray:
         for tablename in tables.keys():
