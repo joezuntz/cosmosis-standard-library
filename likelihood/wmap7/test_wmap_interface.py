@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 import pydesglue
 import numpy as np
 
@@ -34,6 +36,6 @@ if result:
 data = pydesglue.DesDataPackage.from_fits_handle(n)
 like = data.get_param(pydesglue.section_names.likelihoods, "WMAP7_LIKE")
 print("Computed WMAP7 like: ", like)
-expected_like_tot = -7477.656769 / 2
+expected_like_tot = old_div(-7477.656769, 2)
 print("Expected: ", expected_like_tot)
 print("Difference = ", expected_like_tot - like)

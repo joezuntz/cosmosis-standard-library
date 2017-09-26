@@ -1,5 +1,7 @@
 from __future__ import print_function
+from __future__ import division
 #! PYTHONEXE
+from past.utils import old_div
 import sys
 sys.path = ["REPLACEPATH"] + sys.path
 
@@ -19,7 +21,7 @@ def main(argv):
 
     mcl = nm.zeros((4, 1201), dtype=nm.double)
     llp1s2pi = nm.arange(1201) * nm.arange(1, 1202) / 2. / nm.pi
-    mcl[:, 2:] = (test_cl[:1201 - 2, 1:5].T) / llp1s2pi[2:]
+    mcl[:, 2:] = old_div((test_cl[:1201 - 2, 1:5].T), llp1s2pi[2:])
 
     ttmin = max(2, pars.int.ttmin)
     ttmax = min(1200, pars.int.ttmax)

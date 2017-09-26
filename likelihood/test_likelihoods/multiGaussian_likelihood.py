@@ -3,6 +3,10 @@ MultiGaussian_likelihood.py: a test problem for our samplers.
 We sample a 10 dimensional gaussian.
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os
 import sys
 import numpy as np
@@ -51,7 +55,7 @@ class MultiGaussian(object):
 
     def lnprob(self, x):
         diff = x - self.means
-        return -np.dot(diff, np.dot(self.icov, diff)) / 2.0 - self.norm
+        return old_div(-np.dot(diff, np.dot(self.icov, diff)), 2.0) - self.norm
 
     def __call__(self, x):
         return lnprob(self, x)

@@ -3,6 +3,7 @@ An interface to the OWLS code.
 
 """
 from __future__ import print_function
+from builtins import range
 from cosmosis.datablock import option_section, names as section_names
 import owls
 import numpy as np
@@ -73,9 +74,9 @@ def load_parameters(block, modulator):
     section = "OWLS"
     if isinstance(modulator, owls.ChebyshevBaryonPowerModulator):
         rk = [block[section, "K%d" % i]
-              for i in xrange(1, modulator.nterm + 1)]
+              for i in range(1, modulator.nterm + 1)]
         rz = [block[section, "Z%d" % i]
-              for i in xrange(1, modulator.nterm + 1)]
+              for i in range(1, modulator.nterm + 1)]
         r = np.concatenate([rk, rz])
     elif isinstance(modulator, owls.FixedBaryonPowerModulator):
         r = None

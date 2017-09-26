@@ -12,7 +12,11 @@ I could have made mistakes here easily in understanding what is happening! In pa
 I'm not totally sure the value of the read-in data should be squared.
 
 """
+from __future__ import division
 
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import numpy as np
 try:
     import scipy.interpolate
@@ -86,11 +90,11 @@ class BaryonPowerModulator(OwlsFileUser):
         # Now do the same for the upper limit, but divide by the value
         # for DM-only to get the ratio
         u_k, u_z, u_P = self._load_file(upper_filename)
-        u_P *= norm / u_P[0, 0]
+        u_P *= old_div(norm, u_P[0, 0])
         self.upper = scipy.interpolate.RectBivariateSpline(u_k, u_z, u_P)
 
         l_k, l_z, l_P = self._load_file(lower_filename)
-        l_P *= norm / l_P[0, 0]
+        l_P *= old_div(norm, l_P[0, 0])
         self.lower = scipy.interpolate.RectBivariateSpline(l_k, l_z, l_P)
 
         # import pylab
@@ -147,16 +151,16 @@ class ChebyshevBaryonPowerModulator(BaryonPowerModulator):
         n_zcoeffs = len(r_z)
         n_kcoeffs = len(r_k)
         # logk and z, scaled to (0,1)
-        ks = (logk - kmin) / (kmax - kmin)
-        zs = (z - zmin) / (zmax - zmin)
+        ks = old_div((logk - kmin), (kmax - kmin))
+        zs = old_div((z - zmin), (zmax - zmin))
 
         # move the coefficients to range (-1,+1)
         k_coeffs = 2 * np.array(r_k) - 1
         z_coeffs = 2 * np.array(r_z) - 1
 
         # get the k and z based
-        Tk = [self._chebyshev(ks, i) for i in xrange(n_kcoeffs)]
-        Tz = [self._chebyshev(zs, i) for i in xrange(n_zcoeffs)]
+        Tk = [self._chebyshev(ks, i) for i in range(n_kcoeffs)]
+        Tz = [self._chebyshev(zs, i) for i in range(n_zcoeffs)]
         Tk = np.array(Tk)
         Tz = np.array(Tz)
         pk = np.dot(k_coeffs, Tk)
@@ -171,7 +175,7 @@ class ChebyshevBaryonPowerModulator(BaryonPowerModulator):
         # bring it to the range (0,1)
         # with some leeway given by the extremeness parameters
         p = np.outer(pk, pz)
-        p = (p + 1) / 2
+        p = old_div((p + 1), 2)
         p = p.clip(-self.extremes, 1 + self.extremes)
 
         modulation = p * u + (1 - p) * l
@@ -197,8 +201,8 @@ class FixedBaryonPowerModulator(OwlsFileUser):
         # The r argument means we have the same calling structure as the other ones
         # It is ignored
         logk = np.log10(k)
-        s = (10**self.sim(logk, z) - 10**self.dm(logk, z)) / \
-            (10**self.dm(logk, z))
+        s = old_div((10**self.sim(logk, z) - 10**self.dm(logk, z)), \
+            (10**self.dm(logk, z)))
         s[k < self.sim_k[0]] = 0.
         modulation = 1 + s.squeeze()
         return P * modulation
@@ -221,8 +225,8 @@ class ScaledBaryonPowerModulator(OwlsFileUser):
 
     def modulate(self, k, z, P, r=None):
         logk = np.log10(k)
-        s = (10**self.sim(logk, z) - 10**self.dm(logk, z)) / \
-            (10**self.dm(logk, z))
+        s = old_div((10**self.sim(logk, z) - 10**self.dm(logk, z)), \
+            (10**self.dm(logk, z)))
         s[k < self.sim_k[0]] = 0.
         modulation = 1 + r * s.squeeze()
         return P * modulation

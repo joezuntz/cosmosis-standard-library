@@ -114,7 +114,7 @@ def setup(options):
 
 def execute(block, config):
     data_sets = config
-    for name, data in config.items():
+    for name, data in list(config.items()):
         z, nz = data
         nbin = len(nz)
         ns = len(z)

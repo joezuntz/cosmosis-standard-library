@@ -1,3 +1,4 @@
+from builtins import range
 from cosmosis.datablock import names, option_section
 import sys
 
@@ -35,34 +36,34 @@ def execute(block, options):
     if perbin:
         # per-bin - use b1,b2,b3, ...
         biases = [block["bin_bias", "b%d" % pos_bin]
-                  for pos_bin in xrange(1, n_z_bins_pos + 1)]
+                  for pos_bin in range(1, n_z_bins_pos + 1)]
     else:
         # all the same - just use b0
-        biases = [block["bin_bias", "b0"] for pos_bin in xrange(n_z_bins_pos)]
+        biases = [block["bin_bias", "b0"] for pos_bin in range(n_z_bins_pos)]
 
-    for pos_bin1 in xrange(n_z_bins_pos):
+    for pos_bin1 in range(n_z_bins_pos):
         bias1 = biases[pos_bin1]
 
         if apply_to_cl:
             if block.has_section('galaxy_shear_cl'):
-                for shear_bin in xrange(n_z_bins_shear):
+                for shear_bin in range(n_z_bins_shear):
                     name = "bin_{}_{}".format(pos_bin1 + 1, shear_bin + 1)
                     block["galaxy_shear_cl", name] *= bias1
 
             if block.has_section('galaxy_intrinsic_cl'):
-                for shear_bin in xrange(n_z_bins_shear):
+                for shear_bin in range(n_z_bins_shear):
                     name = "bin_{}_{}".format(pos_bin1 + 1, shear_bin + 1)
                     block["galaxy_intrinsic_cl", name] *= bias1
 
             if block.has_section('galaxy_cl'):
-                for pos_bin2 in xrange(pos_bin1 + 1):
+                for pos_bin2 in range(pos_bin1 + 1):
                     bias2 = biases[pos_bin2]
                     name = "bin_{}_{}".format(pos_bin1 + 1, pos_bin2 + 1)
                     block['galaxy_cl', name] *= bias1 * bias2
 
         else:
             if block.has_section('galaxy_xi'):
-                for pos_bin2 in xrange(pos_bin1 + 1):
+                for pos_bin2 in range(pos_bin1 + 1):
                     if auto_only:
                         if pos_bin2 != pos_bin1:
                             continue
@@ -72,7 +73,7 @@ def execute(block, options):
                     # print 'gg',name,bias1,bias2
 
             if block.has_section('galaxy_shear_xi'):
-                for shear_bin in xrange(n_z_bins_shear):
+                for shear_bin in range(n_z_bins_shear):
                     name = "bin_{}_{}".format(pos_bin1 + 1, shear_bin + 1)
                     # print 'ggl',name,bias1
                     block['galaxy_shear_xi', name] *= bias1

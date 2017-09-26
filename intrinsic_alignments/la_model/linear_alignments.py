@@ -1,4 +1,7 @@
 #coding: utf-8
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import scipy.interpolate
 import numpy as np
 """
@@ -31,7 +34,7 @@ def resample_power(k_new, k_old, P_old):
     nk = len(k_new)
     nz = P_old.shape[0]
     P_new = np.zeros((nz, nk))
-    for i in xrange(nz):
+    for i in range(nz):
         if (P_old[i] == 0).all():
             P_new[i] = np.zeros(nk)
         else:
@@ -57,18 +60,18 @@ def bridle_king(z_nl, k_nl, P_nl, A, Omega_m):
 
     # intrinsic-intrinsic term
     P_II = np.zeros_like(P_nl)
-    for i in xrange(nz):
+    for i in range(nz):
         P_II[i] = f**2 * P_nl[z0]
 
     growth = np.zeros_like(z_nl)
     ksmall = np.argmin(k_nl)
     P_GI = np.zeros_like(P_nl)
-    for i in xrange(nz):
-        growth = (P_nl[i, ksmall] / P_nl[z0, ksmall])**0.5
+    for i in range(nz):
+        growth = (old_div(P_nl[i, ksmall], P_nl[z0, ksmall]))**0.5
         P_GI[i] = f * P_nl[i] / growth
 
     # Finally calculate the intrinsic and stochastic bias terms from the power spectra
-    R1 = P_II / P_nl
+    R1 = old_div(P_II, P_nl)
     b_I = -1.0 * np.sqrt(R1) * np.sign(A)
     r_I = P_GI / P_II * b_I
 
@@ -83,22 +86,22 @@ def bridle_king_corrected(z_nl, k_nl, P_nl, A, Omega_m):
 
     ksmall = np.argmin(k_nl)
 
-    growth = (P_nl[:, ksmall] / P_nl[z0, ksmall])**0.5
+    growth = (old_div(P_nl[:, ksmall], P_nl[z0, ksmall]))**0.5
 
     F = - A * C1_RHOCRIT * Omega_m / growth
 
     # intrinsic-intrinsic term
     P_II = np.zeros_like(P_nl)
 
-    for i in xrange(nz):
+    for i in range(nz):
         P_II[i, :] = F[i]**2 * P_nl[i, :]
 
     P_GI = np.zeros_like(P_nl)
-    for i in xrange(nz):
+    for i in range(nz):
         P_GI[i] = F[i] * P_nl[i]
 
     # Finally calculate the intrinsic and stochastic bias terms from the power spectra
-    R1 = P_II / P_nl
+    R1 = old_div(P_II, P_nl)
     b_I = -1.0 * np.sqrt(R1) * np.sign(A)
     r_I = P_GI / P_II * b_I
 
@@ -113,22 +116,22 @@ def linear(z_lin, k_lin, P_lin, A, Omega_m):
 
     ksmall = np.argmin(k_lin)
 
-    growth = (P_lin[:, ksmall] / P_lin[z0, ksmall])**0.5
+    growth = (old_div(P_lin[:, ksmall], P_lin[z0, ksmall]))**0.5
 
     F = - A * C1_RHOCRIT * Omega_m / growth
 
     # intrinsic-intrinsic term
     P_II = np.zeros_like(P_lin)
 
-    for i in xrange(nz):
+    for i in range(nz):
         P_II[i, :] = F[i]**2 * P_lin[i, :]
 
     P_GI = np.zeros_like(P_lin)
-    for i in xrange(nz):
+    for i in range(nz):
         P_GI[i] = F[i] * P_lin[i]
 
     # Finally calculate the intrinsic and stochastic bias terms from the power spectra
-    R1 = P_II / P_lin
+    R1 = old_div(P_II, P_lin)
     b_I = np.sqrt(R1) * -1.0 * A / abs(A)
     r_I = P_GI / P_II * b_I
 
@@ -156,7 +159,7 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 
     # intrinsic-intrinsic term
     P_II = np.zeros_like(P_lin)
-    for i in xrange(nz):
+    for i in range(nz):
         P_II[i] = f**2 * P_lin[z0]
 
     # Make sure the k sampling of the two spectra are contiguous
@@ -171,8 +174,8 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
 
     growth = np.zeros_like(P_lin)
     ksmall = np.argmin(k_lin)
-    for i in xrange(nz):
-        growth[i] = (P_lin[i, ksmall] / P_lin[z0, ksmall])**0.5
+    for i in range(nz):
+        growth[i] = (old_div(P_lin[i, ksmall], P_lin[z0, ksmall]))**0.5
 
     P_GI = f * P_lin**0.5 * P_nl_resample**0.5 / growth
 
@@ -180,7 +183,7 @@ def kirk_rassat_host_bridle_power(z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, A, Omeg
     P_II_resample = resample_power(k_nl, k_lin, P_II)
     P_GI_resample = resample_power(k_nl, k_lin, P_GI)
 
-    R1 = P_II_resample / P_nl
+    R1 = old_div(P_II_resample, P_nl)
     b_I = -1.0 * np.sqrt(R1) * np.sign(A)
     r_I = P_GI_resample / P_II_resample * b_I
 

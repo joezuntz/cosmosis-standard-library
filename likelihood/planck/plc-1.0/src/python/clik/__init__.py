@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import object
 import os.path as osp
 
 if osp.exists(osp.join(osp.dirname(__file__), "lkl.pyx")):
@@ -26,7 +27,7 @@ import numpy as nm
 from .miniparse import miniparse
 
 
-class forfile:
+class forfile(object):
     def __init__(self, fi):
 
         if isinstance(fi, file):

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 from numpy import log, pi, interp, where, loadtxt, dot
 import os
 from cosmosis.datablock import names as section_names
@@ -54,7 +56,7 @@ def execute(block, config):
         raise ValueError(
             "You need to calculate f(z) and d(z) down to z=0 to use the BOSS f*sigma8 likelihood")
     sig = block[cosmo, 'sigma_8']
-    fsigma = (sig * (d_z / d_z[z0])) * f_z
+    fsigma = (sig * (old_div(d_z, d_z[z0]))) * f_z
     fsig = interp(redshift, z, fsigma)
 
     if feedback:
@@ -81,7 +83,7 @@ def execute(block, config):
         bias = block[cosmo, 'bias']
 
         # sigma8 at z=0.57
-        sigma_z = sig * (d_z / d_z[z0])
+        sigma_z = sig * (old_div(d_z, d_z[z0]))
         s = interp(redshift, z, sigma_z)
         # D_a and H at z=0.57
         da_z = interp(redshift, dist_z, d_a)

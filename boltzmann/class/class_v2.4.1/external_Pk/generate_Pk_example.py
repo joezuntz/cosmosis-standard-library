@@ -1,5 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 import sys
 from math import exp
 
@@ -32,7 +34,7 @@ except ValueError:
 
 
 def P(k):
-    return A * (k / k_0)**(n_s - 1.)
+    return A * (old_div(k, k_0))**(n_s - 1.)
 
 # 3. Limits for k and precision:
 #    Check that the boundaries are correct for your case.
@@ -50,7 +52,7 @@ k_per_decade_primordial = 200.
 # Filling the array of k's
 ks = [float(k_min)]
 while ks[-1] <= float(k_max):
-    ks.append(ks[-1] * 10.**(1. / float(k_per_decade_primordial)))
+    ks.append(ks[-1] * 10.**(old_div(1., float(k_per_decade_primordial))))
 
 # Filling the array of Pk's
 for k in ks:

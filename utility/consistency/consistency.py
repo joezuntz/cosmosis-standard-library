@@ -32,6 +32,8 @@ here. See the global variables for the structure.
 """
 from __future__ import print_function
 
+from builtins import range
+from builtins import object
 from numpy import nan, isnan, allclose
 import re
 from math import sqrt, log, exp, pow, log10
@@ -123,7 +125,7 @@ class Consistency(object):
         # without using any of the default values.
         # Then we gradually start using more of the defaults
         # until (hopefully) we have a fully-specified model.
-        for i in xrange(len(self.possible_defaults)):
+        for i in range(len(self.possible_defaults)):
             try:
                 defaults = self.possible_defaults[:i]
                 if self.verbose and i > 0:
@@ -187,7 +189,7 @@ class Consistency(object):
         # checking for parameters we can compute.
         # The max number of loops is the number of relations,
         # since we cannot possibly do anything more after that
-        for i in xrange(1 + len(self.relations)):
+        for i in range(1 + len(self.relations)):
             # Apply all the relations to calculate
             # new values
             for relation in self.relations:
@@ -249,7 +251,7 @@ class Consistency(object):
     def find_unspecified(self):
         # Check for any nan parameters
         unspecified = []
-        for name, value in self.parameters.items():
+        for name, value in list(self.parameters.items()):
             # We use nan to signal "unspecified"
             # since it is infectious
             if isnan(value):

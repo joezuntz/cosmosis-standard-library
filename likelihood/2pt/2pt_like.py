@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from builtins import range
+from past.utils import old_div
+from builtins import object
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 from twopoint_cosmosis import theory_names, type_table
@@ -244,7 +249,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             p = C.shape[0]
             # This x is the inverse of the alpha used in the old code
             # because that applied to the weight matrix not the covariance
-            x = (r - 1.0) / (r - p - 2.0)
+            x = old_div((r - 1.0), (r - p - 2.0))
             C = C * x
             print()
             print("You set covariance_realizations={} in the 2pt likelihood parameter file".format(r))
@@ -329,7 +334,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             else:
                 log_det = block[names.data_vector, self.like_name + "_LOG_DET"]
 
-            like = -0.5 * log_det - 0.5 * N * np.log(1 + chi2 / (N - 1.))
+            like = -0.5 * log_det - 0.5 * N * np.log(1 + old_div(chi2, (N - 1.)))
 
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
@@ -412,8 +417,8 @@ class TwoPointLikelihood(GaussianLikelihood):
                 os.makedirs(self.save_plot_to)
             import pylab
             nbin = max(spectrum.nbin(), spectrum.nbin())
-            for b1 in xrange(1, nbin + 1):
-                for b2 in xrange(1, nbin + 1):
+            for b1 in range(1, nbin + 1):
+                for b2 in range(1, nbin + 1):
                     if (b1, b2) not in bin_data:
                         continue
                     # pylab.subplot(nbin, nbin, (b1-1)*nbin+b2)
@@ -527,15 +532,15 @@ class TwoPointLikelihood(GaussianLikelihood):
             if i > len(self.number_density_shear_bin) or i > len(self.sigma_e_bin) or is_default(self.sigma_e_bin) or is_default(self.number_density_shear_bin):
                 raise ValueError(
                     "Not enough number density bins for shear specified")
-            noise = self.sigma_e_bin[i - 1]**2 / \
-                convert_nz_steradian(self.number_density_shear_bin[i - 1])
+            noise = old_div(self.sigma_e_bin[i - 1]**2, \
+                convert_nz_steradian(self.number_density_shear_bin[i - 1]))
             obs_cl += noise
         if (A == B) and (A == twopoint.Types.galaxy_position_fourier.name) and (i == j):
             if i > len(self.number_density_lss_bin) or is_default(self.number_density_lss_bin):
                 raise ValueError(
                     "Not enough number density bins for lss specified")
-            noise = 1.0 / \
-                convert_nz_steradian(self.number_density_lss_bin[i - 1])
+            noise = old_div(1.0, \
+                convert_nz_steradian(self.number_density_lss_bin[i - 1]))
             obs_cl += noise
 
         return obs_cl

@@ -3,6 +3,7 @@ from __future__ import print_function
 # the failed steps.
 # Usage: python extract_errors.py output
 
+from builtins import range
 import sys
 import os
 

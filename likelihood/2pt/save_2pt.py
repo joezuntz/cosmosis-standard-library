@@ -6,8 +6,12 @@ the results carefully.
 
 """
 from __future__ import print_function
+from __future__ import division
 
 
+from builtins import range
+from builtins import object
+from past.utils import old_div
 from cosmosis.datablock import option_section, names
 import numpy as np
 from scipy.interpolate import interp1d
@@ -124,7 +128,7 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     if real_space:
         # This is in radians
         theory_angle = block[section_name, "theta"]
-        angle_sample_radians = np.radians(angle_sample / 60.)
+        angle_sample_radians = np.radians(old_div(angle_sample, 60.))
     else:
         theory_angle = block[section_name, "ell"]
         angle_sample_radians = angle_sample
@@ -142,12 +146,12 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     angle = []
 
     # Bin pairs. Varies depending on auto-correlation
-    for i in xrange(nbin_a):
+    for i in range(nbin_a):
         if is_auto:
             jmax = i + 1
         else:
             jmax = nbin_b
-        for j in xrange(jmax):
+        for j in range(jmax):
 
             # Load and interpolate from the block
             cl = block[section_name, bin_format.format(i + 1, j + 1)]
@@ -213,7 +217,7 @@ def nz_from_block(block, nz_name):
     assert zlow[0] > 0
     nbin = block[section_name, "nbin"]
     nzs = []
-    for i in xrange(nbin):
+    for i in range(nbin):
         nz = block[section_name, "bin_{}".format(i + 1)]
         if cut:
             nz = nz[1:]
@@ -263,11 +267,11 @@ class ObservedClGetter(object):
         # For shear-shear the noise component is sigma^2 / number_density_bin
         # and for position-position it is just 1/number_density_bin
         if (A == B) and (A == twopoint.Types.galaxy_shear_emode_fourier.name) and (i == j):
-            noise = self.sigma_e_bin[i - 1]**2 / \
-                self.number_density_shear_bin[i - 1]
+            noise = old_div(self.sigma_e_bin[i - 1]**2, \
+                self.number_density_shear_bin[i - 1])
             obs_c_ell += noise
         if (A == B) and (A == twopoint.Types.galaxy_position_fourier.name) and (i == j):
-            noise = 1.0 / self.number_density_lss_bin[i - 1]
+            noise = old_div(1.0, self.number_density_lss_bin[i - 1])
             obs_c_ell += noise
 
         return obs_c_ell

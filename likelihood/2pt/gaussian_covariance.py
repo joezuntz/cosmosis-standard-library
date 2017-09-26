@@ -1,3 +1,4 @@
+from builtins import range
 import numpy as np
 from scipy.interpolate import interp1d
 import warnings
@@ -95,11 +96,11 @@ def compute_gaussian_covariance(sky_area, get_theory_cl, block, AB, CD):
         if delta_AB is None:
             warnings.warn(
                 "There are no delta-ell values for some combinations of ({},{}).".format(A, B))
-            delta_AB = delta_ell_AB.values()[0]
+            delta_AB = list(delta_ell_AB.values())[0]
         if delta_CD is None:
             warnings.warn(
                 "There are no delta-ell values for some combinations ({},{}).".format(C, D))
-            delta_CD = delta_ell_CD.values()[0]
+            delta_CD = list(delta_ell_CD.values())[0]
 
         delta_AB = delta_AB(ell)
         delta_CD = delta_CD(ell)
@@ -116,9 +117,9 @@ def compute_gaussian_covariance(sky_area, get_theory_cl, block, AB, CD):
 def find_equal_ell(ell_1, ell_2):
     n_1 = len(ell_1)
     n_2 = len(ell_2)
-    for i in xrange(n_1):
+    for i in range(n_1):
         ell_i = ell_1[i]
-        for j in xrange(n_2):
+        for j in range(n_2):
             if ell_i == ell_2[j]:
                 yield i, j, ell_i
 

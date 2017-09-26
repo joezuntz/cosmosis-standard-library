@@ -3,6 +3,7 @@ This module takes linear and non-linear P(k) and extrapolates
 them linearly in log-space out to a specified high k_max
 
 """
+from builtins import range
 from cosmosis.datablock import option_section, names
 import numpy as np
 from numpy import log, exp
@@ -40,7 +41,7 @@ def extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint):
     k, z, P = block.get_grid(section, "k_h", "z", "p_k")
     # extrapolate
     P_out = []
-    for i in xrange(nz):
+    for i in range(nz):
         Pi = P[:, i]
         logk, logp = linear_extend(log(k), log(Pi), log(
             kmin), log(kmax), nmin, nmax, npoint)

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range
 from cosmosis.datablock import option_section, names
 import clerkin
 import numpy as np
@@ -118,8 +119,8 @@ def execute_bias_only(block, model, suffix):
         nk = len(k)
         nz = len(z1)
         b = np.zeros((nk, nz))
-        for i in xrange(nk):
-            for j in xrange(nz):
+        for i in range(nk):
+            for j in range(nz):
                 b[i, j] = b_k[i] * b_z[j]
 
         block.put_grid(names.bias_field, "k_h", k, "z", z1, "b" + suffix, b)

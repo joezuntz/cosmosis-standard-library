@@ -1,3 +1,4 @@
+from builtins import range
 from cosmosis.datablock import option_section, names
 from scipy.interpolate import interp1d
 import numpy as np
@@ -32,7 +33,7 @@ def execute(block, config):
     biases = config['bias_section']
     nbin = block[pz, "nbin"]
     z = block[pz, "z"]
-    for i in xrange(1, nbin + 1):
+    for i in range(1, nbin + 1):
         bin_name = "bin_%d" % i
         nz = block[pz, bin_name]
         if config["per_bin"]:

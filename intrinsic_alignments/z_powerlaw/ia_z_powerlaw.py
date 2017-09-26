@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from cosmosis.datablock import names, option_section
 import numpy as np
 
@@ -30,7 +32,7 @@ def execute(block, config):
     _, z_grid = np.meshgrid(k, z)
 
     # Construct and apply redshift scaling
-    z_scaling = ((1 + z_grid) / (1 + z0))**alpha
+    z_scaling = (old_div((1 + z_grid), (1 + z0)))**alpha
     p_ii *= z_scaling**2
     p_mi *= z_scaling
 

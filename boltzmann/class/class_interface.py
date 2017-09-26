@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 import os
 from cosmosis.datablock import names, option_section
 import sys
@@ -89,7 +92,7 @@ def get_class_outputs(block, c, config):
             P[i, j] = c.pk(ki, zj)
 
     # Save matter power as a grid
-    block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+    block.put_grid("matter_power_lin", "k_h", old_div(k, h0), "z", z, "p_k", P * h0**3)
 
     ##
     # Distances and related quantities

@@ -88,7 +88,7 @@ The default modules should not do this so probably you messed with something. Ra
 
         # In case interesting, save the different components to the block
         if self.use_te:
-            for key, val in components_te.items():
+            for key, val in list(components_te.items()):
                 if key != "ell":
                     key = key + "_te"
                 block['spt_model', key] = val

@@ -1,3 +1,4 @@
+from builtins import range
 from cosmosis.datablock import names, option_section
 import sys
 
@@ -28,22 +29,22 @@ def execute(block, options):
     if perbin:
         # per-bin - use b0,b1,b2, ...
         biases = [block["bin_bias", "r%d" % pos_bin]
-                  for pos_bin in xrange(1, n_z_bins_pos + 1)]
+                  for pos_bin in range(1, n_z_bins_pos + 1)]
     else:
         # all the same - just use b0
-        biases = [block["bin_bias", "r0"] for pos_bin in xrange(n_z_bins_pos)]
+        biases = [block["bin_bias", "r0"] for pos_bin in range(n_z_bins_pos)]
 
-    for pos_bin1 in xrange(n_z_bins_pos):
+    for pos_bin1 in range(n_z_bins_pos):
         bias1 = biases[pos_bin1]
 
         if apply_to_cl:
             if block.has_section('galaxy_shear_cl'):
-                for shear_bin in xrange(n_z_bins_shear):
+                for shear_bin in range(n_z_bins_shear):
                     name = "bin_{}_{}".format(pos_bin1 + 1, shear_bin + 1)
                     block["galaxy_shear_cl", name] *= bias1
 
             if block.has_section('galaxy_intrinsic_cl'):
-                for shear_bin in xrange(n_z_bins_shear):
+                for shear_bin in range(n_z_bins_shear):
                     name = "bin_{}_{}".format(pos_bin1 + 1, shear_bin + 1)
                     block["galaxy_intrinsic_cl", name] *= bias1
         else:

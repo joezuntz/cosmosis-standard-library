@@ -180,6 +180,9 @@ Comments in the subroutines contain further details.
 
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import input
+from past.utils import old_div
 import numpy as np
 from scipy.special import loggamma
 from scipy.fftpack._fftpack import drfft
@@ -251,15 +254,15 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
         kr = krgood(mu, q, dlnr, kr)
     elif kropt == 2:  # change kr to low-ringing kr verbosely
         d = krgood(mu, q, dlnr, kr)
-        if abs(kr / d - 1) >= 1e-15:
+        if abs(old_div(kr, d) - 1) >= 1e-15:
             kr = d
             print((" kr changed to ", kr))
     else:             # option to change kr to low-ringing kr interactively
         d = krgood(mu, q, dlnr, kr)
-        if abs(kr / d - 1.0) >= 1e-15:
+        if abs(old_div(kr, d) - 1.0) >= 1e-15:
             print((" change kr = ", kr))
             print((" to low-ringing kr = ", d))
-            go = input("? [CR, y=yes, n=no, x=exit]: ")
+            go = eval(input("? [CR, y=yes, n=no, x=exit]: "))
             if go.lower() in ['', 'y']:
                 kr = d
                 print((" kr changed to ", kr))
@@ -279,11 +282,11 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
     # xsave to not confuse it with xsave from the FFT.
 
     if q == 0:  # unbiased case (q = 0)
-        ln2kr = np.log(2.0 / kr)
-        xp = (mu + 1) / 2.0
-        d = np.pi / (n * dlnr)
+        ln2kr = np.log(old_div(2.0, kr))
+        xp = old_div((mu + 1), 2.0)
+        d = old_div(np.pi, (n * dlnr))
 
-        m = np.arange(1, (n + 1) / 2)
+        m = np.arange(1, old_div((n + 1), 2))
         y = m * d  # y = m*pi/(n*dlnr)
         zp = loggamma(xp + 1j * y)
         # Argument of kr^(-2 i y) U_mu(2 i y)
@@ -302,9 +305,9 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
 
     else:       # biased case (q != 0)
         ln2 = np.log(2.0)
-        ln2kr = np.log(2.0 / kr)
-        xp = (mu + 1 + q) / 2.0
-        xm = (mu + 1 - q) / 2.0
+        ln2kr = np.log(old_div(2.0, kr))
+        xp = old_div((mu + 1 + q), 2.0)
+        xm = old_div((mu + 1 - q), 2.0)
 
         # first element of rest of xsave
         y = 0
@@ -363,8 +366,8 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
         xsave1 = amp * np.cos(arg)
 
         # remaining elements of xsave
-        d = np.pi / (n * dlnr)
-        m = np.arange(1, (n + 1) / 2)
+        d = old_div(np.pi, (n * dlnr))
+        m = np.arange(1, old_div((n + 1), 2))
         y = m * d  # y = m pi/(n dlnr)
         zp = loggamma(xp + 1j * y)
         zm = loggamma(xm + 1j * y)
@@ -463,7 +466,7 @@ def fftl(a, xsave, rk=1, tdir=1):
     kr = xsave[2]
 
     # centre point of array
-    jc = np.array((fct.size + 1) / 2.0)
+    jc = np.array(old_div((fct.size + 1), 2.0))
     j = np.arange(fct.size) + 1
 
     # a(r) = A(r) (r/rc)^[-dir*(q-.5)]
@@ -477,7 +480,7 @@ def fftl(a, xsave, rk=1, tdir=1):
     lnkr = np.log(kr)
     lnrk = np.log(rk)
     fct *= np.exp(-tdir * ((q + 0.5) * (j - jc)
-                           * dlnr + q * lnkr - lnrk / 2.0))
+                           * dlnr + q * lnkr - old_div(lnrk, 2.0)))
 
     return fct
 
@@ -542,7 +545,7 @@ def fht(a, xsave, tdir=1):
     # a(r) = A(r) (r/rc)^(-dir*q)
     if q != 0:
         #  centre point of array
-        jc = np.array((fct.size + 1) / 2.0)
+        jc = np.array(old_div((fct.size + 1), 2.0))
         j = np.arange(fct.size) + 1
         fct *= np.exp(-tdir * q * (j - jc) * dlnr)
 
@@ -607,7 +610,7 @@ def fhtq(a, xsave, tdir=1):
     # _raw_fft(fct, n, -1, 1, 1, _fftpack.drfft)
     fct = drfft(fct, n, 1, 0)
 
-    m = np.arange(1, n / 2, dtype=int)  # index variable
+    m = np.arange(1, old_div(n, 2), dtype=int)  # index variable
     if q == 0:  # unbiased (q = 0) transform
         # multiply by (kr)^[- i 2 m pi/(n dlnr)] U_mu[i 2 m pi/(n dlnr)]
         ar = fct[2 * m - 1]
@@ -658,7 +661,7 @@ def fhtq(a, xsave, tdir=1):
 
         # problematical last element, for even n
         if np.mod(n, 2) == 0:
-            m = int(n / 2)
+            m = int(old_div(n, 2))
             ar = xsave[3 * m + 2] * xsave[3 * m + 1]
             if tdir == 1:  # forward transform: multiply by real part
                 fct[-1] *= ar
@@ -725,14 +728,14 @@ def krgood(mu, q, dlnr, kr):
     if dlnr == 0:
         return kr
 
-    xp = (mu + 1.0 + q) / 2.0
-    xm = (mu + 1.0 - q) / 2.0
+    xp = old_div((mu + 1.0 + q), 2.0)
+    xm = old_div((mu + 1.0 - q), 2.0)
     y = 1j * np.pi / (2.0 * dlnr)
     zp = loggamma(xp + y)
     zm = loggamma(xm + y)
 
     # low-ringing condition is that following should be integral
-    arg = np.log(2.0 / kr) / dlnr + (zp.imag + zm.imag) / np.pi
+    arg = old_div(np.log(old_div(2.0, kr)), dlnr) + old_div((zp.imag + zm.imag), np.pi)
 
     # return low-ringing kr
     return kr * np.exp((arg - np.round(arg)) * dlnr)

@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names
 import numpy as np
@@ -27,7 +30,7 @@ def setup(options):
 
 def gaussian(x, mu, sigma):
     norm = np.sqrt(2 * np.pi) * sigma
-    return np.exp(-0.5 * (x - mu)**2 / sigma**2) / norm
+    return old_div(np.exp(-0.5 * (x - mu)**2 / sigma**2), norm)
 
 
 def execute(block, config):
@@ -41,7 +44,7 @@ def execute(block, config):
     block[section, "NZ"] = len(z)
     block[section, "NBIN"] = nbin
 
-    for i in xrange(1, nbin + 1):
+    for i in range(1, nbin + 1):
         # generate simple gaussian window
         nz_bin = gaussian(z, mu[i - 1], sigma[i - 1])
         # the bin may not quite go to zero before we get to the

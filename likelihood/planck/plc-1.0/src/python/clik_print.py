@@ -1,5 +1,10 @@
 from __future__ import print_function
+from __future__ import division
 #! PYTHONEXE
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import sys
 sys.path = ["REPLACEPATH"] + sys.path
 
@@ -35,7 +40,7 @@ def main_CMB(argv):
     if "prior" in lkl:
         names = lkl["prior"].attrs["name"]
         names = [names[i * 256:(i + 1) * 256].strip()
-                 for i in range(len(names) / 256)]
+                 for i in range(old_div(len(names), 256))]
         print("  gaussian priors on %s" % ", ".join(names))
         loc = lkl["prior/loc"][:]
         print("  at \n    %s" % " ".join([str(l) for l in loc]))

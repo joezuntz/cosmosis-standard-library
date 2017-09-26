@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import zip
+from builtins import range
 from . import parobject as php
 import numpy as nm
 
@@ -147,7 +149,7 @@ def add_parametric_component(lkl_grp, name, dets, vpars, lmin, lmax, defaults={}
     agrp.attrs["keys"] = php.pack256(*npars)
 
     agrp.attrs["ndef"] = len(defaults)
-    defkey = defaults.keys()
+    defkey = list(defaults.keys())
     defval = [defaults[k] for k in defkey]
     agrp.attrs["defaults"] = php.pack256(*defkey)
     agrp.attrs["values"] = php.pack256(*defval)
@@ -181,7 +183,7 @@ def add_parametric_component(lkl_grp, name, dets, vpars, lmin, lmax, defaults={}
                 data, dtype=nm.double).flat[:])
 
     if rename:
-        rename_from = rename.keys()
+        rename_from = list(rename.keys())
         rename_to = [rename[k] for k in rename_from]
         agrp.attrs["rename_from"] = php.pack256(*rename_from)
         agrp.attrs["rename_to"] = php.pack256(*rename_to)
@@ -297,14 +299,14 @@ def parametric_from_smica_group(hgrp, lmin=-1, lmax=-1):
                                            i].attrs["defaults"].split("\0") if v.strip()]
         value = [v.strip() for v in hgrp["component_%d" %
                                          i].attrs["values"].split("\0") if v.strip()]
-        defdir = dict(zip(default, value))
+        defdir = dict(list(zip(default, value)))
         frq = hgrp["component_%d" % i].attrs["dfreq"]
         try:
             rename_from = [v.strip() for v in hgrp["component_%d" %
                                                    i].attrs["rename_from"].split("\0") if v.strip()]
             rename_to = [v.strip() for v in hgrp["component_%d" %
                                                  i].attrs["rename_to"].split("\0") if v.strip()]
-            rename = dict(zip(rename_from, rename_to))
+            rename = dict(list(zip(rename_from, rename_to)))
         except Exception as e:
             rename = {}
         # print rename

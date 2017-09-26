@@ -2,7 +2,10 @@
 rosenbrock_likelihood.py: a test problem for our samplers.
 We sample a Rosenbrock function.
 """
+from __future__ import division
 
+from builtins import object
+from past.utils import old_div
 import os
 import sys
 import numpy as np
@@ -21,7 +24,7 @@ class Rosenbrock(object):
         self.a2 = a2
 
     def loglikelihood(self, p):
-        return -(self.a1 * (p[1] - p[0] ** 2) ** 2 + (1 - p[0]) ** 2) / self.a2
+        return old_div(-(self.a1 * (p[1] - p[0] ** 2) ** 2 + (1 - p[0]) ** 2), self.a2)
 
     def __call__(self, p):
         return self.loglikelihood(p)

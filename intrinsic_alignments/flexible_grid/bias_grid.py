@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import range
+from builtins import object
 import scipy.interpolate as interp
 import numpy as np
 import pdb
@@ -11,7 +13,7 @@ Outputs both stochastic and systematic terms rI, bI, rg and bg.
 """
 
 
-class flexible_grid:
+class flexible_grid(object):
     def __init__(self, config):
         self.nz = config['nznodes']
         self.nk = config['nknodes']
@@ -27,8 +29,8 @@ class flexible_grid:
         BI = np.zeros((self.nz, self.nk))
         Bg = np.zeros((self.nz, self.nk))
 
-        for i in xrange(self.nz):
-            for j in xrange(self.nk):
+        for i in range(self.nz):
+            for j in range(self.nk):
                 if self.intrinsic_alignments:
                     BI[i, j] = block['intrinsic_alignment_parameters',
                                      'node_%d_%d' % (i + 1, j + 1)]

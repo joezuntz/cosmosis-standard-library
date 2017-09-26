@@ -1,13 +1,15 @@
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 
 
 def gtd_bias(z, growth, alpha, b0, c):
-    b = c + (b0 - c) / growth**alpha
+    b = c + old_div((b0 - c), growth**alpha)
     return b
 
 
 def q_bias(k, Q, A):
-    return (1 + Q * k**2) / (1 + A * k)
+    return old_div((1 + Q * k**2), (1 + A * k))
 
 
 def make_grids(k, z):

@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import sys
 import os
 import numpy as np
@@ -52,7 +55,7 @@ def setup(block):
     covx0c = get('COVx0c')
     covx1c = get('COVx1c')
 
-    scalefac = -2.5 / (x0_obs * np.log(10.0))
+    scalefac = old_div(-2.5, (x0_obs * np.log(10.0)))
     covmbx1 = covx0x1 * scalefac
     covmbc = covx0c * scalefac
 
@@ -60,7 +63,7 @@ def setup(block):
     ok_covmats = []
     nbad = 0
 
-    for i_c in xrange(len(z_obs)):
+    for i_c in range(len(z_obs)):
         covmat = np.array([[sig_mb[i_c]**2, covmbx1[i_c], covmbc[i_c]],
                            [covmbx1[i_c], sig_x1[i_c]**2, covx1c[i_c]],
                            [covmbc[i_c], covx1c[i_c], sig_c[i_c]**2]])
@@ -100,12 +103,12 @@ def likelihood(data_vec, z_model_table, mu_model_table, M0, alpha, beta):
 
     # Build up the vector of sigma&2 for each SN
     mu_sig_sq = np.zeros(len(z_obs))
-    for i_c in xrange(len(z_obs)):
+    for i_c in range(len(z_obs)):
         fit_sig_sq = np.dot(np.dot(psi, covmats[i_c]), psi)
         mu_sig_sq[i_c] = fit_sig_sq + int_sig**2
 
     # Get overall error vector
-    chisquare = (mu_obs - mu_theory)**2 / mu_sig_sq
+    chisquare = old_div((mu_obs - mu_theory)**2, mu_sig_sq)
 
     # Return log likelihood = -chi^2/2
     LogLike = -0.5 * chisquare.sum()

@@ -1,4 +1,7 @@
 from __future__ import print_function
+from builtins import next
+from builtins import str
+from builtins import object
 import re
 import numpy as nm
 import os.path as osp
@@ -27,7 +30,7 @@ def read_array(fname, dirname):
         return nm.loadtxt(fname)
 
 
-class transformme:
+class transformme(object):
     def __init__(self, tfunc, pf, isar=False):
         self.tfunc = tfunc
         self.pf = pf
@@ -170,7 +173,7 @@ class miniparse(object):
         self._access_list = []
 
     def keys(self, prefix=""):
-        return [k for k in self.pf.keys() if k[:len(prefix)] == prefix]
+        return [k for k in list(self.pf.keys()) if k[:len(prefix)] == prefix]
 
     def __repr__(self):
         rr = []

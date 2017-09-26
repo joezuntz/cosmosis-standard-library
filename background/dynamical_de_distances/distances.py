@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import map
 import numpy as np
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
@@ -39,9 +40,9 @@ def execute(block, config):
     DM = DistanceCalc(omega_m, omega_k, omega_lambda, wmodel, de_params, h0)
     z_array = np.arange(zmin, zmax + dz, dz)
     mu = np.zeros_like(z_array)
-    mu = map(DM.mu, z_array)
-    da = map(DM.d_a, z_array)
-    dl = map(DM.d_l, z_array)
+    mu = list(map(DM.mu, z_array))
+    da = list(map(DM.d_a, z_array))
+    dl = list(map(DM.d_l, z_array))
 
     block[dist, 'd_l'] = dl
     block[dist, 'd_a'] = da

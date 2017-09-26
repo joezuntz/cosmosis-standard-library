@@ -1,11 +1,17 @@
 from __future__ import print_function
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import scipy.interpolate
 import pdb
 import scipy.stats.mstats as mstats
 import numpy as np
 
 
-class Cl_class:
+class Cl_class(object):
     def __init__(self, block, config):
 
         # Spectra to use
@@ -40,7 +46,7 @@ class Cl_class:
         self.Nzbin_cmb = 1.
         if self.shear:
             self.zbin_edges_shear = [block[shear_cat, 'edge_%d' % i]
-                                     for i in xrange(1, self.Nzbin_shear + 1)]
+                                     for i in range(1, self.Nzbin_shear + 1)]
             if self.intrinsic_alignments[0]:
                 gg_section = 'shear_cl_gg'
             else:
@@ -53,7 +59,7 @@ class Cl_class:
                 self.Nlbin_shear = self.Nl_shear
         if self.position:
             self.zbin_edges_pos = [block[pos_cat, 'edge_%d' % i]
-                                   for i in xrange(1, self.Nzbin_pos + 1)]
+                                   for i in range(1, self.Nzbin_pos + 1)]
             self.l_pos = block['matter_cl', 'ell']
             self.Nl_pos = len(self.l_pos)
             if self.dobinning:
@@ -93,7 +99,7 @@ class Cl_class:
 
         if self.bias:
             self.multiplicative_bias = [block[shear_cat, "m%d" % i]
-                                        for i in xrange(1, self.Nzbin_shear + 1)]
+                                        for i in range(1, self.Nzbin_shear + 1)]
 
         # Finally get the desired binning
         self.get_l_bins(config)
@@ -118,8 +124,8 @@ class Cl_class:
 
         # Then cycle through all the redshift bin combinations
         if self.shear:
-            for i in xrange(1, self.Nzbin_shear + 1):
-                for j in xrange(1, self.Nzbin_shear + 1):
+            for i in range(1, self.Nzbin_shear + 1):
+                for j in range(1, self.Nzbin_shear + 1):
                     bin = "bin_%d_%d" % (i, j)
                     bin_tr = "bin_%d_%d" % (j, i)
 
@@ -151,8 +157,8 @@ class Cl_class:
                 "shear_cl_gg", "ell")
 
         if self.position:
-            for i in xrange(1, self.Nzbin_pos + 1):
-                for j in xrange(1, self.Nzbin_pos + 1):
+            for i in range(1, self.Nzbin_pos + 1):
+                for j in range(1, self.Nzbin_pos + 1):
                     bin = "bin_%d_%d" % (i, j)
                     bin_tr = "bin_%d_%d" % (j, i)
 
@@ -180,8 +186,8 @@ class Cl_class:
         if self.ggl:
             block["galaxy_position_shape_cross_cl_unbinned",
                   "ell"] = block.get_double_array_1d("matter_cl", "ell")
-        for i in xrange(1, self.Nzbin_pos + 1):
-            for j in xrange(1, self.Nzbin_shear + 1):
+        for i in range(1, self.Nzbin_pos + 1):
+            for j in range(1, self.Nzbin_shear + 1):
                 bin = "bin_%d_%d" % (i, j)
                 bin_tr = "bin_%d_%d" % (j, i)
 
@@ -235,8 +241,8 @@ class Cl_class:
             # If noise was added earlier, the binning is done here rather than
             # immediately on loading
             if self.shear:
-                for i in xrange(1, self.Nzbin_shear + 1):
-                    for j in xrange(1, self.Nzbin_shear + 1):
+                for i in range(1, self.Nzbin_shear + 1):
+                    for j in range(1, self.Nzbin_shear + 1):
                         self.C_ee_binned[i - 1][j - 1] = get_binned_cl(self.C_ee[i - 1][j - 1], self.l_shear,
                                                                        self.lbin_edges_shear, self.dobinning, self.window)
                         if self.bias:
@@ -244,16 +250,16 @@ class Cl_class:
                         block["galaxy_shape_cl_unbinned", "bin_%d_%d" %
                               (i, j)] = self.C_ee[i - 1][j - 1]
             if self.position:
-                for i in xrange(1, self.Nzbin_pos + 1):
-                    for j in xrange(1, self.Nzbin_pos + 1):
+                for i in range(1, self.Nzbin_pos + 1):
+                    for j in range(1, self.Nzbin_pos + 1):
                         self.C_nn_binned[i - 1][j - 1] = get_binned_cl(self.C_nn[i - 1][j - 1], self.l_pos,
                                                                        self.lbin_edges_pos, self.dobinning, self.window)
                         block["galaxy_position_cl_UNBINNED", "bin_%d_%d" %
                               (i, j)] = self.C_nn[i - 1][j - 1]
                         print(a)
             if self.ggl:
-                for i in xrange(1, self.Nzbin_pos + 1):
-                    for j in xrange(1, self.Nzbin_shear + 1):
+                for i in range(1, self.Nzbin_pos + 1):
+                    for j in range(1, self.Nzbin_shear + 1):
                         self.C_ne_binned[i - 1][j - 1] = get_binned_cl(self.C_ne[i - 1][j - 1], self.l_ggl,
                                                                        self.lbin_edges_pos, self.dobinning, self.window)
                         if self.bias:
@@ -296,12 +302,12 @@ class Cl_class:
         N_shot_nn = []
 
         if self.shear:
-            for i in xrange(len(self.C_ee[0][0])):
+            for i in range(len(self.C_ee[0][0])):
                 N_shot_ee += [N_ee_0]
             N_shot_ee = np.swapaxes(N_shot_ee, 0, 2)
             N_shot_ee = np.swapaxes(N_shot_ee, 0, 1)
         if self.position:
-            for i in xrange(len(self.C_nn[0][0])):
+            for i in range(len(self.C_nn[0][0])):
                 N_shot_nn += [N_nn_0]
 
             N_shot_nn = np.swapaxes(N_shot_nn, 0, 2)
@@ -324,19 +330,19 @@ class Cl_class:
                 self.l_bins_shear = np.zeros_like(self.lbin_edges_shear[:-1])
                 if self.window == 'tophat':
                     self.l_bins_shear = np.exp(
-                        (np.log(self.lbin_edges_shear[1:] * self.lbin_edges_shear[:-1])) / 2.0)
+                        old_div((np.log(self.lbin_edges_shear[1:] * self.lbin_edges_shear[:-1])), 2.0))
                 elif self.window == 'tophat-arithmetic':
-                    self.l_bins_shear = (
-                        self.lbin_edges_shear[1:] + self.lbin_edges_shear[:-1]) / 2.0
+                    self.l_bins_shear = old_div((
+                        self.lbin_edges_shear[1:] + self.lbin_edges_shear[:-1]), 2.0)
                 elif self.window == 'delta':
                     # Just take the mid point of each bin and sample the Cls there
-                    for i in xrange(len(self.lbin_edges_shear) - 1):
+                    for i in range(len(self.lbin_edges_shear) - 1):
                         lmin0 = self.lbin_edges_shear[i]
                         lmax0 = self.lbin_edges_shear[i + 1]
                         sel = (self.l_shear > lmin0) & (self.l_shear < lmax0)
                         l_in_window = self.l_shear[sel]
-                        self.l_bins_shear[i] = l_in_window[len(
-                            l_in_window) / 2]
+                        self.l_bins_shear[i] = l_in_window[old_div(len(
+                            l_in_window), 2)]
 
             if self.position:
                 lmin, lmax = config['lmin_pos'], config['lmax_pos']
@@ -345,17 +351,17 @@ class Cl_class:
                 self.l_bins_pos = np.zeros_like(self.lbin_edges_pos[:-1])
                 if self.window == 'tophat':
                     self.l_bins_pos = np.exp(
-                        (np.log(self.lbin_edges_pos[1:] * self.lbin_edges_pos[:-1])) / 2.0)
+                        old_div((np.log(self.lbin_edges_pos[1:] * self.lbin_edges_pos[:-1])), 2.0))
                 elif self.window == 'tophat-arithmetic':
-                    self.l_bins_pos = (
-                        self.lbin_edges_pos[1:] + self.lbin_edges_pos[:-1]) / 2.0
+                    self.l_bins_pos = old_div((
+                        self.lbin_edges_pos[1:] + self.lbin_edges_pos[:-1]), 2.0)
                 elif self.window == 'delta':
-                    for i in xrange(len(self.lbin_edges_pos) - 1):
+                    for i in range(len(self.lbin_edges_pos) - 1):
                         lmin0 = self.lbin_edges_pos[i]
                         lmax0 = self.lbin_edges_pos[i + 1]
                         sel = (self.l_pos > lmin0) & (self.l_pos < lmax0)
                         l_in_window = self.l_pos[sel]
-                        self.l_bins_pos[i] = l_in_window[len(l_in_window) / 2]
+                        self.l_bins_pos[i] = l_in_window[old_div(len(l_in_window), 2)]
 
             if self.position and self.shear:
                 lmin, lmax = config['lmin_ggl'], config['lmax_ggl']
@@ -367,34 +373,34 @@ class Cl_class:
                     np.log10(lmin), np.log10(lmax), self.Nlbin_ggl + 1)
                 if self.window == 'tophat':
                     self.l_bins_ggl = np.exp(
-                        (np.log(self.lbin_edges_ggl[1:] * self.lbin_edges_ggl[:-1])) / 2.0)
+                        old_div((np.log(self.lbin_edges_ggl[1:] * self.lbin_edges_ggl[:-1])), 2.0))
                 elif self.window == 'tophat-arithmetic':
-                    self.l_bins_ggl = (
-                        self.lbin_edges_ggl[1:] + self.lbin_edges_ggl[:-1]) / 2.0
+                    self.l_bins_ggl = old_div((
+                        self.lbin_edges_ggl[1:] + self.lbin_edges_ggl[:-1]), 2.0)
                 elif self.window == 'delta':
-                    for i in xrange(len(self.lbin_edges_ggl) - 1):
+                    for i in range(len(self.lbin_edges_ggl) - 1):
                         lmin0 = self.lbin_edges_ggl[i]
                         lmax0 = self.lbin_edges_ggl[i + 1]
                         sel = (self.l_ggl > lmin0) & (self.l_ggl < lmax0)
                         l_in_window = self.l_ggl[sel]
-                        self.l_bins_ggl[i] = l_in_window[len(l_in_window) / 2]
+                        self.l_bins_ggl[i] = l_in_window[old_div(len(l_in_window), 2)]
             if self.cmb_kappa:
                 lmin, lmax = config['lmin_cmb_kappa'], config['lmax_cmb_kappa']
                 self.lbin_edges_kk = np.linspace(lmin, lmax, self.Nlbin_kk + 1)
                 self.l_bins_kk = np.zeros_like(self.lbin_edges_kk[:-1])
                 if self.window == 'tophat':
                     self.l_bins_kk = np.exp(
-                        (np.log(self.lbin_edges_kk[1:] * self.lbin_edges_kk[:-1])) / 2.0)
+                        old_div((np.log(self.lbin_edges_kk[1:] * self.lbin_edges_kk[:-1])), 2.0))
                 elif self.window == 'tophat-arithmetic':
-                    self.l_bins_kk = (
-                        self.lbin_edges_kk[1:] + self.lbin_edges_kk[:-1]) / 2.0
+                    self.l_bins_kk = old_div((
+                        self.lbin_edges_kk[1:] + self.lbin_edges_kk[:-1]), 2.0)
                 elif self.window == 'delta':
-                    for i in xrange(len(self.lbin_edges_kk) - 1):
+                    for i in range(len(self.lbin_edges_kk) - 1):
                         lmin0 = self.lbin_edges_kk[i]
                         lmax0 = self.lbin_edges_kk[i + 1]
                         sel = (self.l_kk > lmin0) & (self.l_kk < lmax0)
                         l_in_window = self.l_kk[sel]
-                        self.l_bins_kk[i] = l_in_window[len(l_in_window) / 2]
+                        self.l_bins_kk[i] = l_in_window[old_div(len(l_in_window), 2)]
 
             if self.kappa_shear:
                 lmin, lmax = config['lmin_kappa_shear'], config['lmax_kappa_shear']
@@ -402,34 +408,34 @@ class Cl_class:
                 self.l_bins_ke = np.zeros_like(self.lbin_edges_ke[:-1])
                 if self.window == 'tophat':
                     self.l_bins_ke = np.exp(
-                        (np.log(self.lbin_edges_ke[1:] * self.lbin_edges_ke[:-1])) / 2.0)
+                        old_div((np.log(self.lbin_edges_ke[1:] * self.lbin_edges_ke[:-1])), 2.0))
                 elif self.window == 'tophat-arithmetic':
-                    self.l_bins_ke = (
-                        self.lbin_edges_ke[1:] + self.lbin_edges_ke[:-1]) / 2.0
+                    self.l_bins_ke = old_div((
+                        self.lbin_edges_ke[1:] + self.lbin_edges_ke[:-1]), 2.0)
                 elif self.window == 'delta':
-                    for i in xrange(len(self.lbin_edges_ke) - 1):
+                    for i in range(len(self.lbin_edges_ke) - 1):
                         lmin0 = self.lbin_edges_ke[i]
                         lmax0 = self.lbin_edges_ke[i + 1]
                         sel = (self.l_ke > lmin0) & (self.l_ke < lmax0)
                         l_in_window = self.l_ke[sel]
-                        self.l_bins_ke[i] = l_in_window[len(l_in_window) / 2]
+                        self.l_bins_ke[i] = l_in_window[old_div(len(l_in_window), 2)]
             if self.kappa_pos:
                 lmin, lmax = config['lmin_kappa_pos'], config['lmax_kappa_pos']
                 self.lbin_edges_kn = np.linspace(lmin, lmax, self.Nlbin_kn + 1)
                 self.l_bins_kn = np.zeros_like(self.lbin_edges_kn[:-1])
                 if self.window == 'tophat':
                     self.l_bins_kn = np.exp(
-                        (np.log(self.lbin_edges_kn[1:] * self.lbin_edges_kn[:-1])) / 2.0)
+                        old_div((np.log(self.lbin_edges_kn[1:] * self.lbin_edges_kn[:-1])), 2.0))
                 elif self.window == 'tophat-arithmetic':
-                    self.l_bins_kn = (
-                        self.lbin_edges_kn[1:] + self.lbin_edges_kn[:-1]) / 2.0
+                    self.l_bins_kn = old_div((
+                        self.lbin_edges_kn[1:] + self.lbin_edges_kn[:-1]), 2.0)
                 elif self.window == 'delta':
-                    for i in xrange(len(self.lbin_edges_kn) - 1):
+                    for i in range(len(self.lbin_edges_kn) - 1):
                         lmin0 = self.lbin_edges_kn[i]
                         lmax0 = self.lbin_edges_kn[i + 1]
                         sel = (self.l_kn > lmin0) & (self.l_kn < lmax0)
                         l_in_window = self.l_kn[sel]
-                        self.l_bins_kn[i] = l_in_window[len(l_in_window) / 2]
+                        self.l_bins_kn[i] = l_in_window[old_div(len(l_in_window), 2)]
         else:
             if self.shear:
                 self.l_bins_shear = self.l_shear
@@ -493,24 +499,24 @@ class Cl_class:
         out_C_nn = {}
         out_C_ne = {}
         if self.shear:
-            for i in xrange(1, self.Nzbin_shear + 1):
-                for j in xrange(1, self.Nzbin_shear + 1):
+            for i in range(1, self.Nzbin_shear + 1):
+                for j in range(1, self.Nzbin_shear + 1):
                     bin = "bin_%d_%d" % (i, j)
                     block.put_double_array_1d(
                         'galaxy_shape_cl', bin, self.C_ee_binned[i - 1][j - 1])
                     if out_path is not None:
                         out_C_ee[bin] = self.C_ee_binned[i - 1][j - 1]
         if self.position:
-            for i in xrange(1, self.Nzbin_pos + 1):
-                for j in xrange(1, self.Nzbin_pos + 1):
+            for i in range(1, self.Nzbin_pos + 1):
+                for j in range(1, self.Nzbin_pos + 1):
                     bin = "bin_%d_%d" % (i, j)
                     block.put_double_array_1d(
                         'galaxy_position_cl', bin, self.C_nn_binned[i - 1][j - 1])
                     if out_path is not None:
                         out_C_nn[bin] = self.C_nn_binned[i - 1][j - 1]
         if self.ggl:
-            for i in xrange(1, self.Nzbin_pos + 1):
-                for j in xrange(1, self.Nzbin_shear + 1):
+            for i in range(1, self.Nzbin_pos + 1):
+                for j in range(1, self.Nzbin_shear + 1):
                     bin = "bin_%d_%d" % (i, j)
                     block.put_double_array_1d(
                         'galaxy_position_shape_cross_cl', bin, self.C_ne_binned[i - 1][j - 1])
@@ -549,7 +555,7 @@ class Cl_class:
                 datavector['C_ne'] = out_C_ne
                 datavector['l_bin_edges_ggl'] = self.lbin_edges_ggl
                 datavector['ell_ggl'] = self.l_bins_ggl
-            import cPickle as pickle
+            import pickle as pickle
 
             f = open(out_path, 'wb')
             print('Saved datavector to %s' % out_path)
@@ -560,7 +566,7 @@ class Cl_class:
 def get_binned_cl(Cl, l, lbin_edges, dobinning, window):
     if dobinning:
         Cl_binned = np.zeros(len(lbin_edges) - 1)
-        for i in xrange(len(lbin_edges) - 1):
+        for i in range(len(lbin_edges) - 1):
             lmin = lbin_edges[i]
             lmax = lbin_edges[i + 1]
             sel = (l > lmin) & (l < lmax)
@@ -575,7 +581,7 @@ def get_binned_cl(Cl, l, lbin_edges, dobinning, window):
             elif window == 'tophat-arithmetic':
                 Cl_binned[i] = np.mean(Cl[sel])
             elif window == 'delta':
-                i0 = len(Cl[sel]) / 2
+                i0 = old_div(len(Cl[sel]), 2)
                 Cl_binned[i] = Cl[sel][i0]
         return Cl_binned
     else:
@@ -590,8 +596,8 @@ def get_binned_number_densities(nzbin, ngal):
     n_binned = []
     # Convert number density from arcmin^-2 to sr^-1
     ngal = (60 * 60 * 180 * 180 / (np.pi * np.pi)) * ngal
-    for i in xrange(nzbin):
-        n_binned += [ngal / nzbin]
+    for i in range(nzbin):
+        n_binned += [old_div(ngal, nzbin)]
     n_binned = np.array(n_binned)
 
     return n_binned

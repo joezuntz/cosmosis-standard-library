@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import re
 import numpy as nm
 
@@ -10,7 +12,7 @@ def scarray(li, scal=False):
         return nm.array(li)
 
 
-class transformme:
+class transformme(object):
     def __init__(self, tfunc, pf, isar=False):
         self.tfunc = tfunc
         self.pf = pf

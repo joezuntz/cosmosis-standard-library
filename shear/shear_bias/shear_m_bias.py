@@ -8,6 +8,7 @@ assuming model values of the multplicative factor m, either per bin or for all b
 
 """
 from __future__ import print_function
+from builtins import range
 from cosmosis.datablock import names, option_section
 import sys
 
@@ -45,8 +46,8 @@ def get_nbins(block, section):
 def calibrate_section(block, section, m_a, m_b, verbose):
     n_a = len(m_a)
     n_b = len(m_b)
-    for i in xrange(n_a):
-        for j in xrange(n_b):
+    for i in range(n_a):
+        for j in range(n_b):
 
             # Get existing C_ell
             cl_name = "bin_{}_{}".format(i + 1, j + 1)
@@ -61,21 +62,21 @@ def calibrate_section(block, section, m_a, m_b, verbose):
 def calibrate_shear_shear(block, section, cal_section, m_per_bin, verbose):
     nbin_a, nbin_b = get_nbins(block, section)
     if m_per_bin:
-        m = [block[cal_section, "m{}".format(i + 1)] for i in xrange(nbin_a)]
+        m = [block[cal_section, "m{}".format(i + 1)] for i in range(nbin_a)]
     else:
         m0 = block[cal_section, "m0"]
-        m = [m0 for i in xrange(nbin_a)]
+        m = [m0 for i in range(nbin_a)]
     calibrate_section(block, section, m, m, verbose)
 
 
 def calibrate_position_shear(block, section, cal_section, m_per_bin, verbose):
     nbin_a, nbin_b = get_nbins(block, section)
-    m_a = [0.0 for i in xrange(nbin_a)]
+    m_a = [0.0 for i in range(nbin_a)]
     if m_per_bin:
-        m_b = [block[cal_section, "m{}".format(i + 1)] for i in xrange(nbin_b)]
+        m_b = [block[cal_section, "m{}".format(i + 1)] for i in range(nbin_b)]
     else:
         m0 = block[cal_section, "m0"]
-        m_b = [m0 for i in xrange(nbin_b)]
+        m_b = [m0 for i in range(nbin_b)]
     calibrate_section(block, section, m_a, m_b, verbose)
 
 

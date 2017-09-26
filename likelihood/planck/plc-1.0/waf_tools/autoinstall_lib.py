@@ -1,4 +1,6 @@
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 from waflib import Logs
 import sys
 import os.path as osp
@@ -214,8 +216,8 @@ def conf_lib(ctx, name, _libs, testfunc=[], testinclude=[], add_inc_path=[], def
 
 
 def getfromurl(fromurl, tofile):
-    import urllib2
-    luaf = urllib2.urlopen(fromurl)
+    import urllib.request, urllib.error, urllib.parse
+    luaf = urllib.request.urlopen(fromurl)
     # if luaf.code!=200 and luaf.code!=None:
     #  raise Utils.WscriptError("Cannot install : %d reported error %d"%(luaf.code,where))
     f = open(tofile, "w")
@@ -227,7 +229,7 @@ def getfromurl(fromurl, tofile):
 def installsmthg_pre(ctx, where, what, whereto="build/"):
 
     from waflib import Utils, Errors
-    import urllib2
+    import urllib.request, urllib.error, urllib.parse
     import re
     import os.path as osp
     import tarfile

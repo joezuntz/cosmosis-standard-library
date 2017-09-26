@@ -16,6 +16,8 @@ from __future__ import print_function
 #$Id: bicep_util.py,v 1.1.2.5 2014/03/12 18:20:57 dbarkats Exp $ #
 
 
+from builtins import str
+from builtins import range
 import numpy as np
 from numpy import linalg as LA
 from scipy.linalg import sqrtm

@@ -1,3 +1,4 @@
+from builtins import str
 from cosmosis.datablock import option_section
 
 

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range
 from cosmosis.datablock import option_section, names
 
 
@@ -34,17 +35,17 @@ def execute(block, config):
 
     if perbin:
         A = [block[names.intrinsic_alignment_parameters, "A{}".format(i + 1)]
-             for i in xrange(nbin_shear)]
+             for i in range(nbin_shear)]
     else:
-        A = [1 for i in xrange(nbin_shear)]
+        A = [1 for i in range(nbin_shear)]
 
     if do_shear_shear:
         # for shear-shear, we're replacing 'shear_cl' (the GG term) with GG+GI+II...
         # so in case useful, save the GG term to shear_cl_gg.
         # also check for a b-mode contribution from IAs
         block[names.shear_cl_gg, 'ell'] = block[names.shear_cl, 'ell']
-        for i in xrange(nbin_shear):
-            for j in xrange(i + 1):
+        for i in range(nbin_shear):
+            for j in range(i + 1):
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
                 bin_ji = 'bin_{1}_{0}'.format(i + 1, j + 1)
                 block[names.shear_cl_gg, bin_ij] = block[names.shear_cl, bin_ij]
@@ -57,8 +58,8 @@ def execute(block, config):
                 if block.has_section("shear_cl_ii_bb"):
                     block["shear_cl_bb", bin_ij] = block["shear_cl_ii_bb", bin_ij]
     if do_position_shear:
-        for i in xrange(nbin_pos):
-            for j in xrange(nbin_shear):
+        for i in range(nbin_pos):
+            for j in range(nbin_shear):
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
                 block["galaxy_shear_cl", bin_ij] += A[j] * \
                     block["galaxy_intrinsic_cl", bin_ij]

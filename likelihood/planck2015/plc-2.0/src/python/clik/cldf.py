@@ -1,3 +1,5 @@
+from builtins import range
+from builtins import object
 import os
 import os.path as osp
 import shutil as shu
@@ -20,7 +22,7 @@ def pack256(*li):
 def is_cldf(name):
     f = open(name)
     try:
-        f.keys()
+        list(f.keys())
         return True
     except Exception as e:
         return False
@@ -77,11 +79,11 @@ class File(object):
         if not path:
             path = self._name
         f = file(osp.join(path, _metadata), "w")
-        for k, v in dct.items():
+        for k, v in list(dct.items()):
             if type(v) == str:
                 typ = "str"
                 modi = "%s"
-            elif type(v) in (bool, int, long, nm.int32, nm.int64):
+            elif type(v) in (bool, int, int, nm.int32, nm.int64):
                 typ = "int"
                 v = int(v)
                 modi = "%d"
@@ -101,7 +103,7 @@ class File(object):
                 os.remove(name)
         else:
             dct = self._parsemetadata(osp.split(name)[0])
-            if osp.split(name)[1] in dct.keys():
+            if osp.split(name)[1] in list(dct.keys()):
                 del dct[osp.split(name)[1]]
                 self._writemetadata(dct, osp.split(name)[0])
 
@@ -220,10 +222,10 @@ class File(object):
         dct = self._parsemetadata(self._name)
         ls = [el for el in os.listdir(
             self._name) if el[0] != '.' and el != _metadata]
-        return ls + dct.keys()
+        return ls + list(dct.keys())
 
     def items(self):
-        ks = self.keys()
+        ks = list(self.keys())
         return [(k, self[k]) for k in ks]
 
     def close(self):
@@ -235,7 +237,7 @@ try:
 
     def hdf2cldf_grp(hdf, fdf):
         # first the metadata
-        for kk in hdf.attrs.keys():
+        for kk in list(hdf.attrs.keys()):
             vl = hdf.attrs[kk]
 
             # print kk,type(vl)
@@ -246,7 +248,7 @@ try:
             else:
                 fdf[kk] = vl
         # then the group/data
-        for kk in hdf.keys():
+        for kk in list(hdf.keys()):
             if kk == "external_data":
                 dts = hdf[kk][:]
                 install_path = osp.join(fdf._name, "_external")

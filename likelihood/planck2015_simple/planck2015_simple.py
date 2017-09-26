@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 from scipy.interpolate import interp1d
@@ -34,9 +36,9 @@ class PlanckSimpleLikelihood(GaussianLikelihood):
         # so convert our theory predictions
         ell_theory = block[self.x_section, self.x_name]
         f = ell_theory * (ell_theory + 1) / (2 * np.pi)
-        tt_theory = block[self.y_section, "tt"] / f
-        te_theory = block[self.y_section, "te"] / f
-        ee_theory = block[self.y_section, "ee"] / f
+        tt_theory = old_div(block[self.y_section, "tt"], f)
+        te_theory = old_div(block[self.y_section, "te"], f)
+        ee_theory = old_div(block[self.y_section, "ee"], f)
 
         # interpolate into the theory,
         tt_predicted = interp1d(ell_theory, tt_theory)(self.data_x[0])

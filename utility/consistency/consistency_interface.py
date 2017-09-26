@@ -28,7 +28,7 @@ def execute(block, config):
             known_parameters[param] = block[section, lookup_param]
 
     if cons.verbose:
-        print("Consistency relation input parameters:", ', '.join(known_parameters.keys()))
+        print("Consistency relation input parameters:", ', '.join(list(known_parameters.keys())))
 
     # Run the consistency checker/parameter filler-inner.
     try:
@@ -50,7 +50,7 @@ def execute(block, config):
         block[cosmo, "A_s"] = np.exp(block[cosmo, 'log1e10As']) * 1.0e-10
 
     # Set or replace the new values
-    for param, value in filled_parameters.items():
+    for param, value in list(filled_parameters.items()):
         if '___' in param:
             section, param = param.split('___')
         else:

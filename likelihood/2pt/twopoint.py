@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 from astropy.io import fits
 import astropy.units
 from astropy.table import Table
@@ -31,8 +36,8 @@ def sample_cov(xi_arrays, mode='full'):
     xi_mean = np.mean(xi_arrays, axis=0)
     for i in range(npoints):
         for j in range(npoints):
-            Cov[i, j] = np.sum((xi_arrays[:, i] - xi_mean[i])
-                               * (xi_arrays[:, j] - xi_mean[j])) / nsample
+            Cov[i, j] = old_div(np.sum((xi_arrays[:, i] - xi_mean[i])
+                               * (xi_arrays[:, j] - xi_mean[j])), nsample)
     # This is the covariance in a patch of size A/nsample. Assume Cov ~ 1/A so Cov=Cov/nsample
     if mode == 'subsample':
         Cov /= nsample
@@ -40,7 +45,7 @@ def sample_cov(xi_arrays, mode='full'):
         Cov *= (nsample - 1)
     for i in range(npoints):
         for j in range(npoints):
-            Corr[i, j] = Cov[i, j] / np.sqrt(Cov[i, i] * Cov[j, j])
+            Corr[i, j] = old_div(Cov[i, j], np.sqrt(Cov[i, i] * Cov[j, j]))
     return Cov, Corr
 
 
@@ -154,18 +159,18 @@ class NumberDensity(object):
             fits.Column(name='Z_HIGH', array=self.zhigh, format='D'),
         ]
 
-        for i in xrange(self.nbin):
+        for i in range(self.nbin):
             name = "BIN{}".format(i + 1)
             columns.append(fits.Column(
                 name=name, array=self.nzs[i], format='D'))
 
         if self.sigma_e is not None:
-            for i in xrange(self.nbin):
+            for i in range(self.nbin):
                 name = "SIG_E_{}".format(i + 1)
                 header[name] = self.sigma_e[i]
 
         if self.ngal is not None:
-            for i in xrange(self.nbin):
+            for i in range(self.nbin):
                 name = "NGAL_{}".format(i + 1)
                 header[name] = self.ngal[i]
 
@@ -194,12 +199,12 @@ class SpectrumMeasurement(object):
         if self.is_real_space():
             #angle is real
             msg = "Files with real-space units must specify units as one of: {}".format(
-                ANGULAR_UNITS.keys())
+                list(ANGULAR_UNITS.keys()))
             assert angle_unit in ANGULAR_UNITS,  msg
         self.angle_unit = angle_unit
 
     def get_bin_pairs(self):
-        all_pairs = zip(self.bin1, self.bin2)
+        all_pairs = list(zip(self.bin1, self.bin2))
         unique_pairs = []
         for p in all_pairs:
             if p not in unique_pairs:
@@ -314,8 +319,8 @@ class SpectrumMeasurement(object):
         header['N_ZBIN_2'] = len(np.unique(self.bin2))
         if self.metadata is not None:
             # Check metadata doesn't share any keys with the stuff that's already in the header
-            assert set(self.metadata.keys()).isdisjoint(header.keys())
-            for key, val in self.metadata.iteritems():
+            assert set(self.metadata.keys()).isdisjoint(list(header.keys()))
+            for key, val in list(self.metadata.items()):
                 header[key] = val
         header['N_ANG'] = len(np.unique(self.angular_bin))
 

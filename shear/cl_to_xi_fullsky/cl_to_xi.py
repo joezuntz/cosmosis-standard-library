@@ -1,3 +1,6 @@
+from __future__ import division
+from past.utils import old_div
+from builtins import object
 import numpy as np
 import scipy.interpolate as interp
 from legendre import *
@@ -38,7 +41,7 @@ def radians_to_arcmin(r):
 
 
 def arcmin_to_radians(a):
-    return np.radians(a / 60.)
+    return np.radians(old_div(a, 60.))
 
 
 def get_N_ell(ell):
@@ -46,7 +49,7 @@ def get_N_ell(ell):
     N_ell = np.atleast_1d(
         np.sqrt(2. / (ell - 1) / ell / (ell + 1) / (ell + 2)))
     N_ell[ell < 2] = 0.
-    N_ell[ell == 2] = np.sqrt(2. / (4 * 3 * 2))
+    N_ell[ell == 2] = np.sqrt(old_div(2., (4 * 3 * 2)))
     return N_ell
 
 
@@ -84,10 +87,10 @@ def cl_to_xi_plus_and_minus_precomp(cl_input, thetas, G_plus_minus_pre):
     Cls = cl_input(ells)
     for i, theta in enumerate(thetas):
         # print theta, G_plus, G_minus
-        C_plus[i] = np.sum(((2 * ells + 1) / 2. / pi) *
-                           N_ell**2 * Cls * G_plus_pre[i]) / 2
-        C_cross[i] = np.sum(((2 * ells + 1) / 2. / pi) *
-                            N_ell**2 * Cls * G_minus_pre[i]) / 2
+        C_plus[i] = old_div(np.sum(((2 * ells + 1) / 2. / pi) *
+                           N_ell**2 * Cls * G_plus_pre[i]), 2)
+        C_cross[i] = old_div(np.sum(((2 * ells + 1) / 2. / pi) *
+                            N_ell**2 * Cls * G_minus_pre[i]), 2)
 
     xi_plus = C_plus + C_cross
     xi_minus = C_plus - C_cross

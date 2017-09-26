@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 from cosmosis.datablock import names
 from cosmosis.gaussian_likelihood import SingleValueGaussianLikelihood
 
@@ -32,7 +34,7 @@ class SZXLikelihood(SingleValueGaussianLikelihood):
         omega_m = block[cosmo, "omega_m"]
 
         # The original measurmen
-        x = sigma8 * (omega_m / self.fid_omega)**0.3
+        x = sigma8 * (old_div(omega_m, self.fid_omega))**0.3
         block[sz, "x"] = x
         return x
 

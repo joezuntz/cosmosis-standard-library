@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 from cosmosis.datablock import names
 from cosmosis.datablock import option_section
 import numpy as np
@@ -54,8 +56,8 @@ def execute(block, config):
 
     sigma2r = np.zeros((np.size(R), np.size(z)))
     for i, rloop in enumerate(R):
-        kmin = max(np.log(.01 / rloop), kmin_overall)
-        kmax = min(np.log(100. / rloop), kmax_overall)
+        kmin = max(np.log(old_div(.01, rloop)), kmin_overall)
+        kmax = min(np.log(old_div(100., rloop)), kmax_overall)
         for j, zloop in enumerate(z):
             sigma2r[i, j] = scipy.integrate.quad(
                 sigint, kmin, kmax, args=(rloop, zloop, rbs), epsrel=1e-6)[0]

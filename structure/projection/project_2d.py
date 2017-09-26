@@ -1,5 +1,9 @@
 # coding:utf-8
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os
 import ctypes as ct
 import numpy as np
@@ -114,7 +118,7 @@ class Spectrum(object):
                                    "_" + self.sample_b][bin2]
         chi_peak = limber.get_kernel_peak(K1, K2)
         a_peak = a_of_chi(chi_peak)
-        z_peak = 1. / a_peak - 1
+        z_peak = old_div(1., a_peak) - 1
         return chi_peak, z_peak
 
 
@@ -406,7 +410,7 @@ class SpectrumCalculator(object):
         # During the setup we already decided what kernels (W(z) or N(z) splines)
         # we needed for the spectra we want to do.  Their names are stored in the
         # kernels_A and kernels_B dictionaries.
-        for kernel_name, kernel_dict in self.kernels_A.items():
+        for kernel_name, kernel_dict in list(self.kernels_A.items()):
             # Check for any old kernels that should have been cleaned up by the
             # clean
             assert len(
@@ -419,7 +423,7 @@ class SpectrumCalculator(object):
         # We are always using two kernels, which we call A and B
         # Often these will be the same groups of kernels, but not
         # always, so we may have to load them separately
-        for kernel_name, kernel_dict in self.kernels_B.items():
+        for kernel_name, kernel_dict in list(self.kernels_B.items()):
             # Again, check for old kernels
             assert len(
                 kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
@@ -430,7 +434,7 @@ class SpectrumCalculator(object):
                 # Loop through all the loaded N(z), W(z)
                 if self.verbose:
                     print("Already calculated ", kernel_name)
-                for i, kernel in self.kernels_A[kernel_name].items():
+                for i, kernel in list(self.kernels_A[kernel_name].items()):
                     kernel_dict[i] = kernel
             else:
                 # If not already cached we will have to load it freshly
@@ -439,11 +443,11 @@ class SpectrumCalculator(object):
     def save_kernels(self, block, zmax):
         z = np.linspace(0.0, zmax, 1000)
         chi = self.chi_of_z(z)
-        for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
+        for kernel_name, kernel_dict in list(self.kernels_A.items()) + list(self.kernels_B.items()):
             section = "kernel_" + kernel_name
             block[section, "z"] = z
             block[section, "chi"] = chi
-            for bin_i, kernel in kernel_dict.items():
+            for bin_i, kernel in list(kernel_dict.items()):
                 key = "bin_{}".format(bin_i)
                 if not block.has_value(section, key):
                     nz = kernel(chi)
@@ -463,7 +467,7 @@ class SpectrumCalculator(object):
             nbin = block[sample_name, 'nbin']
 
         # Now load n(z) or W(z) for each bin in the range
-        for i in xrange(nbin):
+        for i in range(nbin):
             if kernel_type == "N":
                 kernel = limber.get_named_nchi_spline(
                     block, sample_name, i + 1, z, self.a_of_chi, self.chi_of_z)
@@ -497,13 +501,13 @@ class SpectrumCalculator(object):
             block[spectrum_name, 'nbin'] = na
         block[spectrum_name, 'nbin_a'] = na
         block[spectrum_name, 'nbin_b'] = nb
-        for i in xrange(na):
+        for i in range(na):
             # for auto-correlations C_ij = C_ji so we calculate only one of them,
             # but save both orderings to the block to account for different ordering
             # conventions.
             # for cross-correlations we must do both
             jmax = i + 1 if spectrum.is_autocorrelation() else nb
-            for j in xrange(jmax):
+            for j in range(jmax):
                 c_ell = spectrum.compute(
                     block, self.ell, i, j, relative_tolerance=self.relative_tolerance, absolute_tolerance=self.absolute_tolerance)
                 self.outputs[spectrum_name + "_{}_{}".format(i, j)] = c_ell
@@ -517,18 +521,18 @@ class SpectrumCalculator(object):
                     block[spectrum_name, "z_peak_{}_{}".format(
                         i + 1, j + 1)] = z_peak
                     block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(
-                        i + 1, j + 1)] = 60 * np.degrees(1 / chi_peak)
+                        i + 1, j + 1)] = 60 * np.degrees(old_div(1, chi_peak))
 
     def clean(self):
         # need to manually delete power spectra we have loaded
-        for p in self.power.values():
+        for p in list(self.power.values()):
             limber.free_power(p)
         self.power.clear()
 
         # spectra know how to delete themselves, in gsl_wrappers.py
-        for name, kernels in self.kernels_A.items():
+        for name, kernels in list(self.kernels_A.items()):
             kernels.clear()
-        for kernels in self.kernels_B.values():
+        for kernels in list(self.kernels_B.values()):
             kernels.clear()
         self.outputs.clear()
 

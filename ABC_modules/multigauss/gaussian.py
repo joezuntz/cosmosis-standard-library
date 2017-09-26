@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 import numpy as np
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section

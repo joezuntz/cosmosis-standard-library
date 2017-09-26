@@ -3,6 +3,7 @@ from __future__ import print_function
 # Signal should be in ascii file with columns: theta xip_11, xip_12,...,xip_22,xip_23,....xim_11 etc.
 # Covariance in .npy or ascii file with same ordering.
 
+from builtins import range
 from cosmosis.datablock import option_section, names as section_names
 import xipm_like
 import numpy as np
@@ -62,8 +63,8 @@ def setup(options):
 
     k = 0
     n_z_bin_pairs = n_z_bins * (n_z_bins + 1) / 2
-    for i in xrange(1, n_z_bins + 1):
-        for j in xrange(i, n_z_bins + 1):
+    for i in range(1, n_z_bins + 1):
+        for j in range(i, n_z_bins + 1):
             bin_comb = '%d_%d' % (j, i)
             if theory_signal_dir == None:
                 xipm_data['xip_' + bin_comb] = data[k + 1]
@@ -104,8 +105,8 @@ def execute(block, config):
     # Get the xi(theta) for these samples, for each pair of bins.
     # The likelihood calculator wants a big dictionary
     xi_theory = {}
-    for i in xrange(1, n_z_bins + 1):
-        for j in xrange(i, n_z_bins + 1):
+    for i in range(1, n_z_bins + 1):
+        for j in range(i, n_z_bins + 1):
             name = 'xiplus_%d_%d' % (j, i)
             xiplus = block[section, name]
             name = 'ximinus_%d_%d' % (j, i)

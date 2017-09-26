@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import str
+from builtins import zip
+from builtins import range
 import numpy as nm
 from . import hpy
 import shutil
@@ -217,8 +220,8 @@ def add_prior(root_grp, name, loc, var):
     pred = {}
     if "default" in root_grp:
         prid = root_grp["default"]
-        pred = dict(zip([v.strip() for v in prid.attrs["name"].split(
-            "\0") if v.strip()], prid["loc"][:]))
+        pred = dict(list(zip([v.strip() for v in prid.attrs["name"].split(
+            "\0") if v.strip()], prid["loc"][:])))
         del(prid.attrs["name"])
         del[prid["loc"]]
         del(root_grp["default"])
@@ -251,7 +254,7 @@ def add_prior(root_grp, name, loc, var):
     prid.create_dataset("loc", data=loc.flat[:])
     prid.create_dataset("var", data=var.flat[:])
     if pred:
-        nam = pred.keys()
+        nam = list(pred.keys())
         lo = [pred[k] for k in nam]
         add_default(root_grp, nam, lo)
 
@@ -270,24 +273,24 @@ def add_default(root_grp, name, loc, extn=None):
         prid = root_grp["default"]
         # print prid.keys()
         # print prid.attrs.keys()
-        pred = dict(zip([v.strip() for v in prid.attrs["name"].split(
-            "\0") if v.strip()], prid["loc"][:]))
+        pred = dict(list(zip([v.strip() for v in prid.attrs["name"].split(
+            "\0") if v.strip()], prid["loc"][:])))
 
     else:
         prid = root_grp.create_group("default")
         pred = {}
 
-    pred.update(dict(zip(name, loc)))
+    pred.update(dict(list(zip(name, loc))))
 
     if extn != None:
         for n in name:
             if n not in extn and n not in pred:
                 raise Exception("extra parameter %s does not exist" % (n))
 
-    fname = pred.keys()
+    fname = list(pred.keys())
     floc = nm.array([pred[n] for n in fname])
     prid.attrs["name"] = pack256(*fname)
-    if "loc" in prid.keys():
+    if "loc" in list(prid.keys()):
         del(prid["loc"])
     prid["loc"] = floc.flat[:]
 

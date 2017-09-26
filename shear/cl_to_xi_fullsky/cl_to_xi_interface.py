@@ -1,6 +1,7 @@
 #coding: utf-8
 #import cl_to_xi_full
 from __future__ import print_function
+from builtins import range
 import numpy as np
 from cosmosis.datablock import option_section, names as section_names
 from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp
@@ -73,8 +74,8 @@ def execute(block, config):
     block[output_section, "theta"] = thetas
     #block.put_metadata(output_section, "theta", "unit", "radians")
 
-    for i in xrange(1, nbina + 1):
-        for j in xrange(1, nbinb + 1):
+    for i in range(1, nbina + 1):
+        for j in range(1, nbinb + 1):
             name = 'bin_%d_%d' % (i, j)
             if block.has_value(cl_section, name):
                 c_ell = block[cl_section, name]

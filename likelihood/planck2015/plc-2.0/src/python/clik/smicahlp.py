@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 from . import parobject as php
 import numpy as nm
 import re
@@ -513,7 +517,7 @@ def add_parametric_component(lkl_grp, name, dets, vpars, lmin, lmax, defaults={}
     agrp.attrs["keys"] = php.pack256(*npars)
     nefaults = pm.defaults
     agrp.attrs["ndef"] = len(nefaults)
-    defkey = nefaults.keys()
+    defkey = list(nefaults.keys())
     defval = [nefaults[k] for k in defkey]
     agrp.attrs["defaults"] = php.pack256(*defkey)
     agrp.attrs["values"] = php.pack256(*defval)
@@ -549,7 +553,7 @@ def add_parametric_component(lkl_grp, name, dets, vpars, lmin, lmax, defaults={}
 
     rename = pm.rename
     if rename:
-        rename_from = rename.keys()
+        rename_from = list(rename.keys())
         rename_to = [rename[k] for k in rename_from]
         agrp.attrs["rename_from"] = php.pack256(*rename_from)
         agrp.attrs["rename_to"] = php.pack256(*rename_to)
@@ -663,14 +667,14 @@ def parametric_from_smica_group(hgrp, lmin=-1, lmax=-1):
                                            i].attrs["defaults"].split("\0") if v.strip()]
         value = [v.strip() for v in hgrp["component_%d" %
                                          i].attrs["values"].split("\0") if v.strip()]
-        defdir = dict(zip(default, value))
+        defdir = dict(list(zip(default, value)))
         frq = hgrp["component_%d" % i].attrs["dfreq"]
         try:
             rename_from = [v.strip() for v in hgrp["component_%d" %
                                                    i].attrs["rename_from"].split("\0") if v.strip()]
             rename_to = [v.strip() for v in hgrp["component_%d" %
                                                  i].attrs["rename_to"].split("\0") if v.strip()]
-            rename = dict(zip(rename_from, rename_to))
+            rename = dict(list(zip(rename_from, rename_to)))
         except Exception as e:
             rename = {}
         # print rename
@@ -711,7 +715,7 @@ def calTP_from_smica(dffile):
 
     fi = hpy.File(dffile)
     hascl = fi["clik/lkl_0/has_cl"]
-    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
+    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -736,14 +740,14 @@ def calTP_from_smica(dffile):
     def cal(vals):
         rqd = cal0(vals[:-fnd])
         if TP["P"]:
-            calP = 1. / (vals[-fnd])
+            calP = old_div(1., (vals[-fnd]))
             rP = nm.ones((m, m))
             rP[:mt, mt:] = calP
             rP[mt:, :mt] = calP
             rP[mt:, mt:] = calP**2
             rqd = rqd * rP[nm.newaxis, :, :]
         if TP["T"]:
-            calT = 1. / vals[-1]
+            calT = old_div(1., vals[-1])
             rqd = rqd * calT**2
         return rqd
     cal.varpar = [v for v in list(cal0.varpar) + [TP["P"]] + [TP["T"]] if v]
@@ -755,7 +759,7 @@ def calTP0_from_smica(dffile):
 
     fi = hpy.File(dffile)
     hascl = fi["clik/lkl_0/has_cl"]
-    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
+    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -789,7 +793,7 @@ def calTP0_from_smica(dffile):
     if compot == "calTP":
         Mexp = nm.exp
     else:
-        def Mexp(x): return 1. / nm.sqrt(x)
+        def Mexp(x): return old_div(1., nm.sqrt(x))
 
     def cal(vals):
         vec = nm.ones(m)
@@ -811,7 +815,7 @@ def beamTP_from_smica(dffile):
 
     fi = hpy.File(dffile)
     hascl = fi["clik/lkl_0/has_cl"]
-    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
+    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -881,7 +885,7 @@ def ordering_from_smica(dffile, jac=True):
     m = mB + mP * hascl[2]
     # print mT,mP,mE,mB,m
     # print hascl
-    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
+    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
     m2 = m * m
     ordr = nm.concatenate([nm.arange(nb)[msk[iv + jv * m::m2] == 1]
                            * m2 + iv * m + jv for iv, jv in zip(ord[::2], ord[1::2])])
@@ -947,7 +951,7 @@ def get_bestfit_and_cl(dffile, bffile):
             cnt += lmax + 1
     lkl = lkl.clik(dffile)
     names = lkl.extra_parameter_names
-    bestfit = dict(zip(names, bff[cnt:]))
+    bestfit = dict(list(zip(names, bff[cnt:])))
     return bestfit, cls
 
 
@@ -1000,7 +1004,7 @@ def simulate_chanels(dffile, bestfit, cls, calib=True, nside=2048, all=False):
     hascl = fi["clik/lkl_0/has_cl"]
     lmin = fi["clik/lkl_0/lmin"]
     lmax = fi["clik/lkl_0/lmax"]
-    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
+    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -1094,7 +1098,7 @@ def get_binned_calibrated_model_and_data(dffile, bestfit, cls=None):
     hascl = fi["clik/lkl_0/has_cl"]
     lmin = fi["clik/lkl_0/lmin"]
     lmax = fi["clik/lkl_0/lmax"]
-    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
+    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -1222,8 +1226,8 @@ def best_fit_cmb(dffile, bestfit, cty="B"):
 
         #Jt_siginv,Jt_siginv_Yo,Jt_siginv_J = lkl.full_solve(Yo,Jt,siginv)
         #rVec = -lkl.chol_solve(Jt_siginv_J,Jt_siginv_Yo),1./nm.sqrt(Jt_siginv_J.diagonal())
-        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), 1. / \
-            nm.sqrt(Jt_siginv_J.diagonal())
+        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), old_div(1., \
+            nm.sqrt(Jt_siginv_J.diagonal()))
         print(time.time() - a)
     else:
         a = time.time()
@@ -1232,8 +1236,8 @@ def best_fit_cmb(dffile, bestfit, cty="B"):
         Jt_siginv_J = nm.dot(Jt_siginv, Jt.T)
 
         #rVec = -lkl.chol_solve(Jt_siginv_J,Jt_siginv_Yo),1./nm.sqrt(Jt_siginv_J.diagonal())
-        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), 1. / \
-            nm.sqrt(Jt_siginv_J.diagonal())
+        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), old_div(1., \
+            nm.sqrt(Jt_siginv_J.diagonal()))
         print(time.time() - a)
 
     #rVec = -nm.linalg.solve(Jt_siginv_J,Jt_siginv_Yo),1./nm.sqrt(Jt_siginv_J.diagonal())

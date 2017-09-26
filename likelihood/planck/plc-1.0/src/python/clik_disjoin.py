@@ -1,6 +1,7 @@
 from __future__ import print_function
 #! PYTHONEXE
 
+from builtins import range
 import sys
 sys.path = ["REPLACEPATH"] + sys.path
 

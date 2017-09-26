@@ -1,6 +1,10 @@
+from __future__ import division
 # Code by Donnacha Kirk
 # Edited by Simon Samuroff 07/2015
 
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
@@ -22,7 +26,7 @@ def delta(z, z0):
     # location nearest z0 in z
     idx = (np.abs(z - z0)).argmin()
     dz = z[1] - z[0]
-    x[idx] = 1.0 / dz
+    x[idx] = old_div(1.0, dz)
     return x
 
 
@@ -36,12 +40,12 @@ def photometric_error(z, Nz, sigma_z, bias):
             "WARNING: Using a very small sigma_z can be problematic when also using a bias. Consider using the photoz_bias module separately.")
     if sigma_z == 0:
         zmax = z.max()
-        for i in xrange(nz):
+        for i in range(nz):
             p = delta(z, z[i] - bias)
             output[:, i] = p * Nz[i]
 
     else:
-        for i in xrange(nz):
+        for i in range(nz):
             # This doesn't work properly when you have a tiny sigma and a bias
             # because your n(z) can fall between the cracks.
             p = gaussian(z, z[i] - bias, sigma_z * (1 + z[i]))
@@ -53,7 +57,7 @@ def find_bins(z, nz_true, nbin):
     nz_true = nz_true / nz_true.sum() * nbin
     cum = np.cumsum(nz_true)
     bin_edges = [0.0]
-    for i in xrange(1, nbin):
+    for i in range(1, nbin):
         edge = np.interp(1.0 * i, cum, z)
         bin_edges.append(edge)
     bin_edges.append(z.max())
@@ -72,14 +76,14 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 
         # Normalise the n(z) in each redshift bin to 1 over the redshift range
         # of the survey
-        ni *= 1.0 / (ni.sum() * dz)
+        ni *= old_div(1.0, (ni.sum() * dz))
         assert(len(ni) == len(z))
         NI.append(ni)
     return NI
 
 
 def smail_distribution(z, alpha, beta, z0):
-    return (z**alpha) * np.exp(-(z / z0)**beta)
+    return (z**alpha) * np.exp(-(old_div(z, z0))**beta)
 
 
 def compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias):
@@ -112,7 +116,7 @@ def execute(block, config):
     bias = block.get(params, "bias")
 
     # Compute the redshift vector
-    z = np.arange(0, zmax + dz / 2, dz)
+    z = np.arange(0, zmax + old_div(dz, 2), dz)
 
     # Run the main code for getting n(z) in bins
     edges, bins = compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias)

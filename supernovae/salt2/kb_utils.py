@@ -1,3 +1,4 @@
+from builtins import range
 from collections import OrderedDict
 import numpy as np
 
@@ -25,7 +26,7 @@ def dict_to_ndarray(d):
         dtypelist.append((key, d[key].dtype))
 
     # Initialize ndarray and then fill it.
-    firstkey = d.keys()[0]
+    firstkey = list(d.keys())[0]
     col_len = len(d[firstkey])
     result = np.empty(col_len, dtype=dtypelist)
     for key in d:
@@ -125,7 +126,7 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
             i += 1
 
     # Convert Values in metadata
-    for key, val in meta.iteritems():
+    for key, val in list(meta.items()):
         if key in INT_META:
             meta[key] = int(val)
         elif key in STR_META:
@@ -134,8 +135,8 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
             meta[key] = float(val)
 
     # Convert values in columns
-    for tablename, table in tables.iteritems():
-        for key in table.keys():
+    for tablename, table in list(tables.items()):
+        for key in list(table.keys()):
             if key in INT_COLS:
                 table[key] = [int(float(x)) for x in table[key]]  # HACK
             elif key in STR_COLS:
@@ -145,7 +146,7 @@ def read_datafile(filename, default_tablename=None, output_ndarray=False):
 
     # Convert tables to ndarrays
     if output_ndarray:
-        for tablename in tables.keys():
+        for tablename in list(tables.keys()):
             tables[tablename] = dict_to_ndarray(tables[tablename])
 
     return meta, tables

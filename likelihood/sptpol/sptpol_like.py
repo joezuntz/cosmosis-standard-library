@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 from numpy import pi
 import os
@@ -61,14 +65,14 @@ class SPTPolTheoryModel(object):
         W = np.zeros((NBIN, n_ell, nband))
 
         if self.use_ee:
-            for i in xrange(NBIN):
+            for i in range(NBIN):
                 filename = os.path.join(
                     windows_dir, "window_{}".format(ee_start + i))
                 _, W_i = np.loadtxt(filename).T
                 W[i, :, ee_band] = W_i
 
         if self.use_te:
-            for i in xrange(NBIN):
+            for i in range(NBIN):
                 filename = os.path.join(
                     windows_dir, "window_{}".format(te_start + i))
                 _, W_i = np.loadtxt(filename).T
@@ -150,7 +154,7 @@ class SPTPolTheoryModel(object):
         alpha = nuisance_parameters['alpha_dust_' + spectrum]
 
         # The total D_ell spectrum
-        D = A * (self.ell / 80.)**alpha
+        D = A * (old_div(self.ell, 80.))**alpha
         return D
 
     def bin_into_bandpowers(self, spectrum, D):
@@ -165,7 +169,7 @@ class SPTPolTheoryModel(object):
             cal *= nuisance_parameters['p_cal']
         elif spectrum == "ee":
             cal *= nuisance_parameters['p_cal']**2
-        return B / cal
+        return old_div(B, cal)
 
     def apply_beam(self, spectrum, B, nuisance_parameters):
         # The beam described in the paper is different to the one
@@ -173,7 +177,7 @@ class SPTPolTheoryModel(object):
         # and the correction will be small.  Here we use the version
         # in the paper.
         beam = 1
-        for i in xrange(BEAM_TERMS):
+        for i in range(BEAM_TERMS):
             f = nuisance_parameters["beam_{}".format(i + 1)]
             beam += f * self.beam_errors[spectrum][i]
         return B * beam

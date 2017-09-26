@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 import os
 from cosmosis.datablock import names as section_names
@@ -40,7 +42,7 @@ def dndmint(logm, zz, rbs):
 
 
 def dvdm_zint(zz, m, omega_matter, h0, interp_da, rbs):
-    return dVcdz(zz, omega_matter, h0, interp_da) * (1. / m) * massfunction(m, zz, rbs)
+    return dVcdz(zz, omega_matter, h0, interp_da) * (old_div(1., m)) * massfunction(m, zz, rbs)
 
 
 def dvdzdndmint(zz, Mmin, Mmax, omega_matter, h0, interp_da, rbs):

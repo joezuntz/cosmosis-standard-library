@@ -1,5 +1,8 @@
 """Python Enumerations"""
 
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import sys as _sys
 
 __all__ = ['Enum', 'IntEnum', 'unique']
@@ -30,10 +33,10 @@ except NameError:
     basestring = str
 
 try:
-    unicode
+    str
 except NameError:
     # In Python 3 unicode no longer exists (it's just str)
-    unicode = str
+    str = str
 
 
 class _RouteClassAttributeToGetattr(object):
@@ -159,7 +162,7 @@ class EnumMeta(type):
         if type(classdict) is dict:
             original_dict = classdict
             classdict = _EnumDict()
-            for k, v in original_dict.items():
+            for k, v in list(original_dict.items()):
                 classdict[k] = v
 
         member_type, first_enum = metacls._get_mixins_(bases)
@@ -177,7 +180,7 @@ class EnumMeta(type):
             if pyver < 3.0:
                 try:
                     __order__ = [name for (name, value) in sorted(
-                        members.items(), key=lambda item: item[1])]
+                        list(members.items()), key=lambda item: item[1])]
                 except TypeError:
                     __order__ = [name for name in sorted(members.keys())]
             else:
@@ -236,7 +239,7 @@ class EnumMeta(type):
             enum_member.__init__(*args)
             # If another member with the same value was already defined, the
             # new member becomes an alias to the existing one.
-            for name, canonical_member in enum_class._member_map_.items():
+            for name, canonical_member in list(enum_class._member_map_.items()):
                 if canonical_member.value == enum_member._value_:
                     enum_member = canonical_member
                     break
@@ -419,7 +422,7 @@ class EnumMeta(type):
         """
         if pyver < 3.0:
             # if class_name is unicode, attempt a conversion to ASCII
-            if isinstance(class_name, unicode):
+            if isinstance(class_name, str):
                 try:
                     class_name = class_name.encode('ascii')
                 except UnicodeEncodeError:
@@ -642,7 +645,7 @@ def __new__(cls, value):
             return cls._value2member_map_[value]
     except TypeError:
         # not there, now do long search -- O(n) behavior
-        for member in cls._member_map_.values():
+        for member in list(cls._member_map_.values()):
             if member.value == value:
                 return member
     raise ValueError("%s is not a valid %s" % (value, cls.__name__))
@@ -820,7 +823,7 @@ class IntEnum(int, Enum):
 def unique(enumeration):
     """Class decorator that ensures only unique members exist in an enumeration."""
     duplicates = []
-    for name, member in enumeration.__members__.items():
+    for name, member in list(enumeration.__members__.items()):
         if name != member.name:
             duplicates.append((name, member.name))
     if duplicates:
