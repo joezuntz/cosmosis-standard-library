@@ -49,7 +49,8 @@ CSPLINE_PERIODIC = ct.c_void_p.in_dll(gsl, "gsl_interp_cspline_periodic")
 AKIMA = ct.c_void_p.in_dll(gsl, "gsl_interp_akima")
 AKIMA_PERIODIC = ct.c_void_p.in_dll(gsl, "gsl_interp_akima_periodic")
 
-
+class NullSplineError(ValueError):
+    pass
 
 class GSLSpline(object):
     def __init__(self, x, y=None, spline_type=AKIMA, xlog=False, ylog=False):
@@ -57,7 +58,7 @@ class GSLSpline(object):
         if y is None:
             self._ptr = x
             if x is None:
-                raise ValueError("Tried to wrap a null pointer in GSLSpline")
+                raise NullSplineError("Tried to wrap a null pointer in GSLSpline")
         else:
             self._ptr = self._make_spline(x, y, spline_type)
         self.xlog = xlog

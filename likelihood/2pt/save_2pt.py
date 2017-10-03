@@ -13,15 +13,15 @@ from scipy.interpolate import interp1d
 import twopoint
 from twopoint_cosmosis import type_table
 import gaussian_covariance
-
-
-
+twopt_like=__import__('2pt_like')  #don't start .py files with a number!
+SpectrumInterp = twopt_like.SpectrumInterp
 
 def setup(options):
     # ell range of output - all assumed the same, with log-spacing and 
     # no window functions
     real_space = options.get_bool(option_section, "real_space", False)
     make_covariance = options.get_bool(option_section, "make_covariance", True)
+    
 
     config = {"real_space":real_space, "make_covariance":make_covariance}
 
@@ -68,6 +68,8 @@ def setup(options):
     #to the FITS file output
     config['shear_nz'] = options.get_string(option_section, "shear_nz_name").upper()
     config['position_nz'] = options.get_string(option_section, "position_nz_name").upper()
+    #Whether to add nz_ to the start of these
+    config['prefix_nz_section'] = options.get_bool(option_section, "prefix_nz_section", True)
 
     #name of the output file and whether to overwrite it.
     config['filename'] = options.get_string(option_section, "filename")
@@ -147,7 +149,9 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
             #Load and interpolate from the block
             cl = block[section_name, bin_format.format(i+1,j+1)]
             #Convert arcmin to radians for the interpolation
-            cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
+            cl_interp = SpectrumInterp(theory_angle, cl)
+            cl_sample = cl_interp(angle_sample_radians)
+            #cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
             #Build up on the various vectors that we need
             bin1.append(np.repeat(i+1, n_angle_sample))
             bin2.append(np.repeat(j+1, n_angle_sample))
@@ -178,7 +182,7 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
 
 
 
-def nz_from_block(block, nz_name):
+def nz_from_block(block, nz_name, prefix_nz_section):
     print
     print
     print "*************************************************************************************"
@@ -193,15 +197,29 @@ def nz_from_block(block, nz_name):
     print "*************************************************************************************"
     print
     print
-    section_name = "NZ_"+nz_name 
+    
+    if prefix_nz_section:
+        section_name = "nz_"+nz_name
+    else:
+        section_name = nz_name
     z = block[section_name, "z"]
-    dz = 0.5*(z[1]-z[0])
+    dz = 0.5*(z[10]-z[9])
     zlow = z-dz
     zhigh = z+dz
+    if zlow[0]<0:
+        zlow = zlow[1:]
+        z = z[1:]
+        zhigh=zhigh[1:]
+        cut=True
+    else:
+        cut=False
+    assert zlow[0]>0
     nbin = block[section_name, "nbin"]
     nzs = []
     for i in xrange(nbin):
         nz = block[section_name, "bin_{}".format(i+1)]
+        if cut:
+            nz=nz[1:]
         nzs.append(nz)
 
     return twopoint.NumberDensity(nz_name, zlow, z, zhigh, nzs)
@@ -231,12 +249,13 @@ class ObservedClGetter(object):
         #We extract relevant bits from the block and spline them
         #for output
         name_ij = value_name.format(i,j)
+        section_name_ij = '{}_{}'.format(section, name_ij)
 
         if name_ij in self.splines:
-            spline = self.splines[name_ij]
+            spline = self.splines[section_name_ij]
         else:
             spline = self.make_spline(block, A, B, i, j, ell)
-            self.splines[name_ij] = spline
+            self.splines[section_name_ij] = spline
 
         obs_c_ell = spline(ell)
 
@@ -269,7 +288,7 @@ class ObservedClGetter(object):
         elif block.has_value(section, name_ji) and A==B:
             theory = block[section, name_ji]
         else:
-            raise ValueError("Could not find theory prediction {} in section {}".format(value_name.format(i,j), section))
+            raise ValueError("Could not find theory prediction {} in section {}".format(name_ij, section))
 
         spline = interp1d(angle, theory)
         return spline
@@ -409,9 +428,9 @@ def execute(block, config):
 
     kernels = []
     if need_source_nz:
-        kernels.append(nz_from_block(block, shear_nz))
+        kernels.append(nz_from_block(block, shear_nz, config['prefix_nz_section']))
     if need_lens_nz and (shear_nz!=position_nz):
-        kernels.append(nz_from_block(block, position_nz))
+        kernels.append(nz_from_block(block, position_nz, config['prefix_nz_section']))
     
     windows = []
 

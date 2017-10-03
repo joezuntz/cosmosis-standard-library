@@ -5,65 +5,69 @@ import numpy as np
 models = ['gtd', 'q', 'q-gtd'] #...]
 modes = ["power","bias","both"]
 def setup(options):
-	model = options[option_section, "model"].lower()
-	mode = options[option_section, "mode"].lower()
-	color = options.get_string(option_section, "color", default="")
+	model = options.get_string(option_section, "model", default="gtd").lower()
+	bias_only = options.get_bool(option_section, "bias_only", default=False)
+	suffix = options.get_string(option_section, "suffix", default="")
+
 	if model not in models:
 		raise ValueError("The Clerkin module requires a model chosen from: %r" % models)
-	if mode not in modes:
-		raise ValueError("The Clerkin module requires a mode, chosen from: %r" % modes)
-	if color!='':
-		color = '_'+color
 
-	return model, mode, color
+	if suffix!='':
+		suffix = '_'+suffix
 
-def execute_power(block, model, color):
+	return model, bias_only, suffix
+
+def execute_power(block, model, suffix):
 
 	#Get matter power
 	k, z, P = block.get_grid(names.matter_power_nl, "k_h", "z", "p_k")
 
-	#Get matter power with bias
-	if model=='gtd':
+	if 'gtd' in model:
 		#Get growth
-		z1 = block[names.growth_parameters,'z']
-		growth_z = block[names.growth_parameters,'d_z']
-		#Get bias parameters
-		alpha = block['bias_parameters', 'alpha']
-		b0 = block['bias_parameters', 'b0']
-		c = block['bias_parameters', 'c']
-		#compute new power
-		P_out = clerkin.gtd_model(z1, growth_z, k, z, P, alpha, b0, c)
-	elif model=='q':
-		#Get bias parameters
-		Q = block['bias_parameters', 'Q']
-		A = block['bias_parameters', 'A']
-		#compute new power
-		P_out = clerkin.q_model(k, z, P, Q, A)
-	elif model=='q-gtd':
-		#Get growth
-		z1 = block[names.growth_parameters,'z']
-		growth_z = block[names.growth_parameters,'d_z']
+		try:
+			z_growth = block[names.growth_parameters,'z']
+			growth = block[names.growth_parameters,'d_z']
+		except:
+			raise ValueError("The Clerkin module needs you to calculate the growth factor first."+
+				"  Add the growth module before it in your module list")
 
 		#Get bias parameters
-		alpha = block['bias_parameters', 'alpha']
-		b0 = block['bias_parameters', 'b0']
-		c = block['bias_parameters', 'c']
-		Q = block['bias_parameters', 'Q']
-		A = block['bias_parameters', 'A']
-		#compute power
-		P_out = clerkin.gtd_q_model(z1, growth_z, k, z, P, alpha, b0, c, Q, A)
+		alpha = block['galaxy_bias', 'alpha']
+		b0 = block['galaxy_bias', 'b0']
+		c = block['galaxy_bias', 'c']
+
+	if 'q' in model:
+		# Need amplitude and quadratic part for the scale dependence in this model
+		Q = block['galaxy_bias', 'Q']
+		A = block['galaxy_bias', 'A']
+
+
+	#Get matter power with bias
+	if model=='gtd':
+		bias = clerkin.gtd_model(k,z,z_growth,growth,alpha,b0,c)
+	elif model=='q':
+		bias = clerkin.q_model(k,z,Q,A)
+	elif model=='q-gtd':
+		bias = clerkin.gtd_q_model(k, z, z_growth, growth, alpha, b0, c, Q, A)
 	else:
-		raise ValueError("Unknown error in Clerkin")
+		raise ValueError("Unknown model in Clerkin")
 	
-	if (P_out<0).any():
-		print "Negative P: ", P_out.min()
+	if (bias<0).any():
+		print "Negative galaxy power from bias model (bad model; returning error)."
 		return 1
+
+	P_galaxy = bias**2 * P
+	P_matter_galaxy = bias * P
 	
-	block.put_grid("matter_power_gal", "z", z, "k_h", k, "p_k"+color, P_out.T)
+	block.put_grid(names.bias_field+suffix, "k_h", k, "z", z, "b", bias)
+	block.put_grid("galaxy_power"+suffix, "k_h", k, "z", z, "P_k", P_galaxy)
+	block.put_grid("matter_galaxy_power"+suffix, "k_h", k, "z", z, "P_k", P_matter_galaxy)
+
+
 
 	return 0
 
-def execute_bias(block, model, color):
+def execute_bias_only(block, model, suffix):
 	if model=="gtd":
 		#Get growth
 		z1 = block[names.growth_parameters,'z']
@@ -79,8 +83,8 @@ def execute_bias(block, model, color):
 		#bias = bias.swapaxes(0,1)
 		
 		k_h = block['matter_power_nl', 'k_h']
-		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "b_g"+color,  bias)
-		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "r_g"+color, np.ones_like(bias) )
+		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "b"+suffix,  bias)
+		block.put_grid(names.bias_field, "k_h", k_h, "z", z1, "r"+suffix, np.ones_like(bias) )
 
 		#import pdb ; pdb.set_trace()
 
@@ -90,7 +94,7 @@ def execute_bias(block, model, color):
 		A = block['bias_parameters', 'A']
 		b = clerkin.q_bias(k, Q, A)
 		block[names.bias_field, "k"] = k
-		block[names.bias_field, "b"+color] = b
+		block[names.bias_field, "b"+suffix] = b
 
 	elif model=='q-gtd':
 		z1 = block[names.growth_parameters,'z']
@@ -112,23 +116,19 @@ def execute_bias(block, model, color):
 			for j in xrange(nz):
 				b[i, j] = b_k[i]*b_z[j]
 
-		block.put_grid(names.bias_field, "k_h", k, "z", z1, "b"+color, b)
+		block.put_grid(names.bias_field, "k_h", k, "z", z1, "b"+suffix, b)
 	return 0
 
-def execute_both(block, model, color):
-	status = execute_bias(block, model, color)
+def execute_both(block, model, suffix):
+	status = execute_bias(block, model, suffix)
 	if status: return status
-	return execute_power(block, model, color)
+	return execute_power(block, model, suffix)
 
 def execute(block, config):
-	model,mode,color = config
-	if mode=="bias":
-		return execute_bias(block, model, color)
-	elif mode=="power":
-		return execute_power(block, model, color)
-	elif mode=="both":
-		return execute_both(block, model, color)
+	model,bias_only,suffix = config
+	if bias_only:
+		return execute_bias_only(block, model, suffix)
 	else:
-		raise ValueError("Unknown mode in Clerkin")
+		return execute_power(block, model, suffix)
 
 

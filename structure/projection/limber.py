@@ -14,6 +14,8 @@ class c_limber_config(ct.Structure):
         ("ell", ct.POINTER(ct.c_double)),
         ("prefactor", ct.c_double),
         ("status", ct.c_int),
+        ("absolute_tolerance", ct.c_double),
+        ("relative_tolerance", ct.c_double),
 ]
 
 LIMBER_STATUS_OK =  0
@@ -53,11 +55,11 @@ ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, c_power_scaling_function, ct
 lib.interp_2d.restype = ct.c_double
 lib.interp_2d.argtypes = [ct.c_double, ct.c_double, ct.c_void_p]
 
-
 lib.destroy_interp_2d.restype = None
 lib.destroy_interp_2d.argtypes = [ct.c_void_p]
 
-
+lib.sigma_crit.restype = None
+lib.sigma_crit.argtypes = [ct.c_void_p, ct.c_void_p, ct.POINTER(ct.c_double), ct.POINTER(ct.c_double)]
 
 def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
     return GSLSpline(lib.get_named_nchi_spline(block._ptr, section, nbin, z, a_of_chi, chi_of_z))
@@ -97,7 +99,15 @@ def get_kernel_peak(WX, WY, nchi=500):
     "Get chi of maximum of kernel"
     return lib.get_kernel_peak(WX, WY, nchi)
 
-def limber(WX, WY, P, xlog, ylog, ell, prefactor):
+def get_sigma_crit(WX, WY):
+    sigma_crit = ct.c_double(0.)
+    chi_weighted = ct.c_double(0.)
+    print 'calling sigma_crit'
+    lib.sigma_crit(WX, WY, ct.byref(sigma_crit), ct.byref(chi_weighted))
+    print 'got sigma_crit'
+    return sigma_crit.value, chi_weighted.value
+
+def limber(WX, WY, P, xlog, ylog, ell, prefactor, rel_tol=1e-3, abs_tol=1e-5):
     config = c_limber_config()
     config.xlog = xlog
     config.ylog = ylog
@@ -105,6 +115,8 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor):
     config.ell = np.ctypeslib.as_ctypes(ell)
     config.prefactor = prefactor
     config.status = 0
+    config.absolute_tolerance = abs_tol
+    config.relative_tolerance = rel_tol
     spline_ptr = lib.limber_integral(ct.byref(config), WX, WY, P)
     if config.status == LIMBER_STATUS_ZERO:
         ylog = False

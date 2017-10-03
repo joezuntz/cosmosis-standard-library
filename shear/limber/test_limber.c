@@ -44,10 +44,15 @@ gsl_spline * load_nchi(const char * filename)
 		fprintf(stderr,"Could not open file %s\n",filename);
 		exit(1);
 	}
+
 	double chi[NCHI];
 	double nchi[NCHI];
 	for(int i=0; i<NCHI; i++){
-		fscanf(infile, "%lf  %lf\n", chi+i, nchi+i);
+		int count = fscanf(infile, "%lf  %lf\n", chi+i, nchi+i);
+		if (count!=2){
+			fprintf(stderr, "wrong column(s) in file %s on line %d\n",filename, i+1);
+			exit(1);
+		}
 	}
 	gsl_spline * output = gsl_spline_alloc(gsl_interp_akima, NCHI);
 	gsl_spline_init(output, chi, nchi, NCHI);

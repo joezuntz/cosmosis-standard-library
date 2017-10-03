@@ -25,6 +25,8 @@ typedef struct limber_config{
 	double * ell;  // The chosen ell values you want
 	double prefactor; //Scaling prefactor
     int status; // did everything go okay?
+    double absolute_tolerance;
+    double relative_tolerance;
 } limber_config;
 
 

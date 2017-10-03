@@ -9,6 +9,7 @@ def setup(options):
 	sample = options.get_string(option_section, "sample", "")
 	interpolation = options.get_string(option_section, "interpolation", "cubic")
 	bias_section = options.get_string(option_section, "bias_section", "")
+	per_bin = options.get_bool(option_section,"per_bin",True)
 	if sample=="":
 		pz=names.wl_number_density
 	else:
@@ -19,7 +20,7 @@ def setup(options):
 		bias_section = sample+"_errors"
 	if mode not in MODES:
 		raise ValueError("mode for photoz must be one of: %r"%MODES)
-	return {"mode":mode, "sample":pz, "bias_section":bias_section, "interpolation":interpolation}
+	return {"mode":mode, "sample":pz, "bias_section":bias_section, "interpolation":interpolation, "per_bin":per_bin}
 
 def execute(block, config):
 	mode = config['mode']
@@ -31,7 +32,10 @@ def execute(block, config):
 	for i in xrange(1,nbin+1):
 		bin_name = "bin_%d" % i
 		nz = block[pz, bin_name]
-		bias = block[biases, "bias_%d"%i]
+		if config["per_bin"]:
+			bias = block[biases, "bias_%d"%i]
+		else:
+			bias = block[biases, "bias_0"]
 		f = interp1d(z, nz, kind=interpolation, fill_value = 0.0, bounds_error=False)
 		if mode=="multiplicative":
 			nz_biased = f(z*(1-bias))

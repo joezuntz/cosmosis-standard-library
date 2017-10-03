@@ -224,7 +224,8 @@ class SpectrumMeasurement(object):
         self.angular_bin = self.angular_bin[mask]
         self.angle = self.angle[mask]
         self.value = self.value[mask]
-
+        if self.error is not None:
+            self.error=self.error[mask]
     def auto_bins(self):
         return self.bin1==self.bin2
 

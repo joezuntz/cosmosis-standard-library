@@ -177,6 +177,7 @@
 
 
    subroutine Ranges_Add_delta(Reg, t_start, t_end, t_approx_delta, IsLog)
+     use errors
      Type(Regions), target :: Reg
      logical, intent(in), optional :: IsLog
      double precision, intent(in) :: t_start, t_end, t_approx_delta
@@ -189,9 +190,16 @@
         WantLog = .false.    
      end if
      
-     if (t_end <= t_start) & 
-       stop 'Ranges_Add_delta: end must be larger than start'
-     if (t_approx_delta <=0) stop 'Ranges_Add_delta: delta must be > 0'
+     if (t_end <= t_start) then
+       write(*,*) 'Camb error: Ranges_Add_delta: end must be larger than start'
+       global_error_flag = 1
+       return
+      endif
+     if (t_approx_delta <=0) then 
+      write(*,*) 'Camb error: Ranges_Add_delta: delta must be > 0'
+       global_error_flag = 2
+       return
+      endif
 
      if (WantLog) then
       n  = max(1,int(log(t_end/t_start)/t_approx_delta + 1.d0 - RangeTol))

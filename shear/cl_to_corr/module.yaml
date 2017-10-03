@@ -1,0 +1,55 @@
+#This is a template for module description files
+name: cl_to_corr
+version: "1.0"
+purpose: "Compute correlation functions xi+, xi-, w, and gamma_t from C_ell"
+url: ""
+interface: cl_to_corr.py
+attribution: [CosmoSIS Team]
+rules: ""
+cite: []
+
+assumptions:
+    - "Input C_ell sufficiently well-sampled over chosen range"
+    - "Ell and theta values consistently chosen"
+
+explanation: |
+    "
+    The correlation functions are related to the spectra via Bessel functions:
+    \xi_{+}(theta) = \int_0^\infty C^{ss}_\ell J_{0}(\ell \theta) \ell d\ell / 2\pi
+    \xi_{-}(theta) = \int_0^\infty C^{ss}_\ell J_{4}(\ell \theta) \ell d\ell / 2\pi
+      w{-}(theta) = \int_0^\infty C^{gg}_\ell J_{4}(\ell \theta) \ell d\ell / 2\pi
+    \gamma_t(theta) = \int_0^\infty C^{gs}_\ell J_{(0,4)}(\ell \theta) \ell d\ell / 2\pi
+
+    where s=shear and g=galaxy position.
+    In this module that integral is done via a Hankel Transform.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+    corr_type: "String, either w, gamma, or xi depending which transforms you want"
+    input_section_name: "String, name of the angular power spectrum input section. See shear/spectra module. (Default: 'shear_cl', 'galaxy_cl', or 'galaxy_shear_cl' depending on corr_type)"
+    output_section_name: "String, name of the angular correlation function output section (Default: 'shear_xi', 'galaxy_xi', or'galaxy_shear_xi' depending on corr_type)"
+    n_transform: "Integer, Number of points in the transform.  Default 8192"
+    ell_min_extrapolate:  "Real, minimum value of ell to extrapolate the input ell to in the transform (default 1.0e-04)"
+    ell_max_extrapolate:  "Real, maximum value of ell to extrapolate the input ell to in the transform (default 5.0e+06)"
+    theta_min: "Real, minimum value of output theta values to go to, in arcmin (default 0.1)"
+    theta_max: "Real, maximum value of output theta values to go to, in arcmin (default 1000)"
+
+
+inputs:
+    input_section_name:
+        ell: "Real 1d array, sample ell values for input C_ell"
+        nbin_a: "Integer, mainly for mode=2 (GGL) - the number of redshift bins in the first quantity (position bins for GGL)"
+        nbin_b: "Integer, mainly for mode=2 (GGL) - the number of redshift bins in the first quantity (shear bins for GGL)"
+        nbin: "Integer, Number of redshift bins used if nbin_a or b not found."
+        bin_i_j: "Real 1d arrays C_ell (no l(l+1) factor) for bin i and j. Only need j<=i for modes 0 and 1."
+
+outputs:
+    output_section_name:
+        theta: "Real 1D array, Sample theta values for output xi(theta)"
+        xiplus_i_j: "Real 1D arrays, xi_plus(theta) bin i and j, only if mode=xi Only stores j<=i."
+        ximinus_i_j: "Real 1D arrays, xi_minus(theta) bin i and j, only if mode=xi. Only stores j<=i."
+        bin_i_j: "Real 1D array, w(theta) or gamma_t(theta) for bin i and j, only if mode=w or gamma respectively. Only stores j<=i."
+        nbin_a: "Integer, number of i tomographic bins"
+        nbin_b: "Integer, number of j tomographic bins"
+

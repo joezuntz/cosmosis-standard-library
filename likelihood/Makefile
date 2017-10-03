@@ -10,4 +10,4 @@ ifeq ($(WMAPDATA_VERSION),v4_00)
 SUBDIRS += wmap7 
 endif
 
-SUBDIRS+=planck planck2015
+SUBDIRS+=planck planck2015 planck2015_simple/low_ell

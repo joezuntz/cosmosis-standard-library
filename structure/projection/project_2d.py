@@ -3,10 +3,11 @@ import os
 import ctypes as ct
 import numpy as np
 import limber
-from gsl_wrappers import GSLSpline
+from gsl_wrappers import GSLSpline, NullSplineError
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
 import re
+import sys
 
 
 
@@ -15,12 +16,10 @@ class PowerType(Enum):
     matter = "matter_power_nl" #special case
     galaxy = "galaxy_power"
     intrinsic = "intrinsic_power"
+    intrinsic_bb = "intrinsic_power_bb"
     matter_galaxy = "matter_galaxy_power"
     matter_intrinsic = "matter_intrinsic_power"
     galaxy_intrinsic = "galaxy_intrinsic_power"
-
-
-
 
 class Spectrum(object):
     autocorrelation = False
@@ -94,7 +93,7 @@ class Spectrum(object):
         return 2*alpha[bin]-1
 
 
-    def compute(self, block, ell, bin1, bin2):
+    def compute(self, block, ell, bin1, bin2, relative_tolerance=1e-3, absolute_tolerance=1e-5):
         #Get the required kernels
         #maybe get from rescaled version of existing spectra
         P = self.source.power[self.power_spectrum]
@@ -105,13 +104,17 @@ class Spectrum(object):
         #negative, otherwise linear space.
         xlog = ylog = self.autocorrelation
         #Generate a spline
-        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2))
+        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2), 
+            rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         return c_ell
 
-    def kernel_peak(self, block, bin1, bin2):
+    def kernel_peak(self, block, bin1, bin2, a_of_chi):
         K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
-        return limber.get_kernel_peak(K1, K2)
+        chi_peak = limber.get_kernel_peak(K1, K2)
+        a_peak = a_of_chi(chi_peak)
+        z_peak = 1./a_peak - 1
+        return chi_peak, z_peak
 
 
 
@@ -143,6 +146,13 @@ class SpectrumType(Enum):
         kernels = "N N"
         autocorrelation = True
         name = names.shear_cl_ii
+        prefactor_power = 0
+
+    class IntrinsicbIntrinsicb(Spectrum):
+        power_spectrum = PowerType.intrinsic_bb
+        kernels = "N N"
+        autocorrelation = True
+        name = "shear_cl_bb"
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
@@ -239,7 +249,9 @@ class SpectrumCalculator(object):
     def __init__(self, options):
         #General options
         self.verbose = options.get_bool(option_section, "verbose", False)
+        self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
+        self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -278,6 +290,8 @@ class SpectrumCalculator(object):
         ell_max = options.get_double(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
+        self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 1e-5)
+        self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1e-3)
 
     def parse_requested_spectra(self, options):
         #Get the list of spectra that we want to compute.
@@ -420,6 +434,20 @@ class SpectrumCalculator(object):
                 #If not already cached we will have to load it freshly
                 self.load_kernel(block, kernel_name, kernel_dict)
 
+    def save_kernels(self, block, zmax):
+        z = np.linspace(0.0, zmax, 1000)
+        chi = self.chi_of_z(z)
+        for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
+            section = "kernel_"+kernel_name
+            block[section, "z"] = z
+            block[section, "chi"] = chi
+            for bin_i, kernel in kernel_dict.items():
+                key = "bin_{}".format(bin_i)
+                if not block.has_value(section, key):
+                    nz = kernel(chi)
+                    block[section,key] = nz
+
+
 
 
     def load_kernel(self, block, kernel_name, kernel_dict):
@@ -452,7 +480,6 @@ class SpectrumCalculator(object):
             kernel_dict[i] = kernel
 
 
-
     def load_power(self, block):
         for powerType in self.req_power:
             self.power[powerType] = limber.load_power_chi(
@@ -474,12 +501,13 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
-                c_ell = spectrum.compute(block, self.ell, i, j)
+                c_ell = spectrum.compute(block, self.ell, i, j, relative_tolerance=self.relative_tolerance, absolute_tolerance=self.absolute_tolerance)
                 self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
                 if self.get_kernel_peaks:
-                    chi_peak=spectrum.kernel_peak(block, i, j)
+                    chi_peak, z_peak=spectrum.kernel_peak(block, i, j, self.a_of_chi)
                     block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
+                    block[spectrum_name, "z_peak_{}_{}".format(i+1,j+1)] = z_peak
                     block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i+1,j+1)] = 60*np.degrees(1/chi_peak)
 
     def clean(self):
@@ -498,7 +526,17 @@ class SpectrumCalculator(object):
     def execute(self, block):
         try:
             self.load_distance_splines(block)
-            self.load_kernels(block)
+            try:
+                self.load_kernels(block)
+            except NullSplineError:
+                sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
+                sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
+                sys.stderr.write("consistent then you may wish to look into it in more detail. Set fata_errors=T to do so.\n")
+                if self.fatal_errors:
+                    raise
+                return 1
+            if self.save_kernel_zmax>0:
+                self.save_kernels(block, self.save_kernel_zmax)
             self.load_power(block)
             for spectrum in self.req_spectra:
                 if self.verbose:

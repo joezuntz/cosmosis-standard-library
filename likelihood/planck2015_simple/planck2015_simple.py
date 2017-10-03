@@ -6,7 +6,7 @@ import numpy as np
 
 dirname = os.path.split(__file__)[0]
 default_data_file = os.path.join(dirname, "data.txt")
-default_covmat_file = os.path.join(dirname, "covmat.txt")
+default_covmat_file = os.path.join(dirname, "covmat.npy")
 
 class PlanckSimpleLikelihood(GaussianLikelihood):
     like_name = "planck2015_simple"

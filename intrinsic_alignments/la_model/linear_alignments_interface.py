@@ -47,20 +47,20 @@ def execute(block, config):
 
 	#run computation and write to datablock
 	if method=='krhb':
-		P_II, P_GI, b_I, r_I, k_I = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
+		P_II, P_GI, b_I, r_I, k_I, z_I = kirk_rassat_host_bridle_power(z_lin, k_lin, p_lin, z_nl, k_nl, p_nl, A, omega_m)
 	elif method=='bk':
-		P_II, P_GI, b_I, r_I, k_I = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
+		P_II, P_GI, b_I, r_I, k_I, z_I = bridle_king(z_nl, k_nl, p_nl, A, omega_m)
 	elif method=='bk_corrected':
-		P_II, P_GI, b_I, r_I, k_I = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
+		P_II, P_GI, b_I, r_I, k_I, z_I = bridle_king_corrected(z_nl, k_nl, p_nl, A, omega_m)
 	elif method=="linear":
-		P_II, P_GI, b_I, r_I, k_I = linear(z_lin, k_lin, p_lin, A, omega_m)
+		P_II, P_GI, b_I, r_I, k_I, z_I = linear(z_lin, k_lin, p_lin, A, omega_m)
 
 	if grid_mode:
-		block.put_grid(ia, "z", z_nl, "k_h", k_nl,  "b_I"+suffix, b_I)
-		block.put_grid(ia, "z", z_nl, "k_h", k_nl, "r_I"+suffix, r_I)
+		block.put_grid(ia, "z", z_I, "k_h", k_I,  "b_I"+suffix, b_I)
+		block.put_grid(ia, "z", z_I, "k_h", k_I, "r_I"+suffix, r_I)
 	else:
-		block.put_grid(ia_mi, "z", z_lin, "k_h", k_I,  "p_k", P_GI)
-		block.put_grid(ia_ii, "z", z_lin, "k_h", k_I, "p_k", P_II)
+		block.put_grid(ia_mi, "z", z_I, "k_h", k_I,  "p_k", P_GI)
+		block.put_grid(ia_ii, "z", z_I, "k_h", k_I, "p_k", P_II)
 
 
 	#This is a bit of hack...scale GI power spectrum (which is really matter-intrinsic
