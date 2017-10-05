@@ -176,20 +176,12 @@ def read_data_products_bandpowers(exp='bicep1'):
     print("### Reading fiducial, real, and noise bias bandpowers from file: %s"\
         % file_in)
 
-    values = list()
     try:
-        fin = file(file_in, 'r')
+        with open(file_in, 'r') as fin:
+            words = [line.split(' ') for line in fin.readlines() if '#' not in line]
+            values = [[float(elem) for elem in lst if elem != ''] for lst in words if len(lst) > 3]
     except:
         print("Error reading %s. Make sure it is in working directory" % file_in)
-    for line in fin:
-        if "#" not in line:
-            lst = line.split(' ')
-            if len(lst) > 3:
-                b = []
-                for elem in lst:
-                    if elem != '':
-                        b.append(float(elem))
-                values.append(b)
 
     bandpowers = []
     for i in range(3):
@@ -276,7 +268,7 @@ def vecp(mat):
 
     dim = mat.shape[0]
 
-    vec = np.zeros((dim * (dim + 1) / 2))
+    vec = np.zeros((dim * (dim + 1) // 2))
     counter = 0
     for iDiag in range(0, dim):
         vec[counter:counter + dim - iDiag] = np.diag(mat, iDiag)
@@ -364,7 +356,7 @@ def init(experiment, field):
 
     # initialize bandpower arrays
     nf = len(field)
-    dim = nf * (nf + 1) / 2
+    dim = nf * (nf + 1) // 2
     C_l_hat = np.zeros((9, nf, nf))
     C_fl = np.zeros((9, nf, nf))
     N_l = np.zeros((9, nf, nf))
