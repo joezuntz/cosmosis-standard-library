@@ -5,8 +5,6 @@ arxiv: 1401.0358v2
 
 """
 from __future__ import print_function
-from __future__ import division
-from past.utils import old_div
 from cosmosis.datablock import names, option_section
 import os
 import numpy as np
@@ -46,8 +44,8 @@ def execute(block, config):
     rs = block[names.distances, "RS_ZDRAG"]
 
     # Compute the derived D_V distance
-    dr = old_div(z, H)  # in Mpc/c
-    dv = (da**2 * (1 + z)**2 * dr)**(old_div(1., 3.))
+    dr = z / H  # in Mpc/c
+    dv = (da**2 * (1 + z)**2 * dr)**(1. / 3.)
 
     # Interpolate into the theory at the
     # observed redshifts

@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 import sys
 import os
 import numpy as np
@@ -55,7 +53,7 @@ def setup(block):
     covx0c = get('COVx0c')
     covx1c = get('COVx1c')
 
-    scalefac = old_div(-2.5, (x0_obs * np.log(10.0)))
+    scalefac = -2.5 / (x0_obs * np.log(10.0))
     covmbx1 = covx0x1 * scalefac
     covmbc = covx0c * scalefac
 
@@ -108,7 +106,7 @@ def likelihood(data_vec, z_model_table, mu_model_table, M0, alpha, beta):
         mu_sig_sq[i_c] = fit_sig_sq + int_sig**2
 
     # Get overall error vector
-    chisquare = old_div((mu_obs - mu_theory)**2, mu_sig_sq)
+    chisquare = (mu_obs - mu_theory)**2 / mu_sig_sq
 
     # Return log likelihood = -chi^2/2
     LogLike = -0.5 * chisquare.sum()

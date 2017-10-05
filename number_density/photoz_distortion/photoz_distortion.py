@@ -1,6 +1,4 @@
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 from cosmosis.datablock import option_section, names
 from scipy.interpolate import interp1d
 import numpy as np
@@ -34,9 +32,9 @@ def execute(block, config):
 
     # Pad the nz with zeros to prevent an unphysical cutoff
     # if the distribution is shifted upwards in redshift
-    z_med = z[int(old_div(len(z), 2.))]
+    z_med = z[int(len(z) / 2.)]
     d = z[1] - z[0]
-    add_pts = int(old_div((z[-1] - z_med), d))
+    add_pts = int((z[-1] - z_med) / d)
     pad = np.zeros(add_pts)
     padz = np.arange(z.max() + d, z.max() + (add_pts + 1) * d, d)
     z = np.append(z, padz)
@@ -92,9 +90,9 @@ def execute(block, config):
             zcat = block[pz, 'zcat']  # 0.5
             sigcat = block[pz, 'sigcat']  # 0.1
 
-            step = (old_div(dzcat, 2.)) - abs(z - zcat0)
+            step = (dzcat / 2.) - abs(z - zcat0)
             step[step == 0.0] = -1.0
-            step = 0.5 * (old_div(step, abs(step)) + 1.0)
+            step = 0.5 * (step / abs(step) + 1.0)
 
             dz = (z[1] - z[0])
 

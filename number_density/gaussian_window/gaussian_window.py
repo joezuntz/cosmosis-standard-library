@@ -1,6 +1,4 @@
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names
 import numpy as np
@@ -30,7 +28,7 @@ def setup(options):
 
 def gaussian(x, mu, sigma):
     norm = np.sqrt(2 * np.pi) * sigma
-    return old_div(np.exp(-0.5 * (x - mu)**2 / sigma**2), norm)
+    return np.exp(-0.5 * (x - mu)**2 / sigma**2) / norm
 
 
 def execute(block, config):

@@ -1,5 +1,3 @@
-from __future__ import division
-from past.utils import old_div
 from cosmosis.datablock import names, option_section
 import os
 import numpy as np
@@ -40,7 +38,7 @@ def execute(block, config):
     b_theory = np.interp(z_obs, z, b)
 
     # get likelihood
-    chi2 = (old_div((b_theory - b_obs)**2, sigma_obs**2)).sum()
+    chi2 = ((b_theory - b_obs)**2 / sigma_obs**2).sum()
     like = -0.5 * chi2
     block[names.likelihoods, "jullo_like"] = like
 

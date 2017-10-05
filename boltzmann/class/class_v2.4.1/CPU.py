@@ -31,11 +31,9 @@ https://github.com/JesusTorrado/cosmo_mini_toolbox
 
 """
 from __future__ import print_function
-from __future__ import division
 # System imports
 from builtins import zip
 from builtins import range
-from past.utils import old_div
 import os
 import sys
 import argparse
@@ -306,13 +304,13 @@ def plot_CLASS_output(files, x_axis, y_axis, ratio=False, printing='',
                 if scale == 'lin':
                     # ax.plot(axis, splev(ref[:, x_index_ref],
                                         # interpolated)/reference-1)
-                    ax.plot(axis, old_div(interpolated(
-                        ref[:, x_index_ref]), reference) - 1)
+                    ax.plot(axis, interpolated(
+                        ref[:, x_index_ref]) / reference - 1)
                 elif scale == 'loglin':
                     # ax.semilogx(axis, splev(ref[:, x_index_ref],
                                             # interpolated)/reference-1)
-                    ax.semilogx(axis, old_div(interpolated(
-                        ref[:, x_index_ref]), reference) - 1)
+                    ax.semilogx(axis, interpolated(
+                        ref[:, x_index_ref]) / reference - 1)
                 elif scale == 'loglog':
                     raise InputError(
                         "loglog plot is not available for ratios")
@@ -547,7 +545,7 @@ class PlanckScale(mscale.ScaleBase):
             FixedLocator(
                 np.concatenate((np.arange(2, 10),
                                 np.arange(10, 50, 10),
-                                np.arange(floor(old_div(change, 100)), 2500, 100)))))
+                                np.arange(floor(change / 100), 2500, 100)))))
 
     def get_transform(self):
         """
@@ -580,7 +578,7 @@ class PlanckScale(mscale.ScaleBase):
             lower = a[np.where(a <= change)]
             greater = a[np.where(a > change)]
             if lower.size:
-                lower = old_div(self._handle_nonpos(lower * 10.0), 10.0)
+                lower = self._handle_nonpos(lower * 10.0) / 10.0
                 if isinstance(lower, ma.MaskedArray):
                     lower = ma.log10(lower)
                 else:
@@ -610,9 +608,9 @@ class PlanckScale(mscale.ScaleBase):
             greater = a[np.where(a > factor * np.log10(change))]
             if lower.size:
                 if isinstance(lower, ma.MaskedArray):
-                    lower = ma.power(10.0, old_div(lower, float(factor)))
+                    lower = ma.power(10.0, lower / float(factor))
                 else:
-                    lower = np.power(10.0, old_div(lower, float(factor)))
+                    lower = np.power(10.0, lower / float(factor))
             if greater.size:
                 greater = (greater + change - factor * np.log10(change))
             # Only low

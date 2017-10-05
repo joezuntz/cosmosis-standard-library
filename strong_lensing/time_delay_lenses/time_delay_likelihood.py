@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import object
-from past.utils import old_div
 from numpy import pi, sqrt, log
 import numpy as np
 
@@ -69,17 +67,17 @@ class TimeDelayLikelihood(object):
         # D_s = angular diameter distance to source
         # D_ds = angular diameter distance from lens to source
         c = 299792.4580  # km/s
-        D_H = old_div(c, H0)  # Mpc
+        D_H = c / H0  # Mpc
 
         chi_s = comovingDistance(z_s)
         chi_d = comovingDistance(z_d)
 
-        D_s = old_div(chi_s, (1 + z_s))
-        D_d = old_div(chi_d, (1 + z_d))
+        D_s = chi_s / (1 + z_s)
+        D_d = chi_d / (1 + z_d)
 
         f_s = sqrt(1 + omega_k * chi_d**2 / D_H)
         f_d = sqrt(1 + omega_k * chi_s**2 / D_H)
-        D_ds = old_div((f_s * chi_s - f_d * chi_d), (1 + z_s))
+        D_ds = (f_s * chi_s - f_d * chi_d) / (1 + z_s)
 
         return (1 + z_d) * D_d * D_s / D_ds
 
@@ -149,7 +147,7 @@ if __name__ == '__main__':
         cosmo = astropy.cosmology.FlatLambdaCDM(H0=H0, Om0=0.3)
 
         def comovingDistance(z): return (
-            old_div(cosmo.comoving_distance(z), astropy.units.megaparsec)).value
+            cosmo.comoving_distance(z) / astropy.units.megaparsec).value
         rxj_likes[i] = RXJ.likelihood(comovingDistance, omega_k, H0)
         b1608_likes[i] = B1608.likelihood(comovingDistance, omega_k, H0)
         he0435_likes[i] = HE0435.likelihood(comovingDistance, omega_k, H0)

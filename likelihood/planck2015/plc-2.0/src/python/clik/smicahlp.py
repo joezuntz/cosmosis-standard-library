@@ -1,9 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from __future__ import division
 from builtins import zip
 from builtins import range
-from past.utils import old_div
 from . import parobject as php
 import numpy as nm
 import re
@@ -715,7 +713,7 @@ def calTP_from_smica(dffile):
 
     fi = hpy.File(dffile)
     hascl = fi["clik/lkl_0/has_cl"]
-    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
+    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -740,14 +738,14 @@ def calTP_from_smica(dffile):
     def cal(vals):
         rqd = cal0(vals[:-fnd])
         if TP["P"]:
-            calP = old_div(1., (vals[-fnd]))
+            calP = 1. / (vals[-fnd])
             rP = nm.ones((m, m))
             rP[:mt, mt:] = calP
             rP[mt:, :mt] = calP
             rP[mt:, mt:] = calP**2
             rqd = rqd * rP[nm.newaxis, :, :]
         if TP["T"]:
-            calT = old_div(1., vals[-1])
+            calT = 1. / vals[-1]
             rqd = rqd * calT**2
         return rqd
     cal.varpar = [v for v in list(cal0.varpar) + [TP["P"]] + [TP["T"]] if v]
@@ -759,7 +757,7 @@ def calTP0_from_smica(dffile):
 
     fi = hpy.File(dffile)
     hascl = fi["clik/lkl_0/has_cl"]
-    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
+    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -793,7 +791,7 @@ def calTP0_from_smica(dffile):
     if compot == "calTP":
         Mexp = nm.exp
     else:
-        def Mexp(x): return old_div(1., nm.sqrt(x))
+        def Mexp(x): return 1. / nm.sqrt(x)
 
     def cal(vals):
         vec = nm.ones(m)
@@ -815,7 +813,7 @@ def beamTP_from_smica(dffile):
 
     fi = hpy.File(dffile)
     hascl = fi["clik/lkl_0/has_cl"]
-    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
+    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -885,7 +883,7 @@ def ordering_from_smica(dffile, jac=True):
     m = mB + mP * hascl[2]
     # print mT,mP,mE,mB,m
     # print hascl
-    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
+    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
     m2 = m * m
     ordr = nm.concatenate([nm.arange(nb)[msk[iv + jv * m::m2] == 1]
                            * m2 + iv * m + jv for iv, jv in zip(ord[::2], ord[1::2])])
@@ -1004,7 +1002,7 @@ def simulate_chanels(dffile, bestfit, cls, calib=True, nside=2048, all=False):
     hascl = fi["clik/lkl_0/has_cl"]
     lmin = fi["clik/lkl_0/lmin"]
     lmax = fi["clik/lkl_0/lmax"]
-    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
+    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -1098,7 +1096,7 @@ def get_binned_calibrated_model_and_data(dffile, bestfit, cls=None):
     hascl = fi["clik/lkl_0/has_cl"]
     lmin = fi["clik/lkl_0/lmin"]
     lmax = fi["clik/lkl_0/lmax"]
-    nb = old_div(fi["clik/lkl_0/nbins"], hascl.sum())
+    nb = fi["clik/lkl_0/nbins"] / hascl.sum()
     mt = fi["clik/lkl_0/m_channel_T"] * hascl[0]
     me = fi["clik/lkl_0/m_channel_P"] * hascl[1]
     mb = fi["clik/lkl_0/m_channel_P"] * hascl[2]
@@ -1226,8 +1224,8 @@ def best_fit_cmb(dffile, bestfit, cty="B"):
 
         #Jt_siginv,Jt_siginv_Yo,Jt_siginv_J = lkl.full_solve(Yo,Jt,siginv)
         #rVec = -lkl.chol_solve(Jt_siginv_J,Jt_siginv_Yo),1./nm.sqrt(Jt_siginv_J.diagonal())
-        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), old_div(1., \
-            nm.sqrt(Jt_siginv_J.diagonal()))
+        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), 1. / \
+            nm.sqrt(Jt_siginv_J.diagonal())
         print(time.time() - a)
     else:
         a = time.time()
@@ -1236,8 +1234,8 @@ def best_fit_cmb(dffile, bestfit, cty="B"):
         Jt_siginv_J = nm.dot(Jt_siginv, Jt.T)
 
         #rVec = -lkl.chol_solve(Jt_siginv_J,Jt_siginv_Yo),1./nm.sqrt(Jt_siginv_J.diagonal())
-        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), old_div(1., \
-            nm.sqrt(Jt_siginv_J.diagonal()))
+        rVec = -nm.linalg.solve(Jt_siginv_J, Jt_siginv_Yo), 1. / \
+            nm.sqrt(Jt_siginv_J.diagonal())
         print(time.time() - a)
 
     #rVec = -nm.linalg.solve(Jt_siginv_J,Jt_siginv_Yo),1./nm.sqrt(Jt_siginv_J.diagonal())

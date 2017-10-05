@@ -6,12 +6,10 @@ the results carefully.
 
 """
 from __future__ import print_function
-from __future__ import division
 
 
 from builtins import range
 from builtins import object
-from past.utils import old_div
 from cosmosis.datablock import option_section, names
 import numpy as np
 from scipy.interpolate import interp1d
@@ -128,7 +126,7 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     if real_space:
         # This is in radians
         theory_angle = block[section_name, "theta"]
-        angle_sample_radians = np.radians(old_div(angle_sample, 60.))
+        angle_sample_radians = np.radians(angle_sample / 60.)
     else:
         theory_angle = block[section_name, "ell"]
         angle_sample_radians = angle_sample
@@ -267,11 +265,11 @@ class ObservedClGetter(object):
         # For shear-shear the noise component is sigma^2 / number_density_bin
         # and for position-position it is just 1/number_density_bin
         if (A == B) and (A == twopoint.Types.galaxy_shear_emode_fourier.name) and (i == j):
-            noise = old_div(self.sigma_e_bin[i - 1]**2, \
-                self.number_density_shear_bin[i - 1])
+            noise = self.sigma_e_bin[i - 1]**2 / \
+                self.number_density_shear_bin[i - 1]
             obs_c_ell += noise
         if (A == B) and (A == twopoint.Types.galaxy_position_fourier.name) and (i == j):
-            noise = old_div(1.0, self.number_density_lss_bin[i - 1])
+            noise = 1.0 / self.number_density_lss_bin[i - 1]
             obs_c_ell += noise
 
         return obs_c_ell

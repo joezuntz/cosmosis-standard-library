@@ -1,5 +1,3 @@
-from __future__ import division
-from past.utils import old_div
 import scipy.special
 import scipy.interpolate
 from numpy import log, exp, cos, pi
@@ -21,8 +19,8 @@ def log_interp(x, y):
         w4 = ~ (w1 | w2 | w3)
 
         y = np.zeros_like(xi)
-        y[w2] = y0 * (old_div(x0, xi[w2]))
-        y[w3] = y1 * (old_div(x1, xi[w3]))**3
+        y[w2] = y0 * (x0 / xi[w2])
+        y[w3] = y1 * (x1 / xi[w3])**3
         y[w4] = exp(s(log(xi[w4])))
         return y
     return interpolator
@@ -38,7 +36,7 @@ def cl_to_w(ell, c_ell, theta):
 #    for i,ell_i in enumerate(ell_sample):
 #        c_ell_sample[i] = cl_interp(ell_i)
 
-    f = old_div((2 * ell_sample + 1), (4 * pi))
+    f = (2 * ell_sample + 1) / (4 * pi)
     w = np.zeros_like(theta)
     for i, t in enumerate(theta):
         p_ell, _ = scipy.special.lpn(ell_max_integral - 1, cos(t))
@@ -66,7 +64,7 @@ def execute(block, config):
     theta = config['theta']
     ell = block['galaxy_cl', 'ell']
     c_ell = block['galaxy_cl', 'bin_1_1']
-    w = cl_to_w(ell, c_ell, np.radians(old_div(theta, 60)))
+    w = cl_to_w(ell, c_ell, np.radians(theta / 60))
     block['galaxy_xi', 'theta'] = theta
     block['galaxy_xi', 'bin_1_1'] = w
     return 0

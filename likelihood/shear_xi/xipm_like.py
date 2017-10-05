@@ -1,8 +1,6 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import range
 from builtins import object
-from past.utils import old_div
 import numpy as np
 import os
 import scipy.interpolate as interpolate
@@ -39,7 +37,7 @@ class XipmLikelihood(object):
         assert weight.shape[0] == weight.shape[1] == p
         if cov_num_rlzn is not None:  # Apply Anderson-Hartlap correction to inverse covariance
             n_mu = cov_num_rlzn
-            alpha = old_div((n_mu - p - 2.0), (n_mu - 1.0))
+            alpha = (n_mu - p - 2.0) / (n_mu - 1.0)
             weight *= alpha
             print('applying Anderson-Hartlapp correction: ', alpha)
         self.weight = weight
@@ -199,7 +197,7 @@ class XipmLikelihood(object):
                     theta_theory, xi_theory = xi_theory_dict[(i, j)]
                 except KeyError:
                     theta_theory, xi_theory = xi_theory_dict[(j, i)]
-                theta_theory = theta_theory[:old_div(len(theta_theory), 2)]
+                theta_theory = theta_theory[:len(theta_theory) / 2]
                 xi_plus_theory = xi_theory[:len(theta_theory)]
                 xi_minus_theory = xi_theory[len(theta_theory):]
                 # interpolate to data values - this is correct if self.theta values are mean for each bin
@@ -233,7 +231,7 @@ class XipmLikelihood(object):
         chi2 = np.dot(delta, np.dot(self.weight, delta))
         r = np.random.randn(xi_vector.size)
         sim = xi_vector + np.dot(self.covmat, r)
-        return old_div(-chi2, 2.0), xi_vector, self.data_vector, self.weight, self.covmat, sim
+        return -chi2 / 2.0, xi_vector, self.data_vector, self.weight, self.covmat, sim
 
 
 # ordering is (1,1) (1,2) (1,3) (1,4) (1,5) (1,6) (2,2) (2,3) ... (5,5), (5,6), (6,6)

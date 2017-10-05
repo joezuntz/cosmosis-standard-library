@@ -1,6 +1,4 @@
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 import numpy as np
 from scipy import interpolate
 
@@ -61,7 +59,7 @@ def evaluate_mean_z(n_z, z):
     """Integrate n(z) in each bin to get the mean redshift. """
     z_mean = []
     for n in n_z:
-        z_mean += [old_div(sum(n * z), sum(n))]
+        z_mean += [sum(n * z) / sum(n)]
 
     z_mean = np.array(z_mean)
 
@@ -73,7 +71,7 @@ def evaluate_median_z(n_z, z):
     import scipy.stats as stats
     z_med = []
     for n in n_z:
-        prob_dist = old_div(n, n.sum())
+        prob_dist = n / n.sum()
         gen = stats.rv_discrete(values=(z, prob_dist), inc=z[1] - z[0])
         z_med += [gen.median()]
     z_med = np.array(z_med)

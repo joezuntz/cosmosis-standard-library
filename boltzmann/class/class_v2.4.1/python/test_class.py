@@ -69,10 +69,8 @@ matter power spectrum. If the two are not close enough, it will generate a
 PDF plot of this and save it in the 'fail' folder.
 """
 from __future__ import print_function
-from __future__ import division
 from builtins import str
 from builtins import range
-from past.utils import old_div
 from classy import Class
 from classy import CosmoSevereError
 import itertools
@@ -464,8 +462,8 @@ class TestClass(unittest.TestCase):
         ax_lin = plt.subplot(211)
         ax_log = plt.subplot(212)
         ell = np.arange(max(np.shape(candidate))) + 2
-        ax_lin.plot(ell, 1 - old_div(candidate, reference))
-        ax_log.loglog(ell, abs(1 - old_div(candidate, reference)))
+        ax_lin.plot(ell, 1 - candidate / reference)
+        ax_log.loglog(ell, abs(1 - candidate / reference))
 
         ax_lin.set_xlabel('l')
         ax_log.set_xlabel('l')
@@ -492,8 +490,8 @@ class TestClass(unittest.TestCase):
         fig = plt.figure()
         ax_lin = plt.subplot(211)
         ax_log = plt.subplot(212)
-        ax_lin.plot(k, 1 - old_div(candidate, reference))
-        ax_log.loglog(k, abs(1 - old_div(candidate, reference)))
+        ax_lin.plot(k, 1 - candidate / reference)
+        ax_log.loglog(k, abs(1 - candidate / reference))
 
         ax_lin.set_xlabel('k')
         ax_log.set_xlabel('k')

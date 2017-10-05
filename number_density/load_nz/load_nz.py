@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 import numpy as np
 from cosmosis.datablock import option_section, names as section_names
 
@@ -38,7 +36,7 @@ def setup(options):
         # in this case the sample z values are lower edges of
         # histogram bins.  So to turn them into samples we need to
         # shift everything.  This assumes equal sized bins
-        dz = old_div((z[1] - z[0]), 2.0)
+        dz = (z[1] - z[0]) / 2.0
         print("n(z) set to histogram mode. Bin centers are %f higher than edges." % dz)
         z += dz
 

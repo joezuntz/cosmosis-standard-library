@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 import numpy as np
 from scipy.special import lpn
 
@@ -37,8 +35,8 @@ def P2l_rec(ells, cost):
     P2l[3] = P23
     for ell in ells[4:]:
         # print ell, P2l[ell-1], P2l[ell-2]
-        P2l[ell] = old_div(((2 * ell - 1) * cost * P2l[ell - 1] -
-                    (ell + 2 - 1) * P2l[ell - 2]), (ell - 2))
+        P2l[ell] = ((2 * ell - 1) * cost * P2l[ell - 1] -
+                    (ell + 2 - 1) * P2l[ell - 2]) / (ell - 2)
     return P2l
 
 
@@ -60,14 +58,14 @@ def P2l_rec_norm(ells, cost):
     P2l_norm[3] *= P2l_norm_prefac(3)
     for ell in ells[4:]:
         # print ell, P2l[ell-1], P2l[ell-2]
-        a = np.sqrt(old_div((4 * ell**2 - 1.), (ell**2 - 4)))
+        a = np.sqrt((4 * ell**2 - 1.) / (ell**2 - 4))
         b = cost * P2l_norm[ell - 1]
-        c = np.sqrt(old_div(((ell - 1.)**2 - 4),
-                    (4 * (ell - 1.)**2 - 1))) * P2l_norm[ell - 2]
+        c = np.sqrt(((ell - 1.)**2 - 4) /
+                    (4 * (ell - 1.)**2 - 1)) * P2l_norm[ell - 2]
         # print a,b,c
         P2l_norm[ell] = a * (b - c)
         # print ell, P2l_norm[ell], P2l_norm_prefac(ell)
-        P2l[ell] = old_div(P2l_norm[ell], P2l_norm_prefac(ell))
+        P2l[ell] = P2l_norm[ell] / P2l_norm_prefac(ell)
     return P2l
 
 
@@ -86,7 +84,7 @@ def precomp_GpGm(ells, thetas):
     P_m_lminus1[:, 1:] = P_m_l[:, :-1]
     ELLS, THETAS = np.meshgrid(ells, thetas)
     COSTS, SINTS = np.cos(THETAS), np.sin(THETAS)
-    G_plus = -(old_div((ELLS - 4), SINTS**2) + 0.5 * ELLS * (ELLS - 1)) * \
+    G_plus = -((ELLS - 4) / SINTS**2 + 0.5 * ELLS * (ELLS - 1)) * \
         P_m_l + (ELLS + 2) * COSTS * P_m_lminus1 / SINTS**2
     G_minus = 2 * ((ELLS - 1) * COSTS * P_m_l -
                    (ELLS + 2) * P_m_lminus1) / SINTS**2
@@ -100,14 +98,14 @@ def G_plus_minus_l2(ells, theta, s_switch=100.):
     P_m_lminus1 = np.zeros_like(P_m_l)
     cost = np.cos(theta)
     sint = np.sin(theta)
-    do_full = (old_div(ells, theta) < s_switch) | (ells < 20)
+    do_full = (ells / theta < s_switch) | (ells < 20)
     for ell in ells[do_full]:
         P_m_l[ell] = sp.lpmv(2, ell, cost)
     P_m_l[~do_full] = (ells[~do_full] - 1) * ells[~do_full] * (ells[~do_full] + 1) * (
         ells[~do_full] + 2) * sp.jn(2, ells[~do_full] * theta) / ells[~do_full]**2
     print('theta = %f, switching to bessel function for %d<ell<%d' % (np.degrees(theta) * 60., ells[~do_full][0], ells[~do_full][-1]))
     P_m_lminus1[1:] = P_m_l[:-1]
-    G_plus = -(old_div((ells - 4), sint**2) + 0.5 * ells * (ells - 1)) * \
+    G_plus = -((ells - 4) / sint**2 + 0.5 * ells * (ells - 1)) * \
         P_m_l + (ells + 2) * cost * P_m_lminus1 / sint**2
     G_minus = 2 * ((ells - 1) * cost * P_m_l -
                    (ells + 2) * P_m_lminus1) / sint**2

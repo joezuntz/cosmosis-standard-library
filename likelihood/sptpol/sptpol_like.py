@@ -1,8 +1,6 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import range
 from builtins import object
-from past.utils import old_div
 import numpy as np
 from numpy import pi
 import os
@@ -154,7 +152,7 @@ class SPTPolTheoryModel(object):
         alpha = nuisance_parameters['alpha_dust_' + spectrum]
 
         # The total D_ell spectrum
-        D = A * (old_div(self.ell, 80.))**alpha
+        D = A * (self.ell / 80.)**alpha
         return D
 
     def bin_into_bandpowers(self, spectrum, D):
@@ -169,7 +167,7 @@ class SPTPolTheoryModel(object):
             cal *= nuisance_parameters['p_cal']
         elif spectrum == "ee":
             cal *= nuisance_parameters['p_cal']**2
-        return old_div(B, cal)
+        return B / cal
 
     def apply_beam(self, spectrum, B, nuisance_parameters):
         # The beam described in the paper is different to the one

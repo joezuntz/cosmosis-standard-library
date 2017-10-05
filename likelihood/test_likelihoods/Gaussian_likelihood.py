@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import object
-from past.utils import old_div
 import os
 import pydesglue
 import numpy as np
@@ -24,7 +22,7 @@ class Multigaussian(object):
         diff = x[0] - self.means
         print("x", x[0], diff**2, type(self.cov))
 
-        return old_div(-(diff**2), (self.cov * 2.0)) - self.norm
+        return -(diff**2) / (self.cov * 2.0) - self.norm
 
     def __call__(self, x):
         return lnprob(self, x)

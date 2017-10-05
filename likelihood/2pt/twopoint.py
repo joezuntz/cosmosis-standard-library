@@ -1,9 +1,7 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import zip
 from builtins import range
 from builtins import object
-from past.utils import old_div
 from astropy.io import fits
 import astropy.units
 from astropy.table import Table
@@ -36,8 +34,8 @@ def sample_cov(xi_arrays, mode='full'):
     xi_mean = np.mean(xi_arrays, axis=0)
     for i in range(npoints):
         for j in range(npoints):
-            Cov[i, j] = old_div(np.sum((xi_arrays[:, i] - xi_mean[i])
-                               * (xi_arrays[:, j] - xi_mean[j])), nsample)
+            Cov[i, j] = np.sum((xi_arrays[:, i] - xi_mean[i])
+                               * (xi_arrays[:, j] - xi_mean[j])) / nsample
     # This is the covariance in a patch of size A/nsample. Assume Cov ~ 1/A so Cov=Cov/nsample
     if mode == 'subsample':
         Cov /= nsample
@@ -45,7 +43,7 @@ def sample_cov(xi_arrays, mode='full'):
         Cov *= (nsample - 1)
     for i in range(npoints):
         for j in range(npoints):
-            Corr[i, j] = old_div(Cov[i, j], np.sqrt(Cov[i, i] * Cov[j, j]))
+            Corr[i, j] = Cov[i, j] / np.sqrt(Cov[i, i] * Cov[j, j])
     return Cov, Corr
 
 

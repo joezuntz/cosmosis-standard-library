@@ -1,6 +1,4 @@
-from __future__ import division
 from builtins import object
-from past.utils import old_div
 import numpy as np
 import scipy.integrate
 c_km_per_s = 299792.458
@@ -16,7 +14,7 @@ class DistanceCalc(object):
         self.wmodel = wmodel
         self.de_params = de_params
         self.h0 = h0
-        self.d_h = old_div(c_km_per_s, (100.))  # Mpc/h
+        self.d_h = c_km_per_s / (100.)  # Mpc/h
 
     def wfunc(self, a):
         if self.wmodel == 0:  # e.g. Linder 2003
@@ -27,19 +25,19 @@ class DistanceCalc(object):
             return w0 + (ap - a) * wa
         elif self.wmodel == 2:  # Wetterich 2004
             w0, ode_e = self.de_params
-            b = -3. * (old_div(w0, (np.log(old_div((1. - ode_e), ode_e)) +
-                             np.log(old_div((1. - self.om), self.om)))))
-            return old_div(w0, (1.0 - b * (np.log(a))))
+            b = -3. * (w0 / (np.log((1. - ode_e) / ode_e) +
+                             np.log((1. - self.om) / self.om)))
+            return w0 / (1.0 - b * (np.log(a)))
 
     def w_integrand(self, a):
-        return old_div((1. + self.wfunc(a)), a)
+        return (1. + self.wfunc(a)) / a
 
     def w_int(self, z):
-        a = old_div(1., (1. + z))
+        a = 1. / (1. + z)
         return 3.0 * scipy.integrate.quad(self.w_integrand, a, 1.0, epsrel=1e-6, limit=50)[0]
 
     def e_z_inverse(self, z):
-        return old_div(1., (np.sqrt(self.om * (1 + z)**3 + self.ok * (1 + z)**2 + self.ol * np.exp(self.w_int(z)))))
+        return 1. / (np.sqrt(self.om * (1 + z)**3 + self.ok * (1 + z)**2 + self.ol * np.exp(self.w_int(z))))
 
     def d_c(self, z):
         return self.d_h * scipy.integrate.quad(self.e_z_inverse, 0.0, z, epsrel=1e-6, limit=50)[0]

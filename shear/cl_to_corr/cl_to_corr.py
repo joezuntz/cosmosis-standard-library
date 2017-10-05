@@ -1,6 +1,4 @@
-from __future__ import division
 from builtins import range
-from past.utils import old_div
 from builtins import object
 import scipy.interpolate
 import pyfftlog
@@ -131,7 +129,7 @@ class Transformer(object):
         log_ellmax = np.log(ell_max)
         log_ellmid = 0.5 * (log_ellmin + log_ellmax)
         ell_mid = np.exp(log_ellmid)
-        r_mid = old_div(self.kr, ell_mid)  # radians
+        r_mid = self.kr / ell_mid  # radians
         x = np.arange(n)
 
         # And the effective angles of the output
@@ -165,8 +163,8 @@ class Transformer(object):
         bad_low = np.isnan(cl_out) & (self.ell < ell_min)
         bad_high = np.isnan(cl_out) & (self.ell > ell_max)
 
-        cl_out[bad_low] = cl[0] * (old_div(self.ell[bad_low], ell_min))**self.lower
-        cl_out[bad_high] = cl[-1] * (old_div(self.ell[bad_high], ell_max))**self.upper
+        cl_out[bad_low] = cl[0] * (self.ell[bad_low] / ell_min)**self.lower
+        cl_out[bad_high] = cl[-1] * (self.ell[bad_high] / ell_max)**self.upper
 
         return cl_out
 
@@ -239,7 +237,7 @@ class CosmosisTransformer(Transformer):
                 theta, xi = super(CosmosisTransformer, self).__call__(ell, cl)
 
                 # Cosmosis wants theta in radians
-                theta = np.radians(old_div(theta, 60.))
+                theta = np.radians(theta / 60.)
 
                 # Save results back to cosmosis
                 block[self.output_section, "theta"] = theta

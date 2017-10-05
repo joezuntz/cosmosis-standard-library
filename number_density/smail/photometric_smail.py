@@ -1,10 +1,8 @@
-from __future__ import division
 # Code by Donnacha Kirk
 # Edited by Simon Samuroff 07/2015
 
 from builtins import zip
 from builtins import range
-from past.utils import old_div
 import numpy as np
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
@@ -26,7 +24,7 @@ def delta(z, z0):
     # location nearest z0 in z
     idx = (np.abs(z - z0)).argmin()
     dz = z[1] - z[0]
-    x[idx] = old_div(1.0, dz)
+    x[idx] = 1.0 / dz
     return x
 
 
@@ -76,14 +74,14 @@ def compute_bin_nz(z_prob_matrix, z, edges, ngal):
 
         # Normalise the n(z) in each redshift bin to 1 over the redshift range
         # of the survey
-        ni *= old_div(1.0, (ni.sum() * dz))
+        ni *= 1.0 / (ni.sum() * dz)
         assert(len(ni) == len(z))
         NI.append(ni)
     return NI
 
 
 def smail_distribution(z, alpha, beta, z0):
-    return (z**alpha) * np.exp(-(old_div(z, z0))**beta)
+    return (z**alpha) * np.exp(-(z / z0)**beta)
 
 
 def compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias):
@@ -116,7 +114,7 @@ def execute(block, config):
     bias = block.get(params, "bias")
 
     # Compute the redshift vector
-    z = np.arange(0, zmax + old_div(dz, 2), dz)
+    z = np.arange(0, zmax + dz / 2, dz)
 
     # Run the main code for getting n(z) in bins
     edges, bins = compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias)

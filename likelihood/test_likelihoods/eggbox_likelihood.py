@@ -2,10 +2,8 @@
 eggbox_likelihood.py: a test problem for our samplers.
 We sample an eggbox function a very pathological case.
 """
-from __future__ import division
 
 from builtins import object
-from past.utils import old_div
 import os
 import sys
 import numpy as np
@@ -25,7 +23,7 @@ class Eggbox(object):
         self.tmax = tmax
 
     def loglhood(self, t):
-        return (2.0 + np.cos(old_div(t[0], 2.0)) * np.cos(old_div(t[1], 2.0))) ** 5.0
+        return (2.0 + np.cos(t[0] / 2.0) * np.cos(t[1] / 2.0)) ** 5.0
 
     def __call__(self, t):
         return self.loglhood(t)

@@ -1,5 +1,3 @@
-from __future__ import division
-from past.utils import old_div
 from numpy import log, pi
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
@@ -32,7 +30,7 @@ def execute(block, config):
             "You need to set zmin=0 in CAMB to use the sigma8_rescale module.")
 
     # Calculate rescale factor
-    r = old_div((sigma8_input**2), (sigma8_camb**2))
+    r = (sigma8_input**2) / (sigma8_camb**2)
 
     # Rescale CMB Cl and matter power outputs
     A_s *= r

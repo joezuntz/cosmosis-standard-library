@@ -1,9 +1,7 @@
 # coding:utf-8
 from __future__ import print_function
-from __future__ import division
 from builtins import range
 from builtins import object
-from past.utils import old_div
 import os
 import ctypes as ct
 import numpy as np
@@ -118,7 +116,7 @@ class Spectrum(object):
                                    "_" + self.sample_b][bin2]
         chi_peak = limber.get_kernel_peak(K1, K2)
         a_peak = a_of_chi(chi_peak)
-        z_peak = old_div(1., a_peak) - 1
+        z_peak = 1. / a_peak - 1
         return chi_peak, z_peak
 
 
@@ -521,7 +519,7 @@ class SpectrumCalculator(object):
                     block[spectrum_name, "z_peak_{}_{}".format(
                         i + 1, j + 1)] = z_peak
                     block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(
-                        i + 1, j + 1)] = 60 * np.degrees(old_div(1, chi_peak))
+                        i + 1, j + 1)] = 60 * np.degrees(1 / chi_peak)
 
     def clean(self):
         # need to manually delete power spectra we have loaded
