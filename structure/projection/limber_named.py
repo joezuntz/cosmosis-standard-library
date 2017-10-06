@@ -41,16 +41,16 @@ lib.load_interpolator_chi.argtypes = [
 
 def get_w_spline(block, nz_section, bin, z, chi_max, a_of_chi):
     "Compute a shear kernel W(chi) spline"
-    return GSLSpline(lib.get_w_spline_named(block._ptr, nz_section, bin, z, chi_max, a_of_chi))
+    return GSLSpline(lib.get_w_spline_named(block._ptr, nz_section.encode('ascii'), bin, z, chi_max, a_of_chi))
 
 
 def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
     "Load P(k,z) and convert z -> chi"
-    return lib.load_interpolator_chi(block._ptr, chi_of_z, section, k_name, z_name, p_name)
+    return lib.load_interpolator_chi(block._ptr, chi_of_z, section.encode('ascii'), k_name.encode('ascii'), z_name.encode('ascii'), p_name.encode('ascii'))
 
 
 def get_nchi_spline(block, nz_section, nbin, z, a_of_chi, chi_of_z):
-    return GSLSpline(lib.get_nchi_spline_named(block._ptr, nz_section, nbin, z, a_of_chi, chi_of_z))
+    return GSLSpline(lib.get_nchi_spline_named(block._ptr, nz_section.encode('ascii'), nbin, z, a_of_chi, chi_of_z))
 
 
 def limber(WX, WY, P, xlog, ylog, ell, prefactor):

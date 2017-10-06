@@ -73,12 +73,12 @@ lib.sigma_crit.argtypes = [ct.c_void_p, ct.c_void_p,
 
 
 def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
-    return GSLSpline(lib.get_named_nchi_spline(block._ptr, section, nbin, z, a_of_chi, chi_of_z))
+    return GSLSpline(lib.get_named_nchi_spline(block._ptr, section.encode('ascii'), nbin, z, a_of_chi, chi_of_z))
 
 
 def get_named_w_spline(block, section, bin, z, chi_max, a_of_chi):
     "Compute a shear kernel W(chi) spline"
-    return GSLSpline(lib.get_named_w_spline(block._ptr, section, bin, z, chi_max, a_of_chi))
+    return GSLSpline(lib.get_named_w_spline(block._ptr, section.encode('ascii'), bin, z, chi_max, a_of_chi))
 
 
 def get_cmb_kappa_spline(chi_max, chi_star, a_of_chi):
@@ -97,7 +97,7 @@ def free_power(power):
 def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
     "Load P(k,z) and convert z -> chi"
     r = lib.load_interpolator_chi(
-        block._ptr, chi_of_z, section, k_name, z_name, p_name)
+        block._ptr, chi_of_z, section.encode('ascii'), k_name.encode('ascii'), z_name.encode('ascii'), p_name.encode('ascii'))
     if not r:
         raise ValueError("Could not load power spectrum from section {0} (k:{1} z:{2} p:{3})".format(
             section, k_name, z_name, p_name))
@@ -107,7 +107,7 @@ def load_power_chi(block, chi_of_z, section, k_name, z_name, p_name):
 def load_power_chi_function(block, chi_of_z, section, k_name, z_name, p_name, function, args):
     "Load P(k,z) and convert z -> chi and scale P->f(k,z)*P"
     r = lib.load_interpolator_chi_function(
-        block._ptr, chi_of_z, section, k_name, z_name, p_name, function, args)
+        block._ptr, chi_of_z, section.encode('ascii'), k_name.encode('ascii'), z_name.encode('ascii'), p_name.encode('ascii'), function, args)
     if not r:
         raise ValueError("Could not load scaled power spectrum from section {0} (k:{1} z:{2} p:{3})".format(
             section, k_name, z_name, p_name))
