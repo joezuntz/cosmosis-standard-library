@@ -2,6 +2,7 @@
 from __future__ import print_function
 from builtins import range
 from builtins import object
+from builtins import str
 import os
 import ctypes as ct
 import numpy as np
