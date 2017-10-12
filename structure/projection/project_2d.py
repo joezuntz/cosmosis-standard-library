@@ -328,7 +328,7 @@ class SpectrumCalculator(object):
                 continue
 
             # Otherwise it must be a string - enforce this.
-            if not isinstance(value, str):
+            if not isinstance(value, basestring):
                 raise ValueError(
                     "Unknown form of value for option {} in project_2d: {}".format(name, value))
 
