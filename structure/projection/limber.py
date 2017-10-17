@@ -21,6 +21,7 @@ class c_limber_config(ct.Structure):
 LIMBER_STATUS_OK =  0
 LIMBER_STATUS_ZERO =  1
 LIMBER_STATUS_NEGATIVE =  2
+LIMBER_STATUS_ERROR =  3
 
 c_gsl_spline = ct.c_void_p
 
@@ -118,7 +119,10 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor, rel_tol=1e-3, abs_tol=1e-5):
     config.absolute_tolerance = abs_tol
     config.relative_tolerance = rel_tol
     spline_ptr = lib.limber_integral(ct.byref(config), WX, WY, P)
-    if config.status == LIMBER_STATUS_ZERO:
+
+    if config.status  == LIMBER_STATUS_ERROR:
+        raise ValueError("Error running Limber integral.  More info above.")
+    elif config.status == LIMBER_STATUS_ZERO:
         ylog = False
     elif config.status == LIMBER_STATUS_NEGATIVE:
         ylog = False
