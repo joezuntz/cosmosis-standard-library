@@ -8,17 +8,17 @@ def setup(options):
 
 def execute(block, options):
     perbin,auto_only=options
-    if block.has_section('galaxy_shear_cl'):
-        n_z_bins_shear=block["galaxy_shear_cl","nbin_b"]
-        n_z_bins_pos=block["galaxy_shear_cl","nbin_a"]
-        apply_to_cl=True
 
-    elif block.has_section('galaxy_shear_xi'):
+    if block.has_section('galaxy_shear_xi'):
         n_z_bins_shear=block["galaxy_shear_xi","nbin_b"]
         n_z_bins_pos=block["galaxy_shear_xi","nbin_a"]
         apply_to_cl=False
+    elif block.has_section('galaxy_shear_cl'):
+        n_z_bins_shear=block["galaxy_shear_cl","nbin_b"]
+        n_z_bins_pos=block["galaxy_shear_cl","nbin_a"]
+        apply_to_cl=True
     else:
-        sys.stderr.write("ERROR: The bin_bias module could not find any of galaxy_cl, galaxy_shear_cl, galaxy_shear_xi, or galaxy_xi to bias\n")
+        sys.stderr.write("ERROR: The bin_bias module could not find any of galaxy_shear_cl, galaxy_shear_xi, or to bias\n")
         return 1
 
     #We may be doing per-bin biases or a single global value
