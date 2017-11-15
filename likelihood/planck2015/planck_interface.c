@@ -332,7 +332,7 @@ int execute(c_datablock * block, configuration_data * config){
 
 		//
 		char name[64];
-		snprintf(name, 64, "PLANCK_%d_LIKE", i+1);
+		snprintf(name, 64, "PLANCK_LIKE_%d", i+1);
 		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
 
 		like += like_i;
@@ -345,7 +345,7 @@ int execute(c_datablock * block, configuration_data * config){
 
 		//
 		char name[64];
-		snprintf(name, 64, "PLANCK_LENSING_%d_LIKE", i+1);
+		snprintf(name, 64, "PLANCK_LENSING_LIKE_%d", i+1);
 		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
 
 		like += like_i;
