@@ -245,7 +245,41 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 	                 gsl_spline * WY, Interpolator2D * P)
 {
 
+    config->status = LIMBER_STATUS_ERROR;
+    int any_parameter_error=0;
+    if (WX==NULL){
+        fprintf(stderr, "NULL WX parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (WY==NULL){
+        fprintf(stderr, "NULL WY parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (P==NULL){
+        fprintf(stderr, "NULL P parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (config->n_ell<0){
+        fprintf(stderr, "Negative n_ell parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (any_parameter_error){
+        return NULL;
+    }
+
 	config->status = LIMBER_STATUS_OK;
+
+
+    static int n_ell_zero_warning = 0;
+    if (config->n_ell==0){
+        if (n_ell_zero_warning==0){
+            fprintf(stderr, "Warning: n_ell=0 in Limber. Will not be treated as an error. Warning once only per process.\n");
+        }
+        n_ell_zero_warning = 1;
+        return;
+    }
+
+
 	// Get the appropriate ranges over which to integrate
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable

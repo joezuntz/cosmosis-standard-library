@@ -25,6 +25,7 @@ def setup(options):
     # no window functions
     real_space = options.get_bool(option_section, "real_space", False)
     make_covariance = options.get_bool(option_section, "make_covariance", True)
+    
 
     config = {"real_space": real_space, "make_covariance": make_covariance}
 
@@ -71,10 +72,10 @@ def setup(options):
 
     # names n(z) sections in the datablock, to be saved with the same name
     # to the FITS file output
-    config['shear_nz'] = options.get_string(
-        option_section, "shear_nz_name").upper()
-    config['position_nz'] = options.get_string(
-        option_section, "position_nz_name").upper()
+    config['shear_nz'] = options.get_string(option_section, "shear_nz_name").upper()
+    config['position_nz'] = options.get_string(option_section, "position_nz_name").upper()
+    # Whether to add nz_ to the start of these
+    config['prefix_nz_section'] = options.get_bool(option_section, "prefix_nz_section", True)
 
     # name of the output file and whether to overwrite it.
     config['filename'] = options.get_string(option_section, "filename")
@@ -185,7 +186,9 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     return s
 
 
-def nz_from_block(block, nz_name):
+
+
+def nz_from_block(block, nz_name, prefix_nz_section):
     print()
     print()
     print("*************************************************************************************")
@@ -200,7 +203,12 @@ def nz_from_block(block, nz_name):
     print("*************************************************************************************")
     print()
     print()
-    section_name = "NZ_" + nz_name
+    
+    if prefix_nz_section:
+        section_name = "nz_"+nz_name
+    else:
+        section_name = nz_name
+
     z = block[section_name, "z"]
     dz = 0.5 * (z[10] - z[9])
     zlow = z - dz
@@ -445,9 +453,10 @@ def execute(block, config):
 
     kernels = []
     if need_source_nz:
-        kernels.append(nz_from_block(block, shear_nz))
+
+        kernels.append(nz_from_block(block, shear_nz, config['prefix_nz_section']))
     if need_lens_nz and (shear_nz != position_nz):
-        kernels.append(nz_from_block(block, position_nz))
+        kernels.append(nz_from_block(block, position_nz, config['prefix_nz_section']))
 
     windows = []
 
