@@ -144,7 +144,7 @@ def execute(block, config):
 
         # Extract outputs
         get_class_outputs(block, c, config)
-    except StandardError as error:
+    except classy.CosmoError as error:
         if config['debug']:
             sys.stderr.write("Error in class. You set debug=T so here is more debug info:\n")
             traceback.print_exc(file=sys.stderr)
