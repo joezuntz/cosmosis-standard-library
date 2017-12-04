@@ -276,6 +276,11 @@ module camb_interface_tools
 				params%nu_mass_numbers(1) = 1
 				params%Nu_mass_fractions(1) = 1.0
 				params%share_delta_neff = .true.
+            		elseif (params%Num_Nu_massive == 3) then
+                		params%Nu_mass_eigenstates = 1
+                		params%nu_mass_numbers(1) = 3
+                		params%Nu_mass_fractions(1) = 1.0
+                                params%share_delta_neff = .true.
 			elseif (params%Num_Nu_massive == 0) then
 				write(*,*) 'You need massive_nu>0 to have any omega_nu!=0'
 				status=1
