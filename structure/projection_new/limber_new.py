@@ -84,15 +84,8 @@ def free_power(power):
     except ct.ArgumentError as e:
         power.__del__()
 
-def free_power_new(power):
-    try:
-        lib.destroy_interp_2d(power)
-    except ct.ArgumentError as e:
-        power.__del__()
-
 def load_power_growth_chi(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-2, mb_int=False):
     z,k,p = block.get_grid(section, z_name, k_name, p_name)
-    #print z.shape, k.shape, p.shape
     growth_ind=np.where(k>k_growth)[0][0]
     growth_array = np.sqrt(p[:,growth_ind]/p[0,growth_ind])
     chi = chi_of_z(z)
@@ -171,11 +164,7 @@ def extended_limber(WX, WY, P, D_chi, ell, prefactor, rel_tol=1.e-3, abs_tol=0.,
     config.status = 0
     config.absolute_tolerance = abs_tol
     config.relative_tolerance = rel_tol
-    #c_ell = np.ctypeslib.ndpointer(dtype=np.float64, shape=(len(ell),), flags="C_CONTIGUOUS")
     c_ell_out = np.empty(len(ell))
-    #c_ell_pointer = c_ell.ctypes.data_as(c_dbl_array)
-    #print c_ell_pointer
-    #print c_ell_pointer.value
     #extended limber integral requries reduced kernels
     if ext_order>0:
         WX_red = get_reduced_kernel(WX, D_chi)
