@@ -547,6 +547,7 @@ class SpectrumCalculator(object):
         for kernels in self.kernels_B.values():
             kernels.clear()
         self.outputs.clear()
+        print 'got to the end of the clean function...'
 
     def execute(self, block):
         try:
@@ -568,7 +569,9 @@ class SpectrumCalculator(object):
                     print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
                 self.compute_spectra(block, spectrum)
         finally:
+            print 'calling clean'
             self.clean()
+            print 'called clean'
         return 0
 
 
