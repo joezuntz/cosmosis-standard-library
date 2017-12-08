@@ -1,7 +1,7 @@
 import os
 import ctypes as ct
 import numpy as np
-from gsl_wrappers_new import GSLSpline, GSLSpline2d
+from gsl_wrappers_new import GSLSpline, GSLSpline2d, BICUBIC, BILINEAR
 
 
 c_dbl_array = np.ctypeslib.ndpointer(dtype=np.float64, ndim=1, flags="C_CONTIGUOUS")
@@ -37,7 +37,6 @@ lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_
 lib.get_reduced_kernel.restype = c_gsl_spline
 lib.get_reduced_kernel.argtypes = [ct.c_void_p, ct.c_void_p]
 
-
 lib.cmb_wl_kappa_kernel.restype = c_gsl_spline
 lib.cmb_wl_kappa_kernel.argtypes = [ct.c_double, ct.c_double, c_gsl_spline]
 
@@ -48,7 +47,7 @@ lib.limber_integral.restype = c_gsl_spline
 lib.limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p]
 
 lib.extended_limber_integral.restype = ct.c_int
-lib.extended_limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p, ct.c_int, c_dbl_array]
+lib.extended_limber_integral.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct.c_void_p, ct.c_void_p, ct.c_void_p, ct.c_int, c_dbl_array]
 
 lib.load_interpolator_chi.restype = ct.c_void_p
 lib.load_interpolator_chi.argtypes = [ct.c_size_t, ct.c_void_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p]
@@ -80,20 +79,26 @@ def evaluate_power(power, k, z):
 
 
 def free_power(power):
-    lib.destroy_interp_2d(power)
+    try:
+        lib.destroy_interp_2d(power)
+    except ct.ArgumentError as e:
+        power.__del__()
 
-def load_power_growth_chi(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-2, logk=False, mb_int=False):
+def free_power_new(power):
+    try:
+        lib.destroy_interp_2d(power)
+    except ct.ArgumentError as e:
+        power.__del__()
+
+def load_power_growth_chi(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-2, mb_int=False):
     z,k,p = block.get_grid(section, z_name, k_name, p_name)
+    #print z.shape, k.shape, p.shape
     growth_ind=np.where(k>k_growth)[0][0]
     growth_array = np.sqrt(p[:,growth_ind]/p[0,growth_ind])
     chi = chi_of_z(z)
-    if logk:
-        k=np.log(k)
     growth_spline = GSLSpline(chi, growth_array)
-    #if mb_int:
-    #    return load_power_chi(block, chi_of_z, section, k_name, z_name, p_name), growth_spline
-    #else:
-    return GSLSpline2d(chi, k, p), growth_spline
+    power_spline = GSLSpline2d(chi, np.log(k), p.T, spline_type=BILINEAR)
+    return power_spline, growth_spline
 
 def get_reduced_kernel(orig_kernel, d_of_chi):
     return lib.get_reduced_kernel(orig_kernel, d_of_chi)
@@ -153,13 +158,13 @@ def limber(WX, WY, P, xlog, ylog, ell, prefactor, rel_tol=1e-3, abs_tol=0.):
     spline = GSLSpline(spline_ptr, xlog=xlog, ylog=ylog)
     return spline
 
-def extended_limber(WX, WY, P, xlog, ylog, D_chi, ell, prefactor, rel_tol=1.e-3, abs_tol=0., ext_order=0):
+def extended_limber(WX, WY, P, D_chi, ell, prefactor, rel_tol=1.e-3, abs_tol=0., ext_order=0):
     """D_chi is growth factor spline"""
     print 'starting extended_limber'
     config = c_limber_config()
     #print config, xlog, ylog, ell, prefactor, abs_tol, rel_tol
-    config.xlog = xlog
-    config.ylog = ylog
+    config.xlog = False
+    config.ylog = False
     config.n_ell = len(ell)
     config.ell = np.ctypeslib.as_ctypes(ell)
     config.prefactor = prefactor
@@ -178,7 +183,8 @@ def extended_limber(WX, WY, P, xlog, ylog, D_chi, ell, prefactor, rel_tol=1.e-3,
     else:
         WX_red, WY_red = WX, WY
     print 'calling extended_limber_integral'
-    status = lib.extended_limber_integral(ct.byref(config), WX, WY, P, D, ext_order, c_ell_out)
+    status = lib.extended_limber_integral(ct.byref(config), WX, WY, P._ptr, D_chi, ext_order, c_ell_out)
     if config.status  == LIMBER_STATUS_ERROR:
         raise ValueError("Error running Limber integral.  More info above.")
-    return c_ell
+    print 'c_ell_out',c_ell_out
+    return c_ell_out

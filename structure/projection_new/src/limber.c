@@ -34,8 +34,10 @@ typedef struct ExtIntegrandData{
 	gsl_spline * WY_red;
     gsl_spline * D_chi;
 	gsl_spline2d * P;
-	gsl_interp_accel * accelerator_x;
-	gsl_interp_accel * accelerator_y;
+	gsl_interp_accel * accelerator_wx;
+	gsl_interp_accel * accelerator_wy;
+	gsl_interp_accel * accelerator_px;
+	gsl_interp_accel * accelerator_py;
 	gsl_interp_accel * accelerator_growth;
     int ext_order;
 } ExtIntegrandData;
@@ -90,7 +92,6 @@ static double integrand(double chi, void * data_void)
 	// parameter is outside its range
 	double k = (data->ell+0.5) / chi;
 	double p = interp_2d(k, chi, data->P);
-	// printf("p, wx, wy = %le  %le  %le\n", p, wx, wy);
 	// Integrand result.
 	double result = wx * wy * p / chi / chi;
 	return result;
@@ -98,7 +99,7 @@ static double integrand(double chi, void * data_void)
 }
 
 // the integrand W_X(chi) * W_Y(chi) * P(ell/chi, chi) / chi^2
-static double ext_integrand(double chi, void * data_void, int ext_order)
+static double ext_integrand(double chi, void * data_void)
 {
 	ExtIntegrandData * data = (ExtIntegrandData*) data_void;
 	// Return 0 if outside range, for convenience.
@@ -106,22 +107,35 @@ static double ext_integrand(double chi, void * data_void, int ext_order)
 	if(chi < data->chimin || chi > data->chimax) return 0.0;
 
 	// Get W^X(chi) and W^Y(chi)
-	double wx = gsl_spline_eval(data->WX_red,chi,data->accelerator_x);
+	double wx = gsl_spline_eval(data->WX_red,chi,data->accelerator_wx);
 	double wy;
 	// A short-cut - if the two splines are the same we do not need to 
 	// do the interpolation twice
 	if (data->WX_red==data->WY_red) wy = wx;
-	else wy = gsl_spline_eval(data->WY_red,chi,data->accelerator_y);
+	else wy = gsl_spline_eval(data->WY_red,chi,data->accelerator_wy);
 	if (wx==0 || wy==0) return 0.0;
 
 	// Get P(k,z) using k=ell/chi.
 	// The interp_2d interpolator returns 0 if either 
 	// parameter is outside its range
 	double k = (data->ell+0.5) / chi;
-	double p = gsl_spline2d_eval(data->P, chi, k, data->accelerator_x, data->accelerator_y);
-	// printf("p, wx, wy = %le  %le  %le\n", p, wx, wy);
+
+	// Deactivate error handling - if this one fails we will fall back to a more reliable but slower integrator
+	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
+
+	double p;
+	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
+
+	// Restore the old error handler
+	gsl_set_error_handler(old_handler); 
+	if (status) 
+	{
+		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
+		return 0.0;
+	}
+
 	// Integrand result.
-	double result = wx * wy * p / chi ;
+	double result = wx * wy * p / chi / chi;
 	return result;
 }
 
@@ -512,22 +526,36 @@ int * extended_limber_integral(limber_config * config, gsl_spline * WX_red,
 	// This range as well as all the data needed to compute
 	// the integrand is put into a struct to be passed
 	// through the integrator to the function above.
+
 	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
 	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
 	data.WX_red = WX_red;
 	data.WY_red = WY_red;
 	data.P = P;
-	data.accelerator_x = gsl_interp_accel_alloc();
-	data.accelerator_y = gsl_interp_accel_alloc();
+	data.accelerator_wx = gsl_interp_accel_alloc();
+	data.accelerator_wy = gsl_interp_accel_alloc();
+	data.accelerator_px = gsl_interp_accel_alloc();
+	data.accelerator_py = gsl_interp_accel_alloc();
 	data.accelerator_growth = gsl_interp_accel_alloc();
 	data.D_chi = D_chi;
 	data.ext_order = ext_order;
+    //data.kmin = P->ya[0];
+	//data.kmax = P->ya[(P->ysize)-1];
 
 	// Set up the workspace and inputs to the integrator.
 	// Not entirely sure what the table is.
 	gsl_function F;
 	F.function = ext_integrand;
 	F.params = &data;
+
+	//test some stuff
+	
+	/*double p;
+	gsl_spline2d_eval_e(data.P, 185.271495531, log(0.000482123490967), data.accelerator_px, data.accelerator_py, &p);
+	printf("test p: %f\n", p);
+	gsl_spline2d_eval_e(data.P, 8.692562e+02, log(1.725613e-03), data.accelerator_px, data.accelerator_py, &p);
+	printf("test p: %f\n", p);
+	*/
 
 	//gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(2048);
 
@@ -548,22 +576,23 @@ int * extended_limber_integral(limber_config * config, gsl_spline * WX_red,
 		// gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, table, &c_ell, &error);
 		//printf("%d %f %f\n",i_ell,c_ell_old,c_ell);
 		// Try the fast but flaky integrator.
-		int status = gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, &c_ell, &error);
+		//int status = gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, &c_ell, &error);
 		//gsl_integration_qag(&F, data.chimin, data.chimax, abstol, reltol, LIMBER_FIXED_TABLE_SIZE, GSL_INTEG_GAUSS61, W, table, &c_ell, &error);
-		//limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
-		//	abstol, reltol, &c_ell, &error);
+		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+			abstol, reltol, &c_ell, &error);
 
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
-
 		// Record the results into arrays
 		cl_out[i_ell] = c_ell;
 		ell_vector[i_ell] = ell;
 	}
 
 	// Tidy up
-	gsl_interp_accel_free(data.accelerator_x);
-	gsl_interp_accel_free(data.accelerator_y);
+	gsl_interp_accel_free(data.accelerator_wx);
+	gsl_interp_accel_free(data.accelerator_wy);
+	gsl_interp_accel_free(data.accelerator_px);
+	gsl_interp_accel_free(data.accelerator_py);
 	gsl_interp_accel_free(data.accelerator_growth);
 
 	// These two are not deallocated because they are static and only initialized once.

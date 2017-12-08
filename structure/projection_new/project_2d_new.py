@@ -111,9 +111,9 @@ class Spectrum(object):
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         else:
             print 'calling extended limber'
-            c_ell = limber.extended_limber(K1, K2, P, xlog, ylog, D, ell, self.prefactor(block, bin1, bin2), 
+            c_ell = limber.extended_limber(K1, K2, P, D, ell, self.prefactor(block, bin1, bin2), 
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
-            print c_ell
+
         #print limber.extended_limber(K1, K2, P, D, xlog, ylog, ell, self.prefactor(block, bin1, bin2),
         #    rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         return c_ell
@@ -533,8 +533,12 @@ class SpectrumCalculator(object):
 
     def clean(self):
         #need to manually delete power spectra we have loaded
-        for p in self.power.values():
-            limber.free_power(p)
+        for key,p in self.power.iteritems():
+            if self.mb_int:
+                limber.free_power(p)
+            else:
+                p.__del__()
+                self.growth[key].__del__()
         self.power.clear()
 
         #spectra know how to delete themselves, in gsl_wrappers.py
