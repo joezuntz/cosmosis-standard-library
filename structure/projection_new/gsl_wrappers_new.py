@@ -58,6 +58,7 @@ CSPLINE_PERIODIC = ct.c_void_p.in_dll(gsl, "gsl_interp_cspline_periodic")
 AKIMA = ct.c_void_p.in_dll(gsl, "gsl_interp_akima")
 AKIMA_PERIODIC = ct.c_void_p.in_dll(gsl, "gsl_interp_akima_periodic")
 BILINEAR = ct.c_void_p.in_dll(gsl, "gsl_interp2d_bilinear")
+BICUBIC = ct.c_void_p.in_dll(gsl, "gsl_interp2d_bicubic")
 
 class NullSplineError(ValueError):
     pass            
@@ -126,11 +127,11 @@ class GSLSpline2d(object):
         nx = len(x)
         ny = len(y)
         #print x,y,Z
-        print 'allocating %d,%d spline'%(nx,ny)
+        #print 'allocating %d,%d spline'%(nx,ny)
         spline_ptr = gsl.gsl_spline2d_alloc(spline_type, nx, ny)
-        print 'initialising 2d spline'
+        #print 'initialising 2d spline'
         gsl.gsl_spline2d_init(spline_ptr, x, y, Z.flatten(), nx, ny)
-        print 'spline initialised'
+        #print 'spline initialised'
         return spline_ptr
 
     def __del__(self):
@@ -142,8 +143,23 @@ class GSLSpline2d(object):
         status = gsl.gsl_spline2d_eval_e(self._ptr, x, y, None, None, ct.byref(z))
         if status:
             raise Exception("GSL ERROR: {0}".format(status))
-        z = y.value
+        z = z.value
         return z
+
+    def __call__(self, x, y):
+        """
+        Evaluate the spline that this class points to - for testing, you wouldn't actually
+        want to do this at the python level
+        """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
+        if len(x)==1:
+            return np.array([self._eval(x[0],yi) for yi in y])
+        elif len(y)==1:
+            return np.array([self._eval(xi, y[0]) for xi in x])
+        else:
+            return np.array([self._eval(xi,yi) for (xi,yi) in zip(x,y)])
+
 
 def test1d():
     x = np.linspace(0,1,10)
