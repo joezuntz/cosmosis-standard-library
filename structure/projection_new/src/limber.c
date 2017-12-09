@@ -336,7 +336,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
             fprintf(stderr, "Warning: n_ell=0 in Limber. Will not be treated as an error. Warning once only per process.\n");
         }
         n_ell_zero_warning = 1;
-        return;
+        return 0;
     }
 
 
@@ -455,7 +455,7 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
 // world.  The limber_config structure is defined in limber.h but is fairly
 // obvious.  The splines and the interpolator need to be functions of 
 // chi NOT z.
-int * extended_limber_integral(limber_config * config, gsl_spline * WX_red, 
+int extended_limber_integral(limber_config * config, gsl_spline * WX_red, 
 			       gsl_spline * WY_red, gsl_spline2d * P, gsl_spline * D_chi,
 			       int ext_order, double * cl_out)
 {
