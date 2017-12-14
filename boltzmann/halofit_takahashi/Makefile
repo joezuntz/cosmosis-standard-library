@@ -1,10 +1,10 @@
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 all: halofit_interface.so
 
-USER_LDFLAGS=-L${COSMOSIS_SRC_DIR}/cosmosis/datablock -lcosmosis_fortran
+USER_LDFLAGS=-L${COSMOSIS_SRC_DIR}/cosmosis/datablock  -lcosmosis
 
-halofit_interface.so: camb_params_stub.f90 matter_power_stub.f90 nonlinear.f90 halofit_interface.F90 ${COSMOSIS_SRC_DIR}/cosmosis/datablock/libcosmosis_fortran.so
+halofit_interface.so: camb_params_stub.f90 matter_power_stub.f90 nonlinear.f90 halofit_interface.F90
 	$(FC) $(FFLAGS) -fPIC -c -o camb_params_stub.o camb_params_stub.f90
 	$(FC) $(FFLAGS) -fPIC -c -o matter_power_stub.o matter_power_stub.f90
 	$(FC) $(FFLAGS) -fPIC -c -o nonlinear.o nonlinear.f90

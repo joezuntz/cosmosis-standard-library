@@ -27,7 +27,7 @@ CFITSIO_LIBPATH := $(CFITSIO_LIB)
 #define your compilers and stuff
 #CC = gcc
 #FC = gfortran
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 # ifort
 # if you are using ifort set here where its lib are installed

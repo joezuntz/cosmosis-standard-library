@@ -2,7 +2,7 @@
 # If you already have your own Makefile you can 
 # replace all of this, but you need to keep this line
 # at the top:
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 export
 
 USER_CXXFLAGS += -I${GSL_INC}

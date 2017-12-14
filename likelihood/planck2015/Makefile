@@ -1,10 +1,10 @@
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 PLANCK_DIR=plc-2.0
 
 DEFINES=-D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D 'CLIKSVNVERSION="$(VERSION)"'
 USER_CFLAGS=-I$(PLANCK_DIR)/include -I$(PLANCK_DIR)/src -D_GNU_SOURCE $(DEFINES)
-USER_LDFLAGS=-L$(PLANCK_DIR)/lib -lcosmosis_fortran -lcosmosis $(RPATH_FLAGS) -L$(CFITSIO_LIB) -lcfitsio $(LAPACK_LINK)
+USER_LDFLAGS=-L$(PLANCK_DIR)/lib  -lcosmosis $(RPATH_FLAGS) -L$(CFITSIO_LIB) -lcfitsio $(LAPACK_LINK)
 
 RPATH_FLAGS=-Wl,-rpath,$(PWD)/$(PLANCK_DIR)/lib
 

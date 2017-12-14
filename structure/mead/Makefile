@@ -1,9 +1,9 @@
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 all: libhmcode.a mead_interface.so
 
 mead_interface.so: libhmcode.a mead_interface.f90
-	$(FC) $(FFLAGS) -shared -o $@ $+ -L. -lhmcode $(LDFLAGS) -lcosmosis_fortran -lcosmosis
+	$(FC) $(FFLAGS) -shared -o $@ $+ -L. -lhmcode $(LDFLAGS)  -lcosmosis
 
 
 

@@ -49,7 +49,7 @@ diff -Nur camb_Nov13_orig/Makefile camb_Nov13/Makefile
 +#EXTCAMBFILES =
 +#endif
 +
-+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
++include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 +
 +USER_FFLAGS=-I.
 +

@@ -1,7 +1,7 @@
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 USER_FFLAGS=-I.
-USER_LDFLAGS=-lcosmosis_fortran
+USER_LDFLAGS=
 
 export EQUATIONS ?= equations_ppf
 export RECOMBINATION ?= recfast
