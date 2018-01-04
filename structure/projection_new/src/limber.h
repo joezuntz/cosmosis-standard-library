@@ -4,6 +4,8 @@
 #include <gsl/gsl_spline.h>
 #include <stdbool.h>
 #include "interp2d.h"
+#include <gsl/gsl_interp2d.h>
+#include <gsl/gsl_spline2d.h>
 
 
 // The integrated C_ell are in general allowed to be zero or negative if
@@ -19,8 +21,6 @@
 // These are the options you can set for
 // the Limber integrator.
 typedef struct limber_config{
-	bool xlog;  // The output spline will be in terms of log(ell) not ell
-	bool ylog;  // The output spline will return log(C_ell) not C_ell
 	int n_ell;  // Number of ell values you want in the spline
 	double * ell;  // The chosen ell values you want
 	double prefactor; //Scaling prefactor
@@ -40,8 +40,9 @@ typedef struct limber_config{
 
 // TODO - Fortran version
 
-gsl_spline * limber_integral(limber_config * config, 
-	gsl_spline * WX, gsl_spline * WY, Interpolator2D * P);
+int limber_integral(limber_config * config, gsl_spline * WX_red, 
+			       gsl_spline * WY_red, gsl_spline2d * P, gsl_spline * D_chi,
+			       int ext_order, double * cl_out);
 
 
 #endif

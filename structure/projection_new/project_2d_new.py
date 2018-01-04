@@ -10,9 +10,6 @@ from enum34 import Enum
 import re
 import sys
 
-
-
-
 class PowerType(Enum):
     matter = "matter_power_nl" #special case
     galaxy = "galaxy_power"
@@ -94,7 +91,8 @@ class Spectrum(object):
         return 2*alpha[bin]-1
 
 
-    def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3, absolute_tolerance=0., mb_int=False):
+    def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3, 
+                absolute_tolerance=0., do_extended_limber=False):
         #Get the required kernels
         #maybe get from rescaled version of existing spectra
         P = self.source.power[self.power_spectrum]
@@ -102,20 +100,14 @@ class Spectrum(object):
         K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
 
-        #The spline is done in log space if the spectrum never goes
-        #negative, otherwise linear space.
-        xlog = ylog = self.autocorrelation
-        #Generate a spline
-        if mb_int:
-            c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2), 
-            rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
-        else:
-            print 'calling extended limber'
-            c_ell = limber.extended_limber(K1, K2, P, D, ell, self.prefactor(block, bin1, bin2), 
-            rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
+        #Call the integral
+        #if do_extended_limber is True, pass ext_order=1
+        ext_order=0
+        if do_extended_limber:
+            ext_order=1
+        c_ell = limber.extended_limber(K1, K2, P, D, ell, self.prefactor(block, bin1, bin2), 
+            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, ext_order=ext_order)
 
-        #print limber.extended_limber(K1, K2, P, D, xlog, ylog, ell, self.prefactor(block, bin1, bin2),
-        #    rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         return c_ell
 
     def kernel_peak(self, block, bin1, bin2, a_of_chi):
@@ -125,8 +117,6 @@ class Spectrum(object):
         a_peak = a_of_chi(chi_peak)
         z_peak = 1./a_peak - 1
         return chi_peak, z_peak
-
-
 
 
 # This is pretty cool.
@@ -262,15 +252,13 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
-        self.pos_pos_auto_only = options.get_bool(option_section, "pos_pos_auto_only", False)
-        self.mb_int = options.get_bool(option_section, "mb_int", True) #if True, use Matt Becker's interpolation and integration routines.
+        self.do_extended_limber = options.get_bool(option_section, "do_extended_limber", False)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
         print "Will project these spectra into 2D:"
         for spectrum in self.req_spectra:
             print "    - ", spectrum.get_name()
-
 
         #Decide which kernels we will need to save.
         #The overall split is into A and B, the two samples we are correlating into.
@@ -339,7 +327,7 @@ class SpectrumCalculator(object):
                 continue
 
             #Otherwise it must be a string - enforce this.
-            if not isinstance(value, str):
+            if not (isinstance(value, str) or isinstance(value, unicode)):
                 raise ValueError("Unknown form of value for option {} in project_2d: {}".format(name, value))
 
             value = value.strip()
@@ -398,8 +386,6 @@ class SpectrumCalculator(object):
             z_distance = z_distance[::-1].copy()
             a_distance = a_distance[::-1].copy()
             chi_distance = chi_distance[::-1].copy()
-
-
 
         h0 = block[names.cosmological_parameters, "h0"]
 
@@ -460,9 +446,6 @@ class SpectrumCalculator(object):
                     nz = kernel(chi)
                     block[section,key] = nz
 
-
-
-
     def load_kernel(self, block, kernel_name, kernel_dict):
         #the name is of the form N_SAMPLENAME or W_SAMPLENAME, or K_SAMPLENAME
         kernel_type = kernel_name[0]
@@ -492,14 +475,10 @@ class SpectrumCalculator(object):
                 raise ValueError("Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(kernel_name, kernel_type, i+1))
             kernel_dict[i] = kernel
 
-
     def load_power(self, block):
         for powerType in self.req_power:
             self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
                 block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
-            if self.mb_int:
-                self.power[powerType] = limber.load_power_chi(block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
-        print 'done loading power'
 
     def compute_spectra(self, block, spectrum):
         spectrum_name = spectrum.get_name()
@@ -516,15 +495,9 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
-                if (self.pos_pos_auto_only and spectrum_name=='galaxy_cl' and i!=j):
-                    continue
                 c_ell = spectrum.compute(block, self.ell, i, j, relative_tolerance=self.relative_tolerance, 
-                                        absolute_tolerance=self.absolute_tolerance, mb_int=self.mb_int)
-                self.outputs[spectrum_name+"_{}_{}".format(i,j)] = c_ell
-                if self.mb_int:
-                    block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell(self.ell)
-                else:
-                    block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
+                                        absolute_tolerance=self.absolute_tolerance, do_extended_limber=self.do_extended_limber)
+                block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
                 if self.get_kernel_peaks:
                     chi_peak, z_peak=spectrum.kernel_peak(block, i, j, self.a_of_chi)
                     block[spectrum_name, "chi_peak_{}_{}".format(i+1,j+1)] = chi_peak
@@ -533,13 +506,8 @@ class SpectrumCalculator(object):
 
     def clean(self):
         #need to manually delete power spectra we have loaded
-        for key,p in self.power.iteritems():
-            if self.mb_int:
-                limber.free_power(p)
-            else:
-                p.__del__()
-                self.growth[key].__del__()
         self.power.clear()
+        self.growth.clear()
 
         #spectra know how to delete themselves, in gsl_wrappers.py
         for name,kernels in self.kernels_A.items():
@@ -547,7 +515,6 @@ class SpectrumCalculator(object):
         for kernels in self.kernels_B.values():
             kernels.clear()
         self.outputs.clear()
-        print 'got to the end of the clean function...'
 
     def execute(self, block):
         try:
@@ -570,11 +537,9 @@ class SpectrumCalculator(object):
                 self.compute_spectra(block, spectrum)
         finally:
             print 'calling clean'
-            self.clean()
+            #self.clean()
             print 'called clean'
         return 0
-
-
 
 
 def setup(options):
