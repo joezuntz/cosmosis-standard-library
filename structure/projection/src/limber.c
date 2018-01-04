@@ -9,6 +9,7 @@
 // This is a workspace size for the gsl integrator
 #define LIMBER_FIXED_TABLE_SIZE 4096
 
+
 // data that is passed into the integrator
 // This is everything we need to compute the
 // integrand
@@ -22,6 +23,7 @@ typedef struct IntegrandData{
 	gsl_interp_accel * accelerator_x;
 	gsl_interp_accel * accelerator_y;
 } IntegrandData;
+
 
 // data that is passed into the integrator
 // This is everything we need to compute the
@@ -69,48 +71,7 @@ static double inline limber_gsl_spline_max_x(gsl_spline * s)
 	return s->x[s->size-1];
 }
 
-// the limber integrand: 
-// P(nu/chi, chi) * W_X(chi) * W_Y(chi) / chi^2
-static double limber_integrand(double chi, void * data_void)
-{
-	ExtIntegrandData * data = (ExtIntegrandData*) data_void;
-	// Return 0 if outside range, for convenience.
-	// Important to ensure that ranges are wide enough.
-	if(chi < data->chimin || chi > data->chimax) return 0.0;
-
-	// Get W^X(chi) and W^Y(chi)
-	double Wr_X = gsl_spline_eval(data->WX_red,chi,data->accelerator_wx);
-	double Wr_Y;
-	// A short-cut - if the two splines are the same we do not need to 
-	// do the interpolation twice
-	if (data->WX_red==data->WY_red) Wr_Y = Wr_X;
-	else Wr_Y = gsl_spline_eval(data->WY_red,chi,data->accelerator_wy);
-	if (Wr_X==0 || Wr_Y==0) return 0.0;
-
-	double nu = (data->ell+0.5);
-	double k = nu / chi;
-
-	// Get P(k,z) using k=nu/chi.
-	// Deactivate error handling 
-	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
-
-	double p;
-	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
-
-	// Restore the old error handler
-	gsl_set_error_handler(old_handler); 
-	if (status) 
-	{
-		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
-		return 0.0;
-	}
-
-	// Integrand result.
-	double result = p * Wr_X * Wr_Y / (chi*chi);
-	return result;
-}
-
-// the extended limber integrand: 
+// the extended Limber integrand: 
 // P(nu/chi, chi) / ( chi * D^2(chi) ) * 
 // { Wr_X(chi) * Wr_Y(chi) * D^2(chi) } //normal Limber up to here
 // - chi^2/nu^2 * [Wr_X''(chi) * Wr_Y(chi) + Wr_Y''(chi) * Wr_X(chi)] } //extended part
@@ -413,12 +374,7 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	// Set up the workspace and inputs to the integrator.
 	// Not entirely sure what the table is.
 	gsl_function F;
-	if (ext_order>0) {
-		F.function = ext_limber_integrand;
-	}
-	else {
-		F.function = limber_integrand;
-	}
+	F.function = ext_limber_integrand;
 	F.params = &data;
 
 	// save ell values for return
