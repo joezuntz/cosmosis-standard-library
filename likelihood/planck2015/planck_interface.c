@@ -328,7 +328,7 @@ int execute(c_datablock * block, configuration_data * config){
 	for (int i=0; i<config->ndata; i++){
 		// Compute the likelihood for this file.
 		double like_i = 0.0;
-		status = run_clik_cosmosis(block, config->clik_data[i], &like_i);
+		status |= run_clik_cosmosis(block, config->clik_data[i], &like_i);
 
 		//
 		char name[64];

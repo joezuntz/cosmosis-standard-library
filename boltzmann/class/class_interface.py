@@ -2,6 +2,7 @@ from builtins import str
 import os
 from cosmosis.datablock import names, option_section
 import sys
+import traceback
 
 # add class directory to the path
 dirname = os.path.split(__file__)[0]
@@ -28,6 +29,7 @@ def setup(options):
         'lmax': options.get_int(option_section, 'lmax', default=2000),
         'zmax': options.get_double(option_section, 'zmax', default=4.0),
         'kmax': options.get_double(option_section, 'kmax', default=50.0),
+        'debug': options.get_bool(option_section, 'debug', default=False),
     }
 
     # Create the object that connects to Class
@@ -132,18 +134,26 @@ def get_class_outputs(block, c, config):
 def execute(block, config):
     c = config['cosmo']
 
-    # Set input parameters
-    params = get_class_inputs(block, config)
-    c.set(params)
+    try:
+        # Set input parameters
+        params = get_class_inputs(block, config)
+        c.set(params)
 
-    # Run calculations
-    c.compute()
+        # Run calculations
+        c.compute()
 
-    # Extract outputs
-    get_class_outputs(block, c, config)
-
-    # Reset for re-use next time
-    c.struct_cleanup()
+        # Extract outputs
+        get_class_outputs(block, c, config)
+    except classy.CosmoError as error:
+        if config['debug']:
+            sys.stderr.write("Error in class. You set debug=T so here is more debug info:\n")
+            traceback.print_exc(file=sys.stderr)
+        else:
+            sys.stderr.write("Error in class. Set debug=T for info: {}\n".format(error))
+        return 1
+    finally:
+        # Reset for re-use next time
+        c.struct_cleanup()
     return 0
 
 
