@@ -1,7 +1,7 @@
 import os
 import ctypes as ct
 import numpy as np
-from gsl_wrappers_new import GSLSpline, GSLSpline2d, BICUBIC, BILINEAR
+from gsl_wrappers import GSLSpline, GSLSpline2d, BICUBIC, BILINEAR
 
 
 c_dbl_array = np.ctypeslib.ndpointer(dtype=np.float64, ndim=1, flags="C_CONTIGUOUS")

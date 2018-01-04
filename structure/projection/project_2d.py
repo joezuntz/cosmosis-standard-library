@@ -2,9 +2,9 @@
 import os
 import ctypes as ct
 import numpy as np
-import limber_new as limber
+import limber
 print limber.__file__
-from gsl_wrappers_new import GSLSpline, NullSplineError
+from gsl_wrappers import GSLSpline, NullSplineError
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
 import re
