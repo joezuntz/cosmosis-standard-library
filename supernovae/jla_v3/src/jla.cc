@@ -293,7 +293,7 @@ int JLALikelihood::computeResiduals(double * distance_modulii, double * nuisance
   double DeltaM = nuisance_parameters[3];
 
   // Covariance matrix computation
-  double cov[sq(n)];
+  double * cov = new double[sq(n)];
   cblas_dcopy(sq(n), C00, 1, cov, 1);
   cblas_daxpy(sq(n), sq(alpha), C11, 1, cov, 1);
   cblas_daxpy(sq(n), sq(beta), C22, 1, cov, 1);
@@ -324,15 +324,18 @@ int JLALikelihood::computeResiduals(double * distance_modulii, double * nuisance
   if (info != 0){
     if (verbosity > 0)
       cerr << "Cholesky Error: " << info << endl;
+    delete[] cov;
     return -1;
   }
   dtrtrs("U", "T", "N", &n, &nhrs, cov, &n, residuals, &n, &info);  
   if (info != 0){
     if (verbosity > 0)
       cerr << "Solve Error: " << info << endl;
+    delete[] cov;
     return -1;
   }
 
+  delete[] cov;
   return 0;
 }
 

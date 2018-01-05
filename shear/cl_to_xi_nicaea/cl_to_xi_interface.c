@@ -15,11 +15,13 @@ const char * shear_cl = SHEAR_CL_SECTION;
 const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 
 typedef enum {shear_shear=0, matter=1, ggl=2} corr_type_t;
+typedef enum {corrfct=0, map=1} filter_type_t;
 
 typedef struct cl_to_xi_config {
 	char * input_section;
 	char * output_section;
 	corr_type_t corr_type;
+	filter_type_t filter_type;
 
 } cl_to_xi_config;
 
@@ -27,39 +29,67 @@ typedef struct cl_to_xi_config {
 void * setup(c_datablock * options)
 {
 	cl_to_xi_config * config = malloc(sizeof(cl_to_xi_config));
-	int corr_type;
+	int corr_type,filter_type;
 	int status = 0;
 	bool auto_corr;
 
+	char *filter_string=malloc(10*sizeof(char));
+	char *output_string=malloc(100*sizeof(char));
+
 	status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
 
-	if (corr_type==shear_shear){
-		status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
-		status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "shear_xi", &(config->output_section));
+	status |= c_datablock_get_int_default(options, OPTION_SECTION, "filter_type", 0, &filter_type);
+
+	if (filter_type==corrfct) {
+	  sprintf(filter_string,"xi");
 	}
-	else if (corr_type==ggl){
-		status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_shear_cl", &(config->input_section));
-		status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "galaxy_shear_xi", &(config->output_section));
+	else if (filter_type==map) {
+	  sprintf(filter_string,"map");
 	}
-	else if (corr_type==matter){
-		status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_cl", &(config->input_section));
-		status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", "galaxy_xi", &(config->output_section));
-	}
-	else{
-		fprintf(stderr, "Unknown corr_type in cl_to_xi (%d). It should be one of %d (shear-shear), %d (shear-galaxy) or %d (position-galaxy).\n",
-			corr_type,shear_shear,ggl,matter);
+	else {
+	  fprintf(stderr, "Unknown filter type in cl_to_xi (%d).\n",filter_type);
+	  status = 1;
 	}
 
+	if (corr_type==shear_shear){
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
+
+	  sprintf(output_string,"shear_%s",filter_string);		
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+
+	}
+	else if (corr_type==ggl){
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_shear_cl", &(config->input_section));
+
+	  sprintf(output_string,"galaxy_shear_%s",filter_string);		
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+
+	}
+	else if (corr_type==matter){
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_cl", &(config->input_section));
+
+	  sprintf(output_string,"galaxy_%s",filter_string);		
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+
+	}
+	else{
+	  fprintf(stderr, "Unknown corr_type in cl_to_xi (%d). It should be one of %d (shear-shear), %d (shear-galaxy) or %d (position-galaxy).\n",corr_type,shear_shear,ggl,matter);
+	  status = 1;
+	}
 
 	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
 
 	config->corr_type = (corr_type_t)corr_type;
+	config->filter_type = (filter_type_t)filter_type;
+
 	if (status){
-		fprintf(stderr, "Please specify input_section_name, output_section_name, and corr_type=0,1, or 2 in the cl_to_xi module.\n");
-		exit(status);
+	  fprintf(stderr, "Please specify input_section_name, output_section_name, filter_type=0,1, and corr_type=0,1, or 2 in the cl_to_xi module.\n");
+	  exit(status);
 	}
 
+	free(filter_string);
+	free(output_string);
 	return config;
 }
 
@@ -157,24 +187,50 @@ int execute(c_datablock * block, void * config_in)
 
 			// Choose the type of Hankel transform
 			tpstat_t tpstat;
-			switch(config->corr_type) {
-				case shear_shear:
-					tpstat = tp_xipm;
-					snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
-					snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
-					break;
-				case matter:
-					tpstat = tp_w;
-					snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
-					break;
-				case ggl:
-					tpstat = tp_gt;
-					snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
-					break;
-				default:
-					printf("corr_type: %d\n", config->corr_type);
-					printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
-					return 10;
+			if (config->filter_type == map) {
+			  switch(config->corr_type) {	
+			    case shear_shear:
+			      tpstat = tp_map2_poly;
+			      snprintf(name_xip, 64, "map2_%d_%d",i_bin,j_bin);
+			      break;
+			    case matter:
+			      tpstat = tp_map2_poly;
+			      snprintf(name_xip, 64, "nap2_%d_%d",i_bin,j_bin);
+			      break;
+			    case ggl:
+			      tpstat = tp_map2_poly;
+			      snprintf(name_xip, 64, "mapnap_%d_%d",i_bin,j_bin);
+			      break;
+			    default:
+			      printf("corr_type: %d\n", config->corr_type);
+			      printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
+			      return 10;
+			  }
+			}
+			else if (config->filter_type == corrfct) {
+			  switch(config->corr_type) {
+			    case shear_shear:
+			      tpstat = tp_xipm;
+			      snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
+			      snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
+			      break;
+			    case matter:
+			      tpstat = tp_w;
+			      snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
+			      break;
+			    case ggl:
+			      tpstat = tp_gt;
+			      snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
+			      break;
+			    default:
+			      printf("corr_type: %d\n", config->corr_type);
+			      printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
+			      return 10;
+			  }
+			}
+			else {
+			  printf("ERROR: Invalid filter_type %d in cl_to_xi_interface\n",config->filter_type);
+			  return 10;
 			}
 
 			//check for zeros...
@@ -235,38 +291,34 @@ int execute(c_datablock * block, void * config_in)
     	p_projected_data d;
     	d.cl_table = cl_table;
     	//d.f = f;
-			if (neg_vals == 0) {
-		    tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max,
-				       tpstat, &P_projected_loglog, i_bin, j_bin, &err);
-			}
-			else if (neg_vals == n_ell){
-		  	tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max,
-				    tpstat, &P_projected_loglog, i_bin, j_bin, &err);
-		  	double xip_orig,xim_orig;
-		  	for (int i=0; i<N_thetaH; i++){
-		    	xip_orig = xi[0][i];
-					xi[0][i] =-1*xip_orig;
-					if (config->corr_type == shear_shear) {
-		    		xim_orig = xi[1][i];
-		    		xi[1][i] =-1*xim_orig;
-					}
-		  	}
-			}
-			else {
-		    tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max,
-				       tpstat, &P_projected_logl, i_bin, j_bin, &err);
-			}
-			//Now save to block
-			c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
-			c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
-			c_datablock_put_double_array_1d(block, config->output_section, name_xip,
-		                  xi[0], N_thetaH);
-			if (config->corr_type == shear_shear) {
-				c_datablock_put_double_array_1d(block, config->output_section, name_xim,
-                  	xi[1], N_thetaH);
-			}
-			free(C_ell);
-			//fclose(f);
+		if (neg_vals == 0) {
+		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_loglog, i_bin, j_bin, &err);
+		}
+		else if (neg_vals == n_ell) {
+		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_loglog, i_bin, j_bin, &err);
+		  double xip_orig,xim_orig;
+		  for (int i=0; i<N_thetaH; i++){
+		    xip_orig = xi[0][i];
+		    xi[0][i] =-1*xip_orig;
+		    if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
+		      xim_orig = xi[1][i];
+		      xi[1][i] =-1*xim_orig;
+		    }
+		  }
+		}
+		else {
+		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_logl, i_bin, j_bin, &err);
+		}
+		//Now save to block
+		c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
+		c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
+		c_datablock_put_double_array_1d(block, config->output_section, name_xip,
+		              xi[0], N_thetaH);
+		if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
+		  c_datablock_put_double_array_1d(block, config->output_section, name_xim, xi[1], N_thetaH);
+		}
+		free(C_ell);
+		del_interTable(&d.cl_table);
 		}
 	}
 	if (!found_any){
@@ -288,11 +340,11 @@ int execute(c_datablock * block, void * config_in)
 	//Include units
 	c_datablock_put_metadata(block, config->output_section, "theta", "unit", "radians");
 
-
 	//Clean up
 
 	for (int i=0; i<count; i++) free(xi[i]);
 	free(xi);
+	free(ell);
 
 	return status;
 }

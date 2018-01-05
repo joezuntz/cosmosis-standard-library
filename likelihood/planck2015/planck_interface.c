@@ -147,7 +147,7 @@ int extract_c_ell(c_datablock * block, int n_cl,
 		}
 		if (nread<lmax-1){
 			fprintf(stderr, "Could not get enough C_ell values for %s (read lmax=%d but needed lmax=%d).  May need to adjust lmax.\n", 
-				package_names[i], nread+1, lmax_by_type[i], status);
+				package_names[i], nread+1, lmax_by_type[i]);
 			status = 1;
 			return status;
 		}
@@ -328,11 +328,11 @@ int execute(c_datablock * block, configuration_data * config){
 	for (int i=0; i<config->ndata; i++){
 		// Compute the likelihood for this file.
 		double like_i = 0.0;
-		status = run_clik_cosmosis(block, config->clik_data[i], &like_i);
+		status |= run_clik_cosmosis(block, config->clik_data[i], &like_i);
 
 		//
 		char name[64];
-		snprintf(name, 64, "PLANCK_%d_LIKE", i+1);
+		snprintf(name, 64, "PLANCK_LIKE_%d", i+1);
 		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
 
 		like += like_i;
@@ -345,7 +345,7 @@ int execute(c_datablock * block, configuration_data * config){
 
 		//
 		char name[64];
-		snprintf(name, 64, "PLANCK_LENSING_%d_LIKE", i+1);
+		snprintf(name, 64, "PLANCK_LENSING_LIKE_%d", i+1);
 		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
 
 		like += like_i;

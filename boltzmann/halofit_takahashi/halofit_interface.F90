@@ -108,7 +108,7 @@ function execute(block, config) result(status)
 	status = status + datablock_get_double_default(block, cosmological_parameters_section, "OMEGA_NU", 0.0D0, omega_nu)
 	status = status + datablock_get_double_default(block, cosmological_parameters_section, "W", -1.0D0, w_lam)
 	status = status + datablock_get_double_default(block, cosmological_parameters_section, "WA", 0.0D0, wa_ppf)
-	cp%omegac = omega_matter - omega_baryon
+	cp%omegac = omega_matter - omega_baryon - omega_nu
 	cp%omegab = omega_baryon
 	cp%omegan = omega_nu
 	cp%omegav = 1 - omega_matter

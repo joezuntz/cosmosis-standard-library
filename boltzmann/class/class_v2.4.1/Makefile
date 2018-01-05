@@ -29,7 +29,7 @@ AR        = ar rv
 PYTHON = python
 
 # your optimization flag
-OPTFLAG = -fPIC -O4 -ffast-math #-march=native
+OPTFLAG = -fPIC -O4 -ffast-math -fno-tree-vectorize
 #OPTFLAG = -Ofast -ffast-math #-march=native
 #OPTFLAG = -fast
 

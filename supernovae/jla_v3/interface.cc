@@ -77,6 +77,12 @@ void * setup(cosmosis::DataBlock * options){
 	return (void*) calculator;
 }
 
+void cleanup(void * config){
+
+	auto calculator = (JLALikelihood*) config;
+	delete calculator;
+}
+
 gsl_spline * spline_from_vectors(std::vector<double> &x, std::vector<double> &y)
 {
 	int n = x.size();
@@ -123,8 +129,10 @@ int execute(cosmosis::DataBlock * block, void * config){
 	if (Z[1]<Z[0]) {std::reverse(Z.begin(), Z.end()); std::reverse(MU.begin(), MU.end());}
 
 	// Get rid of the first element at z=0 since there mu=-inf
-	Z.erase(Z.begin());
-	MU.erase(MU.begin());
+	if (Z[0]==0.0){
+		Z.erase(Z.begin());
+		MU.erase(MU.begin());
+	}
 
 
 	// Make an interpolating spline

@@ -592,6 +592,8 @@ module camb_interface_tools
 
 
 		deallocate(k, z, P, T)
+		call MatterPowerdata_Free(PK)
+
 	end function
 
 	

@@ -87,7 +87,7 @@ function execute(block,config) result(status)
 	TYPE(cosmology) :: cosi
 	TYPE(tables) :: lut
 	!CosmoSIS supplies double precision - need to convert
-	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s
+	real(8) :: om_m, om_v, om_b, h, w, sig8, n_s, om_nu
 	real(8), ALLOCATABLE :: k_in(:), z_in(:), p_in(:,:)
 	real(8), ALLOCATABLE :: k_out(:), z_out(:), p_out(:,:)
 	real(8) :: Halo_as, halo_eta0
@@ -102,6 +102,7 @@ function execute(block,config) result(status)
 	status = status + datablock_get(block, cosmo, "omega_m", om_m)
 	status = status + datablock_get(block, cosmo, "omega_lambda", om_v)
 	status = status + datablock_get(block, cosmo, "omega_b", om_b)
+        status = status + datablock_get_double_default(block, cosmo, "omega_nu", 0.0D0, om_nu)
 	status = status + datablock_get(block, cosmo, "h0", h)
 	status = status + datablock_get(block, cosmo, "sigma_8", sig8)
 	status = status + datablock_get(block, cosmo, "n_s", n_s)
@@ -116,7 +117,7 @@ function execute(block,config) result(status)
 		return
 	endif
 
-    cosi%om_m=om_m
+    cosi%om_m=om_m-om_nu !The halo modelling should include only cold matter components (i.e. DM and baryons)
     cosi%om_v=om_v
     cosi%om_b=om_b
     cosi%h=h

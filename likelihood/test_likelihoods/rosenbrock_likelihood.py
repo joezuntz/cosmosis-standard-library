@@ -3,6 +3,7 @@ rosenbrock_likelihood.py: a test problem for our samplers.
 We sample a Rosenbrock function.
 """
 
+from builtins import object
 import os
 import sys
 import numpy as np
@@ -25,6 +26,7 @@ class Rosenbrock(object):
 
     def __call__(self, p):
         return self.loglikelihood(p)
+
 
 def setup(options):
     a1 = options.get_double(option_section, "a1", default=100.)

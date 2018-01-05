@@ -14,6 +14,7 @@
 #define LIMBER_STATUS_OK 0
 #define LIMBER_STATUS_ZERO 1
 #define LIMBER_STATUS_NEGATIVE 2
+#define LIMBER_STATUS_ERROR 3
 
 // These are the options you can set for
 // the Limber integrator.
@@ -24,6 +25,8 @@ typedef struct limber_config{
 	double * ell;  // The chosen ell values you want
 	double prefactor; //Scaling prefactor
     int status; // did everything go okay?
+    double absolute_tolerance;
+    double relative_tolerance;
 } limber_config;
 
 

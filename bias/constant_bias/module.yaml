@@ -16,7 +16,7 @@ explanation: |
 
     The matter power spectrum of galaxies is related to that of matter by a bias:
 
-    P_gal(k,z) = b(k,z,...) P_m(k,z)
+    P_gal(k,z) = b^2(k,z,...) P_m(k,z)
 
     where the most general bias is a function of wavenumber k, redshift z, galaxy type,
     and a whole host of other values.  Realistic bias models can be complicated; the purpose

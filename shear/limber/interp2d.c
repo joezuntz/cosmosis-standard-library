@@ -18,11 +18,24 @@ Interpolator2D * load_interp_2d_file(const char * filename, int N1, int N2)
   double * x2 = malloc(sizeof(double)*N2);
   double * y = malloc(sizeof(double)*N);
 
+  int status=0;
+
   for(int i=0; i<N; i++){
-    fscanf(infile, "%lf  %lf  %lf\n", x1+(i/N2), x2+(i%N2), y+i);
+    int count = fscanf(infile, "%lf  %lf  %lf\n", x1+(i/N2), x2+(i%N2), y+i);
+    if (count!=3) {
+        status=i+1;
+        break;
+    }
+
   }
 
-  Interpolator2D * interp2d = init_interp_2d(x1, x2, y, N1, N2, gsl_interp_akima);
+  Interpolator2D * interp2d = NULL;
+  if (status==0){
+    interp2d = init_interp_2d(x1, x2, y, N1, N2, gsl_interp_akima);
+  }
+  else{
+    fprintf(stderr, "Error reading file at line %d\n", status);
+  }
   free(x1);
   free(x2);
   free(y);
@@ -252,4 +265,22 @@ Interpolator2D * init_interp_2d_akima_grid_function(double *x1, double *x2, doub
   interp2d_modifier_function function, void * args)
 {
   return init_interp_2d_grid_function(x1, x2, y, N1, N2, gsl_interp_akima, function, args);
+}
+
+
+
+double interp_2d_xmin(Interpolator2D * interp2d){
+  return interp2d->x1[0];
+}
+
+double interp_2d_xmax(Interpolator2D * interp2d){
+  return interp2d->x1[interp2d->N1-1];
+}
+
+double interp_2d_ymin(Interpolator2D * interp2d){
+  return interp2d->x2[0];
+}
+
+double interp_2d_ymax(Interpolator2D * interp2d){
+  return interp2d->x2[interp2d->N2-1];
 }

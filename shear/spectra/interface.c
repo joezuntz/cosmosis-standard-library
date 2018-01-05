@@ -313,7 +313,8 @@ const char * choose_output_section(spectrum_type_t spectrum_type,
 			return SHEAR_CL_II_SECTION;
 			break;
 		case shear_shear: // config->shear_shear
-			return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
+		        //return (config->intrinsic_alignments ? SHEAR_CL_GG_SECTION : SHEAR_CL_SECTION);
+		        return SHEAR_CL_SECTION;
 			break;
 		case matter_shear: // config->ggl_spectra
 			return "ggl_cl";
@@ -372,6 +373,10 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 		lc->xlog=false;
 		lc->ylog=false;
 	}
+
+	// We just fix these for now.
+	lc->relative_tolerance = 1e-3;
+	lc->absolute_tolerance = 1e-5;
 
 	// Now we need to set up the ell range we wish to compute.
 	// We need the number of ell values and the ell min and max.
@@ -704,11 +709,6 @@ int execute(c_datablock * block, void * config_in)
 	// Load chi(z)
 	status |= c_datablock_get_double_array_1d(block, dist, "d_m", &chi, &nz2);
 
-	// Reverse ordering so a is increasing - that is what
-	// gsl_spline wants
-	reverse(a, nz2);
-	reverse(chi, nz2);
-
 	// Convert chi from Mpc to Mpc/h
 	double h0=0.0;
 	status |= c_datablock_get_double(block, cosmo, "h0", &h0);
@@ -791,10 +791,10 @@ int execute(c_datablock * block, void * config_in)
 	Interpolator2D * PK_II = NULL;
 	if (config->intrinsic_alignments){
 		PK_II = load_interpolator_chi(
-			block, chi_of_z_spline, ia, "k_h", "z", "P_II");
+			block, chi_of_z_spline, "intrinsic_power", "k_h", "z", "p_k");
 
 		PK_GI = load_interpolator_chi(
-			block, chi_of_z_spline, ia, "k_h", "z", "P_GI");
+			block, chi_of_z_spline, "matter_intrinsic_power", "k_h", "z", "p_k");
 
 		if (PK_II==NULL) return 2;
 		if (PK_GI==NULL) return 3;

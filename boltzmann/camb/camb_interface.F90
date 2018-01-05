@@ -17,6 +17,9 @@ module camb_interface_tools
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
 	integer :: linear_nz = 401
 
+	logical :: distances_to_lss
+	integer :: n_highz_distance
+
 
 
 	integer :: k_eta_max_scalar = 2400
@@ -161,6 +164,10 @@ module camb_interface_tools
 		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
 		status = status + datablock_get_logical_default(block, option_section, "do_lensing", .false. , do_lensing)
 
+
+		status = status + datablock_get_logical_default(block, option_section, "distances_to_lss", .false. , distances_to_lss)
+		status = status + datablock_get_int_default(block, option_section, "n_highz_distance", 100, n_highz_distance)
+
 		!Error check
 		if (status .ne. 0) then
 			write(*,*) "Problem setting some options for camb. Status code =  ", status
@@ -269,6 +276,11 @@ module camb_interface_tools
 				params%nu_mass_numbers(1) = 1
 				params%Nu_mass_fractions(1) = 1.0
 				params%share_delta_neff = .true.
+            		elseif (params%Num_Nu_massive == 3) then
+                		params%Nu_mass_eigenstates = 1
+                		params%nu_mass_numbers(1) = 3
+                		params%Nu_mass_fractions(1) = 1.0
+                                params%share_delta_neff = .true.
 			elseif (params%Num_Nu_massive == 0) then
 				write(*,*) 'You need massive_nu>0 to have any omega_nu!=0'
 				status=1
@@ -558,6 +570,10 @@ module camb_interface_tools
 		real(8), parameter :: c2_8piG_kgm = 5.35895884e25
 		real(8), parameter :: rho_units = c2_8piG_kgm / (mpc_in_m**2)
 		real(8) :: shift, rs_zdrag
+		real(8), parameter :: z_lss = 1200.0
+		real(8) dlogz_high, zmax_regular
+		integer nz_regular
+
 
 		density = .true.
 		if (present(save_density)) density = save_density
@@ -568,16 +584,32 @@ module camb_interface_tools
 
 
 		nz = params%transfer%num_redshifts
+		nz_regular = nz
+
+		!Fixed number of sample points out to last scattering surface
+		if (distances_to_lss) then 
+			nz = nz + n_highz_distance
+			zmax_regular = params%transfer%redshifts(1)
+			dlogz_high = (log(1+z_lss) - log(1+zmax_regular))/n_highz_distance
+		endif
+
 		allocate(distance(nz))
 		allocate(z(nz))
 		!if (density) allocate(rho(nz))
 
 		do i=1,nz
-			z(i) = params%transfer%redshifts(i)
+			if (i<=nz_regular) then
+				! The low redshift regime
+				z(i) = params%transfer%redshifts(nz_regular-i+1)
+			else
+				! Additional points beyond the regime where we store the matter power spectrum
+				z(i) = (1+zmax_regular) * exp(dlogz_high*(i-nz_regular)) - 1
+			endif
 			distance(i) = AngularDiameterDistance(z(i))
 			!if (density) rho(i) = MT%TransferData(Transfer_rho_tot,1,i) * rho_units
 		enddo
-		
+
+
 		!Need to call thermal history here
 		if (thermal .and. need_thermal_init) then
 			call cmbmain()
@@ -643,6 +675,11 @@ module camb_interface_tools
 			status = status + datablock_put_double(block, dist, &
 				"CHISTAR", ComovingRadialDistance(ThermoDerivedParams( derived_zstar )))
 			status = status + datablock_put_metadata(block, dist, "CHISTAR", "unit", "Mpc")
+
+			status = status + datablock_put_double(block, dist, &
+				"THETA_MC", CosmomcTheta())
+			status = status + datablock_put_metadata(block, dist, "THETA_MC", "unit", "radian")
+
 		else
 			status = status + datablock_put_double(block, dist, &
 				"AGE", DeltaPhysicalTimeGyr(0.0_dl,1.0_dl))

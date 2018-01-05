@@ -186,6 +186,11 @@ int choose_configuration(c_datablock * block, spectrum_type_t spectrum_type,
 	for (int i=0; i<lc->n_ell; i++) lc->ell[i] = config->ell_min*exp(alpha * i);
 
 
+	// We just fix these for now.
+	lc->relative_tolerance = 1e-3;
+	lc->absolute_tolerance = 1e-5;
+
+
 	//Scalings
 
 	// This scaling value is the bit that goes in front
@@ -353,11 +358,6 @@ int execute(c_datablock * block, void * config_in)
 
 	// Load chi(z)
 	status |= c_datablock_get_double_array_1d(block, dist, "d_m", &chi, &nz2);
-
-	// Reverse ordering so a is increasing - that is what
-	// gsl_spline wants
-	reverse(a, nz2);
-	reverse(chi, nz2);
 
 	// Convert chi from Mpc to Mpc/h
 	double h0=0.0;

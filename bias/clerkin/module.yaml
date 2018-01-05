@@ -41,12 +41,13 @@ explanation: |
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    mode: "'power', 'bias' or 'both' to either scale input power and save that, just save bias, or do both"
+    bias_only:  "(bool, default=F) If set, do not use the matter power spectrum, just save the bias field"
     model: "'gtd', 'q', or 'q-gtd' to use the GTD three-parameter model (z evolution only), the 2-parameter Q model (k scale only) or both"
+    suffix: "(string, default='') A suffix to append to the output section names below"
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
-    bias_parameters:
+    galaxy_bias:
         b0:  real scalar. bias at z=0 if GTD model used
         c:  real scalar. bias parameter for GTD model
         alpha:  real scalar. power law index for growth in GTD model
@@ -58,11 +59,16 @@ inputs:
         P_k: "2D real vector, nonlinear matter power only if mode=power or both"
 
 outputs:
-    matter_power_gal:
-        k_h: "1D real vector, wavenumber in h/Mpc only if mode=power or both"
-        z: "1D real vector, redshift only if mode=power or both"
-        P_k: "2D real vector, galaxy power only if mode=power or both"
+    galaxy_power:
+        k_h: "1D real vector, wavenumber in h/Mpc, only if bias_only=F"
+        z: "1D real vector, redshift, only if bias_only=F"
+        P_k: "2D real vector, galaxy power, only if bias_only=F"
+    matter_galaxy_power:
+        k_h: "1D real vector, wavenumber in h/Mpc, only if bias_only=F"
+        z: "1D real vector, redshift, only if bias_only=F"
+        P_k: "2D real vector, matter-galaxy cross power, only if bias_only=F"
     bias_field:
-        k_h: "1D real vector, wavenumber in h/Mpc only if mode=bias or both"
-        z: "1D real vector, redshift only if mode=bias or both"
-        b: "2D real vector, galaxy power only if mode=bias or both"
+        k_h: "1D real vector, wavenumber in h/Mpc"
+        z: "1D real vector, redshift"
+        b: "2D real vector, galaxy bias"
+        r: "2D real vector, stochastic bias (identically 1 for these models)"

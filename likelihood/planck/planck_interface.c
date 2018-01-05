@@ -129,7 +129,7 @@ int extract_c_ell(c_datablock * block, int n_cl,
 		}
 		if (nread<lmax-1){
 			fprintf(stderr, "Could not get enough C_ell values for %s (read lmax=%d but needed lmax=%d).  May need to adjust lmax.\n", 
-				package_names[i], nread+1, lmax_by_type[i], status);
+				package_names[i], nread+1, lmax_by_type[i]);
 			status = 1;
 			return status;
 		}
@@ -306,20 +306,20 @@ int execute(c_datablock * block, configuration_data * config){
 	// Run the individual clik likelihoods
 	if (config->T_high_data){
 		status = run_clik_cosmosis(block, config->T_high_data, &tt_high_like);
-		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_TT_HIGH_LIKE", tt_high_like);
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LIKE_TT_HIGH", tt_high_like);
 	}
 	if (config->T_low_data){
 		status |= run_clik_cosmosis(block, config->T_low_data, &tt_low_like );
-		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_TT_LOW_LIKE", tt_low_like);
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LIKE_TT_LOW", tt_low_like);
 	}
 	if (config->P_low_data){
 		status |= run_clik_cosmosis(block, config->P_low_data, &p_low_like  );	
-		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_P_LOW_LIKE", p_low_like);
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LIKE_P_LOW", p_low_like);
 	} 
 	// The lensing one is a little different
 	if (config->lensing_data) {
 		status |= run_clik_cosmosis_lensing(block, config->lensing_data, &lensing_like  );		
-		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LENSING_LIKE", lensing_like);
+		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK_LIKE_LENSING", lensing_like);
 	}
 
 	if (status) return status;
