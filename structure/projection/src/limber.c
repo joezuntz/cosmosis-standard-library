@@ -73,8 +73,8 @@ static double inline limber_gsl_spline_max_x(gsl_spline * s)
 
 // the extended Limber integrand: 
 // P(nu/chi, chi) / ( chi * D^2(chi) ) * 
-// { Wr_X(chi) * Wr_Y(chi) * D^2(chi) } //normal Limber up to here
-// - chi^2/nu^2 * [Wr_X''(chi) * Wr_Y(chi) + Wr_Y''(chi) * Wr_X(chi)] } //extended part
+// { Wr_X(chi) * Wr_Y(chi)  //normal Limber up to here
+// - 0.5 * chi^2/nu^2 * [Wr_X''(chi) * Wr_Y(chi) + Wr_Y''(chi) * Wr_X(chi)] } //extended part
 // where Wr_X(chi) is D(chi)*W_X(chi)/sqrt(chi).
 static double ext_limber_integrand(double chi, void * data_void)
 {
@@ -96,15 +96,7 @@ static double ext_limber_integrand(double chi, void * data_void)
 	double k = nu / chi;
 	// 
 	double growth = gsl_spline_eval(data->D_chi, chi, data->accelerator_growth);
-	//if doing extended limber, get kernel 2nd derivatives
-	double d2Wr_x, d2Wr_y;
-	if (data->ext_order > 0){
-	    double d2Wr_x = gsl_spline_eval_deriv2(data->WX_red, chi, data->accelerator_wx);
-	    double d2Wr_y;
-    	if (data->WX_red==data->WY_red) d2Wr_y = d2Wr_x;
-	    else d2Wr_y = gsl_spline_eval_deriv2(data->WY_red, chi, data->accelerator_wy);
-	}
-
+	
 	// Get P(k,z) using k=nu/chi.
 	// Deactivate error handling 
 	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
@@ -122,14 +114,19 @@ static double ext_limber_integrand(double chi, void * data_void)
 
 	// Integrand result.
 	p /= (chi * growth * growth);
-	double result = Wr_X * Wr_Y;  //zeroth order
+	double result_0 = Wr_X * Wr_Y;  //zeroth order
+	double result_ext = 0.;
 	if (data->ext_order>0){
-    	double x2y1 =  - d2Wr_x * Wr_Y; //second order
-	    double x1y2 =  - d2Wr_y * Wr_X; //second order
-	    result += ( x2y1 + x1y2 ) * chi * chi / (nu * nu) ;
+		//if doing extended limber, get kernel 2nd derivatives
+	    double d2Wr_x = gsl_spline_eval_deriv2(data->WX_red, chi, data->accelerator_wx);
+	    double d2Wr_y;
+    	if (data->WX_red==data->WY_red) d2Wr_y = d2Wr_x;
+	    else d2Wr_y = gsl_spline_eval_deriv2(data->WY_red, chi, data->accelerator_wy);
+		//printf("chi,d2Wr_x,d2Wr_y : %f,%.6e,%.6e\n", chi,d2Wr_x,d2Wr_y);
+	    result_ext = - 0.5 * ( d2Wr_x * Wr_Y + d2Wr_y * Wr_X ) * chi * chi / (nu * nu) ;
 	}
-	result *= p;
-	return result;
+	//printf("chi:%f, ext:%.6e, ext frac:%.6e\n", chi, result1, result1/result0);
+	return (result_0 + result_ext) * p ;
 }
 
 
