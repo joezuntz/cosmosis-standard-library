@@ -1,3 +1,4 @@
+from __future__ import print_function
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 import os
@@ -21,25 +22,24 @@ class SPTPolLikelihood(GaussianLikelihood):
         self.use_te = options.get_bool("use_te", default=True)
         self.use_ee = options.get_bool("use_ee", default=True)
 
+        data_filename = options.get_string("bandpowers", DEFAULT_BANDPOWERS)
+        cov_filename = options.get_string("covmat", DEFAULT_COVMAT)
+        beamerr_file = options.get_string("beam_errors", DEFAULT_BEAMERRS)
+        windows_dir = options.get_string("windows", DEFAULT_WINDOWS)
 
-        data_filename  = options.get_string("bandpowers", DEFAULT_BANDPOWERS)
-        cov_filename  = options.get_string("covmat", DEFAULT_COVMAT)
-        beamerr_file  = options.get_string("beam_errors", DEFAULT_BEAMERRS)
-        windows_dir  = options.get_string("windows", DEFAULT_WINDOWS)
+        if (not os.path.exists(DATASET_DIR)) and (cov_filename == DEFAULT_COVMAT or windows_dir == DEFAULT_WINDOWS):
+            raise ValueError(
+                "Please see the file {}/readme.txt for details on downloading the SPTpol data ({} does not exist)".format(ROOT_DIR))
 
-        if (not os.path.exists(DATASET_DIR)) and (cov_filename==DEFAULT_COVMAT or windows_dir==DEFAULT_WINDOWS):
-            raise ValueError("Please see the file {}/readme.txt for details on downloading the SPTpol data ({} does not exist)".format(ROOT_DIR))
+        self.spt_data = sptpol_like.SPTPolData(
+            data_filename, cov_filename, self.use_te, self.use_ee)
+        self.spt_model = sptpol_like.SPTPolTheoryModel(
+            beamerr_file, windows_dir, self.use_te, self.use_ee)
 
+        print("Will look for these nuisance parameters in a section [sptpol]:")
+        print("    " + (', '.join(self.spt_model.nuisance_parameter_names())))
 
-        self.spt_data = sptpol_like.SPTPolData(data_filename, cov_filename, self.use_te, self.use_ee)
-        self.spt_model = sptpol_like.SPTPolTheoryModel(beamerr_file, windows_dir, self.use_te, self.use_ee)
-
-        print "Will look for these nuisance parameters in a section [sptpol]:"
-        print "    " + (', '.join(self.spt_model.nuisance_parameter_names()))
-
-        super(SPTPolLikelihood,self).__init__(options)
-
-
+        super(SPTPolLikelihood, self).__init__(options)
 
     def build_data(self):
         return None, self.spt_data.vector
@@ -47,7 +47,7 @@ class SPTPolLikelihood(GaussianLikelihood):
     def build_covariance(self):
         return self.spt_data.covmat
 
-    def extract_theory_points(self,block):
+    def extract_theory_points(self, block):
         # just get all supplied nuisance parameters
         nuisance = {}
         for name in self.spt_model.nuisance_parameter_names():
@@ -60,18 +60,18 @@ class SPTPolLikelihood(GaussianLikelihood):
         # The likelihood code I wrote assumes that the spectra are all
         # suck that C_ell = C[ell].  This is only true if ell goes down to zero
         # also need to check that ell == arange(n_ell)
-        if ell.min()!=0:
+        if ell.min() != 0:
             start_ell = np.arange(ell.min(), dtype=np.int32)
             start_cl = np.zeros(len(start_ell))
-            ell = np.concatenate([start_ell,ell])
-            te = np.concatenate([start_cl,te])
-            ee = np.concatenate([start_cl,ee])
+            ell = np.concatenate([start_ell, ell])
+            te = np.concatenate([start_cl, te])
+            ee = np.concatenate([start_cl, ee])
 
         if ell.max() < self.spt_model.ell.max() + 1:
             raise ValueError("""
 You need to calculate the CMB spectra to ell>{} to use the SPTpol data.
 This setting can be changed in your camb/class section.""".format(self.spt_model.ell.max() + 1))
-        if not np.all(ell==np.arange(len(ell))):
+        if not np.all(ell == np.arange(len(ell))):
             raise ValueError("""
 For some reason your ell values do not include all the integers - there are gaps.
 The default modules should not do this so probably you messed with something. Raise an issue if not.""")
@@ -83,13 +83,14 @@ The default modules should not do this so probably you messed with something. Ra
             "ee": block[names.cmb_cl, "ee"],
         }
 
-        theory_vector, components_te, components_ee = self.spt_model(cmb, nuisance)
+        theory_vector, components_te, components_ee = self.spt_model(
+            cmb, nuisance)
 
-        #In case interesting, save the different components to the block
+        # In case interesting, save the different components to the block
         if self.use_te:
-            for key,val in components_te.items():
-                if key!="ell":
-                    key = key+"_te"
+            for key, val in list(components_te.items()):
+                if key != "ell":
+                    key = key + "_te"
                 block['spt_model', key] = val
 
         return theory_vector

@@ -3,6 +3,7 @@ eggbox_likelihood.py: a test problem for our samplers.
 We sample an eggbox function a very pathological case.
 """
 
+from builtins import object
 import os
 import sys
 import numpy as np
@@ -18,7 +19,7 @@ class Eggbox(object):
 
     """Adapted from https://github.com/dfm/emcee/blob/master/examples/eggbox.py """
 
-    def __init__(self, tmax=10.*np.pi):
+    def __init__(self, tmax=10. * np.pi):
         self.tmax = tmax
 
     def loglhood(self, t):
@@ -29,7 +30,7 @@ class Eggbox(object):
 
 
 def setup(options):
-    tmax = options.get_double(option_section, "tmax", default=10.*np.pi)
+    tmax = options.get_double(option_section, "tmax", default=10. * np.pi)
     return Eggbox(tmax)
 
 

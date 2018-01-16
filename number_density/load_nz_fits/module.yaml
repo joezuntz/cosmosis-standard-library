@@ -42,10 +42,11 @@ explanation: |
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    filepath: "String; absolute or relative path to an n(z) file"
-    des_fmt: "Bool, default=F; use the DES format n(z) with columns zmin, zmax, nz1, nz2..."
-    histogram: "Bool, default=F; Assume that the given z values are lower edges of histogram bins, not sample points."
-    upsampling: "Integer, default=5. The number of sample points output for each one in the file. n(z) is assumed flat between them. See notes above."
+    nz_file: "String; absolute or relative path to an n(z) file"
+    data_sets: "String, space separated names of the extensions from the FITS files to load and save to the block"
+    prefix_extension: "Bool, default=T.  Add the prefix NZ_ to the names in data_sets when looking in the FITS file"
+    prefix_section: "Bool, default=T. Add the same NZ_ prefix to the section names used in the block."
+    upsampling: "Integer, default=1. The number of sample points output for each one in the file. n(z) is assumed flat between them. See notes above."
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs: {}

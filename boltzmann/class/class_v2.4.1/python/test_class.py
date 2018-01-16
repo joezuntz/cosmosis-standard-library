@@ -68,6 +68,9 @@ rerun CLASS for each case under Newtonian gauge and then compare Cl's and
 matter power spectrum. If the two are not close enough, it will generate a
 PDF plot of this and save it in the 'fail' folder.
 """
+from __future__ import print_function
+from builtins import str
+from builtins import range
 from classy import Class
 from classy import CosmoSevereError
 import itertools
@@ -105,10 +108,10 @@ CLASS_INPUT['Isocurvature_modes'] = (
     [{'ic': 'ad,nid,cdi', 'c_ad_cdi': -0.5}],
     'normal')
 
-#CLASS_INPUT['Scalar_field'] = (
-    #[{'Omega_scf': 0.1, 'attractor_ic_scf': 'yes',
-      #'scf_parameters': '10, 0, 0, 0'}],
-    #'normal')
+# CLASS_INPUT['Scalar_field'] = (
+#[{'Omega_scf': 0.1, 'attractor_ic_scf': 'yes',
+#'scf_parameters': '10, 0, 0, 0'}],
+#'normal')
 
 CLASS_INPUT['Inflation'] = (
     [{'P_k_ini type': 'inflation_V'},
@@ -151,10 +154,10 @@ CLASS_INPUT['Lensing'] = (
 
 INPUTPOWER = []
 INPUTNORMAL = [{}]
-for key, value in CLASS_INPUT.iteritems():
+for key, value in list(CLASS_INPUT.items()):
     models, state = value
     if state == 'power':
-        INPUTPOWER.append([{}]+models)
+        INPUTPOWER.append([{}] + models)
     else:
         INPUTNORMAL.extend(models)
 
@@ -178,7 +181,7 @@ def powerset(iterable):
     xs = list(iterable)
     # note we return an iterator rather than a list
     return itertools.chain.from_iterable(
-        itertools.combinations(xs, n) for n in range(1, len(xs)+1))
+        itertools.combinations(xs, n) for n in range(1, len(xs) + 1))
 
 
 class TestClass(unittest.TestCase):
@@ -239,8 +242,8 @@ class TestClass(unittest.TestCase):
 
     def poormansname(self, somedict):
         string = "_".join(
-            [k+'='+str(v)
-             for k, v in somedict.iteritems()])
+            [k + '=' + str(v)
+             for k, v in list(somedict.items())])
         string = string.replace('/', '%')
         string = string.replace(',', '')
         string = string.replace(' ', '')
@@ -256,13 +259,13 @@ class TestClass(unittest.TestCase):
         sys.stderr.write('\n\n---------------------------------\n')
         sys.stderr.write('| Test case %s |\n' % self.name)
         sys.stderr.write('---------------------------------\n')
-        for key, value in self.scenario.iteritems():
+        for key, value in list(self.scenario.items()):
             sys.stderr.write("%s = %s\n" % (key, value))
             sys.stdout.write("%s = %s\n" % (key, value))
         sys.stderr.write("\n")
 
         setting = self.cosmo.set(
-            dict(self.verbose.items()+self.scenario.items()))
+            dict(list(self.verbose.items()) + list(self.scenario.items())))
         self.assertTrue(setting, "Class failed to initialize with input dict")
 
         cl_dict = {
@@ -291,13 +294,13 @@ class TestClass(unittest.TestCase):
             self.cosmo.state,
             "Class failed to go through all __init__ methods")
         if self.cosmo.state:
-            print '--> Class is ready'
+            print('--> Class is ready')
         # Depending
-        if 'output' in self.scenario.keys():
+        if 'output' in list(self.scenario.keys()):
             # Positive tests of raw cls
             output = self.scenario['output']
             for elem in output.split():
-                if elem in cl_dict.keys():
+                if elem in list(cl_dict.keys()):
                     for cl_type in cl_dict[elem]:
                         sys.stderr.write(
                             '--> testing raw_cl for %s\n' % cl_type)
@@ -313,7 +316,7 @@ class TestClass(unittest.TestCase):
                     pk = self.cosmo.pk(0.1, 0)
                     self.assertIsNotNone(pk, "pk returned nothing")
             # Negative tests of output functions
-            if not any([elem in cl_dict.keys() for elem in output.split()]):
+            if not any([elem in list(cl_dict.keys()) for elem in output.split()]):
                 sys.stderr.write('--> testing absence of any Cl\n')
                 self.assertRaises(CosmoSevereError, self.cosmo.raw_cl, 100)
             if 'mPk' not in output.split():
@@ -323,7 +326,7 @@ class TestClass(unittest.TestCase):
         if COMPARE_OUTPUT:
             # Now, compute with Newtonian gauge, and compare the results
             self.cosmo_newt.set(
-                dict(self.verbose.items()+self.scenario.items()))
+                dict(list(self.verbose.items()) + list(self.scenario.items())))
             self.cosmo_newt.set({'gauge': 'newtonian'})
             self.cosmo_newt.compute()
             # Check that the computation worked
@@ -340,7 +343,7 @@ class TestClass(unittest.TestCase):
         # If we have tensor modes, we must have one tensor observable,
         # either tCl or pCl.
         if has_tensor(self.scenario):
-            if 'output' not in self.scenario.keys():
+            if 'output' not in list(self.scenario.keys()):
                 should_fail = True
             else:
                 output = self.scenario['output'].split()
@@ -349,8 +352,8 @@ class TestClass(unittest.TestCase):
 
         # If we have specified lensing, we must have lCl in output,
         # otherwise lensing will not be read (which is an error).
-        if 'lensing' in self.scenario.keys():
-            if 'output' not in self.scenario.keys():
+        if 'lensing' in list(self.scenario.keys()):
+            if 'output' not in list(self.scenario.keys()):
                 should_fail = True
             else:
                 output = self.scenario['output'].split()
@@ -360,19 +363,19 @@ class TestClass(unittest.TestCase):
                     should_fail = True
 
         # If we have specified a tensor method, we must have tensors.
-        if 'tensor method' in self.scenario.keys():
+        if 'tensor method' in list(self.scenario.keys()):
             if not has_tensor(self.scenario):
                 should_fail = True
 
         # If we have specified non linear, we must have some form of
         # perturbations output.
-        if 'non linear' in self.scenario.keys():
-            if 'output' not in self.scenario.keys():
+        if 'non linear' in list(self.scenario.keys()):
+            if 'output' not in list(self.scenario.keys()):
                 should_fail = True
 
         # If we ask for Cl's of lensing potential, we must have scalar modes.
-        if 'output' in self.scenario.keys() and 'lCl' in self.scenario['output'].split():
-            if 'modes' in self.scenario.keys() and self.scenario['modes'].find('s') == -1:
+        if 'output' in list(self.scenario.keys()) and 'lCl' in self.scenario['output'].split():
+            if 'modes' in list(self.scenario.keys()) and self.scenario['modes'].find('s') == -1:
                 should_fail = True
 
         return should_fail
@@ -391,7 +394,7 @@ class TestClass(unittest.TestCase):
             except CosmoSevereError:
                 continue
             ref = getattr(reference, elem)()
-            for key, value in ref.iteritems():
+            for key, value in list(ref.items()):
                 if key != 'ell':
                     sys.stderr.write('--> testing equality of %s %s\n' % (
                         elem, key))
@@ -399,17 +402,17 @@ class TestClass(unittest.TestCase):
                     if key[0] == key[1]:
                         # If it is a 'dd' or 'll', it is a dictionary.
                         if isinstance(value, dict):
-                            for subkey in value.iterkeys():
+                            for subkey in list(value.keys()):
                                 try:
                                     np.testing.assert_allclose(
                                         value[subkey], to_test[key][subkey],
                                         rtol=1e-03, atol=1e-20)
                                 except AssertionError:
-                                    self.cl_faulty_plot(elem+"_"+key,
+                                    self.cl_faulty_plot(elem + "_" + key,
                                                         value[subkey][2:],
                                                         to_test[key][subkey][2:])
                                 except TypeError:
-                                    self.cl_faulty_plot(elem+"_"+key,
+                                    self.cl_faulty_plot(elem + "_" + key,
                                                         value[subkey][2:],
                                                         to_test[key][subkey][2:])
                         else:
@@ -417,10 +420,10 @@ class TestClass(unittest.TestCase):
                                 np.testing.assert_allclose(
                                     value, to_test[key], rtol=1e-03, atol=1e-20)
                             except AssertionError:
-                                self.cl_faulty_plot(elem+"_"+key,
+                                self.cl_faulty_plot(elem + "_" + key,
                                                     value[2:], to_test[key][2:])
                             except TypeError:
-                                self.cl_faulty_plot(elem+"_"+key,
+                                self.cl_faulty_plot(elem + "_" + key,
                                                     value[2:], to_test[key][2:])
                     # For cross-spectra, as there can be zero-crossing, we
                     # instead compare the difference.
@@ -434,10 +437,10 @@ class TestClass(unittest.TestCase):
                             np.testing.assert_array_almost_equal(
                                 value, to_test[key], decimal=3)
                         except AssertionError:
-                            self.cl_faulty_plot(elem+"_"+key,
+                            self.cl_faulty_plot(elem + "_" + key,
                                                 value[2:], to_test[key][2:])
 
-        if 'output' in self.scenario.keys():
+        if 'output' in list(self.scenario.keys()):
             if self.scenario['output'].find('mPk') != -1:
                 sys.stderr.write('--> testing equality of Pk')
                 k = np.logspace(
@@ -458,9 +461,9 @@ class TestClass(unittest.TestCase):
         fig = plt.figure()
         ax_lin = plt.subplot(211)
         ax_log = plt.subplot(212)
-        ell = np.arange(max(np.shape(candidate)))+2
-        ax_lin.plot(ell, 1-candidate/reference)
-        ax_log.loglog(ell, abs(1-candidate/reference))
+        ell = np.arange(max(np.shape(candidate))) + 2
+        ax_lin.plot(ell, 1 - candidate / reference)
+        ax_log.loglog(ell, abs(1 - candidate / reference))
 
         ax_lin.set_xlabel('l')
         ax_log.set_xlabel('l')
@@ -473,13 +476,13 @@ class TestClass(unittest.TestCase):
         ax_lin.legend([cl_type])
         ax_log.legend([cl_type])
 
-        fig.savefig(path+'_'+cl_type+'.pdf')
+        fig.savefig(path + '_' + cl_type + '.pdf')
 
         # Store parameters (contained in self.scenario) to text file
-        parameters = dict(self.verbose.items()+self.scenario.items())
-        with open(path+'.ini', 'w') as param_file:
-            for key, value in parameters.iteritems():
-                param_file.write(key+" = "+str(value)+'\n')
+        parameters = dict(list(self.verbose.items()) + list(self.scenario.items()))
+        with open(path + '.ini', 'w') as param_file:
+            for key, value in list(parameters.items()):
+                param_file.write(key + " = " + str(value) + '\n')
 
     def pk_faulty_plot(self, k, reference, candidate):
         path = os.path.join(self.faulty_figs_path, self.name)
@@ -487,8 +490,8 @@ class TestClass(unittest.TestCase):
         fig = plt.figure()
         ax_lin = plt.subplot(211)
         ax_log = plt.subplot(212)
-        ax_lin.plot(k, 1-candidate/reference)
-        ax_log.loglog(k, abs(1-candidate/reference))
+        ax_lin.plot(k, 1 - candidate / reference)
+        ax_log.loglog(k, abs(1 - candidate / reference))
 
         ax_lin.set_xlabel('k')
         ax_log.set_xlabel('k')
@@ -501,22 +504,23 @@ class TestClass(unittest.TestCase):
         ax_lin.legend('$P_k$')
         ax_log.legend('$P_k$')
 
-        fig.savefig(path+'_'+'pk'+'.pdf')
+        fig.savefig(path + '_' + 'pk' + '.pdf')
 
         # Store parameters (contained in self.scenario) to text file
-        parameters = dict(self.verbose.items()+self.scenario.items())
-        with open(path+'.ini', 'w') as param_file:
-            for key, value in parameters.iteritems():
-                param_file.write(key+" = "+str(value)+'\n')
+        parameters = dict(list(self.verbose.items()) + list(self.scenario.items()))
+        with open(path + '.ini', 'w') as param_file:
+            for key, value in list(parameters.items()):
+                param_file.write(key + " = " + str(value) + '\n')
 
 
 def has_tensor(input_dict):
-    if 'modes' in input_dict.keys():
+    if 'modes' in list(input_dict.keys()):
         if input_dict['modes'].find('t') != -1:
             return True
     else:
         return False
     return False
+
 
 if __name__ == '__main__':
     toto = TestClass()

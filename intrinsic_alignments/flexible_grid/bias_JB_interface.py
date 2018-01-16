@@ -1,3 +1,4 @@
+from __future__ import print_function
 from cosmosis.datablock import names, option_section
 import bias_grid as functions
 
@@ -5,34 +6,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pdb
 
-def setup(options):
-	nknodes = options[option_section, 'nknodes']
-	nznodes = options[option_section, 'nznodes']
-	ia = options[option_section, 'intrinsic_alignments']
-	gb = options[option_section, 'galaxy_bias']
-	opt= {'nznodes':nznodes, 'nknodes':nknodes, 'intrinsic_alignments': ia, 'galaxy_bias': gb}
 
-	grid_generator = functions.flexible_grid(opt)
-	return opt, grid_generator
+def setup(options):
+    nknodes = options[option_section, 'nknodes']
+    nznodes = options[option_section, 'nznodes']
+    ia = options[option_section, 'intrinsic_alignments']
+    gb = options[option_section, 'galaxy_bias']
+    opt = {'nznodes': nznodes, 'nknodes': nknodes,
+           'intrinsic_alignments': ia, 'galaxy_bias': gb}
+
+    grid_generator = functions.flexible_grid(opt)
+    return opt, grid_generator
+
 
 def execute(block, config):
 
-	options, grid = config
+    options, grid = config
 
-	# Define datablock section names
-	nl= names.matter_power_nl
-	cospar= names.cosmological_parameters
+    # Define datablock section names
+    nl = names.matter_power_nl
+    cospar = names.cosmological_parameters
 
-	# Use the grid object created during startup
-	# with the specific realisation of the nodes
-	
-	grid.setup_grid_nodes(block)
-	grid.interpolate_grid()
-	grid.evaluate_and_save_bias(block)
-	pdb.set_trace()	
+    # Use the grid object created during startup
+    # with the specific realisation of the nodes
 
-	print 'Done.'
-	return 0
+    grid.setup_grid_nodes(block)
+    grid.interpolate_grid()
+    grid.evaluate_and_save_bias(block)
+    pdb.set_trace()
+
+    print('Done.')
+    return 0
+
 
 def cleanup(config):
-	pass
+    pass

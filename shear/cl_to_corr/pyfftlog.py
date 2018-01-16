@@ -179,6 +179,8 @@ Comments in the subroutines contain further details.
     optional routine called by fhti.
 
 """
+from __future__ import print_function
+from builtins import input
 import numpy as np
 from scipy.special import loggamma
 from scipy.fftpack._fftpack import drfft
@@ -250,20 +252,20 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
         kr = krgood(mu, q, dlnr, kr)
     elif kropt == 2:  # change kr to low-ringing kr verbosely
         d = krgood(mu, q, dlnr, kr)
-        if abs(kr/d - 1) >= 1e-15:
+        if abs(kr / d - 1) >= 1e-15:
             kr = d
-            print(" kr changed to ", kr)
+            print((" kr changed to ", kr))
     else:             # option to change kr to low-ringing kr interactively
         d = krgood(mu, q, dlnr, kr)
-        if abs(kr/d-1.0) >= 1e-15:
-            print(" change kr = ", kr)
-            print(" to low-ringing kr = ", d)
-            go = input("? [CR, y=yes, n=no, x=exit]: ")
+        if abs(kr / d - 1.0) >= 1e-15:
+            print((" change kr = ", kr))
+            print((" to low-ringing kr = ", d))
+            go = eval(input("? [CR, y=yes, n=no, x=exit]: "))
             if go.lower() in ['', 'y']:
                 kr = d
-                print(" kr changed to ", kr)
+                print((" kr changed to ", kr))
             elif go.lower() == 'n':
-                print(" kr left unchanged at ", kr)
+                print((" kr left unchanged at ", kr))
             else:
                 print("exit")
                 return False
@@ -278,17 +280,18 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
     # xsave to not confuse it with xsave from the FFT.
 
     if q == 0:  # unbiased case (q = 0)
-        ln2kr = np.log(2.0/kr)
-        xp = (mu + 1)/2.0
-        d = np.pi/(n*dlnr)
+        ln2kr = np.log(2.0 / kr)
+        xp = (mu + 1) / 2.0
+        d = np.pi / (n * dlnr)
 
-        m = np.arange(1, (n+1)/2)
-        y = m*d  # y = m*pi/(n*dlnr)
-        zp = loggamma(xp + 1j*y)
-        arg = 2.0*(ln2kr*y + zp.imag)  # Argument of kr^(-2 i y) U_mu(2 i y)
+        m = np.arange(1, (n + 1) / 2)
+        y = m * d  # y = m*pi/(n*dlnr)
+        zp = loggamma(xp + 1j * y)
+        # Argument of kr^(-2 i y) U_mu(2 i y)
+        arg = 2.0 * (ln2kr * y + zp.imag)
 
         # Arange xsave: [q, dlnr, kr, cos, sin]
-        xsave = np.empty(2*arg.size+3)
+        xsave = np.empty(2 * arg.size + 3)
         xsave[0] = q
         xsave[1] = dlnr
         xsave[2] = kr
@@ -300,9 +303,9 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
 
     else:       # biased case (q != 0)
         ln2 = np.log(2.0)
-        ln2kr = np.log(2.0/kr)
-        xp = (mu + 1 + q)/2.0
-        xm = (mu + 1 - q)/2.0
+        ln2kr = np.log(2.0 / kr)
+        xp = (mu + 1 + q) / 2.0
+        xm = (mu + 1 - q) / 2.0
 
         # first element of rest of xsave
         y = 0
@@ -316,14 +319,14 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
             # U_mu(q) = 2^q Gamma[xp]/Gamma[xm] is finite in this case
             if xpnegi and xmnegi:
                 # Amplitude and Argument of U_mu(q)
-                amp = np.exp(ln2*q)
+                amp = np.exp(ln2 * q)
                 if xp > xm:
-                    m = np.arange(1,  np.round(xp - xm)+1)
+                    m = np.arange(1,  np.round(xp - xm) + 1)
                     amp *= xm + m - 1
                 elif xp < xm:
-                    m = np.arange(1,  np.round(xm - xp)+1)
+                    m = np.arange(1,  np.round(xm - xp) + 1)
                     amp /= xp + m - 1
-                arg = np.round(xp + xm)*np.pi
+                arg = np.round(xp + xm) * np.pi
 
             else:  # one of xp or xm is a negative integer
                 # Transformation is singular if xp is -ve integer, and inverse
@@ -333,45 +336,45 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
                 # potentially infinite constant in the transform.
 
                 if xpnegi:
-                    print('fhti: (mu+1+q)/2 =', np.round(xp), 'is -ve integer',
+                    print(('fhti: (mu+1+q)/2 =', np.round(xp), 'is -ve integer',
                           ', yields singular transform:\ntransform will omit',
                           'additive constant that is generically infinite,',
                           '\nbut that may be finite or zero if the sum of the',
-                          'elements of the input array a_j is zero.')
+                          'elements of the input array a_j is zero.'))
                 else:
-                    print('fhti: (mu+1-q)/2 =', np.round(xm), 'is -ve integer',
+                    print(('fhti: (mu+1-q)/2 =', np.round(xm), 'is -ve integer',
                           ', yields singular inverse transform:\n inverse',
                           'transform will omit additive constant that is',
                           'generically infinite,\nbut that may be finite or',
                           'zero if the sum of the elements of the input array',
-                          'a_j is zero.')
+                          'a_j is zero.'))
                 amp = 0
                 arg = 0
 
         else:  # neither xp nor xm is a negative integer
-            zp = loggamma(xp + 1j*y)
-            zm = loggamma(xm + 1j*y)
+            zp = loggamma(xp + 1j * y)
+            zm = loggamma(xm + 1j * y)
 
             # Amplitude and Argument of U_mu(q)
-            amp = np.exp(ln2*q + zp.real - zm.real)
+            amp = np.exp(ln2 * q + zp.real - zm.real)
             # note +Im(zm) to get conjugate value below real axis
             arg = zp.imag + zm.imag
 
         # first element: cos(arg) = ±1, sin(arg) = 0
-        xsave1 = amp*np.cos(arg)
+        xsave1 = amp * np.cos(arg)
 
         # remaining elements of xsave
-        d = np.pi/(n*dlnr)
-        m = np.arange(1, (n+1)/2)
-        y = m*d  # y = m pi/(n dlnr)
-        zp = loggamma(xp + 1j*y)
-        zm = loggamma(xm + 1j*y)
+        d = np.pi / (n * dlnr)
+        m = np.arange(1, (n + 1) / 2)
+        y = m * d  # y = m pi/(n dlnr)
+        zp = loggamma(xp + 1j * y)
+        zm = loggamma(xm + 1j * y)
         # Amplitude and Argument of kr^(-2 i y) U_mu(q + 2 i y)
-        amp = np.exp(ln2*q + zp.real - zm.real)
-        arg = 2*ln2kr*y + zp.imag + zm.imag
+        amp = np.exp(ln2 * q + zp.real - zm.real)
+        arg = 2 * ln2kr * y + zp.imag + zm.imag
 
         # Arrange xsave: [q, dlnr, kr, xsave1, cos, sin]
-        xsave = np.empty(3*arg.size+4)
+        xsave = np.empty(3 * arg.size + 4)
         xsave[0] = q
         xsave[1] = dlnr
         xsave[2] = kr
@@ -461,11 +464,11 @@ def fftl(a, xsave, rk=1, tdir=1):
     kr = xsave[2]
 
     # centre point of array
-    jc = np.array((fct.size + 1)/2.0)
-    j = np.arange(fct.size)+1
+    jc = np.array((fct.size + 1) / 2.0)
+    j = np.arange(fct.size) + 1
 
     # a(r) = A(r) (r/rc)^[-dir*(q-.5)]
-    fct *= np.exp(-tdir*(q - 0.5)*(j - jc)*dlnr)
+    fct *= np.exp(-tdir * (q - 0.5) * (j - jc) * dlnr)
 
     # transform a(r) -> ã(k)
     fct = fhtq(fct, xsave, tdir)
@@ -474,7 +477,8 @@ def fftl(a, xsave, rk=1, tdir=1):
     #      = ã(k) (k/kc)^[-dir*(q+.5)] (kc rc)^(-dir*q) (rc/kc)^(dir*.5)
     lnkr = np.log(kr)
     lnrk = np.log(rk)
-    fct *= np.exp(-tdir*((q + 0.5)*(j - jc)*dlnr + q*lnkr - lnrk/2.0))
+    fct *= np.exp(-tdir * ((q + 0.5) * (j - jc)
+                           * dlnr + q * lnkr - lnrk / 2.0))
 
     return fct
 
@@ -539,9 +543,9 @@ def fht(a, xsave, tdir=1):
     # a(r) = A(r) (r/rc)^(-dir*q)
     if q != 0:
         #  centre point of array
-        jc = np.array((fct.size + 1)/2.0)
-        j = np.arange(fct.size)+1
-        fct *= np.exp(-tdir*q*(j - jc)*dlnr)
+        jc = np.array((fct.size + 1) / 2.0)
+        j = np.arange(fct.size) + 1
+        fct *= np.exp(-tdir * q * (j - jc) * dlnr)
 
     # transform a(r) -> ã(k)
     fct = fhtq(fct, xsave, tdir)
@@ -550,7 +554,7 @@ def fht(a, xsave, tdir=1):
     #      = ã(k) (k/kc)^(-dir*q) (kc rc)^(-dir*q)
     if q != 0:
         lnkr = np.log(kr)
-        fct *= np.exp(-tdir*q*((j - jc)*dlnr + lnkr))
+        fct *= np.exp(-tdir * q * ((j - jc) * dlnr + lnkr))
 
     return fct
 
@@ -604,13 +608,13 @@ def fhtq(a, xsave, tdir=1):
     # _raw_fft(fct, n, -1, 1, 1, _fftpack.drfft)
     fct = drfft(fct, n, 1, 0)
 
-    m = np.arange(1, n/2, dtype=int)  # index variable
+    m = np.arange(1, n / 2, dtype=int)  # index variable
     if q == 0:  # unbiased (q = 0) transform
         # multiply by (kr)^[- i 2 m pi/(n dlnr)] U_mu[i 2 m pi/(n dlnr)]
-        ar = fct[2*m-1]
-        ai = fct[2*m]
-        fct[2*m-1] = ar*xsave[2*m+1] - ai*xsave[2*m+2]
-        fct[2*m] = ar*xsave[2*m+2] + ai*xsave[2*m+1]
+        ar = fct[2 * m - 1]
+        ai = fct[2 * m]
+        fct[2 * m - 1] = ar * xsave[2 * m + 1] - ai * xsave[2 * m + 2]
+        fct[2 * m] = ar * xsave[2 * m + 2] + ai * xsave[2 * m + 1]
         # problem(2*m)atical last element, for even n
         if np.mod(n, 2) == 0:
             ar = xsave[-2]
@@ -628,15 +632,15 @@ def fhtq(a, xsave, tdir=1):
     else:  # biased (q != 0) transform
         # multiply by (kr)^[- i 2 m pi/(n dlnr)] U_mu[q + i 2 m pi/(n dlnr)]
         # phase
-        ar = fct[2*m-1]
-        ai = fct[2*m]
-        fct[2*m-1] = ar*xsave[3*m+2] - ai*xsave[3*m+3]
-        fct[2*m] = ar*xsave[3*m+3] + ai*xsave[3*m+2]
+        ar = fct[2 * m - 1]
+        ai = fct[2 * m]
+        fct[2 * m - 1] = ar * xsave[3 * m + 2] - ai * xsave[3 * m + 3]
+        fct[2 * m] = ar * xsave[3 * m + 3] + ai * xsave[3 * m + 2]
 
         if tdir == 1:  # forward transform: multiply by amplitude
             fct[0] *= xsave[3]
-            fct[2*m-1] *= xsave[3*m+1]
-            fct[2*m] *= xsave[3*m+1]
+            fct[2 * m - 1] *= xsave[3 * m + 1]
+            fct[2 * m] *= xsave[3 * m + 1]
 
         elif tdir == -1:  # backward transform: divide by amplitude
             # amplitude of m=0 element
@@ -650,13 +654,13 @@ def fhtq(a, xsave, tdir=1):
                 fct[0] /= ar
 
             # remaining amplitudes should never be zero
-            fct[2*m-1] /= xsave[3*m+1]
-            fct[2*m] /= xsave[3*m+1]
+            fct[2 * m - 1] /= xsave[3 * m + 1]
+            fct[2 * m] /= xsave[3 * m + 1]
 
         # problematical last element, for even n
         if np.mod(n, 2) == 0:
-            m = int(n/2)
-            ar = xsave[3*m+2]*xsave[3*m+1]
+            m = int(n / 2)
+            ar = xsave[3 * m + 2] * xsave[3 * m + 1]
             if tdir == 1:  # forward transform: multiply by real part
                 fct[-1] *= ar
             elif (tdir == -1):  # backward transform: divide by real part
@@ -722,14 +726,14 @@ def krgood(mu, q, dlnr, kr):
     if dlnr == 0:
         return kr
 
-    xp = (mu + 1.0 + q)/2.0
-    xm = (mu + 1.0 - q)/2.0
-    y = 1j*np.pi/(2.0*dlnr)
+    xp = (mu + 1.0 + q) / 2.0
+    xm = (mu + 1.0 - q) / 2.0
+    y = 1j * np.pi / (2.0 * dlnr)
     zp = loggamma(xp + y)
     zm = loggamma(xm + y)
 
     # low-ringing condition is that following should be integral
-    arg = np.log(2.0/kr)/dlnr + (zp.imag + zm.imag)/np.pi
+    arg = np.log(2.0 / kr) / dlnr + (zp.imag + zm.imag) / np.pi
 
     # return low-ringing kr
-    return kr*np.exp((arg - np.round(arg))*dlnr)
+    return kr * np.exp((arg - np.round(arg)) * dlnr)

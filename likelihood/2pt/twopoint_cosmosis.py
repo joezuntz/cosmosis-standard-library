@@ -9,11 +9,14 @@ def load_type_table():
     type_table = Table.read(table_name, format="ascii")
     table = {}
     for (type1, type2, section, x, y) in type_table:
-        table[(type1,type2)] = (section, x, y)
+        table[(type1, type2)] = (section, x, y)
     return table
+
 
 type_table = load_type_table()
 
+
 def theory_names(spectrum):
-    section, x_name, y_name = type_table[(spectrum.type1.name,spectrum.type2.name)]
+    section, x_name, y_name = type_table[(
+        spectrum.type1.name, spectrum.type2.name)]
     return section, x_name, y_name
