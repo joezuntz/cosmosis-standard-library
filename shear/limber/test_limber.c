@@ -25,8 +25,9 @@ int main(){
 	config.ell = malloc(sizeof(double)*config.n_ell);
 	for (int i=0; i<config.n_ell; i++) config.ell[i] = 9.9 * pow(1.03, i);
 
-
 	gsl_spline * limber = limber_integral(&config, n_of_chi, n_of_chi, P);
+	if (limber == NULL)  exit (1);
+    
 	for(double ell=10.0; ell<2000; ell*=1.01){
 		printf("%le   %le\n", ell, exp(gsl_spline_eval(limber, log(ell), NULL)));
 	}
