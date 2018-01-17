@@ -584,6 +584,7 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 			// reset the status
 			lc.status = LIMBER_STATUS_OK;
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
+			if (c_ell == NULL)  return 1;
 			if (is_mag) coeff = choose_limber_coefficient(spectrum_type, alpha[bin1-1], alpha[bin2-1]);
 			else coeff=1;
 			int status = save_c_ell(block, section, bin1, bin2, coeff, c_ell, &lc);
