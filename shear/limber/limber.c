@@ -263,21 +263,15 @@ gsl_spline * limber_integral(limber_config * config, gsl_spline * WX,
         fprintf(stderr, "Negative n_ell parameter in limber_integral\n");
         any_parameter_error = 1;
     }
+    if (config->n_ell==0){
+        fprintf(stderr, "Error: n_ell=0 in limber calculation.\n");
+        any_parameter_error = 1;
+    }
     if (any_parameter_error){
         return NULL;
     }
 
 	config->status = LIMBER_STATUS_OK;
-
-
-    static int n_ell_zero_warning = 0;
-    if (config->n_ell==0){
-        if (n_ell_zero_warning==0){
-            fprintf(stderr, "Warning: n_ell=0 in Limber. Will not be treated as an error. Warning once only per process.\n");
-        }
-        n_ell_zero_warning = 1;
-        return;
-    }
 
 
 	// Get the appropriate ranges over which to integrate
