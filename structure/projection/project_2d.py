@@ -4,11 +4,12 @@ import ctypes as ct
 import numpy as np
 import limber
 print limber.__file__
-from gsl_wrappers import GSLSpline, NullSplineError
+from gsl_wrappers import GSLSpline, NullSplineError, GSLSpline2d, BILINEAR
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
 import re
 import sys
+import scipy.interpolate as interp
 
 class PowerType(Enum):
     matter = "matter_power_nl" #special case
@@ -31,7 +32,8 @@ class Spectrum(object):
     #then subclasses should include 1 and/or 2 in this.
     magnification_prefactors = {}
 
-    def __init__(self, source, sample_a=names.wl_number_density, sample_b=names.wl_number_density, save_name=""):
+    def __init__(self, source, sample_a=names.wl_number_density, 
+                 sample_b=names.wl_number_density, save_name=""):
         #caches of n(z), w(z), P(k,z), etc.
         self.source = source
         self.sample_a = sample_a
@@ -65,7 +67,6 @@ class Spectrum(object):
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
         return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
-
     def prefactor(self, block, bin1, bin2):
         if self.prefactor_power == 0:
             #This should be okay for the magnification terms
@@ -92,7 +93,7 @@ class Spectrum(object):
 
 
     def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3, 
-                absolute_tolerance=0., do_extended_limber=False):
+                absolute_tolerance=0., do_extended_limber=False, term=None):
         #Get the required kernels
         #maybe get from rescaled version of existing spectra
         P = self.source.power[self.power_spectrum]
@@ -118,7 +119,84 @@ class Spectrum(object):
         z_peak = 1./a_peak - 1
         return chi_peak, z_peak
 
+    def set_pk_growth_beta(self, *args, **kwargs):
+        return 0
 
+class CountCountSpectrum(Spectrum):
+    def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3, 
+                absolute_tolerance=0., do_extended_limber=False):
+        #Get the required kernels
+        #maybe get from rescaled version of existing spectra
+        K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
+        K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
+
+        #Call the integral
+        #if do_extended_limber is True, pass ext_order=1
+        ext_order=0
+        if do_extended_limber:
+            ext_order=1
+
+        if self.do_rsd:
+            term=-1
+        else:
+            term=0
+
+
+        c_ell = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
+                                            self.beta_growth_B_spline, 
+                                            self.power_spline, self.growth_spline, ell, 
+                                            self.prefactor(block, bin1, bin2),
+                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
+                                            ext_order=ext_order, term=term)
+        #return c_ell
+
+        #For testing
+        c_ell_0_0 = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
+                                            self.beta_growth_B_spline, 
+                                            self.power_spline, self.growth_spline, ell, 
+                                            self.prefactor(block, bin1, bin2),
+                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
+                                            ext_order=ext_order, term=0)
+        c_ell_0_R = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
+                                            self.beta_growth_B_spline, 
+                                            self.power_spline, self.growth_spline, ell, 
+                                            self.prefactor(block, bin1, bin2),
+                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
+                                            ext_order=ext_order, term=1)
+        c_ell_R_0 = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
+                                            self.beta_growth_B_spline, 
+                                            self.power_spline, self.growth_spline, ell, 
+                                            self.prefactor(block, bin1, bin2),
+                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
+                                            ext_order=ext_order, term=2)
+        c_ell_R_R = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
+                                            self.beta_growth_B_spline, 
+                                            self.power_spline, self.growth_spline, ell, 
+                                            self.prefactor(block, bin1, bin2),
+                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
+                                            ext_order=ext_order, term=3)
+        print bin1,bin2
+        print c_ell_0_0
+        print c_ell_0_R
+        print c_ell_R_0
+        print c_ell_R_R
+        return c_ell
+
+    def set_pk_growth_beta(self, block, bin1, bin2, bias_section, bias_prefix,
+                           z_arr, k_arr, pk_arr, D_arr, f_arr, chi_arr, 
+                           do_rsd=True, k_growth=1.e-2):
+        #for now assume linear bias
+        b1_A = block[bias_section, bias_prefix+"%d"%(bin1+1)]
+        b1_B = block[bias_section, bias_prefix+"%d"%(bin2+1)]
+        p_gg = b1_A*b1_B*pk_arr
+        D_gg = np.sqrt(b1_A*b1_B*D_arr)
+        beta_growth_A = f_arr*D_gg/b1_A
+        beta_growth_B = f_arr*D_gg/b1_B
+        self.growth_spline = GSLSpline(chi_arr, D_gg)
+        self.power_spline = GSLSpline2d(chi_arr, np.log(k_arr), p_gg.T, spline_type=BILINEAR)
+        self.beta_growth_A_spline = GSLSpline(chi_arr, beta_growth_A)
+        self.beta_growth_B_spline = GSLSpline(chi_arr, beta_growth_B)
+        self.do_rsd=do_rsd
 # This is pretty cool.
 # You can make an enumeration class which
 # contains a list of possible options for something.
@@ -156,10 +234,17 @@ class SpectrumType(Enum):
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
-        power_spectrum = PowerType.galaxy
+        power_spectrum = PowerType.matter
         kernels = "N N"
         autocorrelation = True
         name = "galaxy_cl"
+        prefactor_power = 0
+
+    class CountCount(CountCountSpectrum):
+        power_spectrum = PowerType.matter
+        kernels = "N N"
+        autocorrelation = True
+        name = "count_cl"
         prefactor_power = 0
 
     class MagnificationPosition(Spectrum):
@@ -239,9 +324,6 @@ class SpectrumType(Enum):
         prefactor_power = 1
 
 
-
-
-
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
     # types, for example ones done with modified gravity changes.
@@ -253,6 +335,7 @@ class SpectrumCalculator(object):
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
         self.do_extended_limber = options.get_bool(option_section, "do_extended_limber", False)
+        self.do_rsd = options.get_bool(option_section, "do_rsd", False)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -303,7 +386,6 @@ class SpectrumCalculator(object):
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
             name = spectrum.value.option_name()
-
             try:
                 value = options[option_section, name]
             #if value is not set at all, skip
@@ -400,6 +482,22 @@ class SpectrumCalculator(object):
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
 
+    #def load_rsd(self, block):
+    def load_matter_power(self, block, chi_of_z, k_growth=1.e-3):
+        self.z_pk,self.k_pk,self.pk_lin = block.get_grid(names.matter_power_lin, 'z', 'k_h', 'p_k')
+        growth_ind=np.where(self.k_pk>k_growth)[0][0]
+        self.growth_array = np.sqrt(np.divide(self.pk_lin[:,growth_ind], self.pk_lin[0,growth_ind], 
+                        out=np.zeros_like(self.pk_lin[:,growth_ind]), where=self.pk_lin[:,growth_ind]!=0.))
+        self.chi_pk = chi_of_z(self.z_pk)
+
+        _,self.k_pk,self.pk_nl = block.get_grid(names.matter_power_nl, 'z', 'k_h', 'p_k')
+
+        log_growth = np.log(self.growth_array)
+        log_a = np.log(1./(1+self.z_pk))
+        log_a, log_growth = log_a[::-1], log_growth[::-1]
+        logD_loga_spline = interp.InterpolatedUnivariateSpline(log_a, log_growth)
+        self.f_of_z_pk = (logD_loga_spline.derivative()(log_a))[::-1]
+        #print self.f_of_z_pk
 
     def load_kernels(self, block):
         #During the setup we already decided what kernels (W(z) or N(z) splines)
@@ -495,8 +593,15 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in xrange(jmax):
-                c_ell = spectrum.compute(block, self.ell, i, j, relative_tolerance=self.relative_tolerance, 
-                                        absolute_tolerance=self.absolute_tolerance, do_extended_limber=self.do_extended_limber)
+                spectrum.set_pk_growth_beta(block, i, j, "bin_bias", "b",
+                           self.z_pk, self.k_pk, self.pk_nl, self.growth_array, 
+                           self.f_of_z_pk, self.chi_pk, do_rsd=self.do_rsd)
+
+                c_ell = spectrum.compute(block, self.ell, i, j, 
+                                        relative_tolerance=self.relative_tolerance, 
+                                        absolute_tolerance=self.absolute_tolerance, 
+                                        do_extended_limber=self.do_extended_limber,
+                                        )
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
                 if self.get_kernel_peaks:
                     chi_peak, z_peak=spectrum.kernel_peak(block, i, j, self.a_of_chi)
@@ -519,6 +624,7 @@ class SpectrumCalculator(object):
     def execute(self, block):
         try:
             self.load_distance_splines(block)
+            self.load_matter_power(block, self.chi_of_z)
             try:
                 self.load_kernels(block)
             except NullSplineError:
