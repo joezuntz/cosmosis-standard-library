@@ -126,14 +126,19 @@ def free_power(power):
     except ct.ArgumentError as e:
         power.__del__()
 
-def load_power_growth_chi(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-2):
+def load_power_growth_chi(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-3):
     z,k,p = block.get_grid(section, z_name, k_name, p_name)
+    chi = chi_of_z(z)
+    growth_spline = growth_from_power(chi, k, p, k_growth)
+    power_spline = GSLSpline2d(chi, np.log(k), p.T, spline_type=BICUBIC)
+    return power_spline, growth_spline
+
+def growth_from_power(chi, k, p, k_growth):
+    "Get D(\chi) from power spectrum"
     growth_ind=np.where(k>k_growth)[0][0]
     growth_array = np.sqrt(np.divide(p[:,growth_ind], p[0,growth_ind], 
                     out=np.zeros_like(p[:,growth_ind]), where=p[:,growth_ind]!=0.))
-    chi = chi_of_z(z)
-    growth_spline = GSLSpline(chi, growth_array)
-    return GSLSpline2d(chi, np.log(k), p.T, spline_type=BILINEAR), growth_spline
+    return GSLSpline(chi, growth_array)
 
 def get_reduced_kernel(orig_kernel, d_of_chi):
     return lib.get_reduced_kernel(orig_kernel, d_of_chi)
