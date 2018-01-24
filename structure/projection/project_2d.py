@@ -4,7 +4,7 @@ import ctypes as ct
 import numpy as np
 import limber
 print limber.__file__
-from gsl_wrappers import GSLSpline, NullSplineError, GSLSpline2d, BILINEAR
+from gsl_wrappers import GSLSpline, NullSplineError, GSLSpline2d, BICUBIC
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
 import re
@@ -130,18 +130,26 @@ class Spectrum(object):
         return 0
 
 class NLGalSpectrum(Spectrum):
-
-    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None, bias_section="bias_b1b2bs_perbin"):
+    galaxy_power_section=names.galaxy_power
+    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None, 
+                        bias_section="bias_b1b2bs_perbin", use_galaxy_power=False):
         #read in P(k) stuff
-        self.z_pk,self.k_pk,self.P_nl = block.get_grid(names.matter_power_nl, "z", "k_h", "p_k")
+        if use_galaxy_power:
+            self.z_pk,self.k_pk,self.P_nl = block.get_grid(self.galaxy_power_section, "z", "k_h", "p_k")
+        else:
+            self.z_pk,self.k_pk,self.P_nl = block.get_grid(names.matter_power_nl, "z", "k_h", "p_k")
         self.Pd1d2=block["fastpt","Pd1d2_o"]
         self.Pd2d2=block["fastpt","Pd2d2_o"]
         self.Pd1s2=block["fastpt","Pd1s2_o"]
         self.Pd2s2=block["fastpt","Pd2s2_o"]
         self.Ps2s2=block["fastpt","Ps2s2_o"]
         self.sig4kz=block["fastpt", "sig4kz_o"]
-        for p in [self.Pd1d2,self.Pd2d2,self.Pd1s2,self.Pd2s2,self.Ps2s2,self.sig4kz]:
-            assert p.shape==self.P_nl.shape
+        for i,p in enumerate([self.Pd1d2,self.Pd2d2,self.Pd1s2,self.Pd2s2,self.Ps2s2,self.sig4kz]):
+            try:
+                 assert p.shape==self.P_nl.shape
+            except AssertionError as e:
+                print self.name,i,p.shape, self.P_nl.shape
+                raise e
         #Read in bias stuff
         self.b1s=[]
         self.b2s=[]
@@ -153,7 +161,7 @@ class NLGalSpectrum(Spectrum):
         self.chi_pk=chi_of_z(self.z_pk)
 
     def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
-        # Generate P(k)
+        # Generate P(k) and growth function
         P_gg = (self.b1s[bin1]*self.b1s[bin2]*self.P_nl
                 + (1./2)*(self.b1s[bin1]*self.b2s[bin2]+self.b1s[bin2]*self.b2s[bin1])*self.Pd1d2 
                 + (1./4)*self.b2s[bin1]*self.b2s[bin2]*(self.Pd2d2) 
@@ -161,7 +169,7 @@ class NLGalSpectrum(Spectrum):
                 + (1./4)*(self.b2s[bin1]*self.bss[bin2]+self.b2s[bin2]*self.bss[bin1])*(self.Pd2s2) 
                 + (1./4)*self.bss[bin1]*self.bss[bin2]*(self.Ps2s2))
         growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gg, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(k), p.T, spline_type=BICUBIC)
+        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gg.T, spline_type=BICUBIC)
         return power_spline, growth_spline
     """
     def compute(self, block, ell, bin1, bin2, relative_tolerance=1e-3, absolute_tolerance=0.):
@@ -183,30 +191,41 @@ class NLGalSpectrum(Spectrum):
         return c_ell
     """
     def clean_power_growth(self, P, D):
-        limber.free_power(P)
-        limber.free_growth(D)
-
+        #print("""WARNING: Not explicitly deleting P or D...I think this is ok as it is only used within"
+        #this class instance, so python will take care of it
+        #...but I could be wrong and it will cause a memory leak that will
+        #cause your computer to burst into flames, enveloping you and anyone within 12 feet.""")
+        return 0
 
 class NLGalShearSpectrum(NLGalSpectrum):
-    def get_power_growth(self, block, bin1, bin2):
+    galaxy_power_section=names.matter_galaxy_power
+    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
         # Generate P(k)
         P_gm = (self.b1s[bin1]*self.P_nl 
                 + (1./2)*self.b2s[bin1]*self.Pd1d2 
                 + (1./2)*self.bss[bin1]*self.Pd1s2
             )
         growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gm, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(k), P_gm.T, spline_type=BICUBIC)
+        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gm.T, spline_type=BICUBIC)
         return power_spline, growth_spline
 
 class NLGalIntrinsicSpectrum(NLGalSpectrum):
-    def get_power_growth(self, block, bin1, bin2):
-        # Generate P(k)
-        P_gI = (self.b1s[bin1]*self.P_nl 
-                + (1./2)*self.b2s[bin1]*self.Pd1d2 
-                + (1./2)*self.bss[bin1]*self.Pd1s2
-            )
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gm, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(k), P_gm.T, spline_type=BICUBIC)
+    galaxy_power_section=names.matter_intrinsic_power
+    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None, bias_section="bias_b1b2bs_perbin",
+        use_galaxy_power=False):
+        #read in P(k) stuff
+        self.z_pk,self.k_pk,self.P_nl = block.get_grid(names.matter_intrinsic_power, "z", "k_h", "p_k")
+        #Read in bias stuff
+        self.b1s=[]
+        for i in range(1,nbin1+1):
+            self.b1s.append(block[bias_section, "b_1_bin%s"%(i)])
+        self.chi_pk=chi_of_z(self.z_pk)
+
+    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
+        # Generate P(k) and growth function
+        P_gI = self.b1s[bin1]*self.P_nl 
+        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gI, k_growth)
+        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gI.T, spline_type=BICUBIC)
         return power_spline, growth_spline
 
 """
@@ -325,7 +344,7 @@ class SpectrumType(Enum):
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
-        power_spectrum = PowerType.matter
+        power_spectrum = PowerType.galaxy
         kernels = "N N"
         autocorrelation = True
         name = "galaxy_cl"
@@ -449,6 +468,10 @@ class SpectrumCalculator(object):
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
         self.do_extended_limber = options.get_bool(option_section, "do_extended_limber", False)
         self.do_rsd = options.get_bool(option_section, "do_rsd", False)
+        self.nl_bias_section = options.get_string(option_section, "nl_bias_section", "bias_b1b2bs_perbin")
+        #by default the nonlinearly biased spectra will start from the nonlinear matter power spectrum,
+        #but in some situations you may want them to start from galaxy_power/galaxy_matter_power instead:
+        self.use_galaxy_power = options.get_bool(option_section, "use_galaxy_power", False)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -701,7 +724,7 @@ class SpectrumCalculator(object):
             block[spectrum_name, 'nbin'] = na
         block[spectrum_name, 'nbin_a'] = na
         block[spectrum_name, 'nbin_b'] = nb
-        spectrum.prep_spectrum(block, self.chi_of_z, na, nbin2=nb)
+        spectrum.prep_spectrum(block, self.chi_of_z, na, nbin2=nb, use_galaxy_power=self.use_galaxy_power)
         for i in xrange(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
             #but save both orderings to the block to account for different ordering
@@ -754,9 +777,7 @@ class SpectrumCalculator(object):
                     print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
                 self.compute_spectra(block, spectrum)
         finally:
-            print 'calling clean'
-            #self.clean()
-            print 'called clean'
+            self.clean()
         return 0
 
 
