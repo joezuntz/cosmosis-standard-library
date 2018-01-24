@@ -44,6 +44,28 @@ typedef struct ExtIntegrandData{
     int ext_order;
 } ExtIntegrandData;
 
+typedef struct RSDIntegrandData{
+	double chimin;
+	double chimax;
+	double ell;
+	gsl_spline * GX;
+	gsl_spline * GY;
+	gsl_spline * HX;
+	gsl_spline * HY;
+    gsl_spline * D_chi;
+	gsl_spline2d * P;
+	gsl_interp_accel * accelerator_gx;
+	gsl_interp_accel * accelerator_gy;
+	gsl_interp_accel * accelerator_hx;
+	gsl_interp_accel * accelerator_hy;
+	gsl_interp_accel * accelerator_px;
+	gsl_interp_accel * accelerator_py;
+	gsl_interp_accel * accelerator_growth;
+    int ext_order;
+    int term;
+} RSDIntegrandData;
+
+
 
 // data that is passed into the integrator
 // This is everything we need to compute the
@@ -129,6 +151,135 @@ static double ext_limber_integrand(double chi, void * data_void)
 	return (result_0 + result_ext) * p ;
 }
 
+// the extended Limber integrand: 
+// P(nu/chi, chi) / ( chi * D^2(chi) ) * 
+// { Wr_X(chi) * Wr_Y(chi)  //normal Limber up to here
+// - 0.5 * chi^2/nu^2 * [Wr_X''(chi) * Wr_Y(chi) + Wr_Y''(chi) * Wr_X(chi)] } //extended part
+// where Wr_X(chi) is D(chi)*W_X(chi)/sqrt(chi).
+static double rsd_limber_integrand(double chi, void * data_void)
+{
+	RSDIntegrandData * data = (RSDIntegrandData*) data_void;
+	// Return 0 if outside range, for convenience.
+	// Important to ensure that ranges are wide enough.
+	if(chi < data->chimin || chi > data->chimax) return 0.0;
+
+	//Growth and power
+	double growth = gsl_spline_eval(data->D_chi, chi, data->accelerator_growth);
+	double ell = data->ell; 
+	double nu = ell+0.5;
+	double k = nu / chi;
+	double chi_over_nu2 = chi * chi / nu / nu;
+	// Get P(nu/chi, chi)
+	// Deactivate error handling 
+	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
+	double p;
+	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
+	// Restore the old error handler
+	gsl_set_error_handler(old_handler); 
+	if (status) 
+	{
+		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
+		return 0.0;
+	}
+
+	// Kernels G_X, G_Y
+	double gx, gy, g2x, g2y;
+	gx = gsl_spline_eval(data->GX,chi,data->accelerator_gx);
+	// A short-cut - if the two splines are the same we do not need to 
+	// do the interpolation twice
+	if (data->GX==data->GY) gy = gx;
+	else gy = gsl_spline_eval(data->GY,chi,data->accelerator_gy);
+	if (gx==0 || gy==0) return 0.0;
+	if (data->ext_order>0){
+		g2x = gsl_spline_eval_deriv2(data->GX,chi,data->accelerator_gx);
+		g2y = gsl_spline_eval_deriv2(data->GY,chi,data->accelerator_gy);
+	}	
+
+	// RSD kernels HX, HY etc.
+	double hx, hxm2, hxp2, h2x, h2xm2, h2xp2;
+	double hy, hym2, hyp2, h2y, h2ym2, h2yp2;
+	double rm2 = chi * (1-2./nu);
+	double rp2 = chi * (1+2./nu);
+
+	hx = gsl_spline_eval(data->HX,chi,data->accelerator_hx);
+	hy = gsl_spline_eval(data->HY,chi,data->accelerator_hy);
+	if (data->ext_order>0){
+		h2x = gsl_spline_eval_deriv2(data->HX,chi,data->accelerator_hx);
+		h2y = gsl_spline_eval_deriv2(data->HY,chi,data->accelerator_hy);
+	}
+
+	if (rp2 > data->chimax){
+		hxp2=0.;
+		hyp2=0.;
+		h2xp2=0.;
+		h2yp2=0.;
+	} 
+	else {
+		hxp2 = gsl_spline_eval(data->HX,rp2,data->accelerator_hx);
+		hyp2 = gsl_spline_eval(data->HY,rp2,data->accelerator_hy);
+		if (data->ext_order>0){
+			h2xp2 = gsl_spline_eval_deriv2(data->HX,rp2,data->accelerator_hx);
+			h2yp2 = gsl_spline_eval_deriv2(data->HY,rp2,data->accelerator_hy);
+		}
+	}	
+	if (rm2 < data->chimin){
+		hxm2=0.;
+		hym2=0.;
+		h2xm2=0.;
+		h2ym2=0.;
+	} 
+	else {
+		hxm2 = gsl_spline_eval(data->HX,rm2,data->accelerator_hx);
+		hym2 = gsl_spline_eval(data->HY,rm2,data->accelerator_hy);
+		if (data->ext_order>0){
+			h2xm2 = gsl_spline_eval_deriv2(data->HX,rm2,data->accelerator_hx);
+			h2ym2 = gsl_spline_eval_deriv2(data->HY,rm2,data->accelerator_hy);
+		}
+	}
+
+	double term_0 = 0.;
+	double term_1 = 0.;
+	double term_2 = 0.;
+	double term_3 = 0.;
+
+	double L_0 = ( 2*ell*ell + 2*ell -1 ) / ( ( 2*ell + 3 ) * ( 2*ell -1 ) );
+	double L_1 = - ( ell * ( ell - 1 ) ) / ( ( 2*ell + 1 ) * ( 2*ell - 1 ) );
+	double L_2 = - ( ( ell + 2 ) * ( ell + 1 ) ) / ( ( 2*ell + 1 ) * ( 2*ell + 3 ) );
+
+	if ((data->term == 0) || (data->term < 0))
+	{
+		term_0 = gx * gy ;
+		if (data->ext_order>0){
+			term_0 += -0.5 * chi_over_nu2 * (gx * g2y + gy * g2x);
+		}
+	}
+	if ((data->term == 1) || (data->term<0)){
+		term_1 = gx * ( L_0 * hy + L_1 * hym2 + L_2 * hyp2);
+		if (data->ext_order>0){
+			term_1 += -0.5 * chi_over_nu2 * ( gx * ( L_0 * h2y + L_1 * h2ym2 + L_2 * h2yp2)
+			+ g2x * ( L_0 * hy + L_1 * hym2 + L_2 * hyp2) );
+		}
+	}
+	if ((data->term == 2) || (data->term<0)){
+		term_2 = gy * ( L_0 * hx + L_1 * hxm2 + L_2 * hxp2);
+		if (data->ext_order>0){
+			term_1 += -0.5 * chi_over_nu2 * ( gy * ( L_0 * h2x + L_1 * h2xm2 + L_2 * h2xp2)
+			+ g2y * ( L_0 * hx + L_1 * hxm2 + L_2 * hxp2) );
+		}
+	}
+	if ((data->term==3) || (data->term<0)){
+		term_3 = ( L_0 * hx + L_1 * hxm2 + L_2 * hxp2) * ( L_0 * hy + L_1 * hym2 + L_2 * hyp2);
+		if (data->ext_order>0){
+			term_3 += -0.5 * chi_over_nu2 * ( ( L_0 * hx + L_1 * hxm2 + L_2 * hxp2) * 
+											  ( L_0 * h2y + L_1 * h2ym2 + L_2 * h2yp2)
+											+ ( L_0 * hy + L_1 * hym2 + L_2 * hyp2) * 
+											  ( L_0 * h2x + L_1 * h2xm2 + L_2 * h2xp2)  );
+		}
+	}
+	double all_terms = term_0 + term_1 + term_2 + term_3;
+	double result = all_terms * p / ( chi * growth * growth );
+	return result;
+}
 
 double get_kernel_peak(gsl_spline * WX, gsl_spline * WY, int n_chi)
 {
@@ -406,3 +557,140 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	// And that's it
 	return 0;
 }
+
+// The only function in this little library callable from the outside
+// world.  The limber_config structure is defined in limber.h but is fairly
+// obvious.  The splines and the interpolator need to be functions of 
+// chi NOT z.
+int limber_integral_rsd(limber_config * config, gsl_spline * GX, 
+			       gsl_spline * GY, gsl_spline * HX, gsl_spline * HY, 
+			       gsl_spline2d * P, gsl_spline * D_chi,
+			       int ext_order, int term, double * cl_out)
+{
+    config->status = LIMBER_STATUS_ERROR;
+    int any_parameter_error=0;
+    if (GX==NULL){
+        fprintf(stderr, "NULL WX parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (GY==NULL){
+        fprintf(stderr, "NULL WY parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (HX==NULL){
+        fprintf(stderr, "NULL WX parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (HY==NULL){
+        fprintf(stderr, "NULL WY parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (P==NULL){
+        fprintf(stderr, "NULL P parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (D_chi==NULL){
+        fprintf(stderr, "NULL D_chi parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (config->n_ell<0){
+        fprintf(stderr, "Negative n_ell parameter in limber_integral\n");
+        any_parameter_error = 1;
+    }
+    if (any_parameter_error){
+        return 1;
+    }
+
+	config->status = LIMBER_STATUS_OK;
+
+    static int n_ell_zero_warning = 0;
+    if (config->n_ell==0){
+        if (n_ell_zero_warning==0){
+            fprintf(stderr, "Warning: n_ell=0 in Limber. Will not be treated as an error. Warning once only per process.\n");
+        }
+        n_ell_zero_warning = 1;
+        return 1;
+    }
+
+	// Get the appropriate ranges over which to integrate
+	// It is assumed that (at least one of) the kernel
+	// splines should go to zero in some kind of reasonable
+	// place, so we just use the range they specify
+	RSDIntegrandData data;
+	double chimin_x = limber_gsl_spline_min_x(GX);
+	double chimin_y = limber_gsl_spline_min_x(GY);
+	double chimax_x = limber_gsl_spline_max_x(GX);
+	double chimax_y = limber_gsl_spline_max_x(GY);
+	double c_ell, error;
+
+	// Workspaces for the main and falback integrators.
+	// Static, so only allocated once as it has a fixed size.
+	setup_integration_workspaces();
+
+	double reltol = config->relative_tolerance;
+	double abstol = config->absolute_tolerance;
+
+	// Take the smallest range since we want both the
+	// splines to be valid there.
+	// This range as well as all the data needed to compute
+	// the integrand is put into a struct to be passed
+	// through the integrator to the function above.
+	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
+	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
+	data.GX = GX;
+	data.GY = GY;
+	data.HX = HX;
+	data.HY = HY;
+	data.P = P;
+	data.accelerator_gx = gsl_interp_accel_alloc();
+	data.accelerator_gy = gsl_interp_accel_alloc();
+	data.accelerator_hx = gsl_interp_accel_alloc();
+	data.accelerator_hy = gsl_interp_accel_alloc();
+	data.accelerator_px = gsl_interp_accel_alloc();
+	data.accelerator_py = gsl_interp_accel_alloc();
+	data.accelerator_growth = gsl_interp_accel_alloc();
+	data.D_chi = D_chi;
+	data.ext_order = ext_order;
+	data.term = term;
+
+	// Set up the workspace and inputs to the integrator.
+	// Not entirely sure what the table is.
+	gsl_function F;
+	F.function = rsd_limber_integrand;
+	F.params = &data;
+
+	// save ell values for return
+	double ell_vector[config->n_ell];
+
+	// loop through ell values according to the input configuration
+	for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
+		double ell = config->ell[i_ell];
+		data.ell=ell;
+
+		// Perform the main integration.
+		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+			abstol, reltol, &c_ell, &error);
+		//Include the prefactor scaling
+		c_ell *= config->prefactor;
+		// Record the results into arrays
+		cl_out[i_ell] = c_ell;
+		ell_vector[i_ell] = ell;
+	}
+
+	// Tidy up
+	gsl_interp_accel_free(data.accelerator_gx);
+	gsl_interp_accel_free(data.accelerator_gy);
+	gsl_interp_accel_free(data.accelerator_hx);
+	gsl_interp_accel_free(data.accelerator_hy);
+	gsl_interp_accel_free(data.accelerator_px);
+	gsl_interp_accel_free(data.accelerator_py);
+	gsl_interp_accel_free(data.accelerator_growth);
+
+	// These two are not deallocated because they are static and only initialized once.
+	// gsl_integration_glfixed_table_free(table);	
+	// gsl_integration_workspace_free(W);
+
+	// And that's it
+	return 0;
+}
+
