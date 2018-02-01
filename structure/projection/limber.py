@@ -141,10 +141,10 @@ def growth_from_power(chi, k, p, k_growth):
     return GSLSpline(chi, growth_array)
 
 def get_reduced_kernel(orig_kernel, d_of_chi):
-    return lib.get_reduced_kernel(orig_kernel, d_of_chi)
+    return GSLSpline(lib.get_reduced_kernel(orig_kernel, d_of_chi))
 
 def get_reduced_kernel(orig_kernel, d_of_chi):
-    return lib.get_reduced_kernel(orig_kernel, d_of_chi)
+    return GSLSpline(lib.get_reduced_kernel(orig_kernel, d_of_chi))
 
 def get_named_nchi_spline(block, section, nbin, z, a_of_chi, chi_of_z):
     return GSLSpline(lib.get_named_nchi_spline(block._ptr, section, nbin, z, a_of_chi, chi_of_z))
