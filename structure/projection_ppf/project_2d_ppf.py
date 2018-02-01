@@ -37,22 +37,9 @@ class SpectrumCalculatorPPF(SpectrumCalculator):
         super(SpectrumCalculatorPPF, self).__init__(options)
 
     def load_ppf_power(self, block):
-        # First load in the field D(k,z) which describes phi-psi
-        MG_D = limber.load_power_chi(
-            block, self.chi_of_z, names.post_friedmann_parameters, "k_h", "z", "D")
-
-        # Make a function that will apply a scale to P(k,z) as
-        # we load it in.
-        @limber.c_power_scaling_function
-        def shear_shear_mg_scaling(k, z, P, args):
-            D = limber.evaluate_power(MG_D, k, z)
-            if D == 0.0:
-                return P
-            else:
-                return P * D**2
-        return limber.load_power_chi_function(
-            block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k",
-            shear_shear_mg_scaling, None)
+        for powerType in self.req_power:
+            self.power[powerType], self.growth[powerType] = load_power_growth_chi_ppf(
+                block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k")
 
     def load_power(self, block):
         for powerType in self.req_power:
@@ -60,14 +47,38 @@ class SpectrumCalculatorPPF(SpectrumCalculator):
             if powerType == PowerTypePPF.ppf_modified_matter:
                 powerInterp = self.load_ppf_power(block)
             else:
-                powerInterp = limber.load_power_chi(
-                    block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
+                powerInterp = super(SpectrumCalculatorPPF,self).load_power()
             self.power[powerType] = powerInterp
 
 
 def setup(options):
+    raise ValueError("Sorry - this module is broken.")
     return SpectrumCalculatorPPF(options)
 
 
 def execute(block, config):
     return config.execute(block)
+
+
+
+def load_power_growth_chi_ppf(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-3):
+    z,k,p = block.get_grid(section, z_name, k_name, p_name)
+    z1,k1,D = block.get_grid(names.post_friedmann_parameters, "z", "k_h", "D")
+
+    chi = chi_of_z(z)
+    growth_spline = limber.growth_from_power(chi, k, p, k_growth)
+
+    # Map the  D values onto the same k points as our P values
+    # Doesn't currently work because we need to extrapolate D(k) in general.
+    chi1 = chi_of_z(z1)
+    D_spline = limber.GSLSpline2d(chi1, np.log(k1), D.T, spline_type=limber.BICUBIC)
+    D_values = np.zeros_like(p)
+    for i in xrange(len(z)):
+        D_i = D_spline(chi, np.log(k[i]))
+        D_values[:,i] = D_i
+
+
+    # Multiply by the D scaling factor.
+    p *= D_values
+    power_spline = limber.GSLSpline2d(chi, np.log(k), p.T, spline_type=limber.BICUBIC)
+    return power_spline, growth_spline
