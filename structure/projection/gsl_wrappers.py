@@ -115,7 +115,7 @@ class GSLSpline(object):
 
 class GSLSpline2d(object):
     def __init__(self, x, y=None, Z=None, spline_type=BILINEAR):
-        if (y is None) and (z is None):
+        if (y is None) and (Z is None):
             self._ptr=x
             if x is None:
                 raise NullSplineError("Tried to wrap a null pointer in GSLSpline")

@@ -89,9 +89,9 @@ def load_power_growth_chi_ppf(block, chi_of_z, section, k_name, z_name, p_name, 
         # Evaluate at all chi points
         D_i = D_spline(chi, logk)
         D_values[:,i] = D_i
-    np.savetxt("D.txt", D_values)
+
     # Multiply by the D scaling factor.
-    p *= D_values
+    p *= D_values**2
     power_spline = limber.GSLSpline2d(chi, np.log(k), p.T, spline_type=limber.BICUBIC)
 
     return power_spline, growth_spline
