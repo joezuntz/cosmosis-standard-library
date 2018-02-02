@@ -35,24 +35,24 @@ class SpectrumCalculatorPPF(SpectrumCalculator):
 
     def __init__(self, options):
         super(SpectrumCalculatorPPF, self).__init__(options)
+        self.flatten_k = options.get_bool(option_section, "flatten_k", False)
 
     def load_ppf_power(self, block):
         for powerType in self.req_power:
             self.power[powerType], self.growth[powerType] = load_power_growth_chi_ppf(
-                block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k")
+                block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k", self.flatten_k)
 
     def load_power(self, block):
         for powerType in self.req_power:
             # Here we detail the ways we have to modify
             if powerType == PowerTypePPF.ppf_modified_matter:
-                powerInterp = self.load_ppf_power(block)
+                self.load_ppf_power(block)
             else:
-                powerInterp = super(SpectrumCalculatorPPF,self).load_power()
-            self.power[powerType] = powerInterp
+                super(SpectrumCalculatorPPF,self).load_power()
 
 
 def setup(options):
-    raise ValueError("Sorry - this module is broken.")
+    # raise ValueError("Sorry - this module is broken.")
     return SpectrumCalculatorPPF(options)
 
 
@@ -61,24 +61,37 @@ def execute(block, config):
 
 
 
-def load_power_growth_chi_ppf(block, chi_of_z, section, k_name, z_name, p_name, k_growth=1.e-3):
+def load_power_growth_chi_ppf(block, chi_of_z, section, k_name, z_name, p_name, flatten_k, k_growth=1.e-3):
     z,k,p = block.get_grid(section, z_name, k_name, p_name)
     z1,k1,D = block.get_grid(names.post_friedmann_parameters, "z", "k_h", "D")
 
+    # Make a growth function spline
     chi = chi_of_z(z)
     growth_spline = limber.growth_from_power(chi, k, p, k_growth)
 
     # Map the  D values onto the same k points as our P values
-    # Doesn't currently work because we need to extrapolate D(k) in general.
+    # Make an interpolator for D(chi,logk)
     chi1 = chi_of_z(z1)
     D_spline = limber.GSLSpline2d(chi1, np.log(k1), D.T, spline_type=limber.BICUBIC)
+    # k value our interpolator goes up to
+    logk1_max = np.log(k1.max())
+
+    # Array on same grid as our P(chi, k) that we will fill in 
     D_values = np.zeros_like(p)
-    for i in xrange(len(z)):
-        D_i = D_spline(chi, np.log(k[i]))
+
+    # For each k value 
+    for i,ki in enumerate(k):
+        logk = np.log(k[i])
+        # If outside range then maybe flatten to max value
+        if flatten_k and (logk>logk1_max):
+            logk = logk1_max
+
+        # Evaluate at all chi points
+        D_i = D_spline(chi, logk)
         D_values[:,i] = D_i
-
-
+    np.savetxt("D.txt", D_values)
     # Multiply by the D scaling factor.
     p *= D_values
     power_spline = limber.GSLSpline2d(chi, np.log(k), p.T, spline_type=limber.BICUBIC)
+
     return power_spline, growth_spline
