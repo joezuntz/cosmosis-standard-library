@@ -100,12 +100,13 @@ def setup(options):
     dz = options.get_double(option_section, "dz", default=0.01)
     zmax = options.get_double(option_section, "zmax", default=4.0)
     nbin = options.get_int(option_section, "nbin")
-    return (dz, zmax, nbin)
+    in_section = options.get_string(option_section, "input_section", default=section_names.number_density_params)
+    out_section = options.get_string(option_section, "output_section", default=section_names.wl_number_density)
+    return (dz, zmax, nbin, in_section, out_section)
 
 
 def execute(block, config):
-    (dz, zmax, nbin) = config
-    params = section_names.number_density_params
+    (dz, zmax, nbin, params, nz_section) = config
     alpha = block[params, "alpha"]
     beta = block[params, "beta"]
     z0 = block[params, "z0"]
@@ -120,7 +121,6 @@ def execute(block, config):
     edges, bins = compute_nz(alpha, beta, z0, z, nbin, sigma_z, ngal, bias)
 
     # Save the results
-    nz_section = section_names.wl_number_density
     block[nz_section, "nbin"] = nbin
     block[nz_section, "nz"] = len(z)
     block[nz_section, "z"] = z
