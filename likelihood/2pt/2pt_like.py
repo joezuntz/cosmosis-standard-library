@@ -125,7 +125,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             self.two_point_data.choose_data_sets(data_sets)
 
         # The ones we actually used.
-        used_names = [
+        self.used_names = [
             spectrum.name for spectrum in self.two_point_data.spectra]
 
         # Check for scale cuts. In general, this is a minimum and maximum angle for
@@ -133,7 +133,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         # but what can you do?
 
         scale_cuts = {}
-        for name in used_names:
+        for name in self.used_names:
             s = self.two_point_data.get_spectrum(name)
             for b1, b2 in s.bin_pairs:
                 option_name = "angle_range_{}_{}_{}".format(name, b1, b2)
@@ -145,7 +145,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         # example:
         # cut_wtheta = 1,2  1,3  2,3
         bin_cuts = []
-        for name in used_names:
+        for name in self.used_names:
             s = self.two_point_data.get_spectrum(name)
             option_name = "cut_{}".format(name)
             if self.options.has_value(option_name):
@@ -169,7 +169,7 @@ class TwoPointLikelihood(GaussianLikelihood):
                 data_points = len(self.two_point_data.get_spectrum(name))
             else:
                 data_points = 0
-            if name in used_names:
+            if name in self.used_names:
                 print("    - {}  {} data points after cuts {}".format(name,  data_points, "  [using in likelihood]"))
                 total_data_points += data_points
             else:
