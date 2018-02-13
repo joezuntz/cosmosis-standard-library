@@ -89,7 +89,7 @@ class Spectrum(object):
         #Need to move this so that it references a particular
         #galaxy sample not the generic galaxy_luminosity_function
         alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
-        return 2*alpha[bin]-1
+        return 2*(alpha[bin]-1)
 
 
     def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3, 
