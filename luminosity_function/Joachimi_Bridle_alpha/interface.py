@@ -20,9 +20,15 @@ def setup(options):
         binned_alpha = options[option_section, "binned_alpha"]
     except:
         binned_alpha = True
+    try:
+        sample = options[option_section, "sample"]
+    except:
+        sample = 'wl_number_density'
 
     config = {'method': method, 'mag_lim': mag_lim,
-              'use_binned_alpha': binned_alpha}
+              'use_binned_alpha': binned_alpha,
+              'sample':sample
+              }
     return config
 
 
@@ -33,13 +39,14 @@ def execute(block, config):
 
     method = config['method']
     mag_lim = config['mag_lim']
+    sample = config['sample']
 
     # Obtain the fine grid points and limits for the redshift from the datablock
     # If the information isn't there already, set these parameters to sensible values
     try:
-        Nz = block[names.wl_number_density, 'nz']
-        nzbin = block[names.wl_number_density, 'nbin']
-        zmax = block[names.wl_number_density, 'edge_%d' % (nzbin + 1)]
+        Nz = block[sample, 'nz']
+        nzbin = block[sample, 'nbin']
+        zmax = block[sample, 'edge_%d' % (nzbin + 1)]
     except:
         Nz = 500
         zmax = 3.0
@@ -54,7 +61,7 @@ def execute(block, config):
     # If required then interpolate alpha(z,rlim) to the mean values in each of the specified redshift bins
     use_binned_alpha = config['use_binned_alpha']
     if use_binned_alpha:
-        alpha_bin, z_bar = luminosity.get_binned_alpha(block, alpha, z)
+        alpha_bin, z_bar = luminosity.get_binned_alpha(block, alpha, z, sample)
 
         # Then write these to the datablock
         block.put_double_array_1d(lum, 'alpha_binned', alpha_bin)
