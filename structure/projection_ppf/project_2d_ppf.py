@@ -37,18 +37,15 @@ class SpectrumCalculatorPPF(SpectrumCalculator):
         super(SpectrumCalculatorPPF, self).__init__(options)
         self.flatten_k = options.get_bool(option_section, "flatten_k", False)
 
-    def load_ppf_power(self, block):
-        for powerType in self.req_power:
-            self.power[powerType], self.growth[powerType] = load_power_growth_chi_ppf(
-                block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k", self.flatten_k)
-
     def load_power(self, block):
         for powerType in self.req_power:
             # Here we detail the ways we have to modify
             if powerType == PowerTypePPF.ppf_modified_matter:
-                self.load_ppf_power(block)
+                self.power[powerType], self.growth[powerType] = load_power_growth_chi_ppf(
+                    block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k", self.flatten_k)
             else:
-                super(SpectrumCalculatorPPF,self).load_power()
+                self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
+                    block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
 
 
 def setup(options):
