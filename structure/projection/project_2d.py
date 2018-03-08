@@ -404,7 +404,7 @@ class SpectrumType(Enum):
         kernels = "W W"
         autocorrelation = False
         name = "magnification_shear_cl"
-        prefactor_power = 1
+        prefactor_power = 2
         magnification_prefactors = (1,)
 
     class ShearCmbkappa(Spectrum):
