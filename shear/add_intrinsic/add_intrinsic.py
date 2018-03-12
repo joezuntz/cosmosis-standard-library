@@ -32,6 +32,7 @@ def setup(options):
         "shear_shear_bb": "shear_cl_bb" + suffix,
         "shear_shear_gg": "shear_cl_gg" + suffix,
         "galaxy_shear": "galaxy_shear_cl" + suffix,
+        "shear_intrinsic": "shear_cl_gi" + suffix,
         "galaxy_intrinsic": "galaxy_intrinsic_cl"  + suffix,
         "intrinsic_intrinsic": "shear_cl_ii"  + suffix,
         "intrinsic_intrinsic_bb": "shear_cl_ii_bb"  + suffix,
@@ -49,6 +50,7 @@ def execute(block, config):
     shear_shear_gg = sec_names['shear_shear']
     galaxy_shear = sec_names['galaxy_shear']
     galaxy_intrinsic = sec_names['galaxy_intrinsic']
+    shear_intrinsic = sec_names['shear_intrinsic']
     parameters = sec_names['parameters']
     intrinsic_intrinsic = sec_names['intrinsic_intrinsic']
     intrinsic_intrinsic_bb = sec_names['intrinsic_intrinsic_bb']
@@ -78,9 +80,8 @@ def execute(block, config):
                 block[shear_shear_gg, bin_ij] = block[shear_shear, bin_ij]
                 block[shear_shear, bin_ij] += (
                     A[i] * A[j] * block[intrinsic_intrinsic, bin_ij]  # II
-                    + A[j] * block[galaxy_intrinsic,
-                                   bin_ij]  # The two GI terms
-                    + A[i] * block[galaxy_intrinsic, bin_ji]
+                    + A[j] * block[shear_intrinsic, bin_ij]  # The two GI terms
+                    + A[i] * block[shear_intrinsic, bin_ji]
                 )
                 if block.has_section(intrinsic_intrinsic_bb):
                     block[shear_shear_bb, bin_ij] = block[intrinsic_intrinsic_bb, bin_ij]
