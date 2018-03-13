@@ -16,7 +16,7 @@ def setup(options):
 def execute(block, config):
     # Get the names of the sections to save to
     suffix = config['suffix']
-    ia_section = names.intrinsic_alignment_parameters
+    ia_section = names.intrinsic_alignment_parameters + suffix
     ia_ii = names.intrinsic_power + suffix
     ia_mi = names.matter_intrinsic_power + suffix
 

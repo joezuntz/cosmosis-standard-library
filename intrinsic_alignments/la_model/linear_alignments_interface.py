@@ -31,7 +31,7 @@ def execute(block, config):
     # load z_lin, k_lin, P_lin, z_nl, k_nl, P_nl, C1, omega_m, H0
     lin = names.matter_power_lin
     nl = names.matter_power_nl
-    ia = names.intrinsic_alignment_parameters
+    ia = names.intrinsic_alignment_parameters + suffix
     ia_ii = names.intrinsic_power + suffix
     ia_gi = names.galaxy_intrinsic_power + suffix
     ia_mi = names.matter_intrinsic_power + suffix
@@ -42,7 +42,7 @@ def execute(block, config):
     z_nl, k_nl, p_nl = block.get_grid(nl, "z", "k_h", "p_k")
 
     omega_m = block[cosmo, "omega_m"]
-    A = block[ia, "A" + suffix]
+    A = block[ia, "A"]
 
     # run computation and write to datablock
     if method == 'krhb':
