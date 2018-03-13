@@ -3,7 +3,6 @@ import os
 import ctypes as ct
 import numpy as np
 import limber
-print limber.__file__
 from gsl_wrappers import GSLSpline, NullSplineError, GSLSpline2d, BICUBIC
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
@@ -310,9 +309,9 @@ class SpectrumCalculator(object):
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
-        print "Will project these spectra into 2D:"
+        print("Will project these spectra into 2D:")
         for spectrum in self.req_spectra:
-            print "    - ", spectrum.get_name()
+            print("    - ", spectrum.get_name())
 
         #Decide which kernels we will need to save.
         #The overall split is into A and B, the two samples we are correlating into.
@@ -424,7 +423,6 @@ class SpectrumCalculator(object):
                     #The self in the line below is not a mistake - the source objects
                     #for the spectrum class is the SpectrumCalculator itself
                     power3D = spectrum.power_3d_type(power_suffix)
-                    print(power3D, power3D.section_name, power_suffix)
                     self.req_power.add(power3D)
                     self.req_spectra.append(spectrum(self, power3D, kernel_a, kernel_b, save_name))
                     print("Calculating Limber: Kernel 1 = {}, Kernel 2 = {}, P_3D = {} --> Output: {}".format(
@@ -436,20 +434,20 @@ class SpectrumCalculator(object):
 
         #If no other spectra are specified, just do the shear-shear spectrum.
         if not any_spectra_option_found:
-            print
-            print "No spectra requested in the parameter file so I will "
-            print "Assume you just want shear-shear, because it's the best one."
-            print
+            print()
+            print("No spectra requested in the parameter file so I will ")
+            print("Assume you just want shear-shear, because it's the best one.")
+            print()
             power3D = self.spectrumType.ShearShear.power_3d_type()
             shear_shear = self.spectrumType.ShearShear.value(self, power3D)
             self.req_spectra.append(shear_shear)
             self.req_power.append(power3D)
         elif not self.req_spectra:
-            print
-            print "You switched off all the spectra in the parameter file" 
-            print "for project_2d.  I will go along with this and just do nothing,"
-            print "but if you get a crash later this is probably why."
-            print
+            print()
+            print("You switched off all the spectra in the parameter file")
+            print("for project_2d.  I will go along with this and just do nothing,")
+            print("but if you get a crash later this is probably why.")
+            print()
 
     def load_distance_splines(self, block):
         #Extract some useful distance splines
@@ -504,7 +502,7 @@ class SpectrumCalculator(object):
             assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
             #Load in the new kernel
             if self.verbose:
-                print "Loading kernel", kernel_name
+                print("Loading kernel", kernel_name)
             self.load_kernel(block, kernel_name, kernel_dict)
 
         #We are always using two kernels, which we call A and B
@@ -519,7 +517,7 @@ class SpectrumCalculator(object):
             if kernel_name in self.kernels_A:
             #Loop through all the loaded N(z), W(z)
                 if self.verbose:
-                    print "Already calculated ", kernel_name
+                    print("Already calculated ", kernel_name)
                 for i,kernel in self.kernels_A[kernel_name].items():
                     kernel_dict[i] = kernel
             else:
@@ -634,7 +632,7 @@ class SpectrumCalculator(object):
             self.load_power(block)
             for spectrum in self.req_spectra:
                 if self.verbose:
-                    print "Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name())
+                    print("Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name()))
                 self.compute_spectra(block, spectrum)
         finally:
             self.clean()
