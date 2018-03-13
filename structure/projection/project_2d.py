@@ -11,19 +11,61 @@ import re
 import sys
 import scipy.interpolate as interp
 
-class PowerType(Enum):
-    matter = "matter_power_nl" #special case
-    galaxy = "galaxy_power"
-    intrinsic = "intrinsic_power"
-    intrinsic_bb = "intrinsic_power_bb"
-    matter_galaxy = "matter_galaxy_power"
-    matter_intrinsic = "matter_intrinsic_power"
-    galaxy_intrinsic = "galaxy_intrinsic_power"
+class Power3D(object):
+    """
+    Class representing the 3D power spectrum that enters the Limber calculation.
+    Most Power spectra are source-specific, like intrinsic alignments and galaxy
+    density.  Others are generic, like matter_power (linear and nonlinear)
+
+    """
+    # Must specify these:
+    # section = "?????"
+    # source_specific = None
+    def __init__(self, suffix=""):
+        if self.source_specific:
+            self.section_name = self.section + suffix
+        else:
+            self.section_name = self.section
+    def __hash__(self):
+        return hash(self.section_name)
+
+class MatterPower3D(Power3D):
+    section = "matter_power_nl"
+    source_specific = False
+
+class LinearMatterPower3D(Power3D):
+    section = "matter_power"
+    source_specific = False
+
+class GalaxyPower3D(Power3D):
+    section = "galaxy_power"
+    source_specific = True
+
+class IntrinsicPower3D(Power3D):
+    section = "intrinsic_power"
+    source_specific = True
+
+class IntrinsicBBPower3D(Power3D):
+    section = "intrinsic_power_bb"
+    source_specific = True
+
+class MatterGalaxyPower3D(Power3D):
+    section = "matter_galaxy_power"
+    source_specific = True
+
+class MatterIntrinsicPower3D(Power3D):
+    section = "matter_intrinsic_power"
+    source_specific = True
+
+class GalaxyIntrinsicPower3D(Power3D):
+    section = "galaxy_intrinsic_power"
+    source_specific = True
+
 
 class Spectrum(object):
     autocorrelation = False
     #These should make it more obvious if the values are not overwritten by subclasses
-    power_spectrum = "?"
+    power_3d_type = "?"
     kernels = "??"
     name = "?"
     prefactor_power = np.nan
@@ -32,10 +74,11 @@ class Spectrum(object):
     #then subclasses should include 1 and/or 2 in this.
     magnification_prefactors = {}
 
-    def __init__(self, source, sample_a=names.wl_number_density, 
+    def __init__(self, source, power_3d, sample_a=names.wl_number_density, 
                  sample_b=names.wl_number_density, save_name=""):
         #caches of n(z), w(z), P(k,z), etc.
         self.source = source
+        self.power_3d = power_3d
         self.sample_a = sample_a
         self.sample_b = sample_b
         self.save_name=save_name
@@ -111,7 +154,7 @@ class Spectrum(object):
         return c_ell
 
     def get_power_growth(self, block, bin1, bin2):
-        return self.source.power[self.power_spectrum], self.source.growth[self.power_spectrum]
+        return self.source.power[self.power_3d], self.source.growth[self.power_3d]
 
     def clean_power_growth(self, P, D):
         #This gets done later for the base class
@@ -129,184 +172,6 @@ class Spectrum(object):
         #no prep required for base class
         return 0
 
-class NLGalSpectrum(Spectrum):
-    galaxy_power_section=names.galaxy_power
-    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None, 
-                        bias_section="bias_b1b2bs_perbin", use_galaxy_power=False):
-        #read in P(k) stuff
-        if use_galaxy_power:
-            self.z_pk,self.k_pk,self.P_nl = block.get_grid(self.galaxy_power_section, "z", "k_h", "p_k")
-        else:
-            self.z_pk,self.k_pk,self.P_nl = block.get_grid(names.matter_power_nl, "z", "k_h", "p_k")
-        self.Pd1d2=block["fastpt","Pd1d2_o"]
-        self.Pd2d2=block["fastpt","Pd2d2_o"]
-        self.Pd1s2=block["fastpt","Pd1s2_o"]
-        self.Pd2s2=block["fastpt","Pd2s2_o"]
-        self.Ps2s2=block["fastpt","Ps2s2_o"]
-        self.sig4kz=block["fastpt", "sig4kz_o"]
-        for i,p in enumerate([self.Pd1d2,self.Pd2d2,self.Pd1s2,self.Pd2s2,self.Ps2s2,self.sig4kz]):
-            try:
-                 assert p.shape==self.P_nl.shape
-            except AssertionError as e:
-                print self.name,i,p.shape, self.P_nl.shape
-                raise e
-        #Read in bias stuff
-        self.b1s=[]
-        self.b2s=[]
-        self.bss=[]
-        for i in range(1,nbin1+1):
-            self.b1s.append(block[bias_section, "b_1_bin%s"%(i)])
-            self.b2s.append(block[bias_section, "b_2_bin%s"%(i)])
-            self.bss.append(block[bias_section, "b_s_bin%s"%(i)])
-        self.chi_pk=chi_of_z(self.z_pk)
-
-    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
-        # Generate P(k) and growth function
-        P_gg = (self.b1s[bin1]*self.b1s[bin2]*self.P_nl
-                + (1./2)*(self.b1s[bin1]*self.b2s[bin2]+self.b1s[bin2]*self.b2s[bin1])*self.Pd1d2 
-                + (1./4)*self.b2s[bin1]*self.b2s[bin2]*(self.Pd2d2) 
-                + (1./2)*(self.b1s[bin1]*self.bss[bin2]+self.b1s[bin2]*self.bss[bin1])*self.Pd1s2 
-                + (1./4)*(self.b2s[bin1]*self.bss[bin2]+self.b2s[bin2]*self.bss[bin1])*(self.Pd2s2) 
-                + (1./4)*self.bss[bin1]*self.bss[bin2]*(self.Ps2s2))
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gg, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gg.T, spline_type=BICUBIC)
-        return power_spline, growth_spline
-    """
-    def compute(self, block, ell, bin1, bin2, relative_tolerance=1e-3, absolute_tolerance=0.):
-        # Get the required kernels
-        # maybe get from rescaled version of existing spectra
-        P = self.get_power(block, bin1, bin2)
-        K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
-        K2 = self.source.kernels_B[self.kernels[-1] +
-                                   "_" + self.sample_b][bin2]
-
-        # The spline is done in log space if the spectrum never goes
-        # negative, otherwise linear space.
-        xlog = ylog = self.autocorrelation
-        # Generate a spline
-        c_ell = limber.limber(K1, K2, P, xlog, ylog, ell, self.prefactor(block, bin1, bin2),
-                              rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
-        #clean power
-        limber.free_power(P)
-        return c_ell
-    """
-    def clean_power_growth(self, P, D):
-        #print("""WARNING: Not explicitly deleting P or D...I think this is ok as it is only used within"
-        #this class instance, so python will take care of it
-        #...but I could be wrong and it will cause a memory leak that will
-        #cause your computer to burst into flames, enveloping you and anyone within 12 feet.""")
-        return 0
-
-class NLGalShearSpectrum(NLGalSpectrum):
-    galaxy_power_section=names.matter_galaxy_power
-    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
-        # Generate P(k)
-        P_gm = (self.b1s[bin1]*self.P_nl 
-                + (1./2)*self.b2s[bin1]*self.Pd1d2 
-                + (1./2)*self.bss[bin1]*self.Pd1s2
-            )
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gm, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gm.T, spline_type=BICUBIC)
-        return power_spline, growth_spline
-
-class NLGalIntrinsicSpectrum(NLGalSpectrum):
-    galaxy_power_section=names.matter_intrinsic_power
-    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None, bias_section="bias_b1b2bs_perbin",
-        use_galaxy_power=False):
-        #read in P(k) stuff
-        self.z_pk,self.k_pk,self.P_nl = block.get_grid(names.matter_intrinsic_power, "z", "k_h", "p_k")
-        #Read in bias stuff
-        self.b1s=[]
-        for i in range(1,nbin1+1):
-            self.b1s.append(block[bias_section, "b_1_bin%s"%(i)])
-        self.chi_pk=chi_of_z(self.z_pk)
-
-    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
-        # Generate P(k) and growth function
-        P_gI = self.b1s[bin1]*self.P_nl 
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gI, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gI.T, spline_type=BICUBIC)
-        return power_spline, growth_spline
-
-"""
-class CountRsdCountRsdSpectrum(Spectrum):
-
-    def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3, 
-                absolute_tolerance=0., do_extended_limber=False):
-        #Get the required kernels
-        #maybe get from rescaled version of existing spectra
-        K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
-        K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
-
-        #Call the integral
-        #if do_extended_limber is True, pass ext_order=1
-        ext_order=0
-        if do_extended_limber:
-            ext_order=1
-
-        if self.do_rsd:
-            term=-1
-        else:
-            term=0
-
-
-        c_ell = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
-                                            self.beta_growth_B_spline, 
-                                            self.power_spline, self.growth_spline, ell, 
-                                            self.prefactor(block, bin1, bin2),
-                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
-                                            ext_order=ext_order, term=term)
-        #return c_ell
-
-        #For testing
-        c_ell_0_0 = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
-                                            self.beta_growth_B_spline, 
-                                            self.power_spline, self.growth_spline, ell, 
-                                            self.prefactor(block, bin1, bin2),
-                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
-                                            ext_order=ext_order, term=0)
-        c_ell_0_R = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
-                                            self.beta_growth_B_spline, 
-                                            self.power_spline, self.growth_spline, ell, 
-                                            self.prefactor(block, bin1, bin2),
-                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
-                                            ext_order=ext_order, term=1)
-        c_ell_R_0 = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
-                                            self.beta_growth_B_spline, 
-                                            self.power_spline, self.growth_spline, ell, 
-                                            self.prefactor(block, bin1, bin2),
-                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
-                                            ext_order=ext_order, term=2)
-        c_ell_R_R = limber.extended_limber_rsd(K1, K2, self.beta_growth_A_spline, 
-                                            self.beta_growth_B_spline, 
-                                            self.power_spline, self.growth_spline, ell, 
-                                            self.prefactor(block, bin1, bin2),
-                                            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, 
-                                            ext_order=ext_order, term=3)
-        print bin1,bin2
-        print c_ell_0_0
-        print c_ell_0_R
-        print c_ell_R_0
-        print c_ell_R_R
-        return c_ell
-
-    def prep_spectrum(self, block, bin1, bin2, bias_section, bias_prefix,
-                           z_arr, k_arr, pk_arr, D_arr, f_arr, chi_arr, 
-                           do_rsd=True, k_growth=1.e-2):
-        #for now assume linear bias
-        b1_A = block[bias_section, bias_prefix+"%d"%(bin1+1)]
-        b1_B = block[bias_section, bias_prefix+"%d"%(bin2+1)]
-        p_gg = b1_A*b1_B*pk_arr
-        D_gg = np.sqrt(b1_A*b1_B*D_arr)
-        beta_growth_A = f_arr*D_gg/b1_A
-        beta_growth_B = f_arr*D_gg/b1_B
-        self.growth_spline = GSLSpline(chi_arr, D_gg)
-        self.power_spline = GSLSpline2d(chi_arr, np.log(k_arr), p_gg.T, spline_type=BILINEAR)
-        self.beta_growth_A_spline = GSLSpline(chi_arr, beta_growth_A)
-        self.beta_growth_B_spline = GSLSpline(chi_arr, beta_growth_B)
-        self.do_rsd=do_rsd
-"""
-
 # This is pretty cool.
 # You can make an enumeration class which
 # contains a list of possible options for something.
@@ -316,51 +181,42 @@ class CountRsdCountRsdSpectrum(Spectrum):
 class SpectrumType(Enum):
 
     class ShearShear(Spectrum):
-        power_spectrum = PowerType.matter
+        power_3d_type = MatterPower3D
         kernels = "W W"
         autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
-        power_spectrum = PowerType.matter_intrinsic
+        power_3d_type = MatterIntrinsicPower3D
         kernels = "W N"
         autocorrelation = False
         name = names.shear_cl_gi
         prefactor_power = 1
 
     class IntrinsicIntrinsic(Spectrum):
-        power_spectrum = PowerType.intrinsic
+        power_3d_type = IntrinsicPower3D
         kernels = "N N"
         autocorrelation = True
         name = names.shear_cl_ii
         prefactor_power = 0
 
     class IntrinsicbIntrinsicb(Spectrum):
-        power_spectrum = PowerType.intrinsic_bb
+        power_3d_type = IntrinsicBBPower3D
         kernels = "N N"
         autocorrelation = True
         name = "shear_cl_bb"
         prefactor_power = 0
 
     class PositionPosition(Spectrum):
-        power_spectrum = PowerType.galaxy
+        power_3d_type = GalaxyPower3D
         kernels = "N N"
         autocorrelation = True
         name = "galaxy_cl"
         prefactor_power = 0
 
-    """
-    class CountRsdCountRsd(CountRsdCountRsdSpectrum):
-        power_spectrum = PowerType.matter
-        kernels = "N N"
-        autocorrelation = True
-        name = "count_cl"
-        prefactor_power = 0
-    """
-
     class MagnificationPosition(Spectrum):
-        power_spectrum = PowerType.matter_galaxy
+        power_3d_type = MatterGalaxyPower3D
         kernels = "W N"
         autocorrelation = False
         name = "magnification_galaxy_cl"
@@ -369,7 +225,7 @@ class SpectrumType(Enum):
 
     #
     class MagnificationMagnification(Spectrum):
-        power_spectrum = PowerType.matter
+        power_3d_type = MatterPower3D
         kernels = "W W"
         autocorrelation = True
         name = "magnification_cl"
@@ -378,21 +234,21 @@ class SpectrumType(Enum):
 
 
     class PositionShear(Spectrum):
-        power_spectrum = PowerType.matter_galaxy
+        power_3d_type = MatterGalaxyPower3D
         kernels = "N W"
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
 
     class PositionIntrinsic(Spectrum):
-        power_spectrum = PowerType.galaxy_intrinsic
+        power_3d_type = GalaxyIntrinsicPower3D
         kernels = "N N"
         autocorrelation = False
         name = "galaxy_intrinsic_cl"
         prefactor_power = 0
 
     class MagnificationIntrinsic(Spectrum):
-        power_spectrum = PowerType.matter_intrinsic
+        power_3d_type = MatterIntrinsicPower3D
         kernels = "W N"
         autocorrelation = False
         name = "magnification_intrinsic_cl"
@@ -400,7 +256,7 @@ class SpectrumType(Enum):
         magnification_prefactors = (1,)
 
     class MagnificationShear(Spectrum):
-        power_spectrum = PowerType.matter
+        power_3d_type = MatterPower3D
         kernels = "W W"
         autocorrelation = False
         name = "magnification_shear_cl"
@@ -408,53 +264,32 @@ class SpectrumType(Enum):
         magnification_prefactors = (1,)
 
     class ShearCmbkappa(Spectrum):
-        power_spectrum = PowerType.matter
+        power_3d_type = MatterPower3D
         kernels = "W K"
         autocorrelation = False
         name = "shear_cmbkappa_cl"
         prefactor_power = 2
 
     class CmbkappaCmbkappa(Spectrum):
-        power_spectrum = PowerType.matter
+        power_3d_type = MatterPower3D
         kernels = "K K"
         autocorrelation = True
         name = "cmbkappa_cl"
         prefactor_power = 2
 
     class IntrinsicCmbkappa(Spectrum):
-        power_spectrum = PowerType.matter_intrinsic
+        power_3d_type = MatterIntrinsicPower3D
         kernels = "N K"
         autocorrelation = False
         name = "intrinsic_cmbkappa_cl"
         prefactor_power = 1
 
     class PositionCmbkappa(Spectrum):
-        power_spectrum = PowerType.matter_galaxy
+        power_3d_type = MatterGalaxyPower3D
         kernels = "N K"
         autocorrelation = False
         name = "galaxy_cmbkappa_cl"
         prefactor_power = 1
-
-    class CountnlCountnl(NLGalSpectrum):
-        power_spectrum = PowerType.matter
-        kernels = "N N"
-        autocorrelation = True
-        name = "galaxy_cl"
-        prefactor_power = 0
-
-    class CountnlShear(NLGalShearSpectrum):
-        power_spectrum = PowerType.matter
-        kernels = "N W"
-        autocorrelation = False
-        name = "galaxy_shear_cl"
-        prefactor_power = 1
-
-    class CountnlIntrinsic(NLGalIntrinsicSpectrum):
-        power_spectrum = PowerType.matter_intrinsic
-        kernels = "N N"
-        autocorrelation = False
-        name = "galaxy_intrinsic_cl"
-        prefactor_power = 0
 
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
@@ -496,9 +331,6 @@ class SpectrumCalculator(object):
             self.kernels_A[kernel_a] = {}
             self.kernels_B[kernel_b] = {}
 
-        self.req_power = set()
-        for spectrum in self.req_spectra:
-            self.req_power.add(spectrum.power_spectrum)
 
         self.power = {}
         self.growth = {}
@@ -517,11 +349,14 @@ class SpectrumCalculator(object):
         #Get the list of spectra that we want to compute.
         #The full list
         self.req_spectra = []
+        self.req_power = set()
+ 
         any_spectra_option_found = False
         for spectrum in self.spectrumType:
+            spectrum = spectrum.value
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
-            name = spectrum.value.option_name()
+            name = spectrum.option_name()
             try:
                 value = options[option_section, name]
             #if value is not set at all, skip
@@ -541,7 +376,10 @@ class SpectrumCalculator(object):
 
             if isinstance(value, bool):
                 if value:
-                    self.req_spectra.append(spectrum.value(self))
+                    power3D = spectrum.power_3d_type()
+                    self.req_spectra.append(spectrum(self, power3D))
+                    print("Adding {}".format(power3D))
+                    self.req_power.add(power3D)
                 continue
 
             #Otherwise it must be a string - enforce this.
@@ -568,25 +406,44 @@ class SpectrumCalculator(object):
                     # e.g. 
                     # #shear-shear = euclid-ska:cross  euclid-euclid:optical  ska-ska:radio
                     # would be needed to avoid clashes. 
+                    # Can also allow
+                    # #intrinsic-intrinsic = des_source-des_source:des_power:des_cl kids_source-kids_source:kids_power:kids_cl
+                    # to use the suffix XXX or YYY on the IA and galaxy density 3D power spectrum inputs
                     if ":" in kernel_b:
                         kernel_b, save_name=kernel_b.split(":",1)
+                        if ":" in save_name:
+                            power_suffix,save_name = save_name.split(':',1)
+                            power_suffix = "_"+power_suffix
+                        else:
+                            power_suffix = ""
                     else:
                         save_name = ""
+                        power_suffix = ""
                     kernel_a = kernel_a.strip()
                     kernel_b = kernel_b.strip()
                     #The self in the line below is not a mistake - the source objects
                     #for the spectrum class is the SpectrumCalculator itself
-                    self.req_spectra.append(spectrum.value(self, kernel_a, kernel_b, save_name))
+                    power3D = spectrum.power_3d_type(power_suffix)
+                    print(power3D, power3D.section_name, power_suffix)
+                    self.req_power.add(power3D)
+                    self.req_spectra.append(spectrum(self, power3D, kernel_a, kernel_b, save_name))
+                    print("Calculating Limber: Kernel 1 = {}, Kernel 2 = {}, P_3D = {} --> Output: {}".format(
+                        kernel_a, kernel_b, power3D.section_name, save_name))
                 except:
+                    raise
                     raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
+
 
         #If no other spectra are specified, just do the shear-shear spectrum.
         if not any_spectra_option_found:
             print
             print "No spectra requested in the parameter file so I will "
-            print "Assume you just want shear-shear."
+            print "Assume you just want shear-shear, because it's the best one."
             print
-            self.req_spectra.append(self.spectrumType.ShearShear.value(self))
+            power3D = self.spectrumType.ShearShear.power_3d_type()
+            shear_shear = self.spectrumType.ShearShear.value(self, power3D)
+            self.req_spectra.append(shear_shear)
+            self.req_power.append(power3D)
         elif not self.req_spectra:
             print
             print "You switched off all the spectra in the parameter file" 
@@ -711,10 +568,13 @@ class SpectrumCalculator(object):
                 raise ValueError("Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(kernel_name, kernel_type, i+1))
             kernel_dict[i] = kernel
 
+    def load_one_power(self,  block, powerType):
+        self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
+            block, self.chi_of_z, powerType.section_name, "k_h", "z", "p_k")
+
     def load_power(self, block):
         for powerType in self.req_power:
-            self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
-                block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
+            self.load_one_power(powerType)
 
     def compute_spectra(self, block, spectrum):
         spectrum_name = spectrum.get_name()

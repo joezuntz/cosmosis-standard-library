@@ -11,18 +11,19 @@ vanilla_dir = os.path.join(dirname, os.path.pardir, 'projection')
 sys.path.append(vanilla_dir)
 
 # Now we have the path to import this
-from project_2d import SpectrumCalculator, Enum, PowerType, Spectrum, limber
+from project_2d import SpectrumCalculator, Enum, Power3D, Spectrum, limber
 
 
-class PowerTypePPF(Enum):
-    ppf_modified_matter = "ppf_modified_matter"
+class PPFLensingPower3D(Power3D):
+    section = "ppf_modified_matter"
+    source_specific = False
 
 # Supported functions
 
 
 class SpectrumTypePPF(Enum):
     class ShearShear(Spectrum):
-        power_spectrum = PowerTypePPF.ppf_modified_matter
+        power_3d_type = PPFLensingPower3D
         kernels = "W W"
         autocorrelation = True
         name = names.shear_cl
@@ -31,7 +32,6 @@ class SpectrumTypePPF(Enum):
 
 class SpectrumCalculatorPPF(SpectrumCalculator):
     spectrumType = SpectrumTypePPF
-    defaultSpectra = [spectrumType.ShearShear]
 
     def __init__(self, options):
         super(SpectrumCalculatorPPF, self).__init__(options)
@@ -40,12 +40,11 @@ class SpectrumCalculatorPPF(SpectrumCalculator):
     def load_power(self, block):
         for powerType in self.req_power:
             # Here we detail the ways we have to modify
-            if powerType == PowerTypePPF.ppf_modified_matter:
+            if isinstance(powerType, PPFLensingPower3D):
                 self.power[powerType], self.growth[powerType] = load_power_growth_chi_ppf(
                     block, self.chi_of_z, names.matter_power_nl, "k_h", "z", "p_k", self.flatten_k)
             else:
-                self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
-                    block, self.chi_of_z, powerType.value, "k_h", "z", "p_k")
+                self.load_one_power(block, powerType)
 
 
 def setup(options):
