@@ -168,7 +168,7 @@ def test1d():
     output = ct.c_double(0.0)
     x_test = np.random.random()
     gsl.gsl_spline_eval_e(spline._ptr, x_test, None, ct.byref(output))
-    print x_test,output.value/x_test**0.5
+    print(x_test,output.value/x_test**0.5)
 
 def test2d():
     x = np.linspace(0,1,10)
@@ -179,9 +179,9 @@ def test2d():
     output = ct.c_double(0.0)
     x_test = np.random.random()
     y_test = np.random.random()
-    print 'calling 2d spline'
+    print('calling 2d spline')
     gsl.gsl_spline2d_eval_e(spline._ptr, x_test, y_test, None, None, ct.byref(output))
-    print output.value, x_test*y_test**0.5
+    print(output.value, x_test*y_test**0.5)
 
 if __name__=="__main__":
     test2d()

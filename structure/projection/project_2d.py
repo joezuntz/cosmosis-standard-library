@@ -502,7 +502,7 @@ class SpectrumCalculator(object):
             assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
             #Load in the new kernel
             if self.verbose:
-                print("Loading kernel", kernel_name)
+                print("Loading kernel {}".format(kernel_name))
             self.load_kernel(block, kernel_name, kernel_dict)
 
         #We are always using two kernels, which we call A and B
@@ -517,7 +517,7 @@ class SpectrumCalculator(object):
             if kernel_name in self.kernels_A:
             #Loop through all the loaded N(z), W(z)
                 if self.verbose:
-                    print("Already calculated ", kernel_name)
+                    print("Already calculated {}".format(kernel_name))
                 for i,kernel in self.kernels_A[kernel_name].items():
                     kernel_dict[i] = kernel
             else:
@@ -551,7 +551,7 @@ class SpectrumCalculator(object):
             nbin = block[sample_name, 'nbin']
 
         #Now load n(z) or W(z) for each bin in the range
-        for i in xrange(nbin):
+        for i in range(nbin):
             if kernel_type=="N":
                 kernel = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
             elif kernel_type=="W":
@@ -572,7 +572,7 @@ class SpectrumCalculator(object):
 
     def load_power(self, block):
         for powerType in self.req_power:
-            self.load_one_power(powerType)
+            self.load_one_power(block, powerType)
 
     def compute_spectra(self, block, spectrum):
         spectrum_name = spectrum.get_name()
@@ -583,13 +583,13 @@ class SpectrumCalculator(object):
         block[spectrum_name, 'nbin_a'] = na
         block[spectrum_name, 'nbin_b'] = nb
         spectrum.prep_spectrum(block, self.chi_of_z, na, nbin2=nb, use_galaxy_power=self.use_galaxy_power)
-        for i in xrange(na):
+        for i in range(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
             #but save both orderings to the block to account for different ordering
             #conventions.
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
-            for j in xrange(jmax):
+            for j in range(jmax):
                 c_ell = spectrum.compute(block, self.ell, i, j, 
                                         relative_tolerance=self.relative_tolerance, 
                                         absolute_tolerance=self.absolute_tolerance, 

@@ -2,11 +2,21 @@ import os
 import ctypes as ct
 import numpy as np
 from gsl_wrappers import GSLSpline, GSLSpline2d, BICUBIC, BILINEAR
-
+import sys
 
 c_dbl_array = np.ctypeslib.ndpointer(dtype=np.float64, ndim=1, flags="C_CONTIGUOUS")
 c_int_array = np.ctypeslib.ndpointer(dtype=np.int, ndim=1, flags="C_CONTIGUOUS")
 
+if sys.version_info[0] < 3:
+    ascii_string = ct.c_char_p
+else:
+    class ascii_string(object):
+        @classmethod
+        def from_param(cls, value):
+            if isinstance(value, bytes):
+                return value
+            else:
+                return value.encode('ascii')
 
 
 class c_limber_config(ct.Structure):
@@ -41,10 +51,10 @@ c_gsl_spline = ct.c_void_p
 dirname = os.path.split(__file__)[0]
 lib = ct.cdll.LoadLibrary(os.path.join(dirname, "src/spec_tools.so"))
 lib.get_named_w_spline.restype = c_gsl_spline
-lib.get_named_w_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_double, ct.c_void_p]
+lib.get_named_w_spline.argtypes = [ct.c_size_t, ascii_string, ct.c_int, c_dbl_array, ct.c_double, ct.c_void_p]
 
 lib.get_named_nchi_spline.restype = c_gsl_spline
-lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ct.c_char_p, ct.c_int, c_dbl_array, ct.c_void_p, ct.c_void_p]
+lib.get_named_nchi_spline.argtypes = [ct.c_size_t, ascii_string, ct.c_int, c_dbl_array, ct.c_void_p, ct.c_void_p]
 
 lib.get_reduced_kernel.restype = c_gsl_spline
 lib.get_reduced_kernel.argtypes = [ct.c_void_p, ct.c_void_p]
@@ -65,14 +75,14 @@ lib.limber_integral_rsd.argtypes = [ct.POINTER(c_limber_config), ct.c_void_p, ct
                                     ct.c_int, ct.c_int, c_dbl_array]
 
 lib.load_interpolator_chi.restype = ct.c_void_p
-lib.load_interpolator_chi.argtypes = [ct.c_size_t, ct.c_void_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p]
+lib.load_interpolator_chi.argtypes = [ct.c_size_t, ct.c_void_p, ascii_string, ascii_string, ascii_string, ascii_string]
 
 c_power_scaling_function = ct.CFUNCTYPE(ct.c_double, ct.c_double, 
     ct.c_double, ct.c_double, ct.c_voidp)
 
 lib.load_interpolator_chi_function.restype = ct.c_void_p
 lib.load_interpolator_chi_function.argtypes = [ct.c_size_t, ct.c_void_p, 
-ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, c_power_scaling_function, ct.c_void_p]
+ascii_string, ascii_string, ascii_string, ascii_string, c_power_scaling_function, ct.c_void_p]
 
 
 lib.interp_2d.restype = ct.c_double
