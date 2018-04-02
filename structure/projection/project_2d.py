@@ -142,13 +142,16 @@ class Spectrum(object):
         K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
 
+
+        K = block.get_double(names.cosmological_parameters, "K")
+
         #Call the integral
         #if do_extended_limber is True, pass ext_order=1
         ext_order=0
         if do_extended_limber:
             ext_order=1
         c_ell = limber.extended_limber(K1, K2, P, D, ell, self.prefactor(block, bin1, bin2), 
-            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, ext_order=ext_order)
+            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, ext_order=ext_order, K=K)
         self.clean_power_growth(P, D)
         return c_ell
 

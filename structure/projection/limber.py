@@ -27,6 +27,7 @@ class c_limber_config(ct.Structure):
         ("status", ct.c_int),
         ("absolute_tolerance", ct.c_double),
         ("relative_tolerance", ct.c_double),
+        ("K", ct.c_double),
 ]
 
 class cl_config(ct.Structure):
@@ -180,7 +181,7 @@ def get_sigma_crit(WX, WY):
     lib.sigma_crit(WX, WY, ct.byref(sigma_crit), ct.byref(chi_weighted))
     return sigma_crit.value, chi_weighted.value
 
-def extended_limber(WX, WY, P, D_chi, ell, prefactor, rel_tol=1.e-3, abs_tol=0., ext_order=0):
+def extended_limber(WX, WY, P, D_chi, ell, prefactor, rel_tol=1.e-3, abs_tol=0., ext_order=0, K=0.0):
     """D_chi is growth factor spline"""
     config = c_limber_config()
     config.n_ell = len(ell)
@@ -189,6 +190,7 @@ def extended_limber(WX, WY, P, D_chi, ell, prefactor, rel_tol=1.e-3, abs_tol=0.,
     config.status = 0
     config.absolute_tolerance = abs_tol
     config.relative_tolerance = rel_tol
+    config.K = K
     c_ell_out = np.empty(len(ell))
 
     #extended limber integral requries reduced kernels
