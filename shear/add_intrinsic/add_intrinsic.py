@@ -7,20 +7,21 @@ def setup(options):
     do_shear_shear = options.get_bool(option_section, "shear-shear", True)
     do_position_shear = options.get_bool(
         option_section, "position-shear", True)
+    do_shear_cmbkappa=options.get_bool(option_section,"shear-cmbkappa",False)
     perbin = options.get_bool(option_section, "perbin", False)
 
     suffix = options.get_string(option_section, "suffix", "")
 
     print()
-    print("The add_intrinsic module will try to combine IA terms into")
-    if do_shear_shear and do_position_shear:
-        print("both the shear-shear and position-shear spectra.")
-    elif do_shear_shear:
-        print("only the shear-shear spectra.")
-    elif do_position_shear:
-        print("only the position-shear.")
-    else:
-        print("... actually not into anything. You set shear-shear=F and position-shear=F")
+    print("The add_intrinsic module will try to combine IA terms into these spectra:")
+    if do_shear_shear:
+        print(" - shear-shear.")
+    if do_position_shear:
+        print(" - position-shear.")
+    if do_shear_cmbkappa:
+        print(" - shear-CMB kappa ")
+    if not (do_shear_cmbkappa or do_position_shear or do_shear_shear):
+        print("... actually not into anything. You set shear-shear=F and position-shear=F  shear-cmbkappa=F")
         print("Ths module will not do anything in this configuration")
     print()
 
@@ -37,13 +38,15 @@ def setup(options):
         "intrinsic_intrinsic": "shear_cl_ii"  + suffix,
         "intrinsic_intrinsic_bb": "shear_cl_ii_bb"  + suffix,
         "parameters": "intrinsic_alignment_parameters" + suffix,
+        "shear_cmbkappa": "shear_cmbkappa" + suffix,
+        "intrinsic_cmbkappa_cl": "intrinsic_cmbkappa_cl" + suffix,
     }   
 
-    return do_shear_shear, do_position_shear, perbin, sec_names
+    return do_shear_shear, do_position_shear, do_shear_cmbkappa, perbin, sec_names
 
 
 def execute(block, config):
-    do_shear_shear, do_position_shear, perbin, sec_names = config
+    do_shear_shear, do_position_shear, do_shear_cmbkappa, perbin, sec_names = config
 
     shear_shear = sec_names['shear_shear']
     shear_shear_bb = sec_names['shear_shear_bb']
@@ -54,11 +57,15 @@ def execute(block, config):
     parameters = sec_names['parameters']
     intrinsic_intrinsic = sec_names['intrinsic_intrinsic']
     intrinsic_intrinsic_bb = sec_names['intrinsic_intrinsic_bb']
+    shear_cmbkappa = sec_names['shear_cmbkappa']
+    intrinsic_cmbkappa_cl = sec_names['intrinsic_cmbkappa_cl']
 
     if do_shear_shear:
         nbin_shear = block[shear_shear, 'nbin']
     elif do_position_shear:
         nbin_shear = block[galaxy_intrinsic, 'nbin_b']
+    elif do_shear_cmbkappa:
+        nbin_shear = block[shear_cmbkappa, 'nbin_a']
     if do_position_shear:
         nbin_pos = block[galaxy_shear, 'nbin_a']
 
@@ -91,4 +98,12 @@ def execute(block, config):
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
                 block[galaxy_shear, bin_ij] += A[j] * \
                     block[galaxy_intrinsic, bin_ij]
+
+    if do_shear_cmbkappa:
+        for i in range(nbin_shear):
+            bin_ij = 'bin_{0}_{1}'.format(i + 1, 1)
+            block[shear_cmbkappa, bin_ij] += A[i] * \
+                    block[intrinsic_cmbkappa_cl, bin_ij]
+
+
     return 0
