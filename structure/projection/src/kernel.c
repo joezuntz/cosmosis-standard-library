@@ -65,17 +65,18 @@ gsl_spline * get_reduced_kernel(gsl_spline * orig_kernel, gsl_spline * growth_of
   double Chi[nchi];
   double chi;
   double growth;
+  double chi_max = growth_of_chi->x[growth_of_chi->size-1];
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   for (int i=0; i<nchi; i++)
     {
       chi = (orig_kernel->x[i]);
       Chi[i] = chi;
-      growth = gsl_spline_eval(growth_of_chi, chi, acc);
-      if (chi>0.){
-	kernel_out_array[i] = orig_kernel->y[i] * growth / sqrt(chi);
+      if (chi>0. && chi<chi_max){
+        growth = gsl_spline_eval(growth_of_chi, chi, acc);
+        kernel_out_array[i] = orig_kernel->y[i] * growth / sqrt(chi);
       }
       else {
-	kernel_out_array[i] = 0.;
+        kernel_out_array[i] = 0.;
       }
   }
   gsl_interp_accel_free(acc);
