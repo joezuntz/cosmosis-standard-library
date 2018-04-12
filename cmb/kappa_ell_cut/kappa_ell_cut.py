@@ -31,31 +31,31 @@ def setup(options):
     shearkappa_section = options.get_string(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
     galkappa_section = options.get_string(option_section, "galkappa_section", default="galaxy_cmbkappa_cl")
 
-    if options.has_value(option_section, 'beam_sigma_arcmin'):
-        beam_sigma_arcmin = options[option_section, "beam_sigma_arcmin"]
-        # radians
-        beam_sigma = (1./60.0)*(np.pi/180.)*beam_sigma_arcmin
-    
-    elif options.has_value(option_section, 'beam_fwhm_arcmin'):
-        beam_fwhm_arcmin = options[option_section, "beam_fwhm_arcmin"]
-        beam_sigma = (1./np.sqrt(8.*np.log(2.)))*(1./60.0)*(np.pi/180.)*beam_fwhm_arcmin
+    if options.has_value(option_section,'Lmin'):
+        Lmin = options[option_section, 'Lmin']
     else:
-        raise ValueError("No beam_sigma_arcmin or beam_fwhm_armcin supplied!")
+        raise ValueError("No Lmin supplied! Setting Lmin=0.")
+        Lmin = 0
+    if options.has_value(option_section,'Lmax'):
+        Lmax = options[option_section, 'Lmax']
+    else:
+        raise ValueError("No Lmax supplied! Setting Lmax=999999.")
+        Lmax = 999999
 
-
-    return {"shearkappa_section":shearkappa_section, "galkappa_section":galkappa_section, "beam_sigma":beam_sigma}
+    return {"shearkappa_section":shearkappa_section, "galkappa_section":galkappa_section, "Lmin":Lmin, "Lmax":Lmax}
 
 def execute(block, config):
     shearkappa_section = config['shearkappa_section']
     galkappa_section = config['galkappa_section']
-    beam_sigma = config['beam_sigma']
+    Lmin = config['Lmin']
+    Lmax = config['Lmax']
 
     if block.has_section(galkappa_section):
-        apply_lcut(block, galkappa_section, beam_sigma)
+        apply_lcut(block, galkappa_section, Lmin, Lmax)
 
 
     if block.has_section(shearkappa_section):
-        apply_lcut(block, shearkappa_section, beam_sigma)
+        apply_lcut(block, shearkappa_section, Lmin, Lmax)
         
     return 0
 
