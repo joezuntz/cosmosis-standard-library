@@ -2,7 +2,6 @@ from __future__ import print_function
 from builtins import range
 from cosmosis.datablock import option_section, names
 
-
 def setup(options):
     do_shear_shear = options.get_bool(option_section, "shear-shear", True)
     do_position_shear = options.get_bool(
@@ -38,8 +37,8 @@ def setup(options):
         "intrinsic_intrinsic": "shear_cl_ii"  + suffix,
         "intrinsic_intrinsic_bb": "shear_cl_ii_bb"  + suffix,
         "parameters": "intrinsic_alignment_parameters" + suffix,
-        "shear_cmbkappa": "shear_cmbkappa" + suffix,
-        "intrinsic_cmbkappa_cl": "intrinsic_cmbkappa_cl" + suffix,
+        "shear_cmbkappa": "shear_cmbkappa_cl" + suffix,
+        "intrinsic_cmbkappa": "intrinsic_cmbkappa_cl" + suffix,
     }   
 
     return do_shear_shear, do_position_shear, do_shear_cmbkappa, perbin, sec_names
@@ -58,7 +57,7 @@ def execute(block, config):
     intrinsic_intrinsic = sec_names['intrinsic_intrinsic']
     intrinsic_intrinsic_bb = sec_names['intrinsic_intrinsic_bb']
     shear_cmbkappa = sec_names['shear_cmbkappa']
-    intrinsic_cmbkappa_cl = sec_names['intrinsic_cmbkappa_cl']
+    intrinsic_cmbkappa = sec_names['intrinsic_cmbkappa']
 
     if do_shear_shear:
         nbin_shear = block[shear_shear, 'nbin']
@@ -103,7 +102,7 @@ def execute(block, config):
         for i in range(nbin_shear):
             bin_ij = 'bin_{0}_{1}'.format(i + 1, 1)
             block[shear_cmbkappa, bin_ij] += A[i] * \
-                    block[intrinsic_cmbkappa_cl, bin_ij]
+                    block[intrinsic_cmbkappa, bin_ij]
 
 
     return 0
