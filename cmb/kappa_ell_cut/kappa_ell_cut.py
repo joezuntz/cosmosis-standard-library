@@ -28,8 +28,8 @@ def apply_lcut(block, section, Lmin, Lmax):
         block[section, 'bin_' + str(bini+1) + '_' + str(1)] = beamed_C_ell
 
 def setup(options):
-    shearkappa_section = options.get(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
-    galkappa_section = options.get(option_section, "galkappa_section", default="galaxy_cmbkappa_cl")
+    shearkappa_section = options.get_string(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
+    galkappa_section = options.get_string(option_section, "galkappa_section", default="galaxy_cmbkappa_cl")
 
     if options.has_key(option_section, 'beam_sigma_arcmin'):
         beam_sigma_arcmin = options[option_section, "beam_sigma_arcmin"]
