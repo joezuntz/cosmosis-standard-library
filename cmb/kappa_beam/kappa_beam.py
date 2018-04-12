@@ -28,12 +28,12 @@ def setup(options):
     shearkappa_section = options.get_string(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
     galkappa_section = options.get_string(option_section, "galkappa_section", default="galaxy_cmbkappa_cl")
 
-    if options.has_key(option_section, 'beam_sigma_arcmin'):
+    if options.has_value(option_section, 'beam_sigma_arcmin'):
         beam_sigma_arcmin = options[option_section, "beam_sigma_arcmin"]
         # radians
         beam_sigma = (1./60.0)*(np.pi/180.)*beam_sigma_arcmin
     
-    elif options.has_key(option_section, 'beam_fwhm_arcmin'):
+    elif options.has_value(option_section, 'beam_fwhm_arcmin'):
         beam_fwhm_arcmin = options[option_section, "beam_fwhm_arcmin"]
         beam_sigma = (1./np.sqrt(8.*np.log(2.)))*(1./60.0)*(np.pi/180.)*beam_fwhm_arcmin
     else:
