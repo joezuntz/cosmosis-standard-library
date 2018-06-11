@@ -136,7 +136,7 @@ static double ext_limber_integrand(double chi, void * data_void)
 	}
 
 	// Integrand result.
-    // JAZ Note that the kernels used here have factors of growth and chi in
+    // JAZ Note that the kernels used here have factors of growth and chi in get_reduced_kernel
     // for some Niall-related reason. This should all come out right, probably
 	p /= (chi * growth * growth);
 
