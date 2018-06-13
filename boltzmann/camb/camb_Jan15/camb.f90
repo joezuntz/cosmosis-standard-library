@@ -84,7 +84,7 @@
     if (global_error_flag/=0) return
     if (CData%Params%WantCls) then
         call ClTransferToCl(CData%ClTransScal,CData%ClTransTens, CData%ClTransvec)
-        if (CP%DoLensing .and. global_error_flag==0) call lens_Cls
+        if (CP%DoLensing .and. global_error_flag==0) call lens_Cls(global_error_flag) ! COSMOSIS error flag in lens_cls
         if (global_error_flag/=0) return
     end if
     if (CData%Params%WantTransfer) call Transfer_Get_sigmas(Cdata%MTrans)
@@ -216,7 +216,7 @@
 
     if (.not. CP%OnlyTransfers) then
         if (CP%DoLensing .and. global_error_flag==0) then
-            call lens_Cls
+            call lens_Cls(global_error_flag) ! COSMOSIS error flag in lens_cls
         end if
 
         if (do_bispectrum .and. global_error_flag==0) call GetBispectrum(CTransScal)

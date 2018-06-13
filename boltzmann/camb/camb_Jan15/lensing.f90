@@ -45,6 +45,9 @@ implicit none
  
  integer :: lensing_method = lensing_method_curv_corr
 
+ ! COSMOSIS - add lensing status
+ integer, parameter :: lensing_error_norm=1
+
  real(dl) :: ALens_Fiducial = 0._dl 
  !Change from zero to set lensing smoothing by scaling amplitude of fiducial template
  
@@ -70,37 +73,39 @@ public lens_Cls, lensing_includes_tensors, lensing_method, lensing_method_flat_c
       lensing_method_curv_corr,lensing_method_harmonic, BessI, bessj0, ALens_Fiducial
 contains
 
-
-subroutine lens_Cls
+! COSMOSIS - add lensing status
+subroutine lens_Cls(status)
  use lvalues
+ integer :: status  ! COSMOSIS new status integer, zero if okay
 
  !Must set l again in case computed tessors (thanks to Chad)
  call initlval(lSamp,CP%Max_l)
  if (lensing_method == lensing_method_curv_corr) then
-    call CorrFuncFullSky()
+    call CorrFuncFullSky(status) ! COSMOSIS status passed to impl routines
   elseif (lensing_method == lensing_method_flat_corr) then 
-    call CorrFuncFlatSky()
+    call CorrFuncFlatSky(status) ! COSMOSIS status passed to impl routines
   elseif (lensing_method == lensing_method_harmonic) then 
-    call BadHarmonic
+    call BadHarmonic(status) ! COSMOSIS status passed to impl routines
   else
     stop 'Unknown lensing method'
  end if
 end subroutine lens_Cls
 
-
-subroutine CorrFuncFullSky
-
+! COSMOSIS - add lensing status
+subroutine CorrFuncFullSky(status)
+  integer :: status
   integer :: lmax_extrap 
-  
+
   lmax_extrap = CP%Max_l - lensed_convolution_margin + 450  
   if (HighAccuracyDefault) lmax_extrap=lmax_extrap+300
   lmax_extrap = min(lmax_extrap_highl,lmax_extrap)
-  call CorrFuncFullSkyImpl(max(lmax_extrap,CP%max_l))
+  call CorrFuncFullSkyImpl(max(lmax_extrap,CP%max_l), status)
 
 end subroutine CorrFuncFullSky
 
 
-subroutine CorrFuncFullSkyImpl(lmax)
+! COSMOSIS lensing status in impl subroutines
+subroutine CorrFuncFullSkyImpl(lmax, status)
  !Accurate curved sky correlation function method
  !Uses non-perturbative isotropic term with 2nd order expansion in C_{gl,2}
  !Neglects C_{gl}(theta) terms (very good approx)
@@ -109,6 +114,7 @@ subroutine CorrFuncFullSkyImpl(lmax)
   use lvalues
   implicit none
   integer, intent(in) :: lmax
+  integer :: status ! COSMOSIS lensing status in impl subroutines
   integer l, i, in
   integer :: npoints 
   real(dl) corr(4), Cg2, sigmasq, theta
@@ -140,6 +146,8 @@ subroutine CorrFuncFullSkyImpl(lmax)
   logical :: short_integral_range
   real(dl) range_fac
   logical, parameter :: approx = .false.
+
+  status = 0  ! COSMOSIS status 0 to start with
 
 !$ integer  OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
 !$ external OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
@@ -212,7 +220,10 @@ subroutine CorrFuncFullSkyImpl(lmax)
     if (Cphil3(10) > 1e-7) then
      write (*,*) 'You need to normalize realistically to use lensing.'
      write (*,*) 'see http://cosmocoffee.info/viewtopic.php?t=94'
-     stop
+     ! COSMOSIS - return error instead of killing program
+     status = lensing_error_norm
+     deallocate(lens_contrib, ddcontribs)
+     return
     end if
     if (lmax > CP%Max_l) then
      l=CP%Max_l
@@ -229,7 +240,9 @@ subroutine CorrFuncFullSkyImpl(lmax)
        CTE(l) =  highL_CL_template(l, C_Cross)*fac2*sc 
       if (Cphil3(CP%Max_l+1) > 1e-7) then
        write (*,*) 'You need to normalize the high-L template so it is dimensionless'
-       stop
+       ! COSMOSIS - return error instead of killing program
+       status = lensing_error_norm
+       deallocate(lens_contrib, ddcontribs)
       end if
      end do
     end if
@@ -506,12 +519,13 @@ end if
 end subroutine CorrFuncFullSkyImpl
 
 
-
-subroutine CorrFuncFlatSky
+! COSMOSIS lensing status in impl subroutines
+subroutine CorrFuncFlatSky(status)
  !Do flat sky approx partially non-perturbative lensing, lensing_method=2
    use ModelParams
   use ModelData
   use lvalues
+  integer :: status ! COSMOSIS lensing status in impl subroutines
   integer l, i
   integer :: npoints 
   real(dl) Cgl2,  sigmasq, theta
@@ -530,7 +544,8 @@ subroutine CorrFuncFlatSky
   integer thread_ix
 !$ integer OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
 !$ external OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
-
+    ! COSMOSIS - error handling
+    status = 0 ! COSMOSIS status zero at start
     if (lensing_includes_tensors) stop 'Haven''t implemented tensor lensing'
 
     max_lensed_ix = lSamp%l0-1
@@ -578,7 +593,10 @@ subroutine CorrFuncFlatSky
     if (Cphil3(10) > 1e-7) then
      write (*,*) 'You need to normalize realistically to use lensing.'
      write (*,*) 'see http://cosmocoffee.info/viewtopic.php?t=94'
-     stop
+     ! COSMOSIS - return error instead of killing program
+     status = lensing_error_norm
+     deallocate(lens_contrib)
+     return
     end if
 
   lens_contrib=0
@@ -691,11 +709,13 @@ subroutine CorrFuncFlatSky
 
 end subroutine CorrFuncFlatSky
 
-subroutine BadHarmonic
+subroutine BadHarmonic(status)
   use ModelParams
   use ModelData
   use lvalues
   use InitialPower
+  ! COSMOSIS - error status
+  integer :: status
   integer maxl, i, in, almin, max_lensed_ix, maxl_phi
   real(dl) , dimension (:,:,:), allocatable :: bare_cls
   real(dl) pp(CP%InitPower%nn,CP%Max_l)
@@ -712,6 +732,8 @@ subroutine BadHarmonic
 
   real(sp) timeprev
     
+  status = 0
+
 !Otherwise use second order perturbative harmonic method
 
   if (DebugMsgs) timeprev=GetTestTime()
@@ -748,7 +770,10 @@ subroutine BadHarmonic
   if (RR(1) > 1e-5) then
      write (*,*) 'You need to normalize realistically to use lensing.'
      write (*,*) 'see http://cosmocoffee.info/viewtopic.php?t=94'
-   stop
+     ! COSMOSIS - return error instead of killing program
+     status = lensing_error_norm
+     deallocate(bare_cls)
+     return
   end if
   if (maxl > lmax_donelnfa) then 
    !Get ln factorials
