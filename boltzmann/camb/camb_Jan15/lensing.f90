@@ -222,7 +222,7 @@ subroutine CorrFuncFullSkyImpl(lmax, status)
      write (*,*) 'see http://cosmocoffee.info/viewtopic.php?t=94'
      ! COSMOSIS - return error instead of killing program
      status = lensing_error_norm
-     deallocate(lens_contrib, ddcontribs)
+     deallocate(lens_contrib, ddcontribs, corrcontribs)
      return
     end if
     if (lmax > CP%Max_l) then
@@ -242,7 +242,7 @@ subroutine CorrFuncFullSkyImpl(lmax, status)
        write (*,*) 'You need to normalize the high-L template so it is dimensionless'
        ! COSMOSIS - return error instead of killing program
        status = lensing_error_norm
-       deallocate(lens_contrib, ddcontribs)
+       deallocate(lens_contrib, ddcontribs, corrcontribs)
       end if
      end do
     end if
