@@ -147,10 +147,11 @@ subroutine CorrFuncFullSkyImpl(lmax, status)
   real(dl) range_fac
   logical, parameter :: approx = .false.
 
-  status = 0  ! COSMOSIS status 0 to start with
 
 !$ integer  OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
 !$ external OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
+
+    status = 0  ! COSMOSIS status 0 to start with
 
     if (lensing_includes_tensors) stop 'Haven''t implemented tensor lensing'
 
