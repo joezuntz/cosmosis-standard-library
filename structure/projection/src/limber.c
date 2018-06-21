@@ -6,8 +6,13 @@
 #include <gsl/gsl_spline2d.h>
 #include <gsl/gsl_spline.h>
 
+#if defined(_OPENMP)
+#include "omp.h"
+#endif
+
 // This is a workspace size for the gsl integrator
 #define LIMBER_FIXED_TABLE_SIZE 4096
+#define LIMBER_NTHREAD_MAX 128
 
 
 // data that is passed into the integrator
@@ -394,21 +399,9 @@ void sigma_crit(gsl_spline * WX, gsl_spline * WY, double * sigma_crit, double * 
 }
 
 
-gsl_integration_workspace * W = NULL;
-gsl_integration_glfixed_table *table = NULL;
-
-void setup_integration_workspaces(){
-	if (W==NULL){
-		W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
-	}
-	if (table==NULL){
-		table = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
-	}
-}
-
 
 static
-void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
+void limber_gsl_fallback_integrator(gsl_integration_workspace * W, gsl_integration_glfixed_table *table, gsl_function * F, double chimin, double chimax, 
 	double abstol, double reltol, double * c_ell, double * error){
 
 	// Only one warning per process
@@ -474,6 +467,7 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	config->status = LIMBER_STATUS_OK;
 
 
+
     static int n_ell_zero_warning = 0;
     if (config->n_ell==0){
         if (n_ell_zero_warning==0){
@@ -487,25 +481,58 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable
 	// place, so we just use the range they specify
-	ExtIntegrandData data;
 	double chimin_x = limber_gsl_spline_min_x(WX_red);
 	double chimin_y = limber_gsl_spline_min_x(WY_red);
 	double chimax_x = limber_gsl_spline_max_x(WX_red);
 	double chimax_y = limber_gsl_spline_max_x(WY_red);
-	double c_ell, error;
 
-	// Workspaces for the main and falback integrators.
-	// Static, so only allocated once as it has a fixed size.
-	setup_integration_workspaces();
 
 	double reltol = config->relative_tolerance;
 	double abstol = config->absolute_tolerance;
+
+
+    static gsl_integration_workspace * workspace[LIMBER_NTHREAD_MAX];
+    static gsl_integration_glfixed_table * table[LIMBER_NTHREAD_MAX];
+
+#if defined(_OPENMP)
+    int nthread_max = omp_get_max_threads();
+#else
+    int nthread_max = 1;
+#endif
+    
+    if (nthread_max>LIMBER_NTHREAD_MAX){
+        fprintf(stderr, "Tried to use more than %d OpenMP threads - modify limber.c", LIMBER_NTHREAD_MAX);
+        exit(1);
+    }
+
+
+
+#pragma omp parallel
+{
+
+    //Figure out which thread is running this
+#if defined(_OPENMP)
+        int thread = omp_get_thread_num();
+#else
+        int thread = 0;
+#endif
+
+    // We maintain an array of per-thread integration workspaces.
+    // The downside of this is that we need a fixed size, but we just use
+    // a fairly large one.
+    if (workspace[thread]==NULL){
+        workspace[thread] = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+    }
+    if (table[thread]==NULL){
+        table[thread] = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+    }
 
 	// Take the smallest range since we want both the
 	// splines to be valid there.
 	// This range as well as all the data needed to compute
 	// the integrand is put into a struct to be passed
 	// through the integrator to the function above.
+    ExtIntegrandData data;    
 	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
 	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
 	data.WX_red = WX_red;
@@ -525,22 +552,22 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	F.function = ext_limber_integrand;
 	F.params = &data;
 
-	// save ell values for return
-	double ell_vector[config->n_ell];
+
 
 	// loop through ell values according to the input configuration
+#pragma omp for schedule(dynamic) nowait
 	for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
 		double ell = config->ell[i_ell];
 		data.ell=ell;
+        double c_ell, error;
 
 		// Perform the main integration.
-		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+		limber_gsl_fallback_integrator(workspace[thread], table[thread], &F, data.chimin, data.chimax, 
 			abstol, reltol, &c_ell, &error);
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
 		// Record the results into arrays
 		cl_out[i_ell] = c_ell;
-		ell_vector[i_ell] = ell;
 	}
 
 	// Tidy up
@@ -550,6 +577,7 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	gsl_interp_accel_free(data.accelerator_py);
 	gsl_interp_accel_free(data.accelerator_growth);
 
+}
 	// These two are not deallocated because they are static and only initialized once.
 	// gsl_integration_glfixed_table_free(table);	
 	// gsl_integration_workspace_free(W);
@@ -616,25 +644,59 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable
 	// place, so we just use the range they specify
-	RSDIntegrandData data;
 	double chimin_x = limber_gsl_spline_min_x(GX);
 	double chimin_y = limber_gsl_spline_min_x(GY);
 	double chimax_x = limber_gsl_spline_max_x(GX);
 	double chimax_y = limber_gsl_spline_max_x(GY);
-	double c_ell, error;
 
-	// Workspaces for the main and falback integrators.
-	// Static, so only allocated once as it has a fixed size.
-	setup_integration_workspaces();
 
 	double reltol = config->relative_tolerance;
 	double abstol = config->absolute_tolerance;
+
+
+
+#if defined(_OPENMP)
+    int nthread_max = omp_get_max_threads();
+#else
+    int nthread_max = 1;
+#endif
+    
+    if (nthread_max>LIMBER_NTHREAD_MAX){
+        fprintf(stderr, "Tried to use more than %d OpenMP threads - modify limber.c", LIMBER_NTHREAD_MAX);
+        exit(1);
+    }
+
+
+    static gsl_integration_workspace * workspace[LIMBER_NTHREAD_MAX];
+    static gsl_integration_glfixed_table * table[LIMBER_NTHREAD_MAX];
+
+
+#pragma omp parallel
+    {
+    //Figure out which thread is running this
+#if defined(_OPENMP)
+        int thread = omp_get_thread_num();
+#else
+        int thread = 0;
+#endif
+
+
+    // We maintain an array of per-thread integration workspaces.
+    // The downside of this is that we need a fixed size, but we just use
+    // a fairly large one.
+    if (workspace[thread]==NULL){
+        workspace[thread] = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+    }
+    if (table[thread]==NULL){
+        table[thread] = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+    }
 
 	// Take the smallest range since we want both the
 	// splines to be valid there.
 	// This range as well as all the data needed to compute
 	// the integrand is put into a struct to be passed
 	// through the integrator to the function above.
+    RSDIntegrandData data;
 	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
 	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
 	data.GX = GX;
@@ -666,9 +728,10 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
 		double ell = config->ell[i_ell];
 		data.ell=ell;
+        double c_ell, error;
 
 		// Perform the main integration.
-		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+		limber_gsl_fallback_integrator(workspace[thread], table[thread], &F, data.chimin, data.chimax, 
 			abstol, reltol, &c_ell, &error);
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
@@ -686,9 +749,7 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	gsl_interp_accel_free(data.accelerator_py);
 	gsl_interp_accel_free(data.accelerator_growth);
 
-	// These two are not deallocated because they are static and only initialized once.
-	// gsl_integration_glfixed_table_free(table);	
-	// gsl_integration_workspace_free(W);
+}
 
 	// And that's it
 	return 0;
