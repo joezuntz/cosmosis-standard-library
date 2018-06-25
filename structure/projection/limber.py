@@ -144,7 +144,7 @@ def load_power_growth_chi(block, chi_of_z, section, k_name, z_name, p_name, k_gr
     return power_spline, growth_spline
 
 def growth_from_power(chi, k, p, k_growth):
-    "Get D(\chi) from power spectrum"
+    r"Get D(\chi) from power spectrum"
     growth_ind=np.where(k>k_growth)[0][0]
     growth_array = np.sqrt(np.divide(p[:,growth_ind], p[0,growth_ind], 
                     out=np.zeros_like(p[:,growth_ind]), where=p[:,growth_ind]!=0.))
