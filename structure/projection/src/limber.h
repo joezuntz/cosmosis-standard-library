@@ -27,6 +27,7 @@ typedef struct limber_config{
     int status; // did everything go okay?
     double absolute_tolerance;
     double relative_tolerance;
+    double K;
 } limber_config;
 
 

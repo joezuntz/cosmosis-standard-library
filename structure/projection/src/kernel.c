@@ -29,6 +29,7 @@ typedef struct w_integrand_data{
   double chi;
   double zmax;
   double chi_max;
+  double K;
 } w_integrand_data;
 
 static double n_of_chi(double chi, void *p)
@@ -53,7 +54,7 @@ static double w_of_chi_integrand(double chis, void *p)
 {
   w_integrand_data * data = (w_integrand_data*) p;
   double nchi = n_of_chi(chis, data);
-  return nchi*(chis - data->chi)/chis;
+  return nchi*f_K(data->K, chis - data->chi) / f_K(data->K,chis);
 }
 
 gsl_spline * get_reduced_kernel(gsl_spline * orig_kernel, gsl_spline * growth_of_chi)
@@ -87,7 +88,7 @@ gsl_spline * get_reduced_kernel(gsl_spline * orig_kernel, gsl_spline * growth_of
 // 1.5 omega_m H0^2 in it.  That should be included in the
 // prefactor later
 gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z, 
-				gsl_spline * a_of_chi)
+				gsl_spline * a_of_chi, double K)
 {
   // Now do the main integral, chi-by-chi.
   // First, space for the results
@@ -104,6 +105,7 @@ gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z,
     gsl_integration_glfixed_table_alloc((size_t) NGLT);
 
   gsl_error_handler_t * old_error_handler = gsl_set_error_handler_off();
+
   volatile int error_status=0; //volatile means that one thread can set it for other threads
 
 #pragma omp parallel shared(error_status)
@@ -116,6 +118,7 @@ gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z,
     data.acc_z = gsl_interp_accel_alloc();
     data.zmax = n_of_z->x[n_of_z->size-1];
     data.chi_max = chi_max;
+    data.K = K;
 
     // First compute the normalization
     gsl_function F;
@@ -147,7 +150,7 @@ gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z,
           continue;
         } 
         // and calculate the integral
-        W[i] = norm * (chi/a) * gsl_integration_glfixed(&F, chi, chi_max, table);
+        W[i] = norm * (f_K(K,chi)/a) * gsl_integration_glfixed(&F, chi, chi_max, table);
       }
 
     // Tidy up
@@ -218,9 +221,12 @@ gsl_spline * get_named_w_spline(c_datablock * block, const char * section, int b
   // Make a spline from n(z)
   gsl_spline * n_of_z_spline = spline_from_arrays(nz1, z, n_of_z);
 
+  double K;
+  status |= c_datablock_get_double_default(block, COSMOLOGICAL_PARAMETERS_SECTION, "K", 0.0, &K);
+
   // Do the main computation
   gsl_spline * W = shear_shear_kernel(chi_max, n_of_z_spline,
-				      a_of_chi_spline);
+				      a_of_chi_spline, K);
 
   // tidy up bin-specific data
   gsl_spline_free(n_of_z_spline);
@@ -257,7 +263,7 @@ int get_wchi_array(c_datablock * block, const char * nz_section,
 
 
 
-gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a_of_chi)
+gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a_of_chi, double K)
 {
 
   int n_chi = NGLT;
@@ -279,7 +285,7 @@ gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a
       int err = gsl_spline_eval_e(a_of_chi, chi, NULL, &a);
       if (err) {error_status=1; break;} 
       // and calculate the integral
-      W[i] = (chi/a) * (chi_star-chi)/chi_star;
+      W[i] = fK(chi,K) / a * fK(chi_star-chi,K) / fK(chi_star,K);
     }
 
   // Convert the static vectors into a spline and return

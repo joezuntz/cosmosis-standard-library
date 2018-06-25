@@ -2,6 +2,7 @@
 #include "gsl/gsl_integration.h"
 #include "gsl/gsl_errno.h"
 #include "limber.h"
+#include "utils.h"
 #include <gsl/gsl_interp2d.h>
 #include <gsl/gsl_spline2d.h>
 #include <gsl/gsl_spline.h>
@@ -47,6 +48,7 @@ typedef struct ExtIntegrandData{
 	gsl_interp_accel * accelerator_py;
 	gsl_interp_accel * accelerator_growth;
     int ext_order;
+    double K;
 } ExtIntegrandData;
 
 typedef struct RSDIntegrandData{
@@ -120,7 +122,7 @@ static double ext_limber_integrand(double chi, void * data_void)
 	if (Wr_X==0 || Wr_Y==0) return 0.0;
 
 	double nu = (data->ell+0.5);
-	double k = nu / chi;
+	double k = nu / f_K(data->K, chi);
 	// 
 	double growth = gsl_spline_eval(data->D_chi, chi, data->accelerator_growth);
 	
@@ -135,25 +137,34 @@ static double ext_limber_integrand(double chi, void * data_void)
 	gsl_set_error_handler(old_handler); 
 	if (status) 
 	{
-		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
 		return 0.0;
 	}
 
 	// Integrand result.
+    // JAZ Note that the kernels used here have factors of growth and chi in get_reduced_kernel
+    // for some Niall-related reason. This should all come out right, probably
 	p /= (chi * growth * growth);
+
+
 	double result_0 = Wr_X * Wr_Y;  //zeroth order
 	double result_ext = 0.;
+
 	if (data->ext_order>0){
 		//if doing extended limber, get kernel 2nd derivatives
 	    double d2Wr_x = gsl_spline_eval_deriv2(data->WX_red, chi, data->accelerator_wx);
 	    double d2Wr_y;
     	if (data->WX_red==data->WY_red) d2Wr_y = d2Wr_x;
 	    else d2Wr_y = gsl_spline_eval_deriv2(data->WY_red, chi, data->accelerator_wy);
-		//printf("chi,d2Wr_x,d2Wr_y : %f,%.6e,%.6e\n", chi,d2Wr_x,d2Wr_y);
 	    result_ext = - 0.5 * ( d2Wr_x * Wr_Y + d2Wr_y * Wr_X ) * chi * chi / (nu * nu) ;
 	}
-	//printf("chi:%f, ext:%.6e, ext frac:%.6e\n", chi, result1, result1/result0);
-	return (result_0 + result_ext) * p ;
+
+	double result = (result_0 + result_ext) * p ;
+
+
+    // This is a total hack because we really really need to rewrite things
+    // cleanly.
+    result *= pow( chi/f_K(data->K, chi), 2);
+    return result;
 }
 
 // the extended Limber integrand: 
@@ -545,6 +556,7 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	data.accelerator_growth = gsl_interp_accel_alloc();
 	data.D_chi = D_chi;
 	data.ext_order = ext_order;
+    data.K = config->K;
 
 	// Set up the workspace and inputs to the integrator.
 	// Not entirely sure what the table is.

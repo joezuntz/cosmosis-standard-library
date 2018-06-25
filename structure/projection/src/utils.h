@@ -6,6 +6,7 @@
 #include "interp2d.h"
 
 
+
 gsl_spline * spline_from_arrays(int n, double * x, double *y);
 
 DATABLOCK_STATUS save_spline(c_datablock * block, const char * section, 
@@ -15,6 +16,7 @@ DATABLOCK_STATUS save_spline(c_datablock * block, const char * section,
 gsl_spline * load_spline(c_datablock * block, const char * section, 
 	const char * x_name, const char * y_name);
 
+double f_K(double K, double chi);
 
 
 void reverse(double * x, int n);
