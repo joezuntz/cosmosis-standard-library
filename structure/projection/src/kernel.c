@@ -285,7 +285,7 @@ gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a
       int err = gsl_spline_eval_e(a_of_chi, chi, NULL, &a);
       if (err) {error_status=1; break;} 
       // and calculate the integral
-      W[i] = fK(chi,K) / a * fK(chi_star-chi,K) / fK(chi_star,K);
+      W[i] = f_K(chi,K) / a * f_K(chi_star-chi,K) / f_K(chi_star,K);
     }
 
   // Convert the static vectors into a spline and return
