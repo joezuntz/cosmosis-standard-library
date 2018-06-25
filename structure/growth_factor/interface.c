@@ -48,7 +48,7 @@ int execute(c_datablock * block, growth_config * config)
 {
 
 	int i,status=0;
-	double w,wa,omega_m;
+	double w,wa,omega_m,omega_v;
 	double *dz,*fz,*zbins;
 	int nzbins = config->nz;
 	
@@ -61,6 +61,8 @@ int execute(c_datablock * block, growth_config * config)
         status |= c_datablock_get_double_default(block, cosmo, "w", -1.0, &w);
         status |= c_datablock_get_double_default(block, cosmo, "wa", 0.0, &wa);
         status |= c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
+	if ( c_datablock_has_value(block, cosmo, "omega_lambda") ) status |= c_datablock_get_double(block, cosmo, "omega_lambda", &omega_v);
+	else omega_v = 1. - omega_m;
 	if (status){
 		fprintf(stderr, "Could not get required parameters for growth function (%d)\n", status);
 		return status;
@@ -80,7 +82,7 @@ int execute(c_datablock * block, growth_config * config)
 	for (i=0;i<nzbins;i++)
 	{	
 		double z = config->zmin + i*config->dz;
-		status = get_growthfactor(1.0/(1.0+z),omega_m,w,wa,gf);
+		status = get_growthfactor(1.0/(1.0+z),omega_m,omega_v,w,wa,gf);
 		dz[i] = gf[0];
 		fz[i] = gf[1];
 		zbins[i] = z;

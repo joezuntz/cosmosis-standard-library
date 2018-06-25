@@ -19,12 +19,12 @@ double omega_m,omega_lambda;
 
 #define LIMIT_SIZE 1000
 
-int get_growthfactor(double a,double om, double w, double w2, double *gf)
+int get_growthfactor(double a,double om, double ov, double w, double w2, double *gf)
 {
 	w0 = w;
 	wa = w2;
 	omega_m = om;
-	omega_lambda = 1.0 - omega_m;
+	omega_lambda = ov;
         growth_de(a,gf);
 	return 0;
 }
@@ -49,7 +49,7 @@ double Xde_int (double a,void *params )
     return Xde_int;
 }
 
-double Xde (double a)
+double Xde_old (double a)
 {
     gsl_integration_workspace * worksp  = gsl_integration_workspace_alloc (LIMIT_SIZE);
     gsl_function F;
@@ -64,26 +64,66 @@ double Xde (double a)
     return omega_m/(1.-omega_m)*exp(-3.*integral);
 }
 
+int func_old (double t, const double y[], double f[], void *params)
+{
+    double mu = *(double *)params;
+    f[0] = y[1];
+    f[1] = -( 3.5 - 1.5 * w(t)/( 1 + Xde(t) ) )*y[1]/t - 1.5 * ( 1 - w(t) )/( 1 + Xde(t))*(y[0]/t/t);
+    return GSL_SUCCESS;
+}
+   
+int jac_old (double t, const double y[], double *dfdy, double dfdt[], void *params)
+{
+    double mu = *(double *)params;
+    gsl_matrix_view dfdy_mat = gsl_matrix_view_array (dfdy, 2, 2); 
+    gsl_matrix * m = &dfdy_mat.matrix; 
+    gsl_matrix_set (m, 0, 0, 0.0); //dy1/dx1
+    gsl_matrix_set (m, 0, 1, 1.0);
+    gsl_matrix_set (m, 1, 0, - 1.5 * ( 1 - w(t) )/( 1 + Xde(t))*(1./t/t));
+    gsl_matrix_set (m, 1, 1, -( 3.5 - 1.5 * w(t)/( 1 + Xde(t) ) )/t);
+    dfdt[0] = 0.0;
+    dfdt[1] = 0.0;
+    return GSL_SUCCESS;
+}  
+
+double Xde (double a)
+{
+    double de_integral = (a-1.)*wa - log(a)*(w0+wa); // analytic integral of Xde_int for w0-wa model
+                                                     // revert to Xde_old if you want to use a generic w(a)
+    
+    return omega_m/omega_lambda*exp(-3.*de_integral);
+}
+
+double func_G(double t)
+{
+    return -1.5 * (1. - w(t)) / ((1. + Xde(t)) * t * t);
+}
+
+double func_Gpr(double t)
+{
+    return -( 3.5 - 1.5 * w(t) / (1. + Xde(t)) ) / t;
+}
+
 int func (double t, const double y[], double f[], void *params)
 {
-	double mu = *(double *)params;
-	f[0] = y[1];
-	f[1] = -( 3.5 - 1.5 * w(t)/( 1 + Xde(t) ) )*y[1]/t - 1.5 * ( 1 - w(t) )/( 1 + Xde(t))*(y[0]/t/t);
-	return GSL_SUCCESS;
+    double mu = *(double *)params;
+    f[0] = y[1];
+    f[1] = func_Gpr(t) * y[1] + func_G(t) * y[0];
+    return GSL_SUCCESS;
 }
-     
+
 int jac (double t, const double y[], double *dfdy, double dfdt[], void *params)
 {
-	double mu = *(double *)params;
-	gsl_matrix_view dfdy_mat = gsl_matrix_view_array (dfdy, 2, 2); 
-	gsl_matrix * m = &dfdy_mat.matrix; 
-	gsl_matrix_set (m, 0, 0, 0.0); //dy1/dx1
-	gsl_matrix_set (m, 0, 1, 1.0);
-	gsl_matrix_set (m, 1, 0, - 1.5 * ( 1 - w(t) )/( 1 + Xde(t))*(1./t/t));
-	gsl_matrix_set (m, 1, 1, -( 3.5 - 1.5 * w(t)/( 1 + Xde(t) ) )/t);
-	dfdt[0] = 0.0;
-	dfdt[1] = 0.0;
-	return GSL_SUCCESS;
+    double mu = *(double *)params;
+    gsl_matrix_view dfdy_mat = gsl_matrix_view_array (dfdy, 2, 2); 
+    gsl_matrix * m = &dfdy_mat.matrix; 
+    gsl_matrix_set (m, 0, 0, 0.0); //dy1/dx1
+    gsl_matrix_set (m, 0, 1, 1.0);
+    gsl_matrix_set (m, 1, 0, func_G(t));
+    gsl_matrix_set (m, 1, 1, func_Gpr(t));
+    dfdt[0] = 0.0;
+    dfdt[1] = 0.0;
+    return GSL_SUCCESS;
 }
      
 double growth_de (double a, double *gf)
@@ -118,7 +158,7 @@ double growth_de (double a, double *gf)
 //	return y[0]*a;  //D growth factor
 //	return y[1]*a*a/(y[0]*a) +1.; // f = d ln D/ d ln a
 	gf[0] = y[0]*a;
-	gf[1] = y[1]*a*a/(y[0]*a) +1.;
+	gf[1] = y[1]*a*a / (y[0]*a) + 1.;
 	return y[0]*a;
 
 }
