@@ -8,6 +8,20 @@ import os
 cosmo = names.cosmological_parameters
 sigma = names.sigma_cpp
 
+def set_vector(options, vmin, vmax, dv, vec):
+
+    if options.has_value(option_section, vec):
+
+        return np.array(options[option_section, vec])
+
+    else:
+
+        xmin = options[option_section, vmin]
+        xmax = options[option_section, vmax]
+        dx = options[option_section, dv]
+
+        return np.arange(xmin, xmax, dx)
+
 def setup(options):
     #This function is called once per processor per chain.
     #It is a chance to read any fixed options from the configuration file,
@@ -24,54 +38,39 @@ def setup(options):
 
         matter_power  = options[option_section, "matter_power"]
 
-        if options.has_value(option_section, "z"):
+        z_vec = set_vector(options, "zmin", "zmax", "dz", "z")
+        r_vec = None
+        m_vec = None
 
-            z_vec = np.array(options[option_section, "z"])
+        use_m = False
+
+        if options.has_value(option_section, "use_m"):
+
+            if isinstance(options[option_section, "use_m"],  bool):
+
+                use_m = options[option_section, "use_m"]
+
+            else:
+
+                print '*** ERROR *** - use_m must be: True, False, T, F'
+
+        if use_m:
+
+            m_vec = set_vector(options, "logmmin", "logmmax", "dlogm", "logm")
+            print 'using mass'
 
         else:
 
-            zmin = options[option_section, "zmin"]
-            zmax = options[option_section, "zmax"]
-            dz = options[option_section, "dz"]
-            z_vec = np.arange(zmin, zmax, dz)
-
-        if options[option_section, "mode"] == 'use_m':
-
-            if options.has_value(option_section, "logm"):
-    
-                m_vec = np.array(options[option_section, "logm"])
-    
-            else:
-    
-                mmin = options[option_section, "logmmin"]
-                mmax = options[option_section, "logmmax"]
-                dm = options[option_section, "dlogm"]
-                m_vec = np.arange(mmin, mmax, dm)
-
-            r_vec = np.zeros(m_vec.size)
-
-        elif options[option_section, "mode"] == 'use_r':
-
-            if options.has_value(option_section, "r"):
-    
-                r_vec = np.array(options[option_section, "r"])
-    
-            else:
-    
-                rmin = options[option_section, "rmin"]
-                rmax = options[option_section, "rmax"]
-                dr = options[option_section, "dr"]
-                r_vec = np.arange(mmin, mmax, dm)
-
-            m_vec = None
-
-        else:
-
-            print '*** ERROR *** - mode must be either use_m or use_r'
+            r_vec = set_vector(options, "rmin", "rmax", "dr", "r")
+            print 'using radius'
 
         rho_c = 2.775e11 #  rho_c/h^2
         rho_c_4pi_3 = rho_c * 4 * np.pi / 3.
         log_rho_c_4pi_3 = np.log10(rho_c_4pi_3)
+
+        print 'm_vec = ', m_vec
+        print 'r_vec = ', r_vec
+        print 'z_vec = ', z_vec
 
         ##############################################################################
         ########################## C WRAPPING ########################################
@@ -101,13 +100,13 @@ def setup(options):
             C_VEC_DOUB        # double* sigma_m         
             ]
 
-    print 'ok'
-
     #Now you have the input options you can do any useful preparation
     #you want.  Maybe load some data, or do a one-off calculation.
 
     #Whatever you return here will be saved by the system and the function below
     #will get it back.  You could return 0 if you won't need anything.
+
+
     return res
 
 def execute(block, config):
@@ -128,10 +127,12 @@ def execute(block, config):
 
         m_vec = config.log_rho_c_4pi_3 + np.log10(OmM) + 3*np.log10(r_vec)
 
+    if r_vec is None:
+
+        r_vec = 0 * m_vec
+
     print 'm_vec', m_vec
     print 'z_vec', z_vec
-
-    print matter_power
     
 
     zk  = block[matter_power, 'z']
@@ -148,8 +149,8 @@ def execute(block, config):
 
     sigma_m = np.zeros(nm*nz)
 
-    print("************************** cluster code begin **********************************")
-    print(len(Pk))
+    print "************************** cluster code begin **********************************"
+    print len(Pk)
     config.Sigma_Func (  
         OmM                 ,
         int_config          ,
@@ -161,7 +162,7 @@ def execute(block, config):
         r_vec               ,
         sigma_m         
         )
-    print("************************** cluster code ok **********************************")
+    print "************************** cluster code ok **********************************"
 
     sigma_m = sigma_m.reshape(nz, nm)
 
