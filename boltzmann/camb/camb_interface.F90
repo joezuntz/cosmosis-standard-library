@@ -48,6 +48,8 @@ module camb_interface_tools
 	real(dl) :: acc_boost = 1.0_dl
 	logical :: high_acc_default = .false.
 
+	logical :: reject_non_accelerating
+
 
 	contains
 
@@ -200,7 +202,7 @@ module camb_interface_tools
 	    status = status + datablock_get_logical_default(block,option_section,"high_accuracy_default",.false.,high_acc_default)
 	    HighAccuracyDefault = high_acc_default
 
-
+	    status = status + datablock_get_logical_default(block, option_section, "reject_non_accelerating", .false., reject_non_accelerating)
 
 		!If noisy, report relevant params
 		if (FeedbackLevel .gt. 0) then
@@ -310,7 +312,7 @@ module camb_interface_tools
 		else
 			status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w_lam)
 			status = status + datablock_get_double_default(block, cosmo, "wa",  0.0D0, wa_ppf)
-			if (w_lam+wa_ppf .gt. 0) then
+			if (reject_non_accelerating .and. (w_lam+wa_ppf .gt. 0)) then
 				write(*,*) "Unphysical w_0 + w_a = ", w_lam, " + ", wa_ppf, " = ", w_lam+wa_ppf, " > 0"
 				status = 1
 			endif
