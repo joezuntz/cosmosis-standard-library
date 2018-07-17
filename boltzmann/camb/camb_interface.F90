@@ -49,7 +49,7 @@ module camb_interface_tools
 
 	logical :: need_thermal_init
 
-	!From Vinicius Miranda, to expose accuracy settings
+	!From Vivian Miranda, to expose accuracy settings
 	real(dl) :: acc_boost = 1.0_dl
 	logical :: high_acc_default = .false.
 
