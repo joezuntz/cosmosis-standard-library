@@ -85,7 +85,9 @@ def setup(options):
         
         # Import as Shared Object
         c_code = '%s/sigma.so'%os.path.dirname(os.path.realpath(__file__))
-        lib_Sigma = ctypes.cdll.LoadLibrary (c_code)
+        dll1 = ctypes.CDLL('libgslcblas.so', mode=ctypes.RTLD_GLOBAL)
+        dll2 = ctypes.CDLL('libgsl.so', mode=ctypes.RTLD_GLOBAL)
+        lib_Sigma = ctypes.CDLL(c_code, mode=ctypes.RTLD_GLOBAL)
         Sigma_Func = lib_Sigma.executemain
         #Sigma_Func.restype = ctypes.c_int
         Sigma_Func.argtypes = [
