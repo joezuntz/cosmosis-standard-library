@@ -25,13 +25,7 @@ def setup(options):
         rmax = options[option_section, "rmax"]
         dr = options[option_section, "dr"]
         R = np.arange(rmin, rmax, dr)
-    crop_klim = True
-    if options.has_value(option_section, "crop_klim"):
-        if isinstance(options[option_section, "crop_klim"], bool):
-            crop_klim = options[option_section, "crop_klim"]
-        else:
-            print('*** ERROR *** - crop_klim(=%s) must be : T, F, True, False'%options[option_section, "crop_klim"])
-            exit()
+    crop_klim = options.get_bool(option_section, "crop_klim", True)
     R = np.atleast_1d(R)
     z = np.atleast_1d(z)
     blockname = options[option_section, "matter_power"]
