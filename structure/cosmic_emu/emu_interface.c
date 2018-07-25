@@ -84,7 +84,8 @@ int execute(c_datablock * block, emu_options * config){
 }
 
 
-void cleanup(emu_options * config){
+int cleanup(emu_options * config){
     free(config->z);
     free(config);
+    return 0;
 }
