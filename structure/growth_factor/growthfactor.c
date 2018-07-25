@@ -19,14 +19,13 @@ double omega_m,omega_lambda;
 
 #define LIMIT_SIZE 1000
 
-int get_growthfactor(double a,double om, double ov, double w, double w2, double *gf)
+int get_growthfactor(int n, double *a,double om, double ov, double w, double w2, double *d, double *f)
 {
 	w0 = w;
 	wa = w2;
 	omega_m = om;
 	omega_lambda = ov;
-        growth_de(a,gf);
-	return 0;
+    return growth_de(n,a,d,f);
 }
 
 // 2 parameter dark energy equation of state
@@ -126,7 +125,7 @@ int jac (double t, const double y[], double *dfdy, double dfdt[], void *params)
     return GSL_SUCCESS;
 }
      
-double growth_de (double a, double *gf)
+int growth_de (int n_a, double *a_vec, double *d_vec, double * f_vec)
 {
 	const gsl_odeiv_step_type * T 
 		= gsl_odeiv_step_rk4;
@@ -141,25 +140,37 @@ double growth_de (double a, double *gf)
 	double mu = 10;
 	gsl_odeiv_system sys = {func, jac, 2, &mu};
      
-	double t =1.e-3, t1 = a;
-	double h = 1e-6;
+    // step size
+    double h = 1e-6;
+
+    // double min value of a
+    double a = 1e-9;
+
+    // starting values of growth
 	double y[2] = {1.,0.}; 
-     
-	while (t < t1)
-	{
-		int status = gsl_odeiv_evolve_apply (e, c, s, &sys, &t, t1, &h, y);
-		if (status != GSL_SUCCESS)
-			break;
-	}
+    int status = 0;
+    
+    for (int i=0; i<n_a; i++){
+
+        double a_max = a_vec[i];
+        printf("a[%d] = %lf\n", i, a_max);
+
+        while (a<a_max)
+        {
+            status = gsl_odeiv_evolve_apply (e, c, s, &sys, &a, a_max, &h, y);
+            if (status != GSL_SUCCESS) break;
+        }
+        d_vec[i] = y[0]*a_max;
+        f_vec[i] = 1.0 + y[1]*a_max*a_max/d_vec[i];
+        if (status != GSL_SUCCESS) break;
+    }
+
+
 	gsl_odeiv_evolve_free (e);
 	gsl_odeiv_control_free (c);
 	gsl_odeiv_step_free (s);
 
-//	return y[0]*a;  //D growth factor
-//	return y[1]*a*a/(y[0]*a) +1.; // f = d ln D/ d ln a
-	gf[0] = y[0]*a;
-	gf[1] = y[1]*a*a / (y[0]*a) + 1.;
-	return y[0]*a;
+	return status;
 
 }
 
