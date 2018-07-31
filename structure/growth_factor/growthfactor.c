@@ -153,7 +153,6 @@ int growth_de (int n_a, double *a_vec, double *d_vec, double * f_vec)
     for (int i=0; i<n_a; i++){
 
         double a_max = a_vec[i];
-        printf("a[%d] = %lf\n", i, a_max);
 
         while (a<a_max)
         {
