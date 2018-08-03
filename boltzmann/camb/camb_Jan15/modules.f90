@@ -1585,6 +1585,7 @@
         if ((i<1) .or. (i+1>nrhopn)) then
             rhonu = sqrt(-1.0d0*abs(am)-1.0d0) !convenient way to make a NaN
             ! could use ieee but not available everywhere
+            global_error_flag=1
             return
         endif
 
