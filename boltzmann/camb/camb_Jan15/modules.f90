@@ -1581,6 +1581,14 @@
     i=int(d)
     d=d-i
 
+    ! COSMOSIS Error handling for crash we have seen
+        if ((i<1) .or. (i+1>nrhopn)) then
+            rhonu = sqrt(-1.0d0*abs(am)-1.0d0) !convenient way to make a NaN
+            ! could use ieee but not available everywhere
+            return
+        endif
+
+
     !  Cubic spline interpolation.
     rhonu=r1(i)+d*(dr1(i)+d*(3._dl*(r1(i+1)-r1(i))-2._dl*dr1(i) &
         -dr1(i+1)+d*(dr1(i)+dr1(i+1)+2._dl*(r1(i)-r1(i+1)))))
