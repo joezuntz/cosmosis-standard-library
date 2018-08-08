@@ -52,25 +52,25 @@ def setup(options):
 
             else:
 
-                print '*** ERROR *** - use_m must be: True, False, T, F'
+                print('*** ERROR *** - use_m must be: True, False, T, F')
 
         if use_m:
 
             m_vec = set_vector(options, "logmmin", "logmmax", "dlogm", "logm")
-            print 'using mass'
+            print('using mass')
 
         else:
 
             r_vec = set_vector(options, "rmin", "rmax", "dr", "r")
-            print 'using radius'
+            print('using radius')
 
         rho_c = 2.775e11 #  rho_c/h^2
         rho_c_4pi_3 = rho_c * 4 * np.pi / 3.
         log_rho_c_4pi_3 = np.log10(rho_c_4pi_3)
 
-        print 'm_vec = ', m_vec
-        print 'r_vec = ', r_vec
-        print 'z_vec = ', z_vec
+        print('m_vec = ', m_vec)
+        print('r_vec = ', r_vec)
+        print('z_vec = ', z_vec)
 
         ##############################################################################
         ########################## C WRAPPING ########################################
@@ -133,8 +133,8 @@ def execute(block, config):
 
         r_vec = 0 * m_vec
 
-    print 'm_vec', m_vec
-    print 'z_vec', z_vec
+    print('m_vec', m_vec)
+    print('z_vec', z_vec)
     
 
     zk  = block[matter_power, 'z']
@@ -151,8 +151,8 @@ def execute(block, config):
 
     sigma_m = np.zeros(nm*nz)
 
-    print "************************** cluster code begin **********************************"
-    print len(Pk)
+    print("************************** cluster code begin **********************************")
+    print(len(Pk))
     config.Sigma_Func (  
         OmM                 ,
         int_config          ,
@@ -164,7 +164,7 @@ def execute(block, config):
         r_vec               ,
         sigma_m         
         )
-    print "************************** cluster code ok **********************************"
+    print("************************** cluster code ok **********************************")
 
     sigma_m = sigma_m.reshape(nz, nm)
 
