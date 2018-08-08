@@ -42,17 +42,7 @@ def setup(options):
         r_vec = None
         m_vec = None
 
-        use_m = False
-
-        if options.has_value(option_section, "use_m"):
-
-            if isinstance(options[option_section, "use_m"],  bool):
-
-                use_m = options[option_section, "use_m"]
-
-            else:
-
-                print('*** ERROR *** - use_m must be: True, False, T, F')
+        use_m = options.get_bool(option_section, "use_m", False)
 
         if use_m:
 
