@@ -44,21 +44,29 @@ int execute(c_datablock * block, emu_options * config){
     const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
     double xstar[nparam];
     double ystar[nk];
+    double k_h[nk];
 
     int status = 0;
-    double wa;
+    double wa, h0;
+
     status |= c_datablock_get_double(block, cosmo, "ommh2",  &xstar[0]);
     status |= c_datablock_get_double(block, cosmo, "ombh2",  &xstar[1]);
     status |= c_datablock_get_double(block, cosmo, "sigma_8",&xstar[2]);
-    status |= c_datablock_get_double(block, cosmo, "h0",     &xstar[3]);
     status |= c_datablock_get_double(block, cosmo, "n_s",    &xstar[4]);
 
+    // We need h0 separately.
+    status |= c_datablock_get_double(block, cosmo, "h0",    &h0);
+    xstar[3] = h0;
+
+    // w0 is optional - assume -1 if not set.
     status |= c_datablock_get_double_default(block, cosmo, "w", -1.0,  &xstar[5]);
 
     // Need to do wa separately because the emu code messes
     // with its input.
     status |= c_datablock_get_double_default(block, cosmo, "wa", 0.0,  &wa);
     status |= c_datablock_get_double(block, cosmo, "omega_nu",  &xstar[7]);
+
+    double h3 = h0*h0*h0;
 
     if (status) return status;
 
@@ -67,17 +75,31 @@ int execute(c_datablock * block, emu_options * config){
     for (int i=0; i<config->nz; i++){
         xstar[6] = wa; // Have to do this or wa is overwritten each time
         xstar[8] = config->z[i];
+
+        // Run emulator
         status |= emu(xstar, PK[i]);
+
+        // Match camb normalization (h^3)
+        for (int j=0; j<nk; j++){
+            PK[i][j] *= h3;
+        }
+
         if (status) break;
     }
 
-    if (status) return status; 
+    // Get the k*h array
+    for (int j=0; j<nk; j++){
+        k_h[j] = mode[j] / h0;
+    }
 
-    c_datablock_put_double_grid(block,
+
+    if (!status) status |= c_datablock_put_double_grid(block,
             MATTER_POWER_NL_SECTION,
             "z", config->nz, config->z,
-            "k_h", nk, mode, // mode is defined in params.h
+            "k_h", nk, k_h, // mode is defined in params.h
             "p_k", PK);
+
+    deallocate_2d_double(&PK, config->nz);
 
     return status;
 
