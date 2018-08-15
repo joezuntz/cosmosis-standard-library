@@ -62,19 +62,20 @@ gsl_spline* spline_from_vectors(std::vector<double> &x, std::vector<double> &y) 
 template <class T>
 double gsl_integral(T &func, const double a, const double b, const double eps=1.0e-10)
 {
-  gsl_integration_romberg_workspace * w
-    = gsl_integration_romberg_alloc(20);
 
   double result, error;
-  size_t neval = 0;
-  void* vd;
+  size_t limit = 100;
+  int key = 1;
+
+  gsl_integration_workspace * w
+    = gsl_integration_workspace_alloc(limit);
 
   gsl_function F;
   F.function = &func;
 
-  gsl_integration_romberg(&F, a, b, 0, eps, &result, &neval, w);
+  gsl_integration_qag(&F, a, b, 0, eps, limit, key, w, &result, &error);
 
-  gsl_integration_romberg_free (w);
+  gsl_integration_workspace_free (w);
 
   return result;
 }
