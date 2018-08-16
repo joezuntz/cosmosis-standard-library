@@ -6,7 +6,7 @@ import os
 # If none of the names here is relevant for your calculation you can use any
 # string you want instead.
 cosmo = names.cosmological_parameters
-sigma = names.sigma_cpp
+sigma = "sigma_r" #names.sigma_cpp
 
 def set_vector(options, vmin, vmax, dv, vec):
 
@@ -162,7 +162,7 @@ def execute(block, config):
     block[sigma, "R" ] = r_vec
     block[sigma, "m" ] = m_vec
     block[sigma, "z" ] = z_vec
-    block[sigma, "sigma" ] = sigma_m
+    block[sigma, "sigma2" ] = sigma_m
 
     #We tell CosmoSIS that everything went fine by returning zero
     return 0

@@ -14,6 +14,7 @@ const long double
 const long double
     ln10 = log(10.0),
     pi = 3.14159265358979323846264338327950,
+    pi2 = pi*pi,
     four_pi_o3 = 4.*pi/3,
     rho_c = 2.775e11// rho_c/h^2
     ;
@@ -171,7 +172,7 @@ int executemain (
         for (int i=0;i<nm_bin;i++){
             PARAMS::r = r_vec[i];
             romb = gsl_integral(sig_arg, lnkmin, lnkmax, eps);
-            sigma_m[i+iz*nm_bin] =  std::sqrt(.5*romb)/PARAMS::pi;
+            sigma_m[i+iz*nm_bin] =  .5*romb/PARAMS::pi2;
         }
     }
 
