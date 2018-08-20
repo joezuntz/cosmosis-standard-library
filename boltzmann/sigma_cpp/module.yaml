@@ -1,9 +1,9 @@
-name: sigma_r
+name: sigma_cpp
 version: 1.0
-purpose: "Compute anisotropy dispersion sigma(R,z)"
+purpose: "Compute anisotropy dispersion sigma(R,z) in cpp"
 url: ""
-interface: sigmar.py
-attribution: [Scott Dodelson]
+interface: sigma_cpp.py
+attribution: [Michel Aguena]
 rules:
     ""
 cite: []
@@ -26,11 +26,17 @@ params:
     zmin: "real, minimum redshift to generate values for"
     zmax: "real, maximum redshift to generate values for"
     dz: "real, output redshift sample spacing"
+    z: "real, values of redshift to generate values for, overwrites (zmin, zmax, dz)"
+    logmmin: "real, minimum value of log10(Mass) [in M_sun/h] to generate values for"
+    logmmax: "real, maximum value of log10(Mass) [in M_sun/h] to generate values for"
+    dlogm: "real, log10(Mass) spacing"
+    logm: "real, values of log10(Mass) [in M_sun/h] to generate values for, overwrites (logmmin, logmmax, dlogm)"
     rmin: "real, minimum scale R in Mpc/h to generate values for"
     rmax: "real, maximum scale R in Mpc/h to generate values for"
     dr: "real, scale R spacing"
+    r: "real, values of R [Mpc/h] to generate values for, overwrites (rmin, rmax, dr)"
     matter_power: "name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl"
-    crop_klim: "logical, crops the klimits of the sigma integral to max(0.01/R, kmin), min(100/R, kmax)  (default T)"
+    use_m: "logical, uses the mass values as a base for the computation instead of R (default F)"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
@@ -41,7 +47,8 @@ inputs:
         P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}.  Section name specified by parameter in ini file."
 
 outputs:
-    sigmar:
+    sigma_cpp:
         R: "real 1D array, scale R of output in Mpc/h"
+        m: "real 1D array, of log10(Mass) [in M_sun/h] output"
         z: "real 1D array, redshift of output"
-        sigma2: "real 2D array, variance sigma^2(R,z)"
+        sigma: "real 2D array, variance sigma(R,z)"
