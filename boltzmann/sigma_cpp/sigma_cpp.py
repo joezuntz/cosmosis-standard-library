@@ -45,18 +45,18 @@ def setup(options):
         use_m = options.get_bool(option_section, "use_m", False)
 
         if use_m:
-
             m_vec = set_vector(options, "logmmin", "logmmax", "dlogm", "logm")
             print('using mass')
-
         else:
-
             r_vec = set_vector(options, "rmin", "rmax", "dr", "r")
             print('using radius')
 
         rho_c = 2.775e11 #  rho_c/h^2
         rho_c_4pi_3 = rho_c * 4 * np.pi / 3.
         log_rho_c_4pi_3 = np.log10(rho_c_4pi_3)
+
+        prt_detail = int(options.get_bool(
+                            option_section, "prt_detail", False))
 
         print('m_vec = ', m_vec)
         print('r_vec = ', r_vec)
@@ -116,33 +116,29 @@ def execute(block, config):
     matter_power = config.matter_power
 
     if m_vec is None:
-
         m_vec = config.log_rho_c_4pi_3 + np.log10(OmM) + 3*np.log10(r_vec)
 
     if r_vec is None:
-
         r_vec = 0 * m_vec
 
-    print('m_vec', m_vec)
-    print('z_vec', z_vec)
+    if config.prt_detail:
+        print('m_vec', m_vec)
+        print('z_vec', z_vec)
     
-
     zk  = block[matter_power, 'z']
     k  = block[matter_power, 'k_h']
     Pk = block[matter_power, 'p_k'].flatten()
 
-    # Do the main calculation that is the purpose of this module.
-    # It is good to make this execute function as simple as possible
-
     nm, nz = len(m_vec), len(z_vec)
     proc_num = 1
 
-    int_config = np.array([proc_num, len(k), nm, nz, len(zk)], dtype=np.int32)
+    int_config = np.array([proc_num, len(k), nm, nz, len(zk), config.prt_detail], dtype=np.int32)
 
     sigma_m = np.zeros(nm*nz)
 
-    print("************************** cluster code begin **********************************")
-    print(len(Pk))
+    if config.prt_detail:
+        print("************************** cluster code begin **********************************")
+        print('len(Pk):',len(Pk))
     config.Sigma_Func (  
         OmM                 ,
         int_config          ,
@@ -154,7 +150,8 @@ def execute(block, config):
         r_vec               ,
         sigma_m         
         )
-    print("************************** cluster code ok **********************************")
+    if config.prt_detail:
+        print("************************** cluster code ok **********************************")
 
     sigma_m = sigma_m.reshape(nz, nm)
 

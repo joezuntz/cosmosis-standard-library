@@ -1,4 +1,3 @@
-#include <time.h>
 #include <cmath>
 #include <vector>
 #include <stdio.h>
@@ -101,6 +100,7 @@ int executemain (
     int nm_bin = int_config[2];
     int nz_bin = int_config[3];
     int nzk_bin = int_config[4];
+    int prt_detail = int_config[5];
 
     #ifdef _OPENMP
     omp_set_num_threads(proc_num);
@@ -108,18 +108,16 @@ int executemain (
 
     PARAMS::kmin = Pk_k[0];
     PARAMS::kmax = Pk_k[n_k-1];
-    printf("kmin=%.10f\tkmax=%.10f\n",PARAMS::kmin,PARAMS::kmax);
 
-    double tstart, tstop, ttime;
-    tstart = (double)clock()/CLOCKS_PER_SEC;
-    printf("starting\n");
-
-
-    printf("proc_num:%d\n",proc_num);
-    printf("n_k:%d\n",n_k);
-    printf("nm_bin:%d\n",nm_bin);
-    printf("nz_bin:%d\n",nz_bin);
-    printf("nzk_bin:%d\n",nzk_bin);
+    if (prt_detail == 1){
+        printf("kmin=%.10f\tkmax=%.10f\n",PARAMS::kmin,PARAMS::kmax);
+        printf("starting\n");
+        printf("proc_num:%d\n",proc_num);
+        printf("n_k:%d\n",n_k);
+        printf("nm_bin:%d\n",nm_bin);
+        printf("nz_bin:%d\n",nz_bin);
+        printf("nzk_bin:%d\n",nzk_bin);
+        }
 
     // Writes radius to vector
 
@@ -183,6 +181,4 @@ int executemain (
         }
     }
 
-    tstop = (double)clock()/CLOCKS_PER_SEC;
-    ttime= tstop-tstart; /*ttime is how long your code run */
     return 0;}
