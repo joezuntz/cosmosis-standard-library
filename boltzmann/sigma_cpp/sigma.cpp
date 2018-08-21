@@ -2,7 +2,9 @@
 #include <cmath>
 #include <vector>
 #include <stdio.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_integration.h>
 
@@ -100,7 +102,9 @@ int executemain (
     int nz_bin = int_config[3];
     int nzk_bin = int_config[4];
 
+    #ifdef _OPENMP
     omp_set_num_threads(proc_num);
+    #endif
 
     PARAMS::kmin = Pk_k[0];
     PARAMS::kmax = Pk_k[n_k-1];
@@ -146,6 +150,9 @@ int executemain (
         gsl_spline * powerspec;
         powerspec = spline_from_vectors(ps_z, Pk_temp);
 
+        #ifdef _OPENMP
+	#pragma omp parallel for
+        #endif
         for (int iz=0;iz<nz_bin;iz++)
             Pk[iz*n_k+i] = gsl_spline_eval(powerspec, z_vec[iz], NULL);
     }
