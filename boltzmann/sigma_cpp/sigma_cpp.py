@@ -68,28 +68,29 @@ def setup(options):
         import ctypes
         
         # C types
-        C_VEC_DOUB     = np.ctypeslib.ndpointer(dtype=np.float64,ndim=1,flags='C_CONTIGUOUS')
-        C_VEC_INT     = np.ctypeslib.ndpointer(dtype=np.int32,ndim=1,flags='C_CONTIGUOUS')
-        C_INT        = ctypes.c_int
-        C_DOUB        = ctypes.c_double
+        C_VEC_DOUB = np.ctypeslib.ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS')
+        C_VEC_INT  = np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS')
+        C_INT      = ctypes.c_int
+        C_DOUB     = ctypes.c_double
         
         # Import as Shared Object
-        c_code = '%s/sigma.so'%os.path.dirname(os.path.realpath(__file__))
-        dll1 = ctypes.CDLL('libgslcblas.so', mode=ctypes.RTLD_GLOBAL)
-        dll2 = ctypes.CDLL('libgsl.so', mode=ctypes.RTLD_GLOBAL)
+        dirname = os.path.dirname(os.path.realpath(__file__))
+        c_code = '{}/sigma.so'.format(dirname)
         lib_Sigma = ctypes.CDLL(c_code, mode=ctypes.RTLD_GLOBAL)
+
+        # Specify the return and argument types of the function we will use
         Sigma_Func = lib_Sigma.executemain
-        #Sigma_Func.restype = ctypes.c_int
+        Sigma_Func.restype = C_INT
         Sigma_Func.argtypes = [
-            C_DOUB    ,   # double* init_parameters ,
-            C_VEC_INT     ,   # int*    int_config      ,
-            C_VEC_DOUB    ,   # double* Pk_k            ,
-            C_VEC_DOUB    ,   # double* Pk_z            ,
-            C_VEC_DOUB    ,   # double* Pk              ,
-            C_VEC_DOUB    ,   # double* z_vec           ,
-            C_VEC_DOUB    ,   # double* m_vec           ,
-            C_VEC_DOUB    ,   # double* r_vec           ,
-            C_VEC_DOUB        # double* sigma_m         
+            C_DOUB        ,   # double* init_parameters
+            C_VEC_INT     ,   # int*    int_config
+            C_VEC_DOUB    ,   # double* Pk_k
+            C_VEC_DOUB    ,   # double* Pk_z
+            C_VEC_DOUB    ,   # double* Pk
+            C_VEC_DOUB    ,   # double* z_vec
+            C_VEC_DOUB    ,   # double* m_vec
+            C_VEC_DOUB    ,   # double* r_vec
+            C_VEC_DOUB        # double* sigma_m
             ]
 
     #Now you have the input options you can do any useful preparation
@@ -102,11 +103,7 @@ def setup(options):
     return res
 
 def execute(block, config):
-    #This function is called every time you have a new sample of cosmological and other parameters.
-    #It is the main workhorse of the code. The block contains the parameters and results of any 
-    #earlier modules, and the config is what we loaded earlier.
 
-    #This loads a value from the section "cosmological_parameters" that we read above.
     OmM = block[cosmo, "omega_m"]
 
     # Just a simple rename for clarity.
@@ -153,13 +150,12 @@ def execute(block, config):
     if config.prt_detail:
         print("************************** cluster code ok **********************************")
 
-    sigma_m = sigma_m.reshape(nz, nm)
+    sigma_m = sigma_m.reshape((nz, nm))
 
-    # Now we have got a result we save it back to the block like this.
-    block[sigma, "R" ] = r_vec
+    # We save the grid sigma2(R,z) and the m vector separately.
+    # This ordering is consistent with the old sigmar module
+    block.put_grid(sigma, "R", r_vec, "z", z_vec, "sigma2", sigma_m.T)
     block[sigma, "m" ] = m_vec
-    block[sigma, "z" ] = z_vec
-    block[sigma, "sigma2" ] = sigma_m
 
     #We tell CosmoSIS that everything went fine by returning zero
     return 0
