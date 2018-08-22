@@ -1,21 +1,17 @@
 from cosmosis.datablock import names, option_section
 import numpy as np
 import os
+import ctypes
 
-# We have a collection of commonly used pre-defined block section names.
-# If none of the names here is relevant for your calculation you can use any
-# string you want instead.
-cosmo = names.cosmological_parameters
-sigma = "sigma_r" #names.sigma_cpp
+# Names used
+sigma = "sigma_r"
 
 def set_vector(options, vmin, vmax, dv, vec):
+    """Read a vector-valued parameter from the parameter file either directly or via min,max,n"""
 
     if options.has_value(option_section, vec):
-
         return np.array(options[option_section, vec])
-
     else:
-
         xmin = options[option_section, vmin]
         xmax = options[option_section, vmax]
         dx = options[option_section, dv]
@@ -23,21 +19,15 @@ def set_vector(options, vmin, vmax, dv, vec):
         return np.arange(xmin, xmax, dx)
 
 def setup(options):
-    #This function is called once per processor per chain.
-    #It is a chance to read any fixed options from the configuration file,
-    #load any data, or do any calculations that are fixed once.
 
-    #Use this syntax to get a single parameter from the ini file section
-    #for this module.  There is no type checking here - you get whatever the user
-    #put in.
+    # We use a class as a namespace here to return config information
 
+    class config:
 
-    #if options.has_value(option_section, "r"):
+        # Name of the section to get matter power from
+        matter_power  = options.get_string(option_section, "matter_power", "matter_power_lin")
 
-    class res():
-
-        matter_power  = options[option_section, "matter_power"]
-
+        # Ranges over which to calculate results
         z_vec = set_vector(options, "zmin", "zmax", "dz", "z")
         r_vec = None
         m_vec = None
@@ -51,12 +41,13 @@ def setup(options):
             r_vec = set_vector(options, "rmin", "rmax", "dr", "r")
             print('using radius')
 
+        # Constants needed later
         rho_c = 2.775e11 #  rho_c/h^2
         rho_c_4pi_3 = rho_c * 4 * np.pi / 3.
         log_rho_c_4pi_3 = np.log10(rho_c_4pi_3)
 
-        prt_detail = int(options.get_bool(
-                            option_section, "prt_detail", False))
+        # printout settings
+        verbose = int(options.get_bool(option_section, "verbose", False))
 
         print('m_vec = ', m_vec)
         print('r_vec = ', r_vec)
@@ -65,7 +56,6 @@ def setup(options):
         ##############################################################################
         ########################## C WRAPPING ########################################
         ##############################################################################
-        import ctypes
         
         # C types
         C_VEC_DOUB = np.ctypeslib.ndpointer(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS')
@@ -90,21 +80,15 @@ def setup(options):
             C_VEC_DOUB    ,   # double* z_vec
             C_VEC_DOUB    ,   # double* m_vec
             C_VEC_DOUB    ,   # double* r_vec
-            C_VEC_DOUB        # double* sigma_m
+            C_VEC_DOUB    ,   # double* sigma_m
             ]
 
-    #Now you have the input options you can do any useful preparation
-    #you want.  Maybe load some data, or do a one-off calculation.
 
-    #Whatever you return here will be saved by the system and the function below
-    #will get it back.  You could return 0 if you won't need anything.
-
-
-    return res
+    return config
 
 def execute(block, config):
 
-    OmM = block[cosmo, "omega_m"]
+    OmM = block[names.cosmological_parameters, "omega_m"]
 
     # Just a simple rename for clarity.
     z_vec = config.z_vec
@@ -118,36 +102,34 @@ def execute(block, config):
     if r_vec is None:
         r_vec = 0 * m_vec
 
-    if config.prt_detail:
+    if config.verbose:
         print('m_vec', m_vec)
         print('z_vec', z_vec)
-    
-    zk  = block[matter_power, 'z']
-    k  = block[matter_power, 'k_h']
-    Pk = block[matter_power, 'p_k'].flatten()
 
     nm, nz = len(m_vec), len(z_vec)
+    
+    # Load the matter power spectrum from the block, e.g. from CAMB.
+    zk, k, Pk = block.get_grid(matter_power, "z", "k_h", "p_k")
+    Pk = Pk.flatten()
+
+
+    # For now OpenMP is disabled
     proc_num = 1
 
-    int_config = np.array([proc_num, len(k), nm, nz, len(zk), config.prt_detail], dtype=np.int32)
+    # integer configuration parameters for the C++ code
+    int_config = np.array([proc_num, len(k), nm, nz, len(zk), config.verbose], dtype=np.int32)
 
+    # Space where the output results will be stored
     sigma_m = np.zeros(nm*nz)
 
-    if config.prt_detail:
+    if config.verbose:
         print("************************** cluster code begin **********************************")
         print('len(Pk):',len(Pk))
-    config.Sigma_Func (  
-        OmM                 ,
-        int_config          ,
-        k                   ,
-        zk                  ,
-        Pk                  ,
-        z_vec               ,
-        m_vec               ,
-        r_vec               ,
-        sigma_m         
-        )
-    if config.prt_detail:
+
+    # Run the main function
+    config.Sigma_Func (OmM, int_config, k, zk, Pk, z_vec, m_vec, r_vec, sigma_m)
+
+    if config.verbose:
         print("************************** cluster code ok **********************************")
 
     sigma_m = sigma_m.reshape((nz, nm))

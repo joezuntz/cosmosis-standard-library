@@ -37,7 +37,7 @@ params:
     r: "real, values of R [Mpc/h] to generate values for, overwrites (rmin, rmax, dr)"
     matter_power: "name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl"
     use_m: "logical, uses the mass values as a base for the computation instead of R (default F)"
-    prt_detail: "logical, prints details of the computation (default F)"
+    verbose: "logical, prints details of the computation (default F)"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
