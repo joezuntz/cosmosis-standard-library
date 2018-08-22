@@ -244,6 +244,7 @@ subroutine CorrFuncFullSkyImpl(lmax, status)
        ! COSMOSIS - return error instead of killing program
        status = lensing_error_norm
        deallocate(lens_contrib, ddcontribs, corrcontribs)
+       return
       end if
      end do
     end if

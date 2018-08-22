@@ -113,28 +113,33 @@ static double ext_limber_integrand(double chi, void * data_void)
 	if(chi < data->chimin || chi > data->chimax) return 0.0;
 
 	// Get W^X(chi) and W^Y(chi)
-	double Wr_X = gsl_spline_eval(data->WX_red,chi,data->accelerator_wx);
-	double Wr_Y;
+    double Wr_X, Wr_Y;
+
+    int status = gsl_spline_eval_e(data->WX_red,chi,data->accelerator_wx, &Wr_X);
+
+
 	// A short-cut - if the two splines are the same we do not need to 
 	// do the interpolation twice
-	if (data->WX_red==data->WY_red) Wr_Y = Wr_X;
-	else Wr_Y = gsl_spline_eval(data->WY_red,chi,data->accelerator_wy);
-	if (Wr_X==0 || Wr_Y==0) return 0.0;
+	if (data->WX_red==data->WY_red){
+        Wr_Y = Wr_X;
+    }
+    else{
+        status |= gsl_spline_eval_e(data->WY_red,chi,data->accelerator_wy, &Wr_Y);
+    }
+
+    if (status) return 0.0;
+
+	if ((Wr_X==0) || (Wr_Y==0)) return 0.0;
 
 	double nu = (data->ell+0.5);
 	double k = nu / f_K(data->K, chi);
 	// 
 	double growth = gsl_spline_eval(data->D_chi, chi, data->accelerator_growth);
 	
-	// Get P(k,z) using k=nu/chi.
-	// Deactivate error handling 
-	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
 
 	double p;
-	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
+	status |= gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
 
-	// Restore the old error handler
-	gsl_set_error_handler(old_handler); 
 	if (status) 
 	{
 		return 0.0;
@@ -187,11 +192,10 @@ static double rsd_limber_integrand(double chi, void * data_void)
 	double chi_over_nu2 = chi * chi / nu / nu;
 	// Get P(nu/chi, chi)
 	// Deactivate error handling 
-	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
+
 	double p;
 	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
-	// Restore the old error handler
-	gsl_set_error_handler(old_handler); 
+
 	if (status) 
 	{
 		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
@@ -516,6 +520,9 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
         exit(1);
     }
 
+    // Get P(k,z) using k=nu/chi.
+    // Deactivate error handling 
+    gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
 
 
 #pragma omp parallel
@@ -589,10 +596,10 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	gsl_interp_accel_free(data.accelerator_py);
 	gsl_interp_accel_free(data.accelerator_growth);
 
-}
-	// These two are not deallocated because they are static and only initialized once.
-	// gsl_integration_glfixed_table_free(table);	
-	// gsl_integration_workspace_free(W);
+} // end of parallel region
+
+    // Restore the old error handler
+    gsl_set_error_handler(old_handler); 
 
 	// And that's it
 	return 0;
@@ -642,6 +649,7 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
     }
 
 	config->status = LIMBER_STATUS_OK;
+    gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
 
     static int n_ell_zero_warning = 0;
     if (config->n_ell==0){
@@ -762,6 +770,9 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	gsl_interp_accel_free(data.accelerator_growth);
 
 }
+    // Restore the old error handler
+    gsl_set_error_handler(old_handler); 
+
 
 	// And that's it
 	return 0;

@@ -217,6 +217,9 @@
     if (.not. CP%OnlyTransfers) then
         if (CP%DoLensing .and. global_error_flag==0) then
             call lens_Cls(global_error_flag) ! COSMOSIS error flag in lens_cls
+            if (global_error_flag/=0) then
+                if (present(error)) error =global_error_flag
+            end if
         end if
 
         if (do_bispectrum .and. global_error_flag==0) call GetBispectrum(CTransScal)

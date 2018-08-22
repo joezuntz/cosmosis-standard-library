@@ -23,6 +23,15 @@ typedef struct growth_config {
 	int nz;
 } growth_config;
 
+void reverse(double * x, int n)
+{
+	for (int i=0; i<n/2; i++){
+		double tmp = x[i];
+		x[i] = x[n-1-i];
+		x[n-1-i] = tmp;
+	}
+}
+
 growth_config * setup(c_datablock * options)
 {
 	int status = 0;
@@ -49,50 +58,52 @@ int execute(c_datablock * block, growth_config * config)
 
 	int i,status=0;
 	double w,wa,omega_m,omega_v;
-	double *dz,*fz,*zbins;
-	int nzbins = config->nz;
+	int nz = config->nz;
 	
-	//allocate memory for single D, f and arrays as function of z
-	double gf[2];
-	dz = malloc(nzbins*sizeof(double));
-	fz = malloc(nzbins*sizeof(double));
-	zbins = malloc(nzbins*sizeof(double));
+
 	//read cosmological params from datablock
-        status |= c_datablock_get_double_default(block, cosmo, "w", -1.0, &w);
-        status |= c_datablock_get_double_default(block, cosmo, "wa", 0.0, &wa);
-        status |= c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
-	if ( c_datablock_has_value(block, cosmo, "omega_lambda") ) status |= c_datablock_get_double(block, cosmo, "omega_lambda", &omega_v);
-	else omega_v = 1. - omega_m;
+    status |= c_datablock_get_double_default(block, cosmo, "w", -1.0, &w);
+    status |= c_datablock_get_double_default(block, cosmo, "wa", 0.0, &wa);
+    status |= c_datablock_get_double(block, cosmo, "omega_m", &omega_m);
+    status |= c_datablock_get_double_default(block, cosmo, "omega_lambda", 1-omega_m, &omega_v);
+
 	if (status){
 		fprintf(stderr, "Could not get required parameters for growth function (%d)\n", status);
 		return status;
 	}
 
-	//returns linear growth factor and growth function for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa	
-	// status = get_growthfactor(1.0/(1.0+redshift),omega_m,w,wa,gf);
-	//save to datablock
-	// status |= c_datablock_put_double(block, growthparameters, "delta", gf[0]);
-	// status |= c_datablock_put_double(block, growthparameters, "dln_delta_dlna", gf[1]);
-	// status |= c_datablock_put_double(block, growthparameters, "growth_z", redshift);
-	// z=0
-	// status = get_growthfactor(1.0,omega_m,w,wa,gf);
-	// status |= c_datablock_put_double(block, growthparameters, "delta_z0", gf[0]);
+	//allocate memory for single D, f and arrays as function of z
+	double *a = malloc(nz*sizeof(double));
+	double *dz = malloc(nz*sizeof(double));
+	double *fz = malloc(nz*sizeof(double));
+	double *z = malloc(nz*sizeof(double));
 
-	//output D and f over a range of z
-	for (i=0;i<nzbins;i++)
-	{	
-		double z = config->zmin + i*config->dz;
-		status = get_growthfactor(1.0/(1.0+z),omega_m,omega_v,w,wa,gf);
-		dz[i] = gf[0];
-		fz[i] = gf[1];
-		zbins[i] = z;
-	}	
-	status |= c_datablock_put_double_array_1d(block,growthparameters, "d_z", dz, nzbins);
-	status |= c_datablock_put_double_array_1d(block,growthparameters, "f_z", fz, nzbins);
-	status |= c_datablock_put_double_array_1d(block,growthparameters, "z", zbins, nzbins);
+
+	// output D and f over a range of z
+	// we do this in reverse becase the growth code is expecting
+	// increasing values of "a"
+	// we reverse afterwards
+	for (i=0;i<nz;i++){
+		z[nz-1-i] = config->zmin + i*config->dz;
+		a[nz-1-i] = 1.0/(1+z[nz-1-i]);
+	}
+
+
+	status = get_growthfactor(nz, a, omega_m, omega_v, w, wa, dz, fz);
+	
+	reverse(a,nz);
+	reverse(z,nz);
+	reverse(dz,nz);
+	reverse(fz,nz);
+
+
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "d_z", dz, nz);
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "f_z", fz, nz);
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "z", z, nz);
 	free(fz);
 	free(dz);
-	free(zbins);
+	free(z);
+	free(a);
 
 return status;
 }
@@ -100,9 +111,6 @@ return status;
 
 int cleanup(growth_config * config)
 {
-// Config is whatever you returned from setup above
-// Free it 	
 	free(config);
-
 	return 0;
 }

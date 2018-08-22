@@ -15,7 +15,12 @@ module camb_interface_tools
 	integer, parameter :: CAMB_MODE_THERMAL  = 4
 
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
-	integer :: linear_nz = 401
+	integer :: linear_nz = 101
+	
+	!Vivian begins
+	real(8) :: back_zmin=0.0, back_zmax=4.0
+	integer :: back_nz = 401
+	!Vivian ends
 
 	logical :: distances_to_lss
 	integer :: n_highz_distance
@@ -44,9 +49,11 @@ module camb_interface_tools
 
 	logical :: need_thermal_init
 
-	!From Vinicius Miranda, to expose accuracy settings
+	!From Vivian Miranda, to expose accuracy settings
 	real(dl) :: acc_boost = 1.0_dl
 	logical :: high_acc_default = .false.
+
+	logical :: reject_non_accelerating
 
 
 	contains
@@ -150,6 +157,11 @@ module camb_interface_tools
 		status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
 		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 
+		status = status + datablock_get_double_default(block, option_section,"background_zmin", back_zmin, back_zmin)
+		status = status + datablock_get_double_default(block, option_section,"background_zmax", back_zmax, back_zmax)
+		status = status + datablock_get_int_default(block, option_section,"background_nz", back_nz, back_nz)
+
+
 		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)
 		status = status + datablock_get_double_default(block, option_section,"kmin", default_kmin, standard_kmin)
 		status = status + datablock_get_int_default(block, option_section,"nk", default_nk, standard_nk)
@@ -200,7 +212,7 @@ module camb_interface_tools
 	    status = status + datablock_get_logical_default(block,option_section,"high_accuracy_default",.false.,high_acc_default)
 	    HighAccuracyDefault = high_acc_default
 
-
+	    status = status + datablock_get_logical_default(block, option_section, "reject_non_accelerating", .false., reject_non_accelerating)
 
 		!If noisy, report relevant params
 		if (FeedbackLevel .gt. 0) then
@@ -310,7 +322,7 @@ module camb_interface_tools
 		else
 			status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w_lam)
 			status = status + datablock_get_double_default(block, cosmo, "wa",  0.0D0, wa_ppf)
-			if (w_lam+wa_ppf .gt. 0) then
+			if (reject_non_accelerating .and. (w_lam+wa_ppf .gt. 0)) then
 				write(*,*) "Unphysical w_0 + w_a = ", w_lam, " + ", wa_ppf, " = ", w_lam+wa_ppf, " > 0"
 				status = 1
 			endif
@@ -359,7 +371,7 @@ module camb_interface_tools
 		nz = linear_nz
 
 		dz=(zmax-zmin)/(nz-1.0)
-		params%transfer%num_redshifts =  nz
+		params%transfer%num_redshifts = nz
         params%Transfer%PK_num_redshifts = nz
 
 		if (nz .gt. max_transfer_redshifts) then
@@ -583,13 +595,19 @@ module camb_interface_tools
 		status = 0
 
 
-		nz = params%transfer%num_redshifts
+!Vivian begins
+		!nz = params%transfer%num_redshifts		
+		!nz_regular = nz
+		nz = back_nz
 		nz_regular = nz
-
+!Vivian ends
 		!Fixed number of sample points out to last scattering surface
 		if (distances_to_lss) then 
 			nz = nz + n_highz_distance
-			zmax_regular = params%transfer%redshifts(1)
+!Vivian begins			
+			!zmax_regular = params%transfer%redshifts(1)
+			zmax_regular = back_zmax
+!Vivian ends			
 			dlogz_high = (log(1+z_lss) - log(1+zmax_regular))/n_highz_distance
 		endif
 
@@ -597,10 +615,14 @@ module camb_interface_tools
 		allocate(z(nz))
 		!if (density) allocate(rho(nz))
 
-		do i=1,nz
+!Vivian begins
+		!do i=1,nz
+		do i=1,back_nz
 			if (i<=nz_regular) then
 				! The low redshift regime
-				z(i) = params%transfer%redshifts(nz_regular-i+1)
+				!z(i) = params%transfer%redshifts(nz_regular-i+1)
+				z(i) = back_zmin + (i-1)*(back_zmax-back_zmin)/(back_nz-1.0)
+!Vivian ends				
 			else
 				! Additional points beyond the regime where we store the matter power spectrum
 				z(i) = (1+zmax_regular) * exp(dlogz_high*(i-nz_regular)) - 1
