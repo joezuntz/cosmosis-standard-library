@@ -62,7 +62,14 @@ def setup(options):
         C_VEC_INT  = np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS')
         C_INT      = ctypes.c_int
         C_DOUB     = ctypes.c_double
-        
+
+        # Importing these manually seems to be necessary on some systems
+        # I thought it should be fine to do the linking in the Makefile
+        # but apparently there is something wrong with that as written.
+        # Would be nice to figure that out.
+        dll1 = ctypes.CDLL('libgslcblas.so', mode=ctypes.RTLD_GLOBAL)
+        dll2 = ctypes.CDLL('libgsl.so', mode=ctypes.RTLD_GLOBAL)
+
         # Import as Shared Object
         dirname = os.path.dirname(os.path.realpath(__file__))
         c_code = '{}/sigma.so'.format(dirname)
@@ -137,7 +144,7 @@ def execute(block, config):
     # We save the grid sigma2(R,z) and the m vector separately.
     # This ordering is consistent with the old sigmar module
     block.put_grid(sigma, "R", r_vec, "z", z_vec, "sigma2", sigma_m.T)
-    block[sigma, "m" ] = m_vec
+    block[sigma, "logm" ] = m_vec
 
     #We tell CosmoSIS that everything went fine by returning zero
     return 0
