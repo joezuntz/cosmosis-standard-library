@@ -50,6 +50,6 @@ inputs:
 outputs:
     sigma_cpp:
         R: "real 1D array, scale R of output in Mpc/h"
-        m: "real 1D array, of log10(Mass) [in M_sun/h] output"
+        logm: "real 1D array, of log10(Mass) [in M_sun/h] output"
         z: "real 1D array, redshift of output"
         sigma: "real 2D array, variance sigma(R,z)"
