@@ -22,6 +22,12 @@ void* setup(c_datablock * options){
     status |= c_datablock_get_int_default(options, OPTION_SECTION, "nz", 50, &(config->nz));
     status |= c_datablock_get_double_default(options, OPTION_SECTION, "zmax", 2.01, &(config->zmax));
 
+    if (config->zmax>2.02){
+        fprintf(stderr, "The Cosmic Emulator can only go up to zmax=2.02.  You set zmax=%lf\n", config->zmax);
+        fprintf(stderr, "This will not work - quitting\n");
+        exit(1);
+    }
+
     config->z = malloc(config->nz*sizeof(double));
     for (int i=0; i<config->nz; i++){
         config->z[i] = i*(config->zmax/(config->nz-1));
