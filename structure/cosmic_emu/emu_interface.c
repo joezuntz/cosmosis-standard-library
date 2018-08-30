@@ -70,7 +70,7 @@ int execute(c_datablock * block, emu_options * config){
     // Need to do wa separately because the emu code messes
     // with its input.
     status |= c_datablock_get_double_default(block, cosmo, "wa", 0.0,  &wa);
-    status |= c_datablock_get_double(block, cosmo, "omnuh2",  &xstar[7]);
+    status |= c_datablock_get_double_default(block, cosmo, "omnuh2",  0.0, &xstar[7]);
 
     double h3 = h0*h0*h0;
 
