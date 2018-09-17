@@ -106,7 +106,6 @@
             call cubicsplint(a_ppf,w_ppf,ddw_ppf,nw_ppf,al,w_de)
         endif
     endif
-    write(*,*) a,w_de
     end function w_de  ! equation of state of the PPF DE
 
 
