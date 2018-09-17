@@ -309,6 +309,10 @@ module camb_interface_tools
 		if (use_tabulated_w) then
 			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "w", w_array, nw_ppf)
 			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "a", a_array, nw_ppf)
+			if (status .ne. 0) then
+				write(*,*) "Failed to read w(a) from de_equation_of_state"
+				return
+			endif
 			if (nw_ppf .gt. nwmax) then
 				write(*,*) "The size of the w(a) table was too large ", nw_ppf, nwmax
 				status=nw_ppf
