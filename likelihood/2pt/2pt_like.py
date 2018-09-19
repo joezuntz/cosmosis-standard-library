@@ -67,7 +67,14 @@ class TwoPointLikelihood(GaussianLikelihood):
         if self.gaussian_covariance:
             self.constant_covariance = False
 
+        self.moped = options.get_string('moped', default='')
+
         super(TwoPointLikelihood, self).__init__(options)
+
+        if self.moped:
+            print("Using compressed data from MOPED algorithm: {} data points".format(len(self.moped_data)))
+            if self.sellentin:
+                raise ValueError("Sellentin mode is incompatible with Moped mode in 2pt like")
 
     def build_data(self):
         filename = self.options.get_string('data_file')
@@ -125,7 +132,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             self.two_point_data.choose_data_sets(data_sets)
 
         # The ones we actually used.
-        used_names = [
+        self.used_names = [
             spectrum.name for spectrum in self.two_point_data.spectra]
 
         # Check for scale cuts. In general, this is a minimum and maximum angle for
@@ -133,7 +140,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         # but what can you do?
 
         scale_cuts = {}
-        for name in used_names:
+        for name in self.used_names:
             s = self.two_point_data.get_spectrum(name)
             for b1, b2 in s.bin_pairs:
                 option_name = "angle_range_{}_{}_{}".format(name, b1, b2)
@@ -145,7 +152,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         # example:
         # cut_wtheta = 1,2  1,3  2,3
         bin_cuts = []
-        for name in used_names:
+        for name in self.used_names:
             s = self.two_point_data.get_spectrum(name)
             option_name = "cut_{}".format(name)
             if self.options.has_value(option_name):
@@ -169,7 +176,7 @@ class TwoPointLikelihood(GaussianLikelihood):
                 data_points = len(self.two_point_data.get_spectrum(name))
             else:
                 data_points = 0
-            if name in used_names:
+            if name in self.used_names:
                 print("    - {}  {} data points after cuts {}".format(name,  data_points, "  [using in likelihood]"))
                 total_data_points += data_points
             else:
@@ -196,15 +203,29 @@ class TwoPointLikelihood(GaussianLikelihood):
             raise ValueError(
                 "No data was chosen to be used from 2-point data file {0}. It was either not selectedin data_sets or cut out".format(filename))
 
+        if self.moped:
+            data_file = fits.open(filename)
+            self.moped_data = data_file['MOPED-DATA-{}'.format(self.moped)].data['moped']
+            self.moped_transform = data_file['MOPED-TRANSFORM-{}'.format(self.moped)].data
+            data_file.close()
+
+            return None, self.moped_data
+
         # The x data is not especially useful here, so return None.
         # We will access the self.two_point_data directly later to
         # determine ell/theta values
         return None, data_vector
 
     def build_covariance(self):
+
+        
         C = np.array(self.two_point_data.covmat)
         r = self.options.get_int('covariance_realizations', default=-1)
         self.sellentin = self.options.get_bool('sellentin', default=False)
+
+        if self.moped:
+            return np.identity(len(self.moped_data))
+
 
         if self.sellentin:
             if not self.constant_covariance:
@@ -298,6 +319,10 @@ class TwoPointLikelihood(GaussianLikelihood):
         # the thing it does want is the theory vector, for comparison with
         # the data vector
         theory = np.concatenate(theory)
+
+        if self.moped:
+            return np.dot(self.moped_transform, theory)
+
         return theory
 
     def do_likelihood(self, block):

@@ -1,0 +1,67 @@
+name: "pantheon"
+version: "2018"
+purpose: "Likelihood of the Pantheon supernova analysis"
+url: "http://dx.doi.org/10.17909/T95Q4X"
+interface: pantheon.py
+attribution: [Scolnic et al (measurement), CosmoSIS team (code)]
+rules: "None."
+cite:
+    - "Scolnic et al, ApJ, 859, 28"
+assumptions:
+    - "Pantheon statistical and systematic analysis"
+explanation: |
+    " Supernova IA can be used as standardisable candles,
+    letting us estimate a redshift-distance relation.
+
+    The Pantheon sample collected together a combined SN IA
+    sample from the Pan-Starrs1, Medium Deep Survey, SDSS,
+    SNLS, and various HST data sets into a joint analysis.
+
+    This module uses that data set to constrain the distance modulus
+    vs redshift relation.
+
+    There are two Pantheon data variants - this version uses the
+    compressed (binned) version since it is much smaller and faster
+    to use and produces nearly identical results to the full version.
+    You can separately download and use the full version files if you
+    wish.
+
+    The Pantheon data release was analyzed with a much more complex code
+    in CosmoMC, but almost all of the machinery in that code was unusued,
+    because the various systematic effects that it implements were subsumed
+    into a single systematic covariance matrix.  This code therefore omits
+    that machinery for simlicitiy.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    data_file: "string, optional. File containing supernova measurements (default=module dir + /lcparam_DS17f.txt)"
+    covmat_file: "string, optional. File containing supernova measurements (default=module dir + /lcparam_DS17f.txt)"
+    x_section: "string, optional.  Use to override the default datablock section for input theory redshift"
+    x_name: "string, optional.  Use to override the default datablock name for input theory redshift"
+    y_section: "string, optional.  Use to override the default datablock section for input theory distance modulus"
+    y_name: "string, optional.  Use to override the default datablock name for input theory distance modulus"
+    like_name: "string, optional.  Use to override the default named for the saved output likelihood"
+    likelihood_only: "bool, optional.  Skip saving everything except the likelihood.  This prevents you from using e.g. the Fisher matrix sampler but can be faster for quick likelihoods"
+    include_norm: "bool, default=F.  Include the normalizing constant at the start of the likelihood.  May be needed when comparing models."
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    distances:
+        z:  "double 1D array, redshifts of calculated theory mu(z)"
+        mu:  "double 1D array, distance modulus mu(z) at given redshifts"
+    supernova_params:
+        M: "double, SN IA absolute magnitude"
+
+outputs:
+    likelihoods:
+        pantheon_like: "double. Gaussian likelihood value of supplied theory mu(z) and M"
+    data_vector:
+        pantheon_covariance: "double 2D array. Fixed covariance matrix, only if likelihood_only=F"
+        pantheon_data: "double 1D array. Fixed data vector mu_obs, only if likelihood_only=F"
+        pantheon_simulation: "double 1D array. Simulated data vector including simulated noise for e.g. ABC, only if likelihood_only=F"
+        pantheon_theory: "double 1D array. Predicted theory values mu_theory(z_obs) only if likelihood_only=F"
+        pantheon_covariance: "double. Fixed covariance matrix, only if likelihood_only=F"
+        pantheon_chi2: "double. chi^2 value, only if likelihood_only=F"
+

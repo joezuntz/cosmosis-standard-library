@@ -1,0 +1,50 @@
+name: CosmicEmu
+version: "2.0"
+purpose: "Emulate N-body simulations to compute nonlinear matter power"
+url: "http://www.hep.anl.gov/cosmology/CosmicEmu/emu.html"
+interface: interface.so
+attribution: [  
+Katrin Heitmann, Derek Bingham, Earl Lawrence, Steven Bergner, Salman Habib, David Higdon, Adrian Pope, Rahul Biswas, Hal Finkel, Nicholas Frontiere, Suman Bhattacharya]
+rules: ""
+cite:
+    - "The Mira-Titan Universe: Precision Predictions for Dark Energy Surveys, ApJ, 820, 2 (2016), arXiv:1508.02654"
+
+assumptions: 
+    - "w0waCDM and the Mira-Titan simulation assumptions"
+
+explanation: |
+        "
+        CosmicEmu is an emulator designed to interpolate among a collection
+        of numerical N-body simulations called Mira-Titan.
+
+        It uses a Gaussian Process interpolation between a set of simulations
+        arranged in a lattice in parameter space.
+
+        Each simulation yields a non-linear matter power spectrum P(k,z), and
+        the interpolation is between these spectra, so the output should be a
+        reasonable (1% accuracy) value of P(k,z) for the given parameters.
+
+        The simulations and the whole process are explained in detail in the paper
+        above.
+        "
+
+params:
+    zmax: "real, maximum output redshift (default 2.0)"
+    nz: "Number of redshift samples.  Note that the code will be interpolating between sample values (default=50)"
+
+
+inputs:
+    cosmological_parameters:
+        ombh2: "real scalar, baryon content"
+        ommh2: "real scalar, matter content"
+        w: "real scalar, dark energy EoS.  Optional; default=-1.0"
+        wa: "real scalar, dark energy EoS derivative.  Optional; default=0.0"
+        h0: "real scalar, Hubble/100km/s/Mpc"
+        n_s: "real scalar, scalar spectral index"
+        sigma_8: "real scalar, power spectrum normalization"
+
+outputs:
+    matter_power_nl:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"

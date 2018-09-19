@@ -30,7 +30,13 @@ def setup(options):
         'zmax': options.get_double(option_section, 'zmax', default=4.0),
         'kmax': options.get_double(option_section, 'kmax', default=50.0),
         'debug': options.get_bool(option_section, 'debug', default=False),
+        'lensing': options.get_bool(option_section, 'lensing', default=True),
     }
+
+    for _, key in options.keys(option_section):
+        if key.startswith('class_'):
+            config[key] = block[option_section, key]
+
 
     # Create the object that connects to Class
     config['cosmo'] = classy.Class()
@@ -44,11 +50,11 @@ def get_class_inputs(block, config):
     # Get parameters from block and give them the
     # names and form that class expects
     params = {
-        'output': 'tCl pCl mPk',
+        'output': 'tCl pCl mPk lCl' if config['lensing'] else 'tCl pCl mPk',
         'l_max_scalars': config["lmax"],
         'P_k_max_h/Mpc':  config["kmax"],
         'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
-        'lensing': 'no',
+        'lensing':   'yes' if config['lensing'] else 'no',
         'A_s':       block[cosmo, 'A_s'],
         'n_s':       block[cosmo, 'n_s'],
         'H0':        100 * block[cosmo, 'h0'],
@@ -58,6 +64,12 @@ def get_class_inputs(block, config):
         'T_cmb':     block.get_double(cosmo, 't_cmb', default=2.726),
         'N_eff':     block.get_double(cosmo, 'massless_nu', default=3.046),
     }
+
+    for key,val in config.items():
+        if key.startswith('class_'):
+            params[key[6:]] = val
+
+
     return params
 
 
@@ -115,7 +127,7 @@ def get_class_outputs(block, c, config):
     ##
     # Now the CMB C_ell
     ##
-    c_ell_data = c.raw_cl()
+    c_ell_data = c.lensed_cl() if config['lensing'] else c.raw_cl()
     ell = c_ell_data['ell']
     ell = ell[2:]
 

@@ -154,9 +154,8 @@ contains
   real(dl), intent(in) :: akthom, tau0, Yhe 
   integer, intent(in) :: FeedbackLevel
   real(dl) astart
-  ! COSMOSIS - error check in rombint
-  integer :: status
-  status = 0
+  integer :: status ! COSMOSIS - reionization error handling
+  status = 0 ! COSMOSIS - reionization error handling
 
      ReionHist%akthom = akthom  
      ReionHist%fHe =  YHe/(mass_ratio_He_H*(1.d0-YHe))

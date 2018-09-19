@@ -29,8 +29,8 @@ def initialise_jb_coefficients(mag_lim):
     return a
 
 
-def get_binned_alpha(block, alpha, z):
-    n_z, z1 = load_n_z(block)
+def get_binned_alpha(block, alpha, z, sample='wl_number_density'):
+    n_z, z1 = load_n_z(block, sample)
 
     z_med = evaluate_median_z(n_z, z1)
 
@@ -40,9 +40,9 @@ def get_binned_alpha(block, alpha, z):
     return alpha_binned, z_med
 
 
-def load_n_z(block):
+def load_n_z(block, sample='wl_number_density'):
     """ Load the n(z) profile in each bin as a 2d array """
-    num_den = 'wl_number_density'
+    num_den = sample
 
     n_z = []
     N_zbins = block[num_den, 'nbin']

@@ -115,11 +115,12 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     # for cross correlations we must save bin_ji as well as bin_ij.
     # but not for auto-correlations. Also the numbers of bins can be different
     is_auto = (types[0] == types[1])
-    if block.has_value(section_name, "nbin"):
-        nbin_a = block[section_name, "nbin"]
-    else:
+    if block.has_value(section_name, "nbin_a"):
         nbin_a = block[section_name, "nbin_a"]
         nbin_b = block[section_name, "nbin_b"]
+    else:
+        nbin_a = block[section_name, "nbin"]
+        nbin_b = block[section_name, "nbin"]
 
     # This is the ell values that have been calculated by cosmosis, not to
     # be confused with the ell values at which we want to save the results
@@ -147,13 +148,19 @@ def spectrum_measurement_from_block(block, section_name, output_name, types, ker
     # Bin pairs. Varies depending on auto-correlation
     for i in range(nbin_a):
         if is_auto:
-            jmax = i + 1
+            jstart = i
         else:
-            jmax = nbin_b
-        for j in range(jmax):
-
-            # Load and interpolate from the block
-            cl = block[section_name, bin_format.format(i + 1, j + 1)]
+            jstart = 0
+        for j in range(jstart, nbin_b):
+            if is_auto:
+                # Load and interpolate from the block
+                bin_name = bin_format.format(i + 1, j + 1)
+                if block.has_value(section_name, bin_name):
+                    cl = block[section_name, bin_format.format(i + 1, j + 1)]
+                else:
+                    cl = block[section_name, bin_format.format(j + 1, i + 1)]
+            else:
+                cl = block[section_name, bin_format.format(i + 1, j + 1)]
             # Convert arcmin to radians for the interpolation
             cl_interp = SpectrumInterp(theory_angle, cl)
             cl_sample = cl_interp(angle_sample_radians)
@@ -257,8 +264,6 @@ class ObservedClGetter(object):
         section, ell_name, value_name = type_table[A, B]
         assert ell_name == "ell", "Gaussian covariances are currently only written for C_ell, not other 2pt functions"
 
-        # We extract relevant bits from the block and spline them
-        # for output
         name_ij = value_name.format(i, j)
         section_name_ij = '{}_{}'.format(section, name_ij)
 
@@ -298,8 +303,7 @@ class ObservedClGetter(object):
         elif block.has_value(section, name_ji) and A == B:
             theory = block[section, name_ji]
         else:
-            raise ValueError(
-                "Could not find theory prediction {} in section {}".format(name_ij, section))
+            raise ValueError("Could not find theory prediction {} in section {}".format(name_ij, section))
 
         spline = interp1d(angle, theory)
         return spline

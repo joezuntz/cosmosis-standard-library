@@ -312,6 +312,7 @@ int compute_spectra(c_datablock * block, int nbin, spectrum_type_t spectrum_type
 		int bin2_max = choose_bin2_max(spectrum_type, nbin, bin1);
 		for (int bin2=1; bin2<=bin2_max; bin2++){
 			gsl_spline * c_ell = limber_integral(&lc, K1[bin1-1], K2[bin2-1], PK);
+			if (c_ell == NULL)  return 1;
 			int status = save_c_ell(block, section, bin1, bin2,  c_ell, &lc);
 			gsl_spline_free(c_ell);
 			if (status) return status;

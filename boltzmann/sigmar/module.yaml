@@ -30,6 +30,7 @@ params:
     rmax: "real, maximum scale R in Mpc/h to generate values for"
     dr: "real, scale R spacing"
     matter_power: "name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl"
+    crop_klim: "logical, crops the klimits of the sigma integral to max(0.01/R, kmin), min(100/R, kmax)  (default T)"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:

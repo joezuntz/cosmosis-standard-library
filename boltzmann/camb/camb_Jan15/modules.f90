@@ -252,12 +252,14 @@
     subroutine CAMBParams_Set(P, error, DoReion)
     use constants
     type(CAMBparams), intent(in) :: P
+    ! COSMOSIS - remove GetOmegaK
     real(dl) fractional_number, conv
     integer, optional :: error !Zero if OK
     logical, optional :: DoReion
     logical WantReion
     integer nu_i,actual_massless
     real(dl) nu_massless_degeneracy, neff_i
+    ! COSMOSIS - remove GetOmegaK
     !external GetOmegak
     real(dl), save :: last_tau0
     !Constants in SI units
@@ -328,6 +330,7 @@
         CP%MassiveNuMethod = Nu_trunc
     end if
 
+    ! COSMOSIS - remove GetOmegaK
     !CP%omegak = GetOmegak()
 
     CP%flat = (abs(CP%omegak) <= OmegaKFlat)
@@ -1577,6 +1580,15 @@
     d=log(am/am_min)/dlnam+1._dl
     i=int(d)
     d=d-i
+
+    ! COSMOSIS Error handling for crash we have seen
+        if ((i<1) .or. (i+1>nrhopn)) then
+            rhonu = sqrt(-1.0d0*abs(am)-1.0d0) !convenient way to make a NaN
+            ! could use ieee but not available everywhere
+            global_error_flag=1
+            return
+        endif
+
 
     !  Cubic spline interpolation.
     rhonu=r1(i)+d*(dr1(i)+d*(3._dl*(r1(i+1)-r1(i))-2._dl*dr1(i) &
