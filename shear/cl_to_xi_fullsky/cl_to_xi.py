@@ -33,23 +33,29 @@ class SpectrumInterp(object):
         spec[np.isnan(spec)] = 0.
         return spec
 
-
 def radians_to_arcmin(r):
     return np.degrees(r) * 60
-
 
 def arcmin_to_radians(a):
     return np.radians(a / 60.)
 
+def cl_to_xi_to_block(block, output_section, name,
+                          cl_interp, thetas, legfacs):
+    if not isinstance(output_section, tuple):
+        output_section = (output_section,)
+        legfacs = (legfacs,)
+    for (o,leg) in zip( output_section, legfacs ):
+        xis = np.zeros_like(thetas)
+        ell_max = leg.shape[1] - 1
+        try:
+            assert len(cl_interp) == leg.shape[1]
+        except TypeError:
+            ells = np.arange(ell_max + 1)
+            cl_interp = cl_interp(ells)
 
-def get_N_ell(ell):
-    """N_ell (eq. 2.16)"""
-    N_ell = np.atleast_1d(
-        np.sqrt(2. / (ell - 1) / ell / (ell + 1) / (ell + 2)))
-    N_ell[ell < 2] = 0.
-    N_ell[ell == 2] = np.sqrt(2. / (4 * 3 * 2))
-    return N_ell
-
+        for it, t in enumerate(thetas):
+            xis[it] = np.sum(cl_interp * leg[it])
+        block[o, name] = xis
 
 def cl_to_xi_precomp_00_02(cl_input, thetas, legfacs):
     """This function works for spin (0,0) e.g. w(theta)
@@ -65,7 +71,6 @@ def cl_to_xi_precomp_00_02(cl_input, thetas, legfacs):
     for it, t in enumerate(thetas):
         xis[it] = np.sum(cl_input * legfacs[it])
     return xis
-
 
 def cl_to_xi_plus_and_minus_precomp(cl_input, thetas, G_plus_minus_pre):
     """Compute xi+/- given:
@@ -102,10 +107,9 @@ def save_xi_00_02(block, section, bin_i, bin_j, cl_input, thetas, legfactors):
     block[section, name] = w
     return w
 
-
 def save_xi_22(block, section, bin_i, bin_j, cl_input, thetas, G_plus_minus_pre):
     xi_plus, xi_minus = cl_to_xi_plus_and_minus_precomp(
         cl_input, thetas, G_plus_minus_pre)
-    block[section, "xiplus_%d_%d" % (bin_i, bin_j)] = xi_plus
-    block[section, "ximinus_%d_%d" % (bin_i, bin_j)] = xi_minus
+    block[section[0], "bin_%d_%d" % (bin_i, bin_j)] = xi_plus
+    block[section[1], "bin_%d_%d" % (bin_i, bin_j)] = xi_minus
     return xi_plus, xi_minus

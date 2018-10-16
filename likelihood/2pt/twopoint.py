@@ -12,8 +12,8 @@ import copy
 TWOPOINT_SENTINEL = "2PTDATA"
 NZ_SENTINEL = "NZDATA"
 COV_SENTINEL = "COVDATA"
-window_types = ["SAMPLE", "CLBP"]
-
+window_types = ["SAMPLE", "CLBP", "LOG_MID"]
+#LOG_MID interpolates at log mid of bin
 
 # Please do not add things to this list
 ANGULAR_UNIT_TYPES = [
@@ -23,7 +23,6 @@ ANGULAR_UNIT_TYPES = [
     astropy.units.deg,
 ]
 ANGULAR_UNITS = {unit.name: unit for unit in ANGULAR_UNIT_TYPES}
-
 
 def sample_cov(xi_arrays, mode='full'):
     """mode should be full, subsample or jk"""
@@ -67,6 +66,7 @@ class Types(Enum):
     galaxy_position_real = "GPR"
     galaxy_shear_plus_real = "G+R"
     galaxy_shear_minus_real = "G-R"
+    cmb_kappa_real = "CKR"
 
     @classmethod
     def lookup(cls, value):
@@ -175,10 +175,39 @@ class NumberDensity(object):
         extension = fits.BinTableHDU.from_columns(columns, header=header)
         return extension
 
+    @classmethod
+    def from_block(cls, block, section_name, output_name=None):
+        """Load kernel from cosmosis datablock"""
+        if output_name==None:
+            output_name = section_name
+        if block.has_value( section_name, "z_mid" ):
+            z_mid = block[section_name, "z_mid"]
+            z_low = block[section_name, "z_low"]
+            z_high = block[section_name, "z_high"]
+        else:
+            z_mid = block[section_name, "z"]
+            dz = z_mid[2]-z_mid[1]
+            z_low = z_mid - 0.5 * dz
+            z_high = z_mid + 0.5 * dz
+
+        nzs = []
+        for i in range(1,99999):
+            bin_name = "bin_%d"%i
+            if block.has_value( section_name, bin_name ):
+                nzs.append( block[section_name, bin_name] )
+            else:
+                break
+
+        N = cls( output_name, z_low, z_mid, z_high,
+                nzs )
+        return N
+
+
 
 class SpectrumMeasurement(object):
     def __init__(self, name, bins, types, kernels, windows, angular_bin, value,
-                 angle=None, error=None, angle_unit=None, metadata=None):
+                 angle=None, error=None, angle_unit=None, metadata=None,
+                 angle_min=None, angle_max=None):
         """metadata is a dictionary which will get added to the fits header"""
         self.name = name
         self.bin1, self.bin2 = bins
@@ -187,6 +216,8 @@ class SpectrumMeasurement(object):
         self.kernel1, self.kernel2 = kernels
         self.angular_bin = angular_bin
         self.angle = angle
+        self.angle_min = angle_min
+        self.angle_max = angle_max
         self.value = value
         if windows in window_types:
             self.windows = windows
@@ -228,6 +259,9 @@ class SpectrumMeasurement(object):
         angle_with_units = self.angle * old_unit
         self.angle = angle_with_units.to(new_unit).value
         self.angle_unit = unit
+        if self.angle_min is not None:
+            self.angle_min = ( self.angle_min * old_unit).to(new_unit).value
+            self.angle_max = ( self.angle_max * old_unit).to(new_unit).value
 
     def apply_mask(self, mask):
         """mask is a boolean array which True for elements to be kept"""
@@ -235,9 +269,22 @@ class SpectrumMeasurement(object):
         self.bin2 = self.bin2[mask]
         self.angular_bin = self.angular_bin[mask]
         self.angle = self.angle[mask]
+        if self.angle_min is not None:
+            self.angle_min = self.angle_min[mask]
+            self.angle_max = self.angle_max[mask]
         self.value = self.value[mask]
         if self.error is not None:
             self.error = self.error[mask]
+
+    def cut_bin_pair(self, bin_pair, complain=False):
+        """Cut a full bin pair. If complain is True,
+        raise a ValueError if the bin pair is not found"""
+        b1, b2 = bin_pair
+        mask = (self.bin1==b1)*(self.bin2==b2)
+        if (mask.sum()==0) and complain:
+            raise ValueError("""You tried to cut bin pair %d,%d from spectrum named %s 
+                             but it doesn't exist"""%(b1,b2,self.name))
+        self.apply_mask(~mask)
 
     def auto_bins(self):
         return self.bin1 == self.bin2
@@ -338,7 +385,6 @@ class SpectrumMeasurement(object):
 
         extension = fits.BinTableHDU.from_columns(columns, header=header)
         return extension
-
 
 class CovarianceMatrixInfo(object):
     """Encapsulate a covariance matrix and indices in it"""

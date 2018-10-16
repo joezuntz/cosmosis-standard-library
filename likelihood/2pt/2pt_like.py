@@ -11,7 +11,11 @@ import numpy as np
 import twopoint
 import gaussian_covariance
 import os
-
+#spec_tools uses the legendre module from shear/cl_to_xi_fullsky
+import sys
+current_dir=os.path.dirname(__file__)
+sys.path.append(os.path.join(current_dir, "../../shear/cl_to_xi_fullsky"))
+from spec_tools import SpectrumInterp
 default_array = np.repeat(-1.0, 99)
 
 
@@ -21,32 +25,6 @@ def is_default(x):
 
 def convert_nz_steradian(n):
     return n * (41253.0 * 60. * 60.) / (4 * np.pi)
-
-
-class SpectrumInterp(object):
-    def __init__(self, angle, spec, bounds_error=True):
-        if np.all(spec > 0):
-            self.interp_func = interp1d(np.log(angle), np.log(
-                spec), bounds_error=bounds_error, fill_value=-np.inf)
-            self.interp_type = 'loglog'
-        elif np.all(spec < 0):
-            self.interp_func = interp1d(
-                np.log(angle), np.log(-spec), bounds_error=bounds_error, fill_value=-np.inf)
-            self.interp_type = 'minus_loglog'
-        else:
-            self.interp_func = interp1d(
-                np.log(angle), spec, bounds_error=bounds_error, fill_value=0.)
-            self.interp_type = "log_ang"
-
-    def __call__(self, angle):
-        if self.interp_type == 'loglog':
-            spec = np.exp(self.interp_func(np.log(angle)))
-        elif self.interp_type == 'minus_loglog':
-            spec = -np.exp(self.interp_func(np.log(angle)))
-        else:
-            assert self.interp_type == "log_ang"
-            spec = self.interp_func(np.log(angle))
-        return spec
 
 
 class TwoPointLikelihood(GaussianLikelihood):
