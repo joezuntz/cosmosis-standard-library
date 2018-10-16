@@ -19,6 +19,9 @@ params:
         zmin: "Real, min value to save f,D (default = 0.0)"
         zmax: "Real, max value to save f,D (default = 3.0)"
         dz: "Real, redshift binsize (default  = 0.01)"
+        zmax_log: "Real, default=1100. redshift max for additional z values tacked above zmax, log space"
+        nz_log: "int, default=0. number of log spaced values (if 0 then no log-spaced values)"
+
 inputs: 
     cosmological_parameters:
         omega_m:  "real, baryon + cdm density fraction today"
