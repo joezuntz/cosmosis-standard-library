@@ -20,7 +20,7 @@ typedef struct growth_config {
 	double zmin;
 	double zmax;
 	double dz;
-	int nz;
+	int nz_lin;
 	double zmax_log;
 	int nz_log;
 } growth_config;
@@ -44,11 +44,16 @@ growth_config * setup(c_datablock * options)
 	status |= c_datablock_get_double_default(options, OPTION_SECTION, "zmax_log", 1100.0, &(config->zmax_log));
 	status |= c_datablock_get_int_default(options, OPTION_SECTION, "nz_log", 0, &(config->nz_log));
 
-	config->nz = (int)((config->zmax-config->zmin)/config->dz)+1;
+	config->nz_lin = (int)((config->zmax-config->zmin)/config->dz)+1;
 
-	printf("Will calculate f(z) and d(z) in %d bins (%lf:%lf:%lf)\n", config->nz, config->zmin, config->zmax, config->dz);
+	printf("Will calculate f(z) and d(z) in %d bins (%lf:%lf:%lf)\n", config->nz_lin, config->zmin, config->zmax, config->dz);
 	if (config->nz_log > 0){
 	  printf("Will extend growth calculation using %d logarithmically spaced z-bins to zmax = %lf \n", config->nz_log, config->zmax_log);
+	}
+
+	if (config->zmax_log <= config->zmax){
+		fprintf(stderr, "zmax_log parameter must be more than zmax in growth function module\n");
+		exit(1);
 	}
 	
 	// status |= c_datablock_get_double(options, OPTION_SECTION, "redshift", config);
@@ -65,7 +70,7 @@ int execute(c_datablock * block, growth_config * config)
 
 	int i,status=0;
 	double w,wa,omega_m,omega_v;
-	int nz_lin = config->nz;
+	int nz_lin = config->nz_lin;
 	int nz_log = config->nz_log;
 	int nz = nz_lin + nz_log;
 	double zmin_log = config->zmax + config->dz;
@@ -121,6 +126,7 @@ int execute(c_datablock * block, growth_config * config)
 	status |= c_datablock_put_double_array_1d(block,growthparameters, "d_z", dz, nz);
 	status |= c_datablock_put_double_array_1d(block,growthparameters, "f_z", fz, nz);
 	status |= c_datablock_put_double_array_1d(block,growthparameters, "z", z, nz);
+	status |= c_datablock_put_double_array_1d(block,growthparameters, "a", a, nz);
 
 	free(fz);
 	free(dz);
