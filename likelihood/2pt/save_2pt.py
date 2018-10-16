@@ -14,8 +14,6 @@ from scipy.interpolate import interp1d
 import twopoint
 from twopoint_cosmosis import type_table
 import gaussian_covariance
-#twopt_like = __import__('2pt_like')  # don't start .py files with a number!
-#SpectrumInterp = twopt_like.SpectrumInterp
 from spec_tools import TheorySpectrum, SpectrumInterp, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
 
 def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False ):
