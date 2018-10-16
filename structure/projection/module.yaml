@@ -76,7 +76,7 @@ params:
     ell_max: "Real, maximum ell value"
     n_ell: "Real, number of log-spaced C_ell values produced"
     shear-shear: "String or Bool. See note in the explanation above for this and related parameters"
-    limber_abs_tol: "Real, default=1e-5, absolute tolerance for the Limber integral"
+    limber_abs_tol: "Real, default=0.0, absolute tolerance for the Limber integral"
     limber_rel_tol: "Real, default=1e-3, relative tolerance for the Limber integral"
 
 inputs:
