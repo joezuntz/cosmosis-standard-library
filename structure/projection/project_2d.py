@@ -196,84 +196,6 @@ class Spectrum(object):
         return 0
 
 
-class NLGalSpectrum(Spectrum):
-    galaxy_power_section = names.galaxy_power
-    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None,
-                      bias_section="bias_and_project", use_galaxy_power=False, 
-                      pt_type=None, output_nl_grid=True):
-        # read in P(k) stuff
-        if use_galaxy_power:
-            self.z_pk, self.k_pk, self.P_nl = block.get_grid(self.galaxy_power_section, "z", "k_h", "p_k")
-        else:
-            self.z_pk, self.k_pk, self.P_nl = block.get_grid(names.matter_power_nl, "z", "k_h", "p_k")
-
-        #Get power spectrum terms from fastpt. Pkth_array is a list of 2d arrays
-        self.Pkth_array, self.karray = fpt.get_Pktharray(block, pt_type, output_nl_grid, 
-                                                         names.matter_power_lin, names.matter_power_nl)
-
-        for i, p in enumerate(self.Pkth_array):
-            try:
-                assert p.shape == self.P_nl.shape
-            except AssertionError as e:
-                print self.name, i, p.shape, self.P_nl.shape
-                raise e
-
-        self.pt_type = pt_type
-        self.chi_pk = chi_of_z(self.z_pk)
-
-    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3, bias_section="bias_and_project"):
-        # Generate P(k) and growth function
-        # This is done by fastpt library
-        param_array_bin1 = fpt.get_bias_param_bin_i(block,bin1, self.pt_type, bias_section)
-        param_array_bin2 = fpt.get_bias_param_bin_i(block,bin2, self.pt_type, bias_section)
-        P_gg, P_gg_terms = fpt.get_PXX_terms_bins(param_array_bin1, param_array_bin2, self.Pkth_array, self.pt_type)
-
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gg, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gg.T, spline_type=BICUBIC)
-
-        return power_spline, growth_spline
-
-    def clean_power_growth(self, P, D):
-        # print("""WARNING: Not explicitly deleting P or D...I think this is ok as it is only used within"
-        # this class instance, so python will take care of it
-        # ...but I could be wrong and it will cause a memory leak that will
-        # cause your computer to burst into flames, enveloping you and anyone within 12 feet.""")
-        return 0
-
-
-class NLGalShearSpectrum(NLGalSpectrum):
-    galaxy_power_section = names.matter_galaxy_power
-
-    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3,bias_section="bias_and_project"):
-        # Generate P(k)
-        param_array_bin1 = fpt.get_bias_param_bin_i(block, bin1, self.pt_type,bias_section)
-        P_gm, P_gm_terms = fpt.get_PXm_terms(param_array_bin1, self.Pkth_array, self.pt_type)
-
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gm, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gm.T, spline_type=BICUBIC)
-        return power_spline, growth_spline
-
-
-class NLGalIntrinsicSpectrum(NLGalSpectrum):
-    galaxy_power_section = names.matter_intrinsic_power
-
-    def prep_spectrum(self, block, chi_of_z, nbin1, nbin2=None, bias_section="bias_and_project",
-                      use_galaxy_power=False):
-        # read in P(k) stuff
-        self.z_pk, self.k_pk, self.P_nl = block.get_grid(names.matter_intrinsic_power, "z", "k_h", "p_k")
-        # Read in bias stuff
-        self.b1s = []
-        for i in range(1, nbin1 + 1):
-
-            self.b1s.append(block[bias_section, "b1E_bin%s" % i])
-        self.chi_pk = chi_of_z(self.z_pk)
-
-    def get_power_growth(self, block, bin1, bin2, k_growth=1.e-3):
-        # Generate P(k) and growth function
-        P_gI = self.b1s[bin1] * self.P_nl
-        growth_spline = limber.growth_from_power(self.chi_pk, self.k_pk, P_gI, k_growth)
-        power_spline = GSLSpline2d(self.chi_pk, np.log(self.k_pk), P_gI.T, spline_type=BICUBIC)
-        return power_spline, growth_spline
 
 
 # This is pretty cool.
@@ -393,26 +315,6 @@ class SpectrumType(Enum):
         name = "galaxy_cmbkappa_cl"
         prefactor_power = 1
 
-    class CountnlCountnl(NLGalSpectrum):
-        power_3d_type = MatterPower3D
-        kernels = "N N"
-        autocorrelation = True
-        name = "galaxy_cl"
-        prefactor_power = 0
-
-    class CountnlShear(NLGalShearSpectrum):
-        power_3d_type = MatterPower3D
-        kernels = "N W"
-        autocorrelation = False
-        name = "galaxy_shear_cl"
-        prefactor_power = 1
-
-    class CountnlIntrinsic(NLGalIntrinsicSpectrum):
-        power_3d_type = MatterIntrinsicPower3D
-        kernels = "N N"
-        autocorrelation = False
-        name = "galaxy_intrinsic_cl"
-        prefactor_power = 0
 
 
 class SpectrumCalculator(object):
@@ -426,11 +328,8 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
-        self.do_rsd = options.get_bool(option_section, "do_rsd", False)
-        self.nl_bias_section = options.get_string(option_section, "nl_bias_section", "bias_and_project")
         # by default the nonlinearly biased spectra will start from the nonlinear matter power spectrum,
         # but in some situations you may want them to start from galaxy_power/galaxy_matter_power instead:
-        self.use_galaxy_power = options.get_bool(option_section, "use_galaxy_power", False)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -467,10 +366,6 @@ class SpectrumCalculator(object):
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
         self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
         self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
-
-        self.pt_type = str(options.get_string(option_section, "pt_type", ""))
-        self.do_time = options.get_bool(option_section, "print_time", False)
-        self.output_nl_grid = options.get_bool(option_section, "output_nl_grid", True)
 
         # do_time_str = options.get_bool(option_section, "print_time","F")
         # if do_time_str == 'T':
@@ -733,9 +628,7 @@ class SpectrumCalculator(object):
         #Save is_auto 
         block[spectrum_name, 'is_auto'] = spectrum.is_autocorrelation()
 
-        spectrum.prep_spectrum( block, self.chi_of_z, na, nbin2=nb, use_galaxy_power=self.use_galaxy_power, 
-                               pt_type=self.pt_type, output_nl_grid=self.output_nl_grid,
-                               bias_section=self.nl_bias_section )
+        spectrum.prep_spectrum( block, self.chi_of_z, na, nbin2=nb)
         for i in range(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
             #but save both orderings to the block to account for different ordering
@@ -745,8 +638,7 @@ class SpectrumCalculator(object):
             for j in range(jmax):
                 c_ell = spectrum.compute( block, self.ell, i, j, 
                                           relative_tolerance=self.relative_tolerance, 
-                                          absolute_tolerance=self.absolute_tolerance, 
-                                          bias_section=self.nl_bias_section )
+                                          absolute_tolerance=self.absolute_tolerance )
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
                 if self.get_kernel_peaks:
                     chi_peak, z_peak = spectrum.kernel_peak(block, i, j, self.a_of_chi)

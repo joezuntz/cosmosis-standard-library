@@ -6,7 +6,7 @@ import sys
 def setup(options):
     perbin = options.get_bool(option_section, "perbin", True)
     auto_only = options.get_bool(option_section, "auto_only", False)
-    apply_to_cl = options.get_bool(option_section, "apply_to_cl", False)
+    apply_to_cl = options.get_bool(option_section, "apply_to_cl", True)
     if apply_to_cl:
         print("Applying bin biases to C_ell values")
     else:
@@ -17,13 +17,22 @@ def bins_count_cl(block):
     n_z_bins_shear = 0
     n_z_bins_pos = 0
     if block.has_section('galaxy_cmbkappa_cl'):
+        if "galaxy_cmbkappa_xi" in block:
+            raise ValueError("""You've asked to apply binwise bias to the C(l)s, but we found xis
+                in the block, so this almost definitely unintended""")
         n_z_bins_pos=block["galaxy_cmbkappa_cl","nbin_a"]
     
     if block.has_section('galaxy_shear_cl'):
+        if "galaxy_shear_xi" in block:
+            raise ValueError("""You've asked to apply binwise bias to the C(l)s, but we found xis
+                in the block, so this almost definitely unintended""")
         n_z_bins_shear = block["galaxy_shear_cl", "nbin_b"]
         n_z_bins_pos = block["galaxy_shear_cl", "nbin_a"]
 
     if block.has_section('galaxy_cl'):
+        if "galaxy_xi" in block:
+            raise ValueError("""You've asked to apply binwise bias to the C(l)s, but we found xis
+                in the block, so this almost definitely unintended""")
         n_z_bins_pos = block["galaxy_cl", "nbin"]
 
     if n_z_bins_pos==0:
