@@ -15,15 +15,26 @@ module camb_interface_tools
 	integer, parameter :: CAMB_MODE_THERMAL  = 4
 
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
-	integer :: linear_nz = 401
+	integer :: linear_nz = 101
+	
+	!Vivian begins
+	real(8) :: back_zmin=0.0, back_zmax=4.0
+	integer :: back_nz = 401
+	!Vivian ends
 
 	logical :: distances_to_lss
 	integer :: n_highz_distance
 
-
-
 	integer :: k_eta_max_scalar = 2400
 	logical :: do_lensing, do_nonlinear, do_tensors
+
+	integer :: matter_power_lin_version = 1  ! Consider this a bit-field
+	                                 ! indicating which spectra are to
+	                                 ! be produced.
+	integer, parameter :: MATTER_POWER_LIN_            =  1
+	integer, parameter :: MATTER_POWER_LIN_CDM_BARYON  =  2
+	integer, parameter :: MATTER_POWER_LIN_BOTH        =  3
+
 	integer :: sterile_neutrino = 0
 	real(dl) :: delta_neff = 0.0
 	real(dl) :: sterile_mass_fraction = 0.0
@@ -44,9 +55,11 @@ module camb_interface_tools
 
 	logical :: need_thermal_init
 
-	!From Vinicius Miranda, to expose accuracy settings
+	!From Vivian Miranda, to expose accuracy settings
 	real(dl) :: acc_boost = 1.0_dl
 	logical :: high_acc_default = .false.
+
+	logical :: reject_non_accelerating
 
 
 	contains
@@ -150,6 +163,11 @@ module camb_interface_tools
 		status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
 		status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 
+		status = status + datablock_get_double_default(block, option_section,"background_zmin", back_zmin, back_zmin)
+		status = status + datablock_get_double_default(block, option_section,"background_zmax", back_zmax, back_zmax)
+		status = status + datablock_get_int_default(block, option_section,"background_nz", back_nz, back_nz)
+
+
 		status = status + datablock_get_double_default(block, option_section,"kmax", default_kmax, standard_kmax)
 		status = status + datablock_get_double_default(block, option_section,"kmin", default_kmin, standard_kmin)
 		status = status + datablock_get_int_default(block, option_section,"nk", default_nk, standard_nk)
@@ -163,6 +181,7 @@ module camb_interface_tools
 
 		status = status + datablock_get_logical_default(block, option_section, "do_nonlinear", .false. , do_nonlinear)
 		status = status + datablock_get_logical_default(block, option_section, "do_lensing", .false. , do_lensing)
+		status = status + datablock_get_int_default(block, option_section, "matter_power_lin_version", MATTER_POWER_LIN_, matter_power_lin_version)
 
 
 		status = status + datablock_get_logical_default(block, option_section, "distances_to_lss", .false. , distances_to_lss)
@@ -200,7 +219,7 @@ module camb_interface_tools
 	    status = status + datablock_get_logical_default(block,option_section,"high_accuracy_default",.false.,high_acc_default)
 	    HighAccuracyDefault = high_acc_default
 
-
+	    status = status + datablock_get_logical_default(block, option_section, "reject_non_accelerating", .false., reject_non_accelerating)
 
 		!If noisy, report relevant params
 		if (FeedbackLevel .gt. 0) then
@@ -297,6 +316,10 @@ module camb_interface_tools
 		if (use_tabulated_w) then
 			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "w", w_array, nw_ppf)
 			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "a", a_array, nw_ppf)
+			if (status .ne. 0) then
+				write(*,*) "Failed to read w(a) from de_equation_of_state"
+				return
+			endif
 			if (nw_ppf .gt. nwmax) then
 				write(*,*) "The size of the w(a) table was too large ", nw_ppf, nwmax
 				status=nw_ppf
@@ -310,7 +333,7 @@ module camb_interface_tools
 		else
 			status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w_lam)
 			status = status + datablock_get_double_default(block, cosmo, "wa",  0.0D0, wa_ppf)
-			if (w_lam+wa_ppf .gt. 0) then
+			if (reject_non_accelerating .and. (w_lam+wa_ppf .gt. 0)) then
 				write(*,*) "Unphysical w_0 + w_a = ", w_lam, " + ", wa_ppf, " = ", w_lam+wa_ppf, " > 0"
 				status = 1
 			endif
@@ -359,7 +382,7 @@ module camb_interface_tools
 		nz = linear_nz
 
 		dz=(zmax-zmin)/(nz-1.0)
-		params%transfer%num_redshifts =  nz
+		params%transfer%num_redshifts = nz
         params%Transfer%PK_num_redshifts = nz
 
 		if (nz .gt. max_transfer_redshifts) then
@@ -440,8 +463,29 @@ module camb_interface_tools
 		return
 	end function
 	
-	function camb_interface_save_transfer(block) result(status)
+
+
+	function  camb_interface_save_transfer (block)  result(status)
+   		integer (cosmosis_block)  ::  block
+		integer  (cosmosis_status)  ::  status
+
+        	status  =  0
+
+		if  (iand (matter_power_lin_version, MATTER_POWER_LIN_)  .ne.  0)  then
+			status = status + camb_interface_save_transfer__ (block, MATTER_POWER_LIN_)
+		endif
+
+		if  (iand (matter_power_lin_version, MATTER_POWER_LIN_CDM_BARYON)  .ne.  0)  then
+			status  =  status  +  camb_interface_save_transfer__ (block, MATTER_POWER_LIN_CDM_BARYON)
+		endif
+
+      end function camb_interface_save_transfer
+
+
+
+	function camb_interface_save_transfer__ (block, matter_power_lin_version__)  result(status)
 		integer (cosmosis_block) :: block
+		integer  ::  matter_power_lin_version__
 		integer (cosmosis_status) :: status
 		Type(MatterPowerData) :: PK
 		integer nz, nk, iz, ik
@@ -449,7 +493,11 @@ module camb_interface_tools
 		real(8), allocatable, dimension(:) :: k, z
 		real(8), allocatable, dimension(:,:) :: T
 
-		call Transfer_GetMatterPowerData(MT, PK, 1)
+		if  (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_)   then
+			call Transfer_GetMatterPowerData  (MT, PK, 1)
+		elseif (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_CDM_BARYON)  then
+			call Transfer_GetMatterPowerData  (MT, PK, 1, var1=transfer_nonu, var2=transfer_nonu)
+		endif
 
 		nz = CP%Transfer%num_redshifts
 		nk = MT%num_q_trans
@@ -473,30 +521,38 @@ module camb_interface_tools
 		enddo
 
 
-		status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
-        	"k_h", k, "z", z, "delta_cdm", T)
+        	status = 0
 
-		if (status .ne. 0) then
-			write(*,*) "Failed to save transfer function in CAMB."
+        	if (.not.  datablock_has_section (block, linear_cdm_transfer_section))  then
+			status = datablock_put_double_grid(block, linear_cdm_transfer_section, &
+						"k_h", k, "z", z, "delta_cdm", T)
+
+			if (status .ne. 0) then
+				write(*,*) "Failed to save transfer function in CAMB."
+			endif
+
 		endif
 
 		deallocate(k, z, T)
 
 		!Now save the matter power
-		status = status + camb_interface_save_matter_power(block, PK)
+		status = status + camb_interface_save_matter_power(block, PK, matter_power_lin_version__)
 
 		call MatterPowerdata_Free(PK)
 	end function
 
-	function camb_interface_save_matter_power(block, PK) result(status)
+
+
+	function camb_interface_save_matter_power(block, PK, matter_power_lin_version__)  result(status)
 		integer (cosmosis_block) :: block
+		integer  ::  matter_power_lin_version__
 		integer (cosmosis_status) :: status
 		Type(MatterPowerData) :: PK
 		integer nz, nk, iz, ik
 		real(8) :: log_kmin, log_kmax
 		real(8), allocatable, dimension(:) :: k, z
 		real(8), allocatable, dimension(:,:) :: P
-
+		character(50) :: datablock_section
 
 		! z values to use.  Use sample values from camb,
 		! which were set in the input
@@ -537,8 +593,14 @@ module camb_interface_tools
 			enddo
 		enddo
 
-		status = datablock_put_double_grid(block, matter_power_lin_section, &
-        	"k_h", k, "z", z, "P_k", P)
+		if  (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_)  then
+			datablock_section  =  matter_power_lin_section
+		elseif  (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_CDM_BARYON)  then
+			datablock_section  =  matter_power_lin_cdm_baryon_section
+		endif
+
+		status = datablock_put_double_grid(block, datablock_section, &
+					"k_h", k, "z", z, "P_k", P)
 
 		if (status .ne. 0) then
 			write(*,*) "Failed to save matter power in CAMB."
@@ -583,13 +645,19 @@ module camb_interface_tools
 		status = 0
 
 
-		nz = params%transfer%num_redshifts
+!Vivian begins
+		!nz = params%transfer%num_redshifts		
+		!nz_regular = nz
+		nz = back_nz
 		nz_regular = nz
-
+!Vivian ends
 		!Fixed number of sample points out to last scattering surface
 		if (distances_to_lss) then 
 			nz = nz + n_highz_distance
-			zmax_regular = params%transfer%redshifts(1)
+!Vivian begins			
+			!zmax_regular = params%transfer%redshifts(1)
+			zmax_regular = back_zmax
+!Vivian ends			
 			dlogz_high = (log(1+z_lss) - log(1+zmax_regular))/n_highz_distance
 		endif
 
@@ -597,10 +665,14 @@ module camb_interface_tools
 		allocate(z(nz))
 		!if (density) allocate(rho(nz))
 
-		do i=1,nz
+!Vivian begins
+		!do i=1,nz
+		do i=1,back_nz
 			if (i<=nz_regular) then
 				! The low redshift regime
-				z(i) = params%transfer%redshifts(nz_regular-i+1)
+				!z(i) = params%transfer%redshifts(nz_regular-i+1)
+				z(i) = back_zmin + (i-1)*(back_zmax-back_zmin)/(back_nz-1.0)
+!Vivian ends				
 			else
 				! Additional points beyond the regime where we store the matter power spectrum
 				z(i) = (1+zmax_regular) * exp(dlogz_high*(i-nz_regular)) - 1

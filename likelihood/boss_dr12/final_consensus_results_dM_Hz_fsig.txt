@@ -1,0 +1,13 @@
+# BAO+FS consensus results, Alam et al. 2016
+#z1 = 0.38 (order = dM(rsfid/rs), Hz(rs/rsfid), fsig8)
+1518.36
+81.5095
+0.49749
+#z2 = 0.51
+1977.44
+90.4474
+0.457523
+#z3 = 0.61
+2283.18
+97.2556
+0.436148

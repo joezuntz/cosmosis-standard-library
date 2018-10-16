@@ -7,6 +7,17 @@
 #include <gsl/gsl_interp2d.h>
 #include <gsl/gsl_spline2d.h>
 
+double f_K(double K, double chi){
+	if (K==0) return chi;
+	if (K>0){
+		double r = sqrt(K);
+		return sin(r*chi)/r;
+	}
+	double r = sqrt(-K);
+	return sinh(r*chi)/r;
+
+}
+
 gsl_spline * spline_from_arrays(int n, double * x, double *y)
 {
 	gsl_spline * output = gsl_spline_alloc(gsl_interp_akima, n);

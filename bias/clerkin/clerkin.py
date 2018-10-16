@@ -34,6 +34,6 @@ def gtd_model(k, z, z_growth, growth, alpha, b0, c):
 def gtd_q_model(k, z, z_growth, growth, alpha, b0, c, Q, A):
     K, Z = make_grids(k, z)
     bias_k = q_bias(K, Q, A)
-    bias_z = gtd_bias(Z, D, alpha, b0, c)
+    bias_z = gtd_model(k, z, z_growth, growth, alpha, b0, c)
     bias = bias_k * bias_z
     return bias

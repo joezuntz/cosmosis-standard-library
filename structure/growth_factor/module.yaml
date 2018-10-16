@@ -19,14 +19,18 @@ params:
         zmin: "Real, min value to save f,D (default = 0.0)"
         zmax: "Real, max value to save f,D (default = 3.0)"
         dz: "Real, redshift binsize (default  = 0.01)"
+        zmax_log: "Real, default=1100. redshift max for additional z values tacked above zmax, log space"
+        nz_log: "int, default=0. number of log spaced values (if 0 then no log-spaced values)"
+
 inputs: 
-        cosmological_parameters:
-                omega_m:  "real, baryon + cdm density fraction today"
-                w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
-                wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
+    cosmological_parameters:
+        omega_m:  "real, baryon + cdm density fraction today"
+        omega_lambda:  "real, dark energy density today (default 1-omega_m)"
+        w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
+        wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
 
 outputs:
-        growth_parameters:
-                d_z: "1D real array, linear growth factor D"
-                f_z: "1D real array, linear growth rate f"
-                z: "1D real array, redshift of samples "
+    growth_parameters:
+        d_z: "1D real array, linear growth factor D"
+        f_z: "1D real array, linear growth rate f"
+        z: "1D real array, redshift of samples "

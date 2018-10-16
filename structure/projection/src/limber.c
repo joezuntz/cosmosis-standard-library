@@ -2,12 +2,18 @@
 #include "gsl/gsl_integration.h"
 #include "gsl/gsl_errno.h"
 #include "limber.h"
+#include "utils.h"
 #include <gsl/gsl_interp2d.h>
 #include <gsl/gsl_spline2d.h>
 #include <gsl/gsl_spline.h>
 
+#if defined(_OPENMP)
+#include "omp.h"
+#endif
+
 // This is a workspace size for the gsl integrator
 #define LIMBER_FIXED_TABLE_SIZE 4096
+#define LIMBER_NTHREAD_MAX 128
 
 
 // data that is passed into the integrator
@@ -42,6 +48,7 @@ typedef struct ExtIntegrandData{
 	gsl_interp_accel * accelerator_py;
 	gsl_interp_accel * accelerator_growth;
     int ext_order;
+    double K;
 } ExtIntegrandData;
 
 typedef struct RSDIntegrandData{
@@ -106,49 +113,63 @@ static double ext_limber_integrand(double chi, void * data_void)
 	if(chi < data->chimin || chi > data->chimax) return 0.0;
 
 	// Get W^X(chi) and W^Y(chi)
-	double Wr_X = gsl_spline_eval(data->WX_red,chi,data->accelerator_wx);
-	double Wr_Y;
+    double Wr_X, Wr_Y;
+
+    int status = gsl_spline_eval_e(data->WX_red,chi,data->accelerator_wx, &Wr_X);
+
+
 	// A short-cut - if the two splines are the same we do not need to 
 	// do the interpolation twice
-	if (data->WX_red==data->WY_red) Wr_Y = Wr_X;
-	else Wr_Y = gsl_spline_eval(data->WY_red,chi,data->accelerator_wy);
-	if (Wr_X==0 || Wr_Y==0) return 0.0;
+	if (data->WX_red==data->WY_red){
+        Wr_Y = Wr_X;
+    }
+    else{
+        status |= gsl_spline_eval_e(data->WY_red,chi,data->accelerator_wy, &Wr_Y);
+    }
+
+    if (status) return 0.0;
+
+	if ((Wr_X==0) || (Wr_Y==0)) return 0.0;
 
 	double nu = (data->ell+0.5);
-	double k = nu / chi;
+	double k = nu / f_K(data->K, chi);
 	// 
 	double growth = gsl_spline_eval(data->D_chi, chi, data->accelerator_growth);
 	
-	// Get P(k,z) using k=nu/chi.
-	// Deactivate error handling 
-	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
 
 	double p;
-	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
+	status |= gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
 
-	// Restore the old error handler
-	gsl_set_error_handler(old_handler); 
 	if (status) 
 	{
-		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
 		return 0.0;
 	}
 
 	// Integrand result.
+    // JAZ Note that the kernels used here have factors of growth and chi in get_reduced_kernel
+    // for some Niall-related reason. This should all come out right, probably
 	p /= (chi * growth * growth);
+
+
 	double result_0 = Wr_X * Wr_Y;  //zeroth order
 	double result_ext = 0.;
+
 	if (data->ext_order>0){
 		//if doing extended limber, get kernel 2nd derivatives
 	    double d2Wr_x = gsl_spline_eval_deriv2(data->WX_red, chi, data->accelerator_wx);
 	    double d2Wr_y;
     	if (data->WX_red==data->WY_red) d2Wr_y = d2Wr_x;
 	    else d2Wr_y = gsl_spline_eval_deriv2(data->WY_red, chi, data->accelerator_wy);
-		//printf("chi,d2Wr_x,d2Wr_y : %f,%.6e,%.6e\n", chi,d2Wr_x,d2Wr_y);
 	    result_ext = - 0.5 * ( d2Wr_x * Wr_Y + d2Wr_y * Wr_X ) * chi * chi / (nu * nu) ;
 	}
-	//printf("chi:%f, ext:%.6e, ext frac:%.6e\n", chi, result1, result1/result0);
-	return (result_0 + result_ext) * p ;
+
+	double result = (result_0 + result_ext) * p ;
+
+
+    // This is a total hack because we really really need to rewrite things
+    // cleanly.
+    result *= pow( chi/f_K(data->K, chi), 2);
+    return result;
 }
 
 // the extended Limber integrand: 
@@ -171,11 +192,10 @@ static double rsd_limber_integrand(double chi, void * data_void)
 	double chi_over_nu2 = chi * chi / nu / nu;
 	// Get P(nu/chi, chi)
 	// Deactivate error handling 
-	gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
+
 	double p;
 	int status = gsl_spline2d_eval_e(data->P, chi, log(k), data->accelerator_px, data->accelerator_py, &p);
-	// Restore the old error handler
-	gsl_set_error_handler(old_handler); 
+
 	if (status) 
 	{
 		//printf(stderr,'spline failed, for now, assume this is because k was out of range and return 0...should probably be more careful here though.');
@@ -394,21 +414,9 @@ void sigma_crit(gsl_spline * WX, gsl_spline * WY, double * sigma_crit, double * 
 }
 
 
-gsl_integration_workspace * W = NULL;
-gsl_integration_glfixed_table *table = NULL;
-
-void setup_integration_workspaces(){
-	if (W==NULL){
-		W = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
-	}
-	if (table==NULL){
-		table = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
-	}
-}
-
 
 static
-void limber_gsl_fallback_integrator(gsl_function * F, double chimin, double chimax, 
+void limber_gsl_fallback_integrator(gsl_integration_workspace * W, gsl_integration_glfixed_table *table, gsl_function * F, double chimin, double chimax, 
 	double abstol, double reltol, double * c_ell, double * error){
 
 	// Only one warning per process
@@ -474,6 +482,7 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	config->status = LIMBER_STATUS_OK;
 
 
+
     static int n_ell_zero_warning = 0;
     if (config->n_ell==0){
         if (n_ell_zero_warning==0){
@@ -487,25 +496,61 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable
 	// place, so we just use the range they specify
-	ExtIntegrandData data;
 	double chimin_x = limber_gsl_spline_min_x(WX_red);
 	double chimin_y = limber_gsl_spline_min_x(WY_red);
 	double chimax_x = limber_gsl_spline_max_x(WX_red);
 	double chimax_y = limber_gsl_spline_max_x(WY_red);
-	double c_ell, error;
 
-	// Workspaces for the main and falback integrators.
-	// Static, so only allocated once as it has a fixed size.
-	setup_integration_workspaces();
 
 	double reltol = config->relative_tolerance;
 	double abstol = config->absolute_tolerance;
+
+
+    static gsl_integration_workspace * workspace[LIMBER_NTHREAD_MAX];
+    static gsl_integration_glfixed_table * table[LIMBER_NTHREAD_MAX];
+
+#if defined(_OPENMP)
+    int nthread_max = omp_get_max_threads();
+#else
+    int nthread_max = 1;
+#endif
+    
+    if (nthread_max>LIMBER_NTHREAD_MAX){
+        fprintf(stderr, "Tried to use more than %d OpenMP threads - modify limber.c", LIMBER_NTHREAD_MAX);
+        exit(1);
+    }
+
+    // Get P(k,z) using k=nu/chi.
+    // Deactivate error handling 
+    gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
+
+
+#pragma omp parallel
+{
+
+    //Figure out which thread is running this
+#if defined(_OPENMP)
+        int thread = omp_get_thread_num();
+#else
+        int thread = 0;
+#endif
+
+    // We maintain an array of per-thread integration workspaces.
+    // The downside of this is that we need a fixed size, but we just use
+    // a fairly large one.
+    if (workspace[thread]==NULL){
+        workspace[thread] = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+    }
+    if (table[thread]==NULL){
+        table[thread] = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+    }
 
 	// Take the smallest range since we want both the
 	// splines to be valid there.
 	// This range as well as all the data needed to compute
 	// the integrand is put into a struct to be passed
 	// through the integrator to the function above.
+    ExtIntegrandData data;    
 	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
 	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
 	data.WX_red = WX_red;
@@ -518,6 +563,7 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	data.accelerator_growth = gsl_interp_accel_alloc();
 	data.D_chi = D_chi;
 	data.ext_order = ext_order;
+    data.K = config->K;
 
 	// Set up the workspace and inputs to the integrator.
 	// Not entirely sure what the table is.
@@ -525,22 +571,22 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	F.function = ext_limber_integrand;
 	F.params = &data;
 
-	// save ell values for return
-	double ell_vector[config->n_ell];
+
 
 	// loop through ell values according to the input configuration
+#pragma omp for schedule(dynamic) nowait
 	for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
 		double ell = config->ell[i_ell];
 		data.ell=ell;
+        double c_ell, error;
 
 		// Perform the main integration.
-		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+		limber_gsl_fallback_integrator(workspace[thread], table[thread], &F, data.chimin, data.chimax, 
 			abstol, reltol, &c_ell, &error);
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
 		// Record the results into arrays
 		cl_out[i_ell] = c_ell;
-		ell_vector[i_ell] = ell;
 	}
 
 	// Tidy up
@@ -550,9 +596,10 @@ int limber_integral(limber_config * config, gsl_spline * WX_red,
 	gsl_interp_accel_free(data.accelerator_py);
 	gsl_interp_accel_free(data.accelerator_growth);
 
-	// These two are not deallocated because they are static and only initialized once.
-	// gsl_integration_glfixed_table_free(table);	
-	// gsl_integration_workspace_free(W);
+} // end of parallel region
+
+    // Restore the old error handler
+    gsl_set_error_handler(old_handler); 
 
 	// And that's it
 	return 0;
@@ -602,6 +649,7 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
     }
 
 	config->status = LIMBER_STATUS_OK;
+    gsl_error_handler_t * old_handler = gsl_set_error_handler_off();
 
     static int n_ell_zero_warning = 0;
     if (config->n_ell==0){
@@ -616,25 +664,59 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	// It is assumed that (at least one of) the kernel
 	// splines should go to zero in some kind of reasonable
 	// place, so we just use the range they specify
-	RSDIntegrandData data;
 	double chimin_x = limber_gsl_spline_min_x(GX);
 	double chimin_y = limber_gsl_spline_min_x(GY);
 	double chimax_x = limber_gsl_spline_max_x(GX);
 	double chimax_y = limber_gsl_spline_max_x(GY);
-	double c_ell, error;
 
-	// Workspaces for the main and falback integrators.
-	// Static, so only allocated once as it has a fixed size.
-	setup_integration_workspaces();
 
 	double reltol = config->relative_tolerance;
 	double abstol = config->absolute_tolerance;
+
+
+
+#if defined(_OPENMP)
+    int nthread_max = omp_get_max_threads();
+#else
+    int nthread_max = 1;
+#endif
+    
+    if (nthread_max>LIMBER_NTHREAD_MAX){
+        fprintf(stderr, "Tried to use more than %d OpenMP threads - modify limber.c", LIMBER_NTHREAD_MAX);
+        exit(1);
+    }
+
+
+    static gsl_integration_workspace * workspace[LIMBER_NTHREAD_MAX];
+    static gsl_integration_glfixed_table * table[LIMBER_NTHREAD_MAX];
+
+
+#pragma omp parallel
+    {
+    //Figure out which thread is running this
+#if defined(_OPENMP)
+        int thread = omp_get_thread_num();
+#else
+        int thread = 0;
+#endif
+
+
+    // We maintain an array of per-thread integration workspaces.
+    // The downside of this is that we need a fixed size, but we just use
+    // a fairly large one.
+    if (workspace[thread]==NULL){
+        workspace[thread] = gsl_integration_workspace_alloc(LIMBER_FIXED_TABLE_SIZE);
+    }
+    if (table[thread]==NULL){
+        table[thread] = gsl_integration_glfixed_table_alloc((size_t) LIMBER_FIXED_TABLE_SIZE);
+    }
 
 	// Take the smallest range since we want both the
 	// splines to be valid there.
 	// This range as well as all the data needed to compute
 	// the integrand is put into a struct to be passed
 	// through the integrator to the function above.
+    RSDIntegrandData data;
 	data.chimin = chimin_x>chimin_y ? chimin_x : chimin_y;
 	data.chimax = chimax_x<chimax_y ? chimax_x : chimax_y;
 	data.GX = GX;
@@ -666,9 +748,10 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	for (int i_ell = 0; i_ell<config->n_ell; i_ell++){
 		double ell = config->ell[i_ell];
 		data.ell=ell;
+        double c_ell, error;
 
 		// Perform the main integration.
-		limber_gsl_fallback_integrator(&F, data.chimin, data.chimax, 
+		limber_gsl_fallback_integrator(workspace[thread], table[thread], &F, data.chimin, data.chimax, 
 			abstol, reltol, &c_ell, &error);
 		//Include the prefactor scaling
 		c_ell *= config->prefactor;
@@ -686,9 +769,10 @@ int limber_integral_rsd(limber_config * config, gsl_spline * GX,
 	gsl_interp_accel_free(data.accelerator_py);
 	gsl_interp_accel_free(data.accelerator_growth);
 
-	// These two are not deallocated because they are static and only initialized once.
-	// gsl_integration_glfixed_table_free(table);	
-	// gsl_integration_workspace_free(W);
+}
+    // Restore the old error handler
+    gsl_set_error_handler(old_handler); 
+
 
 	// And that's it
 	return 0;

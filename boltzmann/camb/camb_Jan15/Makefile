@@ -84,7 +84,7 @@
 
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-USER_FFLAGS=-I.
+USER_FFLAGS=-I. -ffast-math
 
 FISHER=
 F90C     = $(FC)

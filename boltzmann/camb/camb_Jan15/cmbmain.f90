@@ -174,6 +174,7 @@
 
     if (CP%WantCls) call SetkValuesForSources
 
+    ! COSMOSIS - return early on error when setting up
     if (global_error_flag/=0) return
 
 
@@ -704,6 +705,8 @@
         SourceNum=3
     end if
 
+    ! COSMOSIS - avoid reallocation error on early exit
+    ! in previous iterations
     if (allocated(Src)) deallocate(Src)
     if (allocated(ddSrc)) deallocate(ddSrc)
 
@@ -849,6 +852,7 @@
         end if
     end if
 
+    ! COSMOSIS - early exit on error in ranges
     if (global_error_flag .ne. 0) return
 
     call Ranges_GetArray(Evolve_q, .false.)
@@ -1031,6 +1035,7 @@
             Src(EV%q_ix,1:SourceNum,j) = 0
         else
             call GaugeInterface_EvolveTens(EV,tau,yt,tauend,tol1,ind,c,wt)
+            ! COSMOSIS - early exit on tensor error
             if (global_error_flag/=0) return
             call outputt(EV,yt,EV%nvart,j,tau,Src(EV%q_ix,CT_Temp,j),&
             Src(EV%q_ix,CT_E,j),Src(EV%q_ix,CT_B,j))

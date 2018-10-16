@@ -264,8 +264,6 @@ class ObservedClGetter(object):
         section, ell_name, value_name = type_table[A, B]
         assert ell_name == "ell", "Gaussian covariances are currently only written for C_ell, not other 2pt functions"
 
-        # We extract relevant bits from the block and spline them
-        # for output
         name_ij = value_name.format(i, j)
         section_name_ij = '{}_{}'.format(section, name_ij)
 
@@ -305,8 +303,7 @@ class ObservedClGetter(object):
         elif block.has_value(section, name_ji) and A == B:
             theory = block[section, name_ji]
         else:
-            raise ValueError(
-                "Could not find theory prediction {} in section {}".format(name_ij, section))
+            raise ValueError("Could not find theory prediction {} in section {}".format(name_ij, section))
 
         spline = interp1d(angle, theory)
         return spline

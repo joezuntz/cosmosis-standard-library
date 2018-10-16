@@ -48,15 +48,20 @@ params:
     do_tensors: "Include tensor modes (default F) "
     zmin: "real, Min value to save P(k,z) (default 0.0)"
     zmax: "real, Max value to save P(k,z) (default 4.0)"
-    nz: "integer, Number of z values to save P(k,z) (default 401, so that dz=0.01)"
+    nz: "integer, Number of z values to save P(k,z) (default 101, so that dz=0.04)"
+    background_zmin: "real, Min value to save distance measures (default 0.0)"
+    background_zmax: "real, Max value to save distance measures (default 4.0)"
+    background_nz: "integer, Number of z values to save distance measures (default 401, so that dz=0.01)"
     kmin: "real, Min wavenumber k to save P(k,z) in h/Mpc (default is camb model-dependent but typically small)"
     kmax: "real, Max wavenumber k to save P(k,z) in h/Mpc (default 50.0)"
     nk: "integer, Number of k values to save P(k,z) (default is camb-model dependent)"
     do_nonlinear: "logical, Apply non-linear halofit corrections to matter-power.  Relevant only for lensing right now (default F)"
     do_lensing: "logical, Include lensing of CMB, and save C_ell phi-phi (default F)"
     high_ell_template: "string, Required for lensing - set to the file included in the camb dir (no default)"
+    matter_power_lin_version: "bit-field, sum of required matter power spectra.  Default is legacy version."
     accuracy_boost: "real, apply an accuracy boost across all calculations. Default=1.0"
-    high_accuracy_default: "Change accuracy defaults so that CMB results from ell=500 to ell=2000 are at 0.1% accuracy (usually 0.3%)"
+    high_accuracy_default: "logical, Change accuracy defaults so that CMB results from ell=500 to ell=2000 are at 0.1% accuracy (usually 0.3%). Default=F"
+    reject_non_accelerating: "logical, Reject models with w0 + wa > 0. Default=F"
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:

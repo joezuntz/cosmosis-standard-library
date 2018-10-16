@@ -1,0 +1,55 @@
+name: sigma_cpp
+version: 1.0
+purpose: "Compute anisotropy dispersion sigma(R,z) in cpp"
+url: ""
+interface: sigma_cpp.py
+attribution: [Michel Aguena]
+rules:
+    ""
+cite: []
+
+assumptions:
+    - "minimal assumptions; sigma computed directly from P(k,z)"
+
+explanation: |
+    "sigma(R,z) is the variance of cosmic density fluctuations on scales
+    down to 8 Mpc/h.
+
+    In Fourier space is given by sigma(R,z) = \int_0^\infty W^2(k R) k^2 P(k,z) / (2 \pi)^2 dk
+
+    The P(k,z) used could in general be linear or non-linear, but usually when people
+    say sigma they mean the non-linear variant.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    zmin: "real, minimum redshift to generate values for"
+    zmax: "real, maximum redshift to generate values for"
+    dz: "real, output redshift sample spacing"
+    z: "real, values of redshift to generate values for, overwrites (zmin, zmax, dz)"
+    logmmin: "real, minimum value of log10(Mass) [in M_sun/h] to generate values for"
+    logmmax: "real, maximum value of log10(Mass) [in M_sun/h] to generate values for"
+    dlogm: "real, log10(Mass) spacing"
+    logm: "real, values of log10(Mass) [in M_sun/h] to generate values for, overwrites (logmmin, logmmax, dlogm)"
+    rmin: "real, minimum scale R in Mpc/h to generate values for"
+    rmax: "real, maximum scale R in Mpc/h to generate values for"
+    dr: "real, scale R spacing"
+    r: "real, values of R [Mpc/h] to generate values for, overwrites (rmin, rmax, dr)"
+    matter_power: "name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl"
+    use_m: "logical, uses the mass values as a base for the computation instead of R (default F)"
+    verbose: "logical, prints details of the computation (default F)"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    matter_power:
+        k_h: "real 1D array, sample values of linear spectrum in Mpc/h.  Section name specified by parameter in ini file."
+        z: "real 1D array, redshift of linear spectrum samples.  Section name specified by parameter in ini file."
+        P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}.  Section name specified by parameter in ini file."
+
+outputs:
+    sigma_cpp:
+        R: "real 1D array, scale R of output in Mpc/h"
+        logm: "real 1D array, of log10(Mass) [in M_sun/h] output"
+        z: "real 1D array, redshift of output"
+        sigma: "real 2D array, variance sigma(R,z)"

@@ -1,0 +1,32 @@
+#This is a template for module description files
+name: mgs_bao
+version: "1409.3242"
+purpose: Compute the likelihood against SDSS MGS data
+url: ""
+interface: mgs_bao.py
+attribution: [MGS team]
+rules: ""
+cite: 
+    - "A. Ross et al, MNRAS 449 (2015)"
+
+assumptions:
+    - "MGS chi2"
+    - "FLRW metric and standard BAO size"
+
+explanation: |
+    "This module gives a likelihood of the redshift-distance and redshift-Hubble
+    relations in combined form D_v = (da**2 * (1+z)**2 * dr)**(1./3.) 
+    where dr = z / H. It uses the sound horizon at last-scatter rs_zdrag and 
+    the predicted expansion since last scattering to predict the BAO size
+    at the redshifts at which SDSS MGS measured them."
+params:
+    verbose: "Bool, Print extra output (default = False)"
+inputs: 
+    distances:
+        z: "1D real array, redshifts of samples"
+        d_m: "1D real array, physical angular diameter distance in Mpc"
+        h:  "1D real array, hubble parameter with in units of Mpc"
+        rz_zdrag:  "real, sound horizon at last scattering in Mpc"
+outputs:
+    likelihoods:
+        MGS_BAO_LIKE: "real, likelihood of supplied expansion history"

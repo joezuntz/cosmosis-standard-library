@@ -67,7 +67,14 @@ class TwoPointLikelihood(GaussianLikelihood):
         if self.gaussian_covariance:
             self.constant_covariance = False
 
+        self.moped = options.get_string('moped', default='')
+
         super(TwoPointLikelihood, self).__init__(options)
+
+        if self.moped:
+            print("Using compressed data from MOPED algorithm: {} data points".format(len(self.moped_data)))
+            if self.sellentin:
+                raise ValueError("Sellentin mode is incompatible with Moped mode in 2pt like")
 
     def build_data(self):
         filename = self.options.get_string('data_file')
@@ -196,15 +203,29 @@ class TwoPointLikelihood(GaussianLikelihood):
             raise ValueError(
                 "No data was chosen to be used from 2-point data file {0}. It was either not selectedin data_sets or cut out".format(filename))
 
+        if self.moped:
+            data_file = fits.open(filename)
+            self.moped_data = data_file['MOPED-DATA-{}'.format(self.moped)].data['moped']
+            self.moped_transform = data_file['MOPED-TRANSFORM-{}'.format(self.moped)].data
+            data_file.close()
+
+            return None, self.moped_data
+
         # The x data is not especially useful here, so return None.
         # We will access the self.two_point_data directly later to
         # determine ell/theta values
         return None, data_vector
 
     def build_covariance(self):
+
+        
         C = np.array(self.two_point_data.covmat)
         r = self.options.get_int('covariance_realizations', default=-1)
         self.sellentin = self.options.get_bool('sellentin', default=False)
+
+        if self.moped:
+            return np.identity(len(self.moped_data))
+
 
         if self.sellentin:
             if not self.constant_covariance:
@@ -298,6 +319,10 @@ class TwoPointLikelihood(GaussianLikelihood):
         # the thing it does want is the theory vector, for comparison with
         # the data vector
         theory = np.concatenate(theory)
+
+        if self.moped:
+            return np.dot(self.moped_transform, theory)
+
         return theory
 
     def do_likelihood(self, block):

@@ -177,6 +177,7 @@
 
 
    subroutine Ranges_Add_delta(Reg, t_start, t_end, t_approx_delta, IsLog)
+    ! COSMOSIS - use error handling in this function
      use errors
      Type(Regions), target :: Reg
      logical, intent(in), optional :: IsLog
@@ -190,6 +191,7 @@
         WantLog = .false.    
      end if
      
+     ! COSMOSIS - handle errors without crashing
      if (t_end <= t_start) then
        write(*,*) 'Camb error: Ranges_Add_delta: end must be larger than start'
        global_error_flag = 1

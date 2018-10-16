@@ -10,8 +10,6 @@
 #include "gsl/gsl_integration.h"
 #include "gsl/gsl_errno.h"
 
-#define NGLT 2048
-
 // Short-hand names for the sections we will
 // be looking at
 const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
@@ -20,7 +18,7 @@ const char * cosmo = COSMOLOGICAL_PARAMETERS_SECTION;
 const char * ia = INTRINSIC_ALIGNMENT_PARAMETERS_SECTION;
 const char * lum = GALAXY_LUMINOSITY_FUNCTION_SECTION;
 
-#define NGLT 2048
+#define NGLT 1024
 
 
 typedef struct w_integrand_data{
@@ -31,6 +29,7 @@ typedef struct w_integrand_data{
   double chi;
   double zmax;
   double chi_max;
+  double K;
 } w_integrand_data;
 
 static double n_of_chi(double chi, void *p)
@@ -55,7 +54,7 @@ static double w_of_chi_integrand(double chis, void *p)
 {
   w_integrand_data * data = (w_integrand_data*) p;
   double nchi = n_of_chi(chis, data);
-  return nchi*(chis - data->chi)/chis;
+  return nchi*f_K(data->K, chis - data->chi) / f_K(data->K,chis);
 }
 
 gsl_spline * get_reduced_kernel(gsl_spline * orig_kernel, gsl_spline * growth_of_chi)
@@ -65,17 +64,18 @@ gsl_spline * get_reduced_kernel(gsl_spline * orig_kernel, gsl_spline * growth_of
   double Chi[nchi];
   double chi;
   double growth;
+  double chi_max = growth_of_chi->x[growth_of_chi->size-1];
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   for (int i=0; i<nchi; i++)
     {
       chi = (orig_kernel->x[i]);
       Chi[i] = chi;
-      growth = gsl_spline_eval(growth_of_chi, chi, acc);
-      if (chi>0.){
-	kernel_out_array[i] = orig_kernel->y[i] * growth / sqrt(chi);
+      if (chi>0. && chi<chi_max){
+        growth = gsl_spline_eval(growth_of_chi, chi, acc);
+        kernel_out_array[i] = orig_kernel->y[i] * growth / sqrt(chi);
       }
       else {
-	kernel_out_array[i] = 0.;
+        kernel_out_array[i] = 0.;
       }
   }
   gsl_interp_accel_free(acc);
@@ -88,68 +88,82 @@ gsl_spline * get_reduced_kernel(gsl_spline * orig_kernel, gsl_spline * growth_of
 // 1.5 omega_m H0^2 in it.  That should be included in the
 // prefactor later
 gsl_spline * shear_shear_kernel(double chi_max, gsl_spline * n_of_z, 
-				gsl_spline * a_of_chi)
+				gsl_spline * a_of_chi, double K)
 {
-  // Integrand data
-  w_integrand_data data;
-  data.n_of_z = n_of_z;
-  data.a_of_chi = a_of_chi;
-  data.acc_chi = gsl_interp_accel_alloc();
-  data.acc_z = gsl_interp_accel_alloc();
-  data.zmax = n_of_z->x[n_of_z->size-1];
-
-  // Limit of our range.
-  double chi_min = 0.0;
-  data.chi_max = chi_max;
-
-  // Integration workspace
-  gsl_integration_glfixed_table *table = 
-    gsl_integration_glfixed_table_alloc((size_t) NGLT);
-
-  // First compute the normalization
-  gsl_function F;
-  F.params = &data;
-  F.function = &n_of_chi;
-  double norm = 1.0 / gsl_integration_glfixed(&F, chi_min, chi_max, table);
-
   // Now do the main integral, chi-by-chi.
   // First, space for the results
   int n_chi = NGLT;
   double Chi[n_chi];
   double W[n_chi];
 
-  // The evaluation points separation, and set up the integrator
-  double delta_chi = (chi_max-chi_min)/ (n_chi - 1);
-  F.function = &w_of_chi_integrand;
+
+  // Limit of our range.
+  double chi_min = 0.0;
+
+  // Integration workspace
+  gsl_integration_glfixed_table *table = 
+    gsl_integration_glfixed_table_alloc((size_t) NGLT);
 
   gsl_error_handler_t * old_error_handler = gsl_set_error_handler_off();
-  int error_status=0;
-  // Loop through samples to be evenly spaced in chi
-  for(int i=0; i<n_chi; i++)
-    {
-      // Get chi at this evaluation point
-      double chi = delta_chi * i;
-      Chi[i] = chi;
-      // We need it during the integration, so save.
-      data.chi = chi;
-      // ingredient for the prefactor chi/a
-      double a;
-      int err = gsl_spline_eval_e(a_of_chi, chi, data.acc_chi, &a);
-      if (err) {error_status=1; break;} 
-      // and calculate the integral
-      W[i] = norm * (chi/a) * gsl_integration_glfixed(&F, chi, chi_max, table);
-    }
+
+  volatile int error_status=0; //volatile means that one thread can set it for other threads
+
+#pragma omp parallel shared(error_status)
+  {
+    // Integrand data
+    w_integrand_data data;
+    data.n_of_z = n_of_z;
+    data.a_of_chi = a_of_chi;
+    data.acc_chi = gsl_interp_accel_alloc();
+    data.acc_z = gsl_interp_accel_alloc();
+    data.zmax = n_of_z->x[n_of_z->size-1];
+    data.chi_max = chi_max;
+    data.K = K;
+
+    // First compute the normalization
+    gsl_function F;
+    F.params = &data;
+    F.function = &n_of_chi;
+    double norm = 1.0 / gsl_integration_glfixed(&F, chi_min, chi_max, table);
+
+
+    // The evaluation points separation, and set up the integrator
+    double delta_chi = (chi_max-chi_min)/ (n_chi - 1);
+    F.function = &w_of_chi_integrand;
+
+    // Loop through samples to be evenly spaced in chi
+#pragma omp for schedule(dynamic)
+    for(int i=0; i<n_chi; i++)
+      {
+        if (error_status) continue;
+        // Get chi at this evaluation point
+        double chi = delta_chi * i;
+        Chi[i] = chi;
+        // We need it during the integration, so save.
+        data.chi = chi;
+        // ingredient for the prefactor chi/a
+        double a;
+        int err = gsl_spline_eval_e(a_of_chi, chi, data.acc_chi, &a);
+        if (err) {
+#pragma omp atomic          
+          error_status++; 
+          continue;
+        } 
+        // and calculate the integral
+        W[i] = norm * (f_K(K,chi)/a) * gsl_integration_glfixed(&F, chi, chi_max, table);
+      }
+
+    // Tidy up
+    gsl_interp_accel_free(data.acc_chi);
+    gsl_interp_accel_free(data.acc_z);
+  }
+  gsl_integration_glfixed_table_free(table);
   gsl_set_error_handler(old_error_handler);
 
-  // Convert the static vectors into a spline and return
-  gsl_spline * output;
-  if (error_status) output = NULL;
-  else output = spline_from_arrays(n_chi, Chi, W);
-
-  // Tidy up
-  gsl_integration_glfixed_table_free(table);
-  gsl_interp_accel_free(data.acc_chi);
-  gsl_interp_accel_free(data.acc_z);
+    // Convert the static vectors into a spline and return
+    gsl_spline * output;
+    if (error_status) output = NULL;
+    else output = spline_from_arrays(n_chi, Chi, W);
 
   // Finish
   return output;
@@ -207,9 +221,12 @@ gsl_spline * get_named_w_spline(c_datablock * block, const char * section, int b
   // Make a spline from n(z)
   gsl_spline * n_of_z_spline = spline_from_arrays(nz1, z, n_of_z);
 
+  double K;
+  status |= c_datablock_get_double_default(block, COSMOLOGICAL_PARAMETERS_SECTION, "K", 0.0, &K);
+
   // Do the main computation
   gsl_spline * W = shear_shear_kernel(chi_max, n_of_z_spline,
-				      a_of_chi_spline);
+				      a_of_chi_spline, K);
 
   // tidy up bin-specific data
   gsl_spline_free(n_of_z_spline);
@@ -246,7 +263,7 @@ int get_wchi_array(c_datablock * block, const char * nz_section,
 
 
 
-gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a_of_chi)
+gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a_of_chi, double K)
 {
 
   int n_chi = NGLT;
@@ -268,7 +285,7 @@ gsl_spline * cmb_wl_kappa_kernel(double chi_max, double chi_star, gsl_spline * a
       int err = gsl_spline_eval_e(a_of_chi, chi, NULL, &a);
       if (err) {error_status=1; break;} 
       // and calculate the integral
-      W[i] = (chi/a) * (chi_star-chi)/chi_star;
+      W[i] = f_K(K,chi) / a * f_K(K,chi_star-chi) / f_K(K,chi_star);
     }
 
   // Convert the static vectors into a spline and return

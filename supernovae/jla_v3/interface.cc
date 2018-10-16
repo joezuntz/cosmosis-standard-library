@@ -128,6 +128,8 @@ int execute(cosmosis::DataBlock * block, void * config){
 	// Reverse if needed
 	if (Z[1]<Z[0]) {std::reverse(Z.begin(), Z.end()); std::reverse(MU.begin(), MU.end());}
 
+	double z_max_calc = Z.back();
+
 	// Get rid of the first element at z=0 since there mu=-inf
 	if (Z[0]==0.0){
 		Z.erase(Z.begin());
@@ -142,17 +144,26 @@ int execute(cosmosis::DataBlock * block, void * config){
 	int n_sn = calculator->size();
 	double * z_sn = calculator->getZ();
 	double mu_sn[n_sn];
+	int out_of_range = 0;
 
 	// Evaluate our theory mu(z) for each supernova
 	for (int i=0; i<n_sn; i++){
 		double z_helio = calculator->lcpars[i].zhel;
 		double helio_correction = 5*(log10(1+z_helio) - log10(1+z_sn[i]));
+		if (z_sn[i] > z_max_calc){
+			out_of_range = 1;
+			break;
+		}
 		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL) + helio_correction;
 	}
 
 	free(z_sn);
-
 	gsl_spline_free(mu_of_z);
+
+	if (out_of_range){
+		std::cerr << "ERROR: One or more JLA supernovae beyond calculated redshift max z=" << z_max_calc <<  std::endl;
+		return 1;
+	}
 
 	//Get the chi^2 and convert to log-like
 	double chi2 = calculator->computeLikelihood(mu_sn, nuisance);

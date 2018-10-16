@@ -1,6 +1,6 @@
 name: camb
 version: Nov13
-purpose: "Boltzmann and background integrator for BG, CMB, and matter power"
+purpose: "Boltzmann and background integrator for BG, CMB, and matter power  (Note some settings in this module may not be consistent with other modules e.g. the Planck likelihood. Camb 2015 is recommended in this case)"
 url: http://camb.info
 interface: camb.so
 attribution: [Antony Lewis, Anthony Challinor]

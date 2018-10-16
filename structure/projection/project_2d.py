@@ -61,6 +61,13 @@ class GalaxyIntrinsicPower3D(Power3D):
     source_specific = True
 
 
+def lensing_prefactor(block):
+    c_kms = 299792.4580
+    omega_m = block[names.cosmological_parameters, "omega_m"]
+    shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
+    return shear_scaling
+
+
 class Spectrum(object):
     autocorrelation = False
     #These should make it more obvious if the values are not overwritten by subclasses
@@ -114,10 +121,7 @@ class Spectrum(object):
             #This should be okay for the magnification terms
             #since none of those have prefactor_power==0
             return 1.0
-        c_kms = 299792.4580
-        omega_m = block[names.cosmological_parameters, "omega_m"]
-        shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
-        f = shear_scaling**self.prefactor_power
+        f = lensing_prefactor(block)**self.prefactor_power
         if 1 in self.magnification_prefactors:
             f *= self.magnification_prefactor(block, bin1)
         if 2 in self.magnification_prefactors:
@@ -142,13 +146,16 @@ class Spectrum(object):
         K1 = self.source.kernels_A[self.kernels[ 0]+"_"+self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1]+"_"+self.sample_b][bin2]
 
+
+        K = block.get_double(names.cosmological_parameters, "K")
+
         #Call the integral
         #if do_extended_limber is True, pass ext_order=1
         ext_order=0
         if do_extended_limber:
             ext_order=1
         c_ell = limber.extended_limber(K1, K2, P, D, ell, self.prefactor(block, bin1, bin2), 
-            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, ext_order=ext_order)
+            rel_tol=relative_tolerance, abs_tol=absolute_tolerance, ext_order=ext_order, K=K)
         self.clean_power_growth(P, D)
         return c_ell
 
@@ -290,6 +297,25 @@ class SpectrumType(Enum):
         name = "galaxy_cmbkappa_cl"
         prefactor_power = 1
 
+    class FastShearShearIA(Spectrum):
+        """
+        Variant method of Shear+IA calculation that
+        does the integral all at once including the shear 
+        components.  Only works for scale-independent IA/
+        """
+        power_3d_type = MatterPower3D
+        kernels = "F F"
+        autocorrelation = True
+        name = names.shear_cl
+        prefactor_power = 2
+
+    class FastPositionShearIA(Spectrum):
+        power_3d_type = MatterGalaxyPower3D
+        kernels = "N F"
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_power = 1
+
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
     # types, for example ones done with modified gravity changes.
@@ -329,6 +355,12 @@ class SpectrumCalculator(object):
             #one dictionary per named group
             self.kernels_A[kernel_a] = {}
             self.kernels_B[kernel_b] = {}
+
+            # Special case - F kernel (fast shear+IA) needs W kernel too
+            if spectrum.kernels[0]=="F":
+                self.kernels_A["W" + "_" + spectrum.sample_a] = {}
+            if spectrum.kernels[-1]=="F":
+                self.kernels_B["W" + "_" + spectrum.sample_b] = {}
 
 
         self.power = {}
@@ -418,6 +450,9 @@ class SpectrumCalculator(object):
                     else:
                         save_name = ""
                         power_suffix = ""
+                    if spectrum in [SpectrumType.FastShearShearIA.value, SpectrumType.FastPositionShearIA.value]:
+                        if power_suffix != "":
+                            raise ValueError("Sorry - Joe has not coded up the logic for using a suffix on the power spectrum with the fast Shear+IA limber integral")
                     kernel_a = kernel_a.strip()
                     kernel_b = kernel_b.strip()
                     #The self in the line below is not a mistake - the source objects
@@ -499,7 +534,7 @@ class SpectrumCalculator(object):
         for kernel_name, kernel_dict in self.kernels_A.items():
             #Check for any old kernels that should have been cleaned up by the
             #clean
-            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
+            # assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned "
             #Load in the new kernel
             if self.verbose:
                 print("Loading kernel {}".format(kernel_name))
@@ -527,7 +562,7 @@ class SpectrumCalculator(object):
     def save_kernels(self, block, zmax):
         z = np.linspace(0.0, zmax, 1000)
         chi = self.chi_of_z(z)
-        for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
+        for kernel_name, kernel_dict in list(self.kernels_A.items()) + list(self.kernels_B.items()):
             section = "kernel_"+kernel_name
             block[section, "z"] = z
             block[section, "chi"] = chi
@@ -556,15 +591,56 @@ class SpectrumCalculator(object):
                 kernel = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
             elif kernel_type=="W":
                 kernel = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
+            elif kernel_type=="F":
+                kernel = self.get_combined_shear_ia_spline(block, kernel_name, sample_name, i, z)
             elif kernel_type=="K":
                 if self.chi_star is None:
                     raise ValueError("Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
-                kernel = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
+                curv_K = block.get_double(names.cosmological_parameters, "K", 0.0)
+                kernel = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi, curv_K)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
             if kernel is None:
                 raise ValueError("Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(kernel_name, kernel_type, i+1))
             kernel_dict[i] = kernel
+
+    def get_combined_shear_ia_spline(self, block, kernel_name, sample_name, i, z):
+        # Get basic W spline that this thing starts from.
+        # Might have it already or need to make it fresh (and store it)
+        W_kernel_name = "W_"+kernel_name[2:]
+        W_dict = self.kernels_A[W_kernel_name]
+        W = W_dict.get(i)
+        if W is None:
+            print(sample_name, i+1)
+            W = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
+            if W is None:
+                raise ValueError("Could not load the W(z) splines needed for limber integral (fast shear+IA, name={} bin={})".format(sample_name, i+1))
+            W_dict[i] = W
+
+        # This one is quick to calculate so I won't mess around caching it
+        N = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
+
+        # Check that the P_II(k,z) does not
+        z1, k1, P_II = block.get_grid(names.intrinsic_power, "z", "k_h", "p_k")
+        z2, k2, P_GI = block.get_grid(names.matter_intrinsic_power, "z", "k_h", "p_k")
+        assert np.allclose(k1, k2), "Non-matching PII and PGI in the  Fast Shear+IA C_ell calculator"
+        assert np.allclose(z1, z2), "Non-matching PII and PGI in the  Fast Shear+IA C_ell calculator"
+
+        chi = self.chi_of_z(z)
+        chi1 = self.chi_of_z(z1)
+
+        if (P_GI[:,0]==0).all():
+            # If there are no intrinsic alignments we can just use W
+            kernel = W
+        else:
+            F1 = P_II[:,0] / P_GI[:,0]
+            F_test = P_II[:,-1] / P_GI[:,-1]
+            assert np.allclose(F1,F_test), "Scale dependent IA cannot be used with Fast Shear+IA C_ell calculator"
+            F = GSLSpline(chi1, F1)
+            Q = W(chi) + F(chi) * N(chi) / lensing_prefactor(block)
+            kernel = GSLSpline(chi, Q)
+
+        return kernel
 
     def load_one_power(self,  block, powerType):
         self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
@@ -644,4 +720,4 @@ def setup(options):
 
 def execute(block, config):
     return config.execute(block)
-    
+
