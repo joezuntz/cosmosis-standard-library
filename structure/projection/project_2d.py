@@ -468,7 +468,7 @@ class SpectrumCalculator(object):
         self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
         self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
 
-        self.pt_type = str(options.get_string(option_section, "pt_type"))
+        self.pt_type = str(options.get_string(option_section, "pt_type", ""))
         self.do_time = options.get_bool(option_section, "print_time", False)
         self.output_nl_grid = options.get_bool(option_section, "output_nl_grid", True)
 
@@ -608,6 +608,12 @@ class SpectrumCalculator(object):
         else:
             self.chi_star = None
         self.chi_max = chi_distance.max()
+        print("chi:")
+        print(chi_distance)
+        print("a:")
+        print(a_distance)
+        print("z:")
+        print(z_distance)
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
 
@@ -768,9 +774,11 @@ class SpectrumCalculator(object):
 
     def execute(self, block):
         try:
+            print("loading distance splines")
             self.load_distance_splines(block)
             # self.load_matter_power(block, self.chi_of_z)
             try:
+                print("loading kernels")
                 self.load_kernels(block)
             except NullSplineError:
                 sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
@@ -784,6 +792,7 @@ class SpectrumCalculator(object):
                 self.save_kernels(block, self.save_kernel_zmax)
             self.load_power(block)
             for spectrum in self.req_spectra:
+                print("computing spectrum:", spectrum)
                 if self.verbose:
                     print("Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name()))
                 self.compute_spectra(block, spectrum)
