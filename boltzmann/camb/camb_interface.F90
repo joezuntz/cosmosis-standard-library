@@ -666,8 +666,7 @@ module camb_interface_tools
 		!if (density) allocate(rho(nz))
 
 !Vivian begins
-		!do i=1,nz
-		do i=1,back_nz
+		do i=1,nz
 			if (i<=nz_regular) then
 				! The low redshift regime
 				!z(i) = params%transfer%redshifts(nz_regular-i+1)
