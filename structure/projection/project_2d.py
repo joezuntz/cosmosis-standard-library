@@ -10,10 +10,6 @@ import re
 import sys
 import scipy.interpolate as interp
 import time
-sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/cosmosis-des-library/tcp/fast_pt/non_linear_bias/')
-import fastpt_interface as fpt
-import pdb
-
 
 class Power3D(object):
     """
