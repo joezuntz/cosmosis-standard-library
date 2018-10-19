@@ -1,0 +1,17 @@
+#This is a template for module description files
+name: "stop"
+version: "1.0"
+purpose: "Enters python debugger."
+url: ""
+interface: "stop.py"
+attribution: []
+rules:
+    "You can do what you want with this file."
+cite: []
+
+assumptions:
+    - ""
+
+explanation: |
+    "Use this module to enter the python debugger at the desired point in a cosmosis module list."
+
