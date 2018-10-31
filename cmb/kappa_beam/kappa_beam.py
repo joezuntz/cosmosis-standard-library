@@ -18,9 +18,9 @@ def apply_beam(block, section, beam_sigma):
     ell = block[section, 'ell']
     B_ell = np.exp(-0.5*ell*(ell+1.)*beam_sigma**2.)
     for bini in xrange(0,n_other):
-        C_ell_orig = block[section, 'bin_' + str(bini+1) + '_' + str(1)]
+        C_ell_orig = block[section, 'bin_{}_1'.format(bini+1)]
         beamed_C_ell = C_ell_orig*B_ell
-        block[section, 'bin_' + str(bini+1) + '_' + str(1)] = beamed_C_ell
+        block[section, 'bin_{}_1'.format(bini+1)] = beamed_C_ell
   
 def setup(options):
     shearkappa_section = options.get_string(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
@@ -29,11 +29,11 @@ def setup(options):
     if options.has_value(option_section, 'beam_sigma_arcmin'):
         beam_sigma_arcmin = options[option_section, "beam_sigma_arcmin"]
         # radians
-        beam_sigma = (1./60.0)*(np.pi/180.)*beam_sigma_arcmin
+        beam_sigma = np.radians(beam_sigma_arcmin/60.)
     
     elif options.has_value(option_section, 'beam_fwhm_arcmin'):
         beam_fwhm_arcmin = options[option_section, "beam_fwhm_arcmin"]
-        beam_sigma = (1./np.sqrt(8.*np.log(2.)))*(1./60.0)*(np.pi/180.)*beam_fwhm_arcmin
+        beam_sigma = (1./np.sqrt(8.*np.log(2.)))*np.radians(beam_fwhm_arcmin/60.)
     else:
         raise ValueError("No beam_sigma_arcmin or beam_fwhm_armcin supplied!")
 
