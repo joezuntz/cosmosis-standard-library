@@ -16,7 +16,7 @@ explanation: |
     "It is often useful to convolve an estimated CMB lensing map with a Gaussian beam before measuring correlation functions with galaxies and shears.  If such smoothing is applied, we must account for it on the modeling side.  This module accounts for such smoothing by multiplying the theoretical power spectra by the necessary beam factors."
 
 params:
-    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blanck if none."
+    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blank if none."
     galkappa_section: "section name where harmonic-space cross-spectrum between galaxy density and CMB kappa is stored.  Leave blank if none." 
     beam_sigma_arcmin: "sigma of Gaussian for smoothing CMB kappa (in arcminutes)"
     beam_fwhm_arcmin: "FWHM of Gaussian for smoothing CMB kappa (in arcminutes)"

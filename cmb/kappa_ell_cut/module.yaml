@@ -16,7 +16,7 @@ explanation: |
     "It is often useful to apply a maximum or minimum ell cut to a CMB lensing map before measuring correlation functions with galaxies and shears.  If such an ell-cut is applied, we must account for it on the modeling side.  This module applies the lmin/lmax cut to the relevant cross-power spectra."
 
 params:
-    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blanck if none."
+    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blank if none."
     galkappa_section: "section name where harmonic-space cross-spectrum between galaxy density and CMB kappa is stored.  Leave blank if none." 
     Lmin: "minimum ell to impose for CMB kappa cross-spectra."
     Lmax: "maximum ell to impose for CMB kappa cross-spectra."
