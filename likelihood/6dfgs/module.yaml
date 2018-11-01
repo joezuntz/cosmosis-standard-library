@@ -1,0 +1,40 @@
+#This is a template for module description files
+name: 6dFGS
+version: ""
+purpose: Compute the likelihood of supplied D_v or fsigma8(z=0.067)
+url: ""
+interface: 6dfgs_rsd.py
+attribution: [6dFGS Team]
+rules: ""
+cite: 
+    - "BAO MNRAS 416, 3017 3032 (2011)"
+    - "fsigma8 MMNRAS 423, 3430 3444 (2012)"
+assumptions:
+    - "6dFGS dataset"
+
+explanation: >
+        ""
+params:
+        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+        mode: "Integer, 0 for BAO and 1 for fsigma8"
+        mean: "Real,  Dv (default = 457.) for mode 0 or fsigma8 (default  = 0.423) for mode 1"
+        sigma: "Real, sigma_Dv (default = 27.) for mode 0 or sigma_fsigma8 (default  = 0.055) for mode 1"
+        redshift: "Real, redshift (default  = 0.106 for mode 0 or 0.067 for mode 1)"
+inputs: 
+        growth_parameters:
+                d_z: "1D real array, linear growth factor D"
+                f_z: "1D real array, linear growth rate f"
+                z: "1D real array, redshift of samples "
+        cosmological_parameters:
+                omega_m:  "real, baryon + cdm density fraction today"
+                sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
+                bias:  "real, galaxy bias "
+                h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        distances:
+                z: "1D real array, redshifts of samples"
+                d_m: "1D real array, physical angular diameter distance in Mpc"
+                h:  "1D real array, hubble parameter with in units of Mpc"
+
+outputs:
+        likelihoods:
+                6dfgs_LIKE: "real, likelihood of supplied Dv(z=0.106) or fsigma8(z=0.067)"

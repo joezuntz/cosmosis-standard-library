@@ -8,7 +8,8 @@ attribution: ["L. Clerkin"]
 rules:
     "Please cite the relevant papers if you use this module."
 cite:
-    - "arXiv:1405.5521 "
+    - "arXiv:1405.5521"
+    - "Cole et al, MNRAS, 362, 2, 505–534"
 
 assumptions:
     - "3-parameter bias model from Clerkin et al l 2014"
@@ -36,6 +37,8 @@ explanation: |
      
     This module creates bias fields and/or scales power spectra, 
     depending on the chosen  options
+
+    The version of this model without redshift dependence is from Cole et al.
 
     "
 
