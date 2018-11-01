@@ -1,4 +1,4 @@
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas -lcosmosis -L${FFTW_LIBRARY} -lfftw3
 USER_CFLAGS=-I${GSL_INC} -Wno-deprecated-declarations -I${FFTW_INCLUDE_DIR} -std=c99

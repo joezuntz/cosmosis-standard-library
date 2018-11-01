@@ -1,4 +1,4 @@
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 all: halofit_module.so
 
@@ -10,4 +10,4 @@ clean:
 	rm -rf halofit_module.so.dSYM/
 
 halofit_module.so: halofit.F90 halofit_module.F90
-	$(FC) $(FFLAGS) -shared -o $@ $+ -lcosmosis
+	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lcosmosis

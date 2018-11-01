@@ -82,7 +82,7 @@
 #EXTCAMBFILES =
 #endif
 
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_FFLAGS=-I. -ffast-math
 

@@ -1,6 +1,6 @@
 #Some Makefile for CLASS.
 #Julien Lesgourgues, 28.11.2011
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 MDIR := $(shell pwd)
 WRKDIR = $(MDIR)/build

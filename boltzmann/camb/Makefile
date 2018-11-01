@@ -1,4 +1,4 @@
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_FFLAGS=-I.
 USER_LDFLAGS=-L${COSMOSIS_SRC_DIR} -lcosmosis

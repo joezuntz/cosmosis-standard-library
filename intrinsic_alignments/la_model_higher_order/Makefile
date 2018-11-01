@@ -1,4 +1,4 @@
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_CFLAGS= -I ../../shear/limber -I ${GSL_INC}
 USER_LDFLAGS= -L../../shear/limber -llimber -lcosmosis -L ${GSL_LIB} -lgsl -lgslcblas 
