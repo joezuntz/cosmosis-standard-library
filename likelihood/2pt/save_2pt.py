@@ -64,7 +64,7 @@ def setup(options):
 
     def read_list(key):
         s = options.get_string(option_section, key)
-        return [str(x) for x in s.split()]
+        return s.split()
 
     #Get the spectrum section names
     config["spectrum_sections"] = read_list("spectrum_sections")
