@@ -157,12 +157,16 @@ def setup(options):
         if key.startswith(range_token):
             bits = key[len(range_token):].split("_")
             name = "_".join(bits[:-2])
+            if name not in config["output_extensions"]:
+                raise ValueError("You set %s but there's no output extension named %s"%(key, name))
             bin1 = int(bits[-2])
             bin2 = int(bits[-1])
             scale_cuts[(name, bin1, bin2)] = options.get_double_array_1d(
                 option_section, key)
         elif key.startswith(cut_token):
             name = key[len(cut_token):]
+            if name not in config["output_extensions"]:
+                raise ValueError("You set %s but there's no output extension named %s"%(key, name))
             cuts = options[option_section, key].split()
             cuts = [eval(cut) for cut in cuts]
             for b1, b2 in cuts:
