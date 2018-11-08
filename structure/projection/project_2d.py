@@ -9,7 +9,6 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-import time
 
 class Power3D(object):
     """
@@ -135,44 +134,22 @@ class Spectrum(object):
         return 2 * alpha[bin] - 1
 
     def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3,
-                absolute_tolerance=0., do_extended_limber=False, do_time=False, 
-                bias_section="bias_and_project"):
-
-        if do_time:
-            print('getting cell for ', self.name, ' for bin ', bin1 + 1, ' and ', bin2 + 1)
-            time0 = time.time()
-
-        if do_time:
-            time2 = time.time()
-            print('getting power and growth')
+                absolute_tolerance=0.):
 
         # Get the required kernels
         # maybe get from rescaled version of existing spectra
-        P, D = self.get_power_growth(block, bin1, bin2, bias_section=bias_section)
-        if do_time:
-            print('getting power and growth took ', time.time() - time2, 's')
+        P, D = self.get_power_growth(block, bin1, bin2)
 
         K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
 
-        # Call the integral
-
-
-        if do_time:
-            print('getting limber')
-            time3 = time.time()
-
         #Call the integral
         c_ell = limber.limber(K1, K2, P, D, ell.astype(float), self.prefactor(block, bin1, bin2), 
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance )
-        if do_time:
-            print('getting limber took ', time.time() - time3, 's')
         self.clean_power_growth(P, D)
-        if do_time:
-            print('getting cell took ', time.time() - time0, 's')
         return c_ell
 
-    def get_power_growth(self, block, bin1, bin2, **kwargs):
+    def get_power_growth(self, block, bin1, bin2):
         return self.source.power[self.power_3d], self.source.growth[self.power_3d]
 
     def clean_power_growth(self, P, D):
