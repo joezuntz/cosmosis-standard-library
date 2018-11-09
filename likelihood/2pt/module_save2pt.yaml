@@ -51,11 +51,15 @@ params:
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
-    section:
-        NOTE: "The name of both the section depends on the data type used from the file. It might be galaxy_cl or shear_cl, for example."
+    spectrum_sections:
+        NOTE: "The name of the sections is specified in the spectrum_sections option. It might be galaxy_cl or shear_cl, for example."
         ell: "If a Fourier-space measurement is used, the angular wave-number of the predicted theory curves."
         theta: "If a real-space measurement is used, the angle in radians of the predicted theory curves."
-        bin_{i}_{j}: "For various i,j depending what is found in the file, the theory predictions for this value. For example, C_ell or xi(theta)"
+        bin_{i}_{j}: "For various i,j depending what is found in the section, the theory predictions for this value. For example, C_ell or xi(theta)"
+    nz_sections:
+        NOTE: "The n(z) sections will be inferred from the sample_a and sample_b values of the spectrum sections"
+        z: "z values"
+        bin_{i}: "n(z) for bin i"
 
 outputs:
 
