@@ -9,7 +9,6 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-import time
 
 class Power3D(object):
     """
@@ -132,47 +131,25 @@ class Spectrum(object):
         # Need to move this so that it references a particular
         # galaxy sample not the generic galaxy_luminosity_function
         alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
-        return 2 * alpha[bin] - 1
+        return 2 * (alpha[bin] - 1)
 
     def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3,
-                absolute_tolerance=0., do_extended_limber=False, do_time=False, 
-                bias_section="bias_and_project"):
-
-        if do_time:
-            print('getting cell for ', self.name, ' for bin ', bin1 + 1, ' and ', bin2 + 1)
-            time0 = time.time()
-
-        if do_time:
-            time2 = time.time()
-            print('getting power and growth')
+                absolute_tolerance=0.):
 
         # Get the required kernels
         # maybe get from rescaled version of existing spectra
-        P, D = self.get_power_growth(block, bin1, bin2, bias_section=bias_section)
-        if do_time:
-            print('getting power and growth took ', time.time() - time2, 's')
+        P, D = self.get_power_growth(block, bin1, bin2)
 
         K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
 
-        # Call the integral
-
-
-        if do_time:
-            print('getting limber')
-            time3 = time.time()
-
         #Call the integral
         c_ell = limber.limber(K1, K2, P, D, ell.astype(float), self.prefactor(block, bin1, bin2), 
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance )
-        if do_time:
-            print('getting limber took ', time.time() - time3, 's')
         self.clean_power_growth(P, D)
-        if do_time:
-            print('getting cell took ', time.time() - time0, 's')
         return c_ell
 
-    def get_power_growth(self, block, bin1, bin2, **kwargs):
+    def get_power_growth(self, block, bin1, bin2):
         return self.source.power[self.power_3d], self.source.growth[self.power_3d]
 
     def clean_power_growth(self, P, D):
@@ -311,7 +288,24 @@ class SpectrumType(Enum):
         name = "galaxy_cmbkappa_cl"
         prefactor_power = 1
 
+    class FastShearShearIA(Spectrum):
+        """
+        Variant method of Shear+IA calculation that
+        does the integral all at once including the shear 
+        components.  Only works for scale-independent IA/
+        """
+        power_3d_type = MatterPower3D
+        kernels = "F F"
+        autocorrelation = True
+        name = names.shear_cl
+        prefactor_power = 2
 
+    class FastPositionShearIA(Spectrum):
+        power_3d_type = MatterGalaxyPower3D
+        kernels = "N F"
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_power = 1
 
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
@@ -324,8 +318,6 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
-        # by default the nonlinearly biased spectra will start from the nonlinear matter power spectrum,
-        # but in some situations you may want them to start from galaxy_power/galaxy_matter_power instead:
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -350,6 +342,12 @@ class SpectrumCalculator(object):
             self.kernels_A[kernel_a] = {}
             self.kernels_B[kernel_b] = {}
 
+            # Special case - F kernel (fast shear+IA) needs W kernel too
+            if spectrum.kernels[0]=="F":
+                self.kernels_A["W" + "_" + spectrum.sample_a] = {}
+            if spectrum.kernels[-1]=="F":
+                self.kernels_B["W" + "_" + spectrum.sample_b] = {}
+
         self.power = {}
         self.growth = {}
         self.outputs = {}
@@ -363,13 +361,6 @@ class SpectrumCalculator(object):
         self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
         self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
 
-        # do_time_str = options.get_bool(option_section, "print_time","F")
-        # if do_time_str == 'T':
-        #     self.do_time = 1
-        #     print("I will print timing of each step")
-        # else:
-        #     self.do_time = 0
-        #     print("I won't print timing of each step")
 
     def parse_requested_spectra(self, options):
         # Get the list of spectra that we want to compute.
@@ -502,25 +493,6 @@ class SpectrumCalculator(object):
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
 
-    # def load_rsd(self, block):
-    """
-    def load_matter_power(self, block, chi_of_z, k_growth=1.e-3):
-        self.z_pk,self.k_pk,self.pk_lin = block.get_grid(names.matter_power_lin, 'z', 'k_h', 'p_k')
-        growth_ind=np.where(self.k_pk>k_growth)[0][0]
-        self.growth_array = np.sqrt(np.divide(self.pk_lin[:,growth_ind], self.pk_lin[0,growth_ind], 
-                        out=np.zeros_like(self.pk_lin[:,growth_ind]), where=self.pk_lin[:,growth_ind]!=0.))
-        self.chi_pk = chi_of_z(self.z_pk)
-
-        _,self.k_pk,self.pk_nl = block.get_grid(names.matter_power_nl, 'z', 'k_h', 'p_k')
-
-        log_growth = np.log(self.growth_array)
-        log_a = np.log(1./(1+self.z_pk))
-        log_a, log_growth = log_a[::-1], log_growth[::-1]
-        logD_loga_spline = interp.InterpolatedUnivariateSpline(log_a, log_growth)
-        self.f_of_z_pk = (logD_loga_spline.derivative()(log_a))[::-1]
-        #print self.f_of_z_pk
-    """
-
     def load_kernels(self, block):
         # During the setup we already decided what kernels (W(z) or N(z) splines)
         # we needed for the spectra we want to do.  Their names are stored in the
@@ -556,7 +528,7 @@ class SpectrumCalculator(object):
     def save_kernels(self, block, zmax):
         z = np.linspace(0.0, zmax, 1000)
         chi = self.chi_of_z(z)
-        for kernel_name, kernel_dict in self.kernels_A.items() + self.kernels_B.items():
+        for kernel_name, kernel_dict in list(self.kernels_A.items()) + list(self.kernels_B.items()):
             section = "kernel_" + kernel_name
             block[section, "z"] = z
             block[section, "chi"] = chi

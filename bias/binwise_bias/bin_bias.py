@@ -95,6 +95,9 @@ def execute(block, options):
 
             if block.has_section('galaxy_cl'):
                 for pos_bin2 in range(pos_bin1 + 1):
+                    if auto_only:
+                        if pos_bin2 != pos_bin1:
+                            continue
                     bias2 = biases[pos_bin2]
                     name = "bin_{}_{}".format(pos_bin1 + 1, pos_bin2 + 1)
                     block['galaxy_cl', name] *= bias1 * bias2

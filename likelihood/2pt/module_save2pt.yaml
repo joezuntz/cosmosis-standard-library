@@ -1,0 +1,65 @@
+name: "save_2pt"
+version: "1.0"
+purpose: "Generate mock 2-point measurements and save to 2point format."
+url: ""
+interface: save_2pt.py
+attribution: ["Niall MacCrann", "Joe Zuntz"]
+rules: "None."
+cite: []
+
+assumptions:
+    - "A Gaussian likelihood approximation for two-point measurements"
+    - "Data supplied in a specific file format"
+
+explanation: |
+    This module takes theoretical predictions for two-point functions calculated by
+    the pipline and converts them into a measurement-like format. It interpolates
+    the predictions at angular scales determined by the user and saves the 'measurements'
+    to the general format used by the Dark Energy Survey, described here 
+    (https://github.com/joezuntz/2point/).
+
+    The user should specify which measurements to generate using the spectrum_sections
+    option which is a list of section names of spectra calculated by the pipeline
+    e.g. shear_cl or galaxy_shear_xi etc. 
+
+    These will be saved to extensions of the same name in the output measurement
+    file, or different names can be specified with the output_extensions option.
+
+    All spectra will be saved with the same angular binning, specified either
+    via theta_min, theta_max and n_theta for real-space measurements or
+    ell_min, ell_max, n_ell for harmonic space measurements. 
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    filename: "str, required. name for the output measurement file"
+    clobber: "bool, default false. If true, overwrite if filename exists already."
+    logspaced: "bool, default true. Generate measurements with log-spaced binning."
+    angle_units: "string, default arcminutes for real-space measurements."
+    spectrum_sections: "(multiple) strings, required. Sections of desired two-point functions in the datablock"
+    output_extensions: "(multiple) strings, defaults to spectrum_sections. Names of extensions in the output file"
+    theta_min: "double, optional. Minimum angular scale for real-space measurements in angle_units"
+    theta_max: "double, required if theta_min is provided. Maximum angular scale for real-space measurements in angle_units"
+    ntheta: "int, required if theta_min is provided. Number of angular bins for real-space measurements"
+    ell_min: "double, optional. Minimum angular scale for real-space measurements in angle_units"
+    ell_max: "double, required if ell_min is provided. Maximum angular scale for harmonic-space measurements in angle_units"
+    n_ell: "int, required if ell_min is provided. Number of angular bins for harmonic-space measurements"
+    angle_range_<spec_name>_i_j: "2 doules. Cut bin pair i,j of the spectrum in output extension <spec_name> to this angular range"
+    bin_cuts_<spec_name>: "(multiple) tuples (i,j). Remove bin pairs (i,j) from the spectrum in output extension <spec_name>"
+
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    spectrum_sections:
+        NOTE: "The name of the sections is specified in the spectrum_sections option. It might be galaxy_cl or shear_cl, for example."
+        ell: "If a Fourier-space measurement is used, the angular wave-number of the predicted theory curves."
+        theta: "If a real-space measurement is used, the angle in radians of the predicted theory curves."
+        bin_{i}_{j}: "For various i,j depending what is found in the section, the theory predictions for this value. For example, C_ell or xi(theta)"
+    nz_sections:
+        NOTE: "The n(z) sections will be inferred from the sample_a and sample_b values of the spectrum sections"
+        z: "z values"
+        bin_{i}: "n(z) for bin i"
+
+outputs:
+
