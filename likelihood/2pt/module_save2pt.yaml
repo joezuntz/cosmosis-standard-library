@@ -33,7 +33,7 @@ explanation: |
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
     filename: "str, required. name for the output measurement file"
-    clobber: "bool, default false. If true, overwrite if filename exists already."
+    overwrite: "bool, default false. If true, overwrite if filename exists already."
     logspaced: "bool, default true. Generate measurements with log-spaced binning."
     angle_units: "string, default arcminutes for real-space measurements."
     spectrum_sections: "(multiple) strings, required. Sections of desired two-point functions in the datablock"

@@ -673,7 +673,7 @@ class TwoPointFile(object):
             start_i += cov_lengths[ind_i]
         return cov_out
 
-    def to_fits(self, filename, clobber=False):
+    def to_fits(self, filename, overwrite=False):
         hdus = [fits.PrimaryHDU()]
 
         if self.covmat_info is not None:
@@ -690,7 +690,7 @@ class TwoPointFile(object):
                 hdus.append(kernel.to_fits())
 
         hdulist = fits.HDUList(hdus)
-        hdulist.writeto(filename, clobber=clobber)
+        hdulist.writeto(filename, overwrite=overwrite)
 
     @classmethod
     def from_fits(cls, filename, covmat_name="COVMAT"):

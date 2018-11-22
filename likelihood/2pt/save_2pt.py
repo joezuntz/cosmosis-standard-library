@@ -147,7 +147,7 @@ def setup(options):
 
     # name of the output file and whether to overwrite it.
     config['filename'] = options.get_string(option_section, "filename")
-    config['clobber'] = options.get_bool(option_section, "clobber", False)
+    config['overwrite'] = options.get_bool(option_section, "overwrite", False)
 
     scale_cuts = {}
     bin_cuts = []
@@ -184,7 +184,7 @@ def execute(block, config):
     filename = config['filename']
     #shear_nz = config['shear_nz']
     #position_nz = config['position_nz']
-    clobber = config['clobber']
+    overwrite = config['overwrite']
 
     make_covariance = config['make_covariance']
 
@@ -329,7 +329,7 @@ def execute(block, config):
     if scale_cuts or bin_cuts:
         data.mask_scales(scale_cuts, bin_cuts)
 
-    data.to_fits(filename, clobber=clobber)
+    data.to_fits(filename, overwrite=overwrite)
 
     return 0
 
