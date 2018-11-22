@@ -245,6 +245,7 @@ def execute(block, config):
                     assert cl_spec.bin_pairs == theory_spec_list[i_spec].bin_pairs
                 except AssertionError as e:
                     print( "cl and xi specs have different bin_pairs:" )
+                    print( "sections were %s and %s"%(cl_section, spectrum_section))
                     print( "cl bin pairs:", cl_spec.bin_pairs )
                     print( "xi bin pairs:", theory_spec_list[i_spec].bin_pairs)
                     raise(e)
