@@ -11,10 +11,6 @@ import numpy as np
 import twopoint
 import gaussian_covariance
 import os
-#spec_tools uses the legendre module from shear/cl_to_xi_fullsky
-import sys
-current_dir=os.path.dirname(__file__)
-sys.path.append(os.path.join(current_dir, "../../shear/cl_to_xi_fullsky"))
 from spec_tools import SpectrumInterp
 default_array = np.repeat(-1.0, 99)
 

@@ -1,5 +1,6 @@
 from cosmosis.datablock import option_section, names
 import numpy as np
+import warnings
 
 def get_nbins(block, section):
     if block.has_value(section, "nbin_a"):
@@ -19,11 +20,11 @@ def apply_lcut(block, section, Lmin, Lmax):
     ell = block[section, 'ell']
     w   = np.ones(ell.shape[0])
     w[ell<Lmin]=0
-    w[np.where(ell>Lmax)[0][1:]]=0
+    w[ell>Lmax+1]=0
     for bini in xrange(0,n_other):
-        C_ell_orig = block[section, 'bin_' + str(bini+1) + '_' + str(1)]
+        C_ell_orig = block[section, 'bin_{}_1'.format(bini+1)]
         beamed_C_ell = C_ell_orig*w
-        block[section, 'bin_' + str(bini+1) + '_' + str(1)] = beamed_C_ell
+        block[section, 'bin_{}_1'.format(bini+1)] = beamed_C_ell
 
 def setup(options):
     shearkappa_section = options.get_string(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
@@ -32,12 +33,12 @@ def setup(options):
     if options.has_value(option_section,'Lmin'):
         Lmin = options[option_section, 'Lmin']
     else:
-        raise ValueError("No Lmin supplied! Setting Lmin=0.")
+        warnings.warn("No Lmin supplied! Setting Lmin=0.")
         Lmin = 0
     if options.has_value(option_section,'Lmax'):
         Lmax = options[option_section, 'Lmax']
     else:
-        raise ValueError("No Lmax supplied! Setting Lmax=999999.")
+        warnings.warn("No Lmax supplied! Setting Lmax=999999.")
         Lmax = 999999
 
     return {"shearkappa_section":shearkappa_section, "galkappa_section":galkappa_section, "Lmin":Lmin, "Lmax":Lmax}

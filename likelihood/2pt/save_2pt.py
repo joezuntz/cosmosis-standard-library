@@ -64,7 +64,7 @@ def setup(options):
 
     def read_list(key):
         s = options.get_string(option_section, key)
-        return [str(x) for x in s.split()]
+        return s.split()
 
     #Get the spectrum section names
     config["spectrum_sections"] = read_list("spectrum_sections")
@@ -147,7 +147,7 @@ def setup(options):
 
     # name of the output file and whether to overwrite it.
     config['filename'] = options.get_string(option_section, "filename")
-    config['clobber'] = options.get_bool(option_section, "clobber", False)
+    config['overwrite'] = options.get_bool(option_section, "overwrite", False)
 
     scale_cuts = {}
     bin_cuts = []
@@ -157,12 +157,16 @@ def setup(options):
         if key.startswith(range_token):
             bits = key[len(range_token):].split("_")
             name = "_".join(bits[:-2])
+            if name not in config["output_extensions"]:
+                raise ValueError("You set %s but there's no output extension named %s"%(key, name))
             bin1 = int(bits[-2])
             bin2 = int(bits[-1])
             scale_cuts[(name, bin1, bin2)] = options.get_double_array_1d(
                 option_section, key)
         elif key.startswith(cut_token):
             name = key[len(cut_token):]
+            if name not in config["output_extensions"]:
+                raise ValueError("You set %s but there's no output extension named %s"%(key, name))
             cuts = options[option_section, key].split()
             cuts = [eval(cut) for cut in cuts]
             for b1, b2 in cuts:
@@ -180,7 +184,7 @@ def execute(block, config):
     filename = config['filename']
     #shear_nz = config['shear_nz']
     #position_nz = config['position_nz']
-    clobber = config['clobber']
+    overwrite = config['overwrite']
 
     make_covariance = config['make_covariance']
 
@@ -241,6 +245,7 @@ def execute(block, config):
                     assert cl_spec.bin_pairs == theory_spec_list[i_spec].bin_pairs
                 except AssertionError as e:
                     print( "cl and xi specs have different bin_pairs:" )
+                    print( "sections were %s and %s"%(cl_section, spectrum_section))
                     print( "cl bin pairs:", cl_spec.bin_pairs )
                     print( "xi bin pairs:", theory_spec_list[i_spec].bin_pairs)
                     raise(e)
@@ -325,7 +330,7 @@ def execute(block, config):
     if scale_cuts or bin_cuts:
         data.mask_scales(scale_cuts, bin_cuts)
 
-    data.to_fits(filename, clobber=clobber)
+    data.to_fits(filename, overwrite=overwrite)
 
     return 0
 

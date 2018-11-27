@@ -1,7 +1,7 @@
 #This is a template for module description files
-name: "kappa_ell_cut"
+name: "kappa_beam"
 version: "1.0"
-purpose: "Apply minimum and maximum ell to cross-power spectra with CMB kappa."
+purpose: "Apply smoothing function to cross-correlations with CMB kappa in harmonic space."
 url: ""
 interface: "kappa_beam.py"
 attribution: []
@@ -13,14 +13,13 @@ assumptions:
     - ""
 
 explanation: |
-    "It is often useful to apply a maximum or minimum ell cut to a CMB lensing map before measuring correlation functions with galaxies and shears.  If such an ell-cut is applied, we must account for it on the modeling side.  This module applies the lmin/lmax cut to the relevant cross-power spectra."
+    "It is often useful to convolve an estimated CMB lensing map with a Gaussian beam before measuring correlation functions with galaxies and shears.  If such smoothing is applied, we must account for it on the modeling side.  This module accounts for such smoothing by multiplying the theoretical power spectra by the necessary beam factors."
 
 params:
-    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blanck if none."
+    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blank if none."
     galkappa_section: "section name where harmonic-space cross-spectrum between galaxy density and CMB kappa is stored.  Leave blank if none." 
-    Lmin: "minimum ell to impose for CMB kappa cross-spectra."
-    Lmax: "maximum ell to impose for CMB kappa cross-spectra."
-
+    beam_sigma_arcmin: "sigma of Gaussian for smoothing CMB kappa (in arcminutes)"
+    beam_fwhm_arcmin: "FWHM of Gaussian for smoothing CMB kappa (in arcminutes)"
 
 inputs:
     shear_cmbkappa_cl:
