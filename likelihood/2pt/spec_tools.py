@@ -3,8 +3,12 @@ import numpy as np
 import twopoint
 from twopoint_cosmosis import type_table
 from scipy.interpolate import interp1d
+#We need to use the legendre module in 
+#cosmosis-standard-library/shear/cl_to_xi_fullsky
 import sys
-sys.path.append("../../shear/cl_to_xi_fullsky")
+import os
+sys.path.append(os.path.join(os.environ["COSMOSIS_SRC_DIR"],
+                             "cosmosis-standard-library/shear/cl_to_xi_fullsky"))
 import legendre
 from collections import OrderedDict
 
