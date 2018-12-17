@@ -94,7 +94,7 @@ BDIR := $(shell pwd)/buildir
 ODIR := $(shell pwd)/buildir/tmp
 
 # tools
-LD = gcc
+LD = $(FC)
 INSTALL = install
 ECHO = echo
 
@@ -237,7 +237,7 @@ endif
 CFITSIO =  -L$(CFITSIO_LIBPATH) -lcfitsio
 
 #final LDFLAG
-LDFLAG = $(CM64) $(CFITSIO) $(LAPACK) $(FRUNTIME) -ldl -lm -lpthread
+LDFLAG = $(CM64) $(CFITSIO) $(LAPACK) -ldl -lm -lpthread
 
 # define some path to find the codes
 vpath %.c src src/minipmc src/cldf src/CAMspec src/component_plugin/basic src/lenslike/plenslike

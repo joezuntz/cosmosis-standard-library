@@ -345,11 +345,13 @@ $(CLIKLIB): | $(ODIR) $(ODIR)/.print_info $(ODIR)/.test_cfitsio
 
 $(BDIR)/libclik.$(SO): $(CLIKLIB) 
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	$(LD)  $(SHARED)   $^ -o $@  $(LAPACK) $(LDFLAG)
+	# JZ changed LD to FC to help with linking
+	$(FC)  $(SHARED)   $^ -o $@  $(LAPACK) $(LDFLAG)
 
 $(BDIR)/libclik_f90.$(SO): $(BDIR)/libclik.$(SO) $(addprefix $(ODIR)/,clik_fortran.o clik.f90.o)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
-	$(LD) $(SHARED)   $^ -o $@ $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik
+	# JZ changed LD to FC to help with linking
+	$(FC) $(SHARED)   $^ -o $@ $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik
 
 $(BDIR)/clik_example_C: $(ODIR)/clik_example_c.o $(BDIR)/libclik.$(SO)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"

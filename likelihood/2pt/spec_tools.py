@@ -7,8 +7,9 @@ from scipy.interpolate import interp1d
 #cosmosis-standard-library/shear/cl_to_xi_fullsky
 import sys
 import os
-sys.path.append(os.path.join(os.environ["COSMOSIS_SRC_DIR"],
-                             "cosmosis-standard-library/shear/cl_to_xi_fullsky"))
+dirname = os.path.split(__file__)[0]
+fullsky_path = os.path.join(dirname,"..","..","shear","cl_to_xi_fullsky")
+sys.path.append(fullsky_path)
 import legendre
 from collections import OrderedDict
 
