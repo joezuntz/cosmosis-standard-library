@@ -33,8 +33,8 @@ def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False ):
 def get_ell_scales( ell_min, ell_max, nbins, logspaced=True ):
     #ells should be integers. So get scales using get_scales and then 
     #convert
-    lims, mids = get_scales( ell_min, ell_max )
-    ell_lims = np.floor(lims)
+    lims, mids = get_scales( ell_min, ell_max, nbins )
+    ell_lims = (np.floor(lims)).astype(int)
     ell_mids = np.exp( 0.5 * ( np.log(ell_lims[1:]) + np.log(ell_lims[:-1]) ) )
     return ell_lims, ell_mids
 
@@ -85,6 +85,7 @@ def setup(options):
 
         #Work out what units we're working with
         if angle_units == "":
+            print("No angle_units provided, assuming arcminutes")
             angle_units = twopoint.ANGULAR_UNITS["arcmin"]
         else:
             angle_units = twopoint.ANGULAR_UNITS[angle_units]
@@ -111,8 +112,8 @@ def setup(options):
             print("or (ell_min, ell_max, n_ell)")
             raise(e)
         config['real_space'] = False
-        ell_min = options.get_double(option_section, "ell_min")
-        ell_max = options.get_double(option_section, "ell_max")
+        ell_min = options.get_int(option_section, "ell_min")
+        ell_max = options.get_int(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
         ell_lims, ell_mids = get_ell_scales( ell_min, ell_max, n_ell )
         config['angle_lims'] = ell_lims
@@ -230,9 +231,15 @@ def execute(block, config):
 
         theory_spec = TheorySpectrum.from_block( block, spectrum_section )
         theory_spec_list.append(theory_spec)
+
+        #get angle_units
+        if config["angle_units"] is not None:
+            angle_units = config['angle_units'].name
+        else:
+            angle_units = None
         spec_meas_list.append( theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
             (kernel_name_a, kernel_name_b), output_extension, angle_lims = config['angle_lims_userunits'], 
-            angle_units=config['angle_units'].name ) )
+            angle_units=angle_units ) )
         
         if make_covariance:
             if real_space:
@@ -314,6 +321,12 @@ def execute(block, config):
                 high_l_filter = config['high_l_filter'] )
             covmat_info = twopoint.CovarianceMatrixInfo( 'COVMAT', [s.name for s in spec_meas_list], 
                                                          xi_lengths, covmat )
+
+        else:
+            covmat, cl_lengths = cl_cov.get_binned_cl_cov(config['angle_lims'])
+            assert covmat.shape[0] == sum([len(s.value) for s in spec_meas_list])
+            covmat_info = twopoint.CovarianceMatrixInfo( 'COVMAT', [s.name for s in spec_meas_list],
+                                                         [len(s.value) for s in spec_meas_list], covmat )
     else:
         covmat_info = None
 

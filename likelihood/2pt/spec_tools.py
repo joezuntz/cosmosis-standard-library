@@ -23,23 +23,49 @@ class SpectrumInterp(object):
             self.interp_func = interp1d(np.log(angle), np.log(
                 spec), bounds_error=bounds_error, fill_value=-np.inf)
             self.interp_type = 'loglog'
+            self.x_func = np.log
+            self.y_func = np.exp
+
         elif np.all(spec < 0):
             self.interp_func = interp1d(
                 np.log(angle), np.log(-spec), bounds_error=bounds_error, fill_value=-np.inf)
             self.interp_type = 'minus_loglog'
+            self.x_func = np.log
+            self.y_func = lambda y: -np.exp(y)
         else:
             self.interp_func = interp1d(
                 np.log(angle), spec, bounds_error=bounds_error, fill_value=0.)
             self.interp_type = "log_ang"
+            self.x_func = np.log
+            self.y_func = lambda y: y
 
     def __call__(self, angle):
+        interp_vals = self.x_func(angle)
+        try:
+            spec = self.y_func( self.interp_func(interp_vals) )
+        except ValueError:
+            interp_vals[0] *= 1+1.e-9
+            interp_vals[-1] *= 1-1.e-9
+            spec = self.y_func( self.interp_func(interp_vals) )
+        """
         if self.interp_type == 'loglog':
-            spec = np.exp(self.interp_func(np.log(angle)))
+            interp_vals = np.log(angle)
+
+            try:
+                spec = np.exp(self.interp_func(interp_vals))
+            except ValueError:
+                interp_vals[0] *= 1+1.e-9
+                interp_vals[-1] *= 1-1.e-9
+                print(interp_vals)
+                print(self.interp_func.x)
+                spec = np.exp(self.interp_func(interp_vals))
+
         elif self.interp_type == 'minus_loglog':
             spec = -np.exp(self.interp_func(np.log(angle)))
         else:
             assert self.interp_type == "log_ang"
             spec = self.interp_func(np.log(angle))
+        """
         return spec
 
 class TheorySpectrum(object):
@@ -51,6 +77,8 @@ class TheorySpectrum(object):
         self.name = name
         self.types = types
         self.angle_vals = angle_vals
+        #print("initializing TheorySpectrum with angle lims:")
+        #print(self.angle_vals.min(), self.angle_vals.max())
         self.spec_interps = spec_interps
         self.is_auto = is_auto
         #self.set_spec_interps()
@@ -152,15 +180,18 @@ class TheorySpectrum(object):
             angle_min, angle_max = None, None
         n_angle_sample = len(angle_vals)
  
-        #Convert angular units to arcmin
-        angle_vals_with_units = angle_vals * twopoint.ANGULAR_UNITS[angle_units]
-        angle_vals_rad = (angle_vals_with_units.to(twopoint.ANGULAR_UNITS["rad"])).value
+        #If real-space, get angle_vals in radians for interpolation
+        if angle_units is not None:
+            angle_vals_with_units = angle_vals * twopoint.ANGULAR_UNITS[angle_units]
+            angle_vals_interp = (angle_vals_with_units.to(twopoint.ANGULAR_UNITS["rad"])).value
+        else:
+            angle_vals_interp = angle_vals
 
         # Bin pairs. Varies depending on auto-correlation
         for (i,j) in self.bin_pairs:
             spec_interp = self.spec_interps[(i,j)]
             # Convert arcmin to radians for the interpolation
-            spec_sample = spec_interp( angle_vals_rad )
+            spec_sample = spec_interp( angle_vals_interp )
             #cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
             # Build up on the various vectors that we need
             bin1.append(np.repeat(i, n_angle_sample))
@@ -281,12 +312,12 @@ class ClCov( object ):
         self.names = [t.name for t in self.theory_spectra ]
         self.fsky = fsky
 
-    def get_cov_diag_ijkl( self, name1, name2, ij, kl, ell_max, noise_only=False):
+    def get_cov_diag_ijkl( self, name1, name2, ij, kl, ell_max, ell_min=0, noise_only=False):
         # From Joachimi & Bridle 2010 0911.2454
         # Cov(C^{ij}_{12}, C^{kl}_{34}) = prefactor * [ C^{ik}_{13} C^{jl}_{24} + C^{il}_{14} C^{kl}_{23} ]
         # The C's on the RHS are observed C(l)s (i.e. with noise bias)
         # superscripts indicate redshift bin pairs, subscripts quantities (shear or galaxy over-density etc.)
-        ell_vals = np.arange(ell_max+1)
+        ell_vals = np.arange(ell_min, ell_max+1)
         n_ell = len(ell_vals)
 
         c_ij_12 = self.theory_spectra[ self.names.index(name1) ]
@@ -330,6 +361,77 @@ class ClCov( object ):
                 c_ells.append(s.get_obs_spec_values( bin1, bin2, ells ))
         #print(ret)
         return c_ells[0]*c_ells[1] + c_ells[2]*c_ells[3]
+
+    def get_binned_cl_cov( self, ell_lims, noise_only=False):
+        #-Build a binned C(l) covariance
+        #-Assume the measured C(l) for bin i is the (2l+1)-weighted average 
+        #of C(ell_lims[i],...,ell_lims[i+1]-1)
+        #First construct the output array
+        n_spectra = len(self.theory_spectra)
+        n_ell = len(ell_lims) - 1
+        n_dv = 0
+        cl_lengths = []
+        for s in self.theory_spectra:
+            l = n_ell * len(s.bin_pairs)
+            n_dv += l
+            cl_lengths.append(l)
+        covmat = np.zeros((n_dv, n_dv))
+        ell_max = ell_lims[-1]
+        
+        #Get the starting index in the full datavector for each spectrum
+        #this will be used later for adding covariance blocks to the full matrix.
+        cl_starts = []
+        start = 0
+        for i in range(n_spectra):
+            cl_starts.append( int(sum(cl_lengths[:i])) )
+
+        #Now loop through pairs of Cls and pairs of bin pairs filling the covariance matrix
+        for i_cl in range(n_spectra):
+            cl_spec_i = self.theory_spectra[i_cl]
+            for j_cl in range(i_cl, n_spectra):
+                cl_spec_j = self.theory_spectra[j_cl]
+                cov_blocks = {} #collect cov_blocks in this dictionary
+                for i_bp, bin_pair_i in enumerate(cl_spec_i.bin_pairs):
+                    for j_bp, bin_pair_j in enumerate(cl_spec_j.bin_pairs):
+                        #First check if we've already calculated this
+                        if (i_cl == j_cl) and cl_spec_i.is_auto and ( j_bp < i_bp ):
+                            cl_var_binned = cov_blocks[j_bp, i_bp]
+                        else:
+                            #First calculate the unbinned Cl covariance
+                            ell_max = ell_lims[-1]
+                            cl_var_unbinned = self.get_cov_diag_ijkl( cl_spec_i.name, 
+                                cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, 
+                                ell_min=ell_lims[0], noise_only=noise_only )
+                            #Now bin this diaginal covariance
+                            #Var(binned_cl) = Sum_i Var(C(l_i)) / (# of ell in bin)^2
+                            cl_var_binned = np.zeros(n_ell)
+                            for ell_bin, (ell_low, ell_high) in enumerate(zip(ell_lims[:-1], ell_lims[1:])):
+                                #Get the ell values for this bin:
+                                ell_vals_bin = np.arange(ell_low, ell_high).astype(int)
+                                #Get the indices in cl_var_binned these correspond to:
+                                ell_vals_bin_inds = ell_vals_bin - ell_lims[0]
+                                cl_var_unbinned_bin = cl_var_unbinned[ell_vals_bin_inds]
+                                cl_var_binned[ell_bin] = (np.sum((2*ell_vals_bin+1) * cl_var_unbinned_bin) 
+                                    / np.sum(2*ell_vals_bin+1))
+                            cov_blocks[i_bp, j_bp] = cl_var_binned
+
+                        #Now work out where this goes in the full covariance matrix
+                        #and add it there.
+                        inds_i = np.arange( cl_starts[i_cl] + n_ell*i_bp, 
+                            cl_starts[i_cl] + n_ell*(i_bp+1) )
+                        inds_j = np.arange( cl_starts[j_cl] + n_ell*j_bp, 
+                            cl_starts[j_cl] + n_ell*(j_bp+1) )
+                        cov_inds = np.ix_( inds_i, inds_j )
+                        covmat[ cov_inds ] = np.diag(cl_var_binned)
+                        cov_inds_T = np.ix_( inds_j, inds_i )
+                        covmat[ cov_inds_T ] = np.diag(cl_var_binned)
+
+        print("Completed covariance")
+        print("slog det:", np.linalg.slogdet(covmat))
+        print("condition number:", np.linalg.cond(covmat))
+        print(covmat)
+        return covmat, cl_lengths
+
 
 def real_space_cov( cl_cov, cl_specs, cl2xi_types, ell_max, angle_lims_rad, 
     upsample=None, high_l_filter=0.75, noise_only=False ):
@@ -384,7 +486,7 @@ def real_space_cov( cl_cov, cl_specs, cl2xi_types, ell_max, angle_lims_rad,
                     print(i_xi, j_xi, bin_pair_i, bin_pair_j)
                     print(cl_spec_i.name, cl_spec_j.name)
                     #Check if we've already done this combo
-                    #We've already done it if its and auto-correlation i.e. i_xi==j_xi and
+                    #We've already done it if its an auto-correlation i.e. i_xi==j_xi and
                     #j_bp is less than i_bp 
                     if (i_xi == j_xi) and cl_spec_i.is_auto and ( j_bp < i_bp ):
                         cov_blocks[i_xi, j_xi, i_bp, j_bp] = cov_blocks[i_xi, j_xi, j_bp, i_bp]
