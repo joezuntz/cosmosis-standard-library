@@ -1,14 +1,14 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_FFLAGS=-I.
-USER_LDFLAGS=-lcosmosis_fortran
+#USER_LDFLAGS=-lcosmosis_fortran
 
 export EQUATIONS ?= equations_ppf
 export RECOMBINATION ?= recfast
 
 INTERFACE=camb.so
-CAMBLIB=libcamb_$(RECOMBINATION).a
-CAMBDIR=camb_Jan15
+CAMBLIB=libcamb_$(RECOMBINATION).so
+CAMBDIR=${PWD}/camb_Jan15
 
 all: $(INTERFACE)
 
@@ -17,12 +17,15 @@ all: $(INTERFACE)
 $(CAMBDIR)/$(CAMBLIB)::
 	cd $(CAMBDIR) && $(MAKE) $(CAMBLIB)
 
-$(INTERFACE): $(CAMBDIR)/$(CAMBLIB) camb_interface.F90 camb_module.F90
-	$(FC) $(FFLAGS) -shared camb_interface.F90 camb_module.F90 -o $(INTERFACE) $(LDFLAGS) -I$(CAMBDIR)  -L$(CAMBDIR) -lcamb_$(RECOMBINATION)
+$(INTERFACE): $(CAMBDIR)/$(CAMBLIB) camb_interface.F90 camb_module.F90 $(CAMBDIR)/$(CAMBLIB)
+	$(FC) $(FFLAGS) -shared -Wl,-rpath,@loader_path/../../../cosmosis/datablock  camb_interface.F90 camb_module.F90 -o $(INTERFACE) -I$(CAMBDIR) -lcamb_$(RECOMBINATION) -lcosmosis_fortran
 
 clean:
 	cd $(CAMBDIR) && $(MAKE) clean
-	rm -rf *.so *.o *.mod *.dSYM
+	rm -rf *.so *.o *.mod camb.dSYM
 
 test:
 	@echo "Alas, camb has no tests"
+
+install: $(CAMBDIR)/$(CAMBLIB)
+	cp $(CAMBDIR)/$(CAMBLIB) /usr/local/lib

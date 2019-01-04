@@ -15,7 +15,7 @@ DRIVER        = inidriver.F90
 #DRIVER        = tester.f90
 
 
-CAMBLIB       = libcamb.a
+CAMBLIB       = libcamb.so
 
 #Shouldn't need to change anything else...
 
@@ -47,7 +47,7 @@ camb: $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(DRIVER) -o $@
 
 $(CAMBLIB): $(CAMBOBJ)
-	ar -r $@ $?
+	$(FC) -shared -o $(CAMBLIB) $(CAMBOBJ)
 
 camb_fits: writefits.f90 $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) -I$(HEALPIXDIR)/include $(CAMBOBJ) writefits.f90 $(DRIVER) $(HEALPIXLD) -DWRITE_FITS -o $@
@@ -66,5 +66,5 @@ Matrix_utils.o:
 	$(F90C) $(F90FLAGS) -c Matrix_utils.F90	
 
 clean:
-	-rm -f *.o *.a *.d core *.mod
+	-rm -f *.o *.a *.d core *.mod *.so
 

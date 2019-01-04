@@ -5,18 +5,17 @@ USER_CXXFLAGS += -O3 -fPIC
 OBJECTS =  clusters.o fgas.o lensing.o wrapper.o xray.o ConfigFile.o
 SEPOBJ = fwrapper.o
 
-ARCHIVES = libclusters.a
+MYLIB = libclusters.so
 
-default: objects archives
+default: objects $(MYLIB)
 
 listobjects:
 	@echo $(OBJECTS)
 
 objects: $(OBJECTS) $(SEPOBJ)
 
-archives: $(ARCHIVES)
-
-$(ARCHIVES): $(OBJECTS)
+$(MYLIB): $(OBJECTS)
+	$(CXX) -shared -o $(MYLIB) -L$(GSL_LIB) -lgsl $(OBJECTS)
 
 clusters.o: clusters.hpp util.hpp
 fgas.o: clusters.hpp fgas.hpp lensing.hpp util.hpp xray.hpp
@@ -29,8 +28,5 @@ xray.o: clusters.hpp util.hpp xray.hpp
 %.o: %.cpp
 	$(CXX) -o $@ -c $(CXXFLAGS) $*.cpp
 
-%.a:
-	rm -f $@; ar -r $@ $(OBJECTS)
-
 clean:
-	rm -f $(OBJECTS) $(SEPOBJ) $(ARCHIVES)
+	rm -f $(OBJECTS) $(SEPOBJ) $(MYLIB)

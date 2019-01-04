@@ -18,7 +18,7 @@ DRIVER        ?= inidriver.F90
 #DRIVER       ?= tester.f90
 
 
-CAMBLIB       = libcamb_$(RECOMBINATION).a
+CAMBLIB       = libcamb_$(RECOMBINATION).so
 
 #Shouldn't need to change anything else...
 
@@ -70,7 +70,8 @@ camb: $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(DRIVER) $(F90CRLINK) -o $@
 
 $(CAMBLIB): $(CAMBOBJ)
-	ar -r $@ $(CAMBOBJ)
+	$(FC) -shared -o $(CAMBLIB) $(CAMBOBJ)
+	install_name_tool -id $(CURDIR)/$(CAMBLIB) $(CURDIR)/$(CAMBLIB)
 
 camb_fits: writefits.f90 $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) -I$(HEALPIXDIR)/include $(CAMBOBJ) writefits.f90 $(DRIVER) $(HEALPIXLD) -DWRITE_FITS -o $@
@@ -83,7 +84,8 @@ camb_fits: writefits.f90 $(CAMBOBJ) $(DRIVER)
 
 
 clean:
-	-rm -f *.o *.a *.d core *.mod
+	rm -f *.o *.a *.d core *.mod *.so camb
+	rm -rf camb.dSYM
 
 
 ## CosmoRec make parts

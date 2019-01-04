@@ -354,4 +354,5 @@ int cleanup(void * config_in)
 	// Free the memory that we allocated in the setup
 	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 	free(config);
+  return 0;
 }

@@ -10,5 +10,6 @@ sigma.so : sigma.cpp
 
 clean :
 	rm -f sigma.so
+	rm -rf sigma.so.dSYM
 
 

@@ -10,7 +10,7 @@ USER_LDFLAGS=-L${GSL_LIB} -lgsl -lgslcblas -lcosmosis -lm
 AR = ar rc
 
 OBJS = limber.o interp2d.o utils.o
-LIB = liblimber.a
+LIB = liblimber.so
 SHLIBNAME = interface.so
 EXEC=test_limber
 
@@ -23,7 +23,7 @@ $(EXEC): $(LIB) test_limber.o
 	$(CC) $(CFLAGS) -o $@ $(OBJS1)  test_limber.o $(LDFLAGS) -L. -llimber
 
 $(LIB): $(OBJS)
-	$(AR) $(LIB) $(OBJS)
+	$(CC) -shared -o $(LIB) $(LDFLAGS)  $(OBJS)
 
 
 .PHONY : clean
