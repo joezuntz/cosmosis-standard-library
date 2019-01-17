@@ -361,8 +361,8 @@ int execute(c_datablock * block, void * config_in)
     double dlog_theta= (log_theta_max-log_theta_min)/((double)N_thetaH-1.0);
     double logtheta_center = 0.5*(log_theta_max+log_theta_min);
     int nc = N_thetaH/2+1;
-    double theta_vals[N_thetaH];
-    for (int i; i<N_thetaH; i++){
+    double *theta_vals = malloc(sizeof(double)*N_thetaH);
+    for (int i=0; i<N_thetaH; i++){
         theta_vals[i] = exp(log_theta_min+i*dlog_theta);
     }
     c_datablock_put_double_array_1d(block, xi_section, "theta",
@@ -390,6 +390,7 @@ int execute(c_datablock * block, void * config_in)
     for (int i=0; i<count; i++) free(xi[i]);
     free(xi);
     free(ell);
+    free(theta_vals);
 
     return status;
 }
