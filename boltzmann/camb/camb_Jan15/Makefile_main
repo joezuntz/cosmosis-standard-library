@@ -70,8 +70,7 @@ camb: $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(DRIVER) $(F90CRLINK) -o $@
 
 $(CAMBLIB): $(CAMBOBJ)
-	$(FC) -shared -o $(CAMBLIB) $(CAMBOBJ)
-	install_name_tool -id $(CURDIR)/$(CAMBLIB) $(CURDIR)/$(CAMBLIB)
+	$(FC) -shared -o $(CURDIR)/$(CAMBLIB) $(CAMBOBJ)
 
 camb_fits: writefits.f90 $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) -I$(HEALPIXDIR)/include $(CAMBOBJ) writefits.f90 $(DRIVER) $(HEALPIXLD) -DWRITE_FITS -o $@

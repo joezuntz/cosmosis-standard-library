@@ -18,14 +18,11 @@ $(CAMBDIR)/$(CAMBLIB)::
 	cd $(CAMBDIR) && $(MAKE) $(CAMBLIB)
 
 $(INTERFACE): $(CAMBDIR)/$(CAMBLIB) camb_interface.F90 camb_module.F90 $(CAMBDIR)/$(CAMBLIB)
-	$(FC) $(FFLAGS) -shared -Wl,-rpath,@loader_path/../../../cosmosis/datablock  camb_interface.F90 camb_module.F90 -o $(INTERFACE) -I$(CAMBDIR) -lcamb_$(RECOMBINATION) -lcosmosis_fortran
+	$(FC) $(FFLAGS) -I$(CAMBDIR) -shared camb_interface.F90 camb_module.F90 -o $(INTERFACE) -L$(CAMBDIR) $(LDFLAGS) -lcamb_$(RECOMBINATION) -lcosmosis_fortran
 
 clean:
 	cd $(CAMBDIR) && $(MAKE) clean
-	rm -rf *.so *.o *.mod camb.dSYM
+	rm -rf *.so *.o *.mod camb.so.dSYM
 
 test:
 	@echo "Alas, camb has no tests"
-
-install: $(CAMBDIR)/$(CAMBLIB)
-	cp $(CAMBDIR)/$(CAMBLIB) /usr/local/lib

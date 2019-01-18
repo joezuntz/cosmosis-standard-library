@@ -8,7 +8,7 @@ USER_LDFLAGS+=  -lcosmosis ${LAPACK_LINK} -L ${GSL_LIB} -lgslcblas -lgsl
 all: libjla.so jla.so
 
 libjla.so: src/jla.o
-	$(CXX) -shared $(LDFLAGS) -o $@ $^
+	$(CXX) -shared $(LDFLAGS) -o $(CURDIR)/$@ $^
 
 jla.so: interface.cc libjla.so
 	$(CXX) $(CXXFLAGS) -shared -o $@ interface.cc -L. -ljla $(LDFLAGS)
