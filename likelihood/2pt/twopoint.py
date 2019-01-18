@@ -5,7 +5,7 @@ from builtins import object
 from astropy.io import fits
 import astropy.units
 from astropy.table import Table
-from .enum34 import Enum
+from enum34 import Enum
 import numpy as np
 import copy
 import os
