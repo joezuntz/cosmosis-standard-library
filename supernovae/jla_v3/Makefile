@@ -20,6 +20,7 @@ clean:
 	rm -f src/*.o
 	rm -f libjla.so jla.so
 	rm -rf jla.so.dSYM
+	rm -f test_jla
 
 test: test_jla
 	@echo Running test_jla
