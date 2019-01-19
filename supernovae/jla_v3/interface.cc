@@ -5,6 +5,7 @@
 #include "gsl/gsl_spline.h"
 #include "src/jla.h"
 #include <cstring>
+#include <iomanip>
 
 inline void report_missing_param(char const* section, std::string const& name) {
   std::cerr << "Could not find parameter named: " << name << " in section: " << section << '\n';
@@ -13,6 +14,15 @@ inline void report_missing_param(char const* section, std::string const& name) {
 int get_option(cosmosis::DataBlock * options, const std::string &name, std::string &parameter){
 	auto status = options->get_val("jla", name, parameter);
 	if (status != DBS_SUCCESS) {
+    std::cerr << "Failure in get_option\n"
+      << "status: " << status << '\n'
+        << "name: " << name << '\n';
+    datablock_type_t t;
+    status = options->get_type("jla", name, t);
+    std::cerr << "from get_type: status = " << status << " type is: " << t << '\n';
+    std::cerr << "type is string: " << std::boolalpha << (t == DBT_STRING) << '\n';
+    
+    abort();
 		parameter.clear();
 		report_missing_param("jla", name);
 		return 1;
@@ -33,6 +43,7 @@ void * setup(cosmosis::DataBlock * options) {
 	if (status!=DBS_SUCCESS) {
 		std::cerr<< "JLA Parameter error: verbosity not set right" << std::endl; 
 		error|=status;
+    abort();
 	}
 	Configuration config;
 	std::string parameter;
