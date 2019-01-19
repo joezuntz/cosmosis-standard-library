@@ -6,25 +6,29 @@
 #include "src/jla.h"
 #include <cstring>
 
-extern "C" {
-
+inline void report_missing_param(char const* section, std::string const& name) {
+  std::cerr << "Could not find parameter named: " << name << " in section: " << section << '\n';
+}
 
 int get_option(cosmosis::DataBlock * options, const std::string &name, std::string &parameter){
-	
-	auto status = options->get_val(OPTION_SECTION, name, parameter);
-	if (status!=DBS_SUCCESS) {
-		parameter = "";
-		std::cerr<< "Could not find or understand parameter in JLA section: " << name << std::endl; 
+	auto status = options->get_val("jla", name, parameter);
+	if (status != DBS_SUCCESS) {
+		parameter.clear();
+		report_missing_param("jla", name);
 		return 1;
 	}
 	return 0;
 }
 
-void * setup(cosmosis::DataBlock * options){
+extern "C" {
+
+void * setup(cosmosis::DataBlock * options) {
+  assert(options);
+  std::cerr << "In interface.cc setup\n";
 	int verbosity;
 	int default_verbosity = 2;
 	int error = 0;
-	auto status = options->get_val(OPTION_SECTION, 
+	auto status = options->get_val("jla",
 		"verbosity", default_verbosity, verbosity);
 	if (status!=DBS_SUCCESS) {
 		std::cerr<< "JLA Parameter error: verbosity not set right" << std::endl; 
@@ -33,8 +37,7 @@ void * setup(cosmosis::DataBlock * options){
 	Configuration config;
 	std::string parameter;
 
-		
-	options->get_val(OPTION_SECTION, "scriptmcut", config.scriptmcut);
+	options->get_val("jla", "scriptmcut", config.scriptmcut);
 
 	error|=get_option(options, "data_dir", parameter);
 	std::string data_dir = parameter;
@@ -68,7 +71,10 @@ void * setup(cosmosis::DataBlock * options){
 	parameter = data_dir + parameter;
 	config.C12 = strdup(parameter.c_str());
 
-	if (error) exit(1);
+	if (error) {
+    options->print_log();
+    exit(1);
+  }
 
 	auto calculator = new JLALikelihood(verbosity);
 	calculator->configure(config);
