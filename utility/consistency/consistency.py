@@ -148,6 +148,10 @@ class Consistency(object):
                 if self.verbose:
                     unspecified = self.find_unspecified()
                     print("Model still unspecified: %s" % (", ".join(unspecified)))
+            except OverSpecifiedModel:
+                if self.verbose:
+                    print("Model overspecified - clashing assumptions.  Trying more.")
+
         # Our final run uses all the defaults we know about.
         # If this still doesn't work we'll throw the error.
         if self.verbose and self.possible_defaults:
