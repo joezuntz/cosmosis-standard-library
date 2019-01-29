@@ -25,7 +25,7 @@ def execute(block, config):
 
     logD_spline = scipy.interpolate.UnivariateSpline(loga[::-1], logD[::-1])
     f_spline = logD_spline.derivative()
-    f = f_spline(a)
+    f = f_spline(loga)
 
     block[output_section, "z"] = z
     block[output_section, "d_z"] = D
