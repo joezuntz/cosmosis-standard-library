@@ -1,0 +1,31 @@
+#This is a template for module description files
+name: extract_growth
+version: 1
+purpose: returns growth factor and growth rate by examining small-scale P(k)
+url: ""
+interface: extract_growth.py
+attribution: [CosmoSIS Team]
+rules: ""
+cite: []
+
+assumptions:
+    - "Nonlinear or linear P(k,z) calculated at a small k value."
+
+explanation: |
+        "This simple module extracts the the linear growth factor D, and linear growth rate, from the matter power spectra
+        It takes the z spacing from the input module
+        "
+params:
+        input_section: "String, which input section (spectrum) to use (default=matter_power_nl)"
+        output_section: "String, which output section to put the results in (default="
+inputs: 
+    matter_power_nl:
+        k_h:  "Real 1D, wavenumbers of samples"
+        z:  "Real 1D, Redshifts of samples"
+        p_k:  "Real 2D, Matter power spectrum samples"
+
+outputs:
+    growth_parameters:
+        d_z: "1D real array, linear growth factor D"
+        f_z: "1D real array, linear growth rate f"
+        z: "1D real array, redshift of samples "
