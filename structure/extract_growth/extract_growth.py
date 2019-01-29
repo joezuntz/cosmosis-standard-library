@@ -3,7 +3,6 @@ import scipy.interpolate
 import numpy as np
 
 def setup(options):
-    print("Warning: extract_growth is currently being tested.")
     input_section = options.get_string(option_section, "input_section", names.matter_power_lin)
     output_section = options.get_string(option_section, "output_section", names.growth_parameters)
     return [input_section, output_section]
