@@ -401,5 +401,6 @@ clean:
 	@$(ECHO) "$(BLUE_COLOR)Removing all in $(BDIR)$(NO_COLOR)"
 	@rm -rf $(BDIR)
 	@rm -f include/clik.mod
+	@rm -f lib/*.so lib/*.dylib
 
 .PHONY :clean  LAPACK_PRINT LAPACK_DEP
