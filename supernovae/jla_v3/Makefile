@@ -21,6 +21,7 @@ clean:
 	rm -f libjla.so jla.so
 	rm -rf jla.so.dSYM
 	rm -f test_jla
+	rm -rf test_jla.dSYM
 
 test: test_jla
 	@echo Running test_jla
