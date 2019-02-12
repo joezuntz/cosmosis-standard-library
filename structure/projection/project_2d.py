@@ -60,6 +60,14 @@ class GalaxyIntrinsicPower3D(Power3D):
     section = "galaxy_intrinsic_power"
     source_specific = True
 
+
+def lensing_prefactor(block):
+    c_kms = 299792.4580
+    omega_m = block[names.cosmological_parameters, "omega_m"]
+    shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
+    return shear_scaling
+
+
 class Spectrum(object):
     autocorrelation = False
     #These should make it more obvious if the values are not overwritten by subclasses
@@ -500,7 +508,7 @@ class SpectrumCalculator(object):
         for kernel_name, kernel_dict in self.kernels_A.items():
             # Check for any old kernels that should have been cleaned up by the
             # clean
-            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
+            # assert (len(kernel_dict) == 0), "Internal cosmosis error: old cosmology not properly cleaned"
             # Load in the new kernel
             if self.verbose:
                 print("Loading kernel {}".format(kernel_name))
@@ -562,6 +570,8 @@ class SpectrumCalculator(object):
                     raise ValueError(
                         "Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
                 kernel = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
+            elif kernel_type=="F":
+                kernel = self.get_combined_shear_ia_spline(block, kernel_name, sample_name, i, z)
             else:
                 raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
             if kernel is None:
@@ -569,6 +579,45 @@ class SpectrumCalculator(object):
                     "Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(
                         kernel_name, kernel_type, i + 1))
             kernel_dict[i] = kernel
+
+    def get_combined_shear_ia_spline(self, block, kernel_name, sample_name, i, z):
+        # Get basic W spline that this thing starts from.
+        # Might have it already or need to make it fresh (and store it)
+        W_kernel_name = "W_"+kernel_name[2:]
+        W_dict = self.kernels_A[W_kernel_name]
+        W = W_dict.get(i)
+        if W is None:
+            print(sample_name, i+1)
+            W = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
+            if W is None:
+                raise ValueError("Could not load the W(z) splines needed for limber integral (fast shear+IA, name={} bin={})".format(sample_name, i+1))
+            W_dict[i] = W
+
+        # This one is quick to calculate so I won't mess around caching it
+        N = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
+
+        # Check that the P_II(k,z) does not
+        z1, k1, P_II = block.get_grid(names.intrinsic_power, "z", "k_h", "p_k")
+        z2, k2, P_GI = block.get_grid(names.matter_intrinsic_power, "z", "k_h", "p_k")
+        assert np.allclose(k1, k2), "Non-matching PII and PGI in the  Fast Shear+IA C_ell calculator"
+        assert np.allclose(z1, z2), "Non-matching PII and PGI in the  Fast Shear+IA C_ell calculator"
+
+        chi = self.chi_of_z(z)
+        chi1 = self.chi_of_z(z1)
+
+        if (P_GI[:,0]==0).all():
+            # If there are no intrinsic alignments we can just use W
+            kernel = W
+        else:
+            F1 = P_II[:,0] / P_GI[:,0]
+            F_test = P_II[:,-1] / P_GI[:,-1]
+            assert np.allclose(F1,F_test), "Scale dependent IA cannot be used with Fast Shear+IA C_ell calculator"
+            F = GSLSpline(chi1, F1)
+            Q = W(chi) + F(chi) * N(chi) / lensing_prefactor(block)
+            kernel = GSLSpline(chi, Q)
+
+        return kernel
+
 
     def load_one_power(self,  block, powerType):
         self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
