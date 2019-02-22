@@ -1,0 +1,53 @@
+name: "save_2pt"
+version: "2"
+purpose: "Generate a simulated 2pt likelihood file from theory predictions"
+url: ""
+interface: save_2pt.py
+attribution: ["CosmoSIS Team", "Niall Maccrann"]
+rules: "None."
+cite: []
+
+assumptions:
+    - "Spectra and correlation functions are currently interpolated to a specific value"
+
+explanation: |
+    "This module, which is typically run at the end of a cosmosis pipeline,
+    saves the results of that pipeline as a 2pt FITS file which can then be used
+    in a likelihood later.
+
+    The typical forecasting workflow is to simulate some observations using this module and the test
+    sampler, and then run another pipeline, often the same but with the last module changed
+    from save_2pt to 2pt_like, to analyze the that simulated observation.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    spectrum_sections: "string, Space-separated list of sections to look in for data, e.g. 'shear_cl shear_xi_plus galaxy_cl'"
+    output_extensions: "string, default=spectrum_sections) Names of FITS extensions to save the chosen spectra to"
+    theta_min: "real, minimum angular scale for real-space outputs.  If found then run will use real-space correlations.  Otherwise ell_min is required"
+    theta_max: "real, maximum angular scale for real-space outputs"
+    n_theta: "real, number of real-space data points"
+    angle_units: "string, name of angular unit used in theta_min, theta_max, one of arcsec, arcmin, deg, rad. default=arcmin"
+    ell_min: "integer, minimum angular wavenumber for Fourier-space outputs.  Required if theta_min not set."
+    ell_max: "integer, maximum angular wavenumber for Fourier-space outputs. Also used if real-space covariances are required as the max ell in that calculation."
+    n_ell: "integer, number of ell values to use for Fourier-space outputs."
+    logspaced: "bool, whether to use log-spacing in the output values (default=T)"
+    make_covariance: "bool, whether to generate a Gaussian covariance with the outputs"
+    fsky: "real, if make_covariance=T then the sky fraction to assume for the survey"
+    upsample_cov: "int, For real-space covariances, boost in number of points cov used for calculation. (default=10)"
+    high_l_filter: "real, filter used in real-space cov calculation (default=0.75)"
+    filename: "string, name of output file to generate"
+    overwrite: "bool, whether to overwrite the output file if it exists already"
+    angle_range_{name}_{i}_{j}: "2 real values, For choices of {name} in output_extensions or spectrum_sections, min and max values to save for bin pair i,j"
+    cut_{name}_{i}_{j}: "bool, whether to completely exclude the given bin pair for the named output"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    section:
+        NOTE: "The name of both the section depends on the data type used from the file. It might be galaxy_cl or shear_cl, for example."
+        ell: "If a Fourier-space measurement is used, the angular wave-number of the predicted theory curves."
+        theta: "If a real-space measurement is used, the angle in radians of the predicted theory curves."
+        bin_{i}_{j}: "For various i,j depending what is found in the file, the theory predictions for this value. For example, C_ell or xi(theta)"
+
+outputs: {}
