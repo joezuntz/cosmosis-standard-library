@@ -9,15 +9,30 @@ cite: []
 
 assumptions:
     - "Spectra and correlation functions are currently interpolated to a specific value"
+    - "A Gaussian covariance approximation"
 
 explanation: |
-    "This module, which is typically run at the end of a cosmosis pipeline,
-    saves the results of that pipeline as a 2pt FITS file which can then be used
-    in a likelihood later.
+    "This module takes theoretical predictions for two-point functions calculated by
+    the pipline and converts them into a measurement-like format. It interpolates
+    the predictions at angular scales determined by the user and saves the 'measurements'
+    to the general format used by the Dark Energy Survey, described here 
+    (https://github.com/joezuntz/2point/).
 
     The typical forecasting workflow is to simulate some observations using this module and the test
     sampler, and then run another pipeline, often the same but with the last module changed
     from save_2pt to 2pt_like, to analyze the that simulated observation.
+
+    The user should specify which measurements to generate using the spectrum_sections
+    option which is a list of section names of spectra calculated by the pipeline
+    e.g. shear_cl or galaxy_shear_xi etc. 
+
+    These will be saved to extensions of the same name in the output measurement
+    file, or different names can be specified with the output_extensions option.
+
+    All spectra will be saved with the same angular binning, specified either
+    via theta_min, theta_max and n_theta for real-space measurements or
+    ell_min, ell_max, n_ell for harmonic space measurements. 
+
     "
 
 # List of parameters that can go in the params.ini file in the section for this module    
@@ -49,5 +64,9 @@ inputs:
         ell: "If a Fourier-space measurement is used, the angular wave-number of the predicted theory curves."
         theta: "If a real-space measurement is used, the angle in radians of the predicted theory curves."
         bin_{i}_{j}: "For various i,j depending what is found in the file, the theory predictions for this value. For example, C_ell or xi(theta)"
+    nz_section:
+        NOTE: "The n(z) sections will be inferred from the sample_a and sample_b values of the spectrum sections"
+        z: "Redshift sample values"
+        bin_{i}: "Object number density n(z) for bin i"
 
 outputs: {}
