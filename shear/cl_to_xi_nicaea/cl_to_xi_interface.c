@@ -332,7 +332,7 @@ int execute(c_datablock * block, void * config_in)
 	double logtheta_center = 0.5*(log_theta_max+log_theta_min);
 	int nc = N_thetaH/2+1;
 	double theta_vals[N_thetaH];
-	for (int i; i<N_thetaH; i++){
+	for (int i=0; i<N_thetaH; i++){
 		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
 	}
 	c_datablock_put_double_array_1d(block, config->output_section, "theta",
