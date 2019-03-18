@@ -23,4 +23,4 @@ clean:
 
 libhmcode.so: HMcode.f90
 	$(FC) $(FFLAGS) -c  $+ $(LDFLAGS)
-	$(FC) -shared -o $@ HMcode.o
+	$(FC) -shared -o $(CURDIR)/$@ HMcode.o

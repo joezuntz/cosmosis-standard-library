@@ -6,7 +6,7 @@ USER_LDFLAGS+=-L${GSL_LIB} -lgsl -lgslcblas
 all: sigma.so
 
 sigma.so : sigma.cpp
-	${CXX} ${CXXFLAGS} sigma.cpp -shared -o sigma.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} sigma.cpp -shared -o $(CURDIR)/sigma.so ${LDFLAGS}
 
 clean :
 	rm -f sigma.so

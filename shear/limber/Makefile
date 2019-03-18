@@ -23,7 +23,7 @@ $(EXEC): $(LIB) test_limber.o
 	$(CC) $(CFLAGS) -o $@ $(OBJS1)  test_limber.o $(LDFLAGS) -L. -llimber
 
 $(LIB): $(OBJS)
-	$(CC) -shared -o $(LIB) $(LDFLAGS)  $(OBJS)
+	$(CC) -shared -o $(CURDIR)/$(LIB) $(LDFLAGS)  $(OBJS)
 
 
 .PHONY : clean
