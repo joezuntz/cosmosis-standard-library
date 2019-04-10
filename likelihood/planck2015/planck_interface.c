@@ -97,7 +97,7 @@ configuration_data * setup(c_datablock * options){
 	config->ndata=read_requested_files(config, options, clik_type_standard);
 	config->nlensing=read_requested_files(config, options, clik_type_lensing);
 
-	if (config->ndata==0 + config->nlensing){
+	if ((config->ndata + config->nlensing)==0){
 		fprintf(stderr, "No data files were specified for Planck at all!\n");
 		fprintf(stderr, "In the options file (not the values.ini file) you need to set in the section for Planck at least the first of:\n");
 		fprintf(stderr, "   data_1 = ...\n");
