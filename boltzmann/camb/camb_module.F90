@@ -80,7 +80,14 @@ function execute_all(block, config) result(status)
 		write(*,*) "Failed to write angular diameter distance data. Error", status
 		return
 	endif
-	
+
+	! This will only actually do anything if save_growth=T
+	status = camb_interface_save_growth_rate(block)
+	if (status .ne. 0) then
+		write(*,*) "Failed to write transfer section. Error", status
+		return
+	endif
+
 	return
 
 
