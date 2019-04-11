@@ -2,13 +2,13 @@ module mead_settings_mod
 	type mead_settings
                 logical :: noisy
 		logical :: feedback
-		real(8) :: kmin, kmax
-		integer :: nk
+		!real(8) :: kmin, kmax
+		!integer :: nk
 
 		real(8) :: numin, numax
 
-		real(8) :: zmin, zmax
-		integer :: nz
+		!real(8) :: zmin, zmax
+		!integer :: nz
 
 	end type mead_settings
 
@@ -27,14 +27,14 @@ function setup(options) result(result)
 	
 	allocate(settings)
 
-	status = status + datablock_get(options, option_section, "zmin", settings%zmin)
-	status = status + datablock_get(options, option_section, "zmax", settings%zmax)
-	status = status + datablock_get(options, option_section, "nz", settings%nz)
+	!status = status + datablock_get(options, option_section, "zmin", settings%zmin)
+	!status = status + datablock_get(options, option_section, "zmax", settings%zmax)
+	!status = status + datablock_get(options, option_section, "nz", settings%nz)
 
 
-	status = status + datablock_get(options, option_section, "kmin", settings%kmin)
-	status = status + datablock_get(options, option_section, "kmax", settings%kmax)
-	status = status + datablock_get(options, option_section, "nk", settings%nk)
+	!status = status + datablock_get(options, option_section, "kmin", settings%kmin)
+	!status = status + datablock_get(options, option_section, "kmax", settings%kmax)
+	!status = status + datablock_get(options, option_section, "nk", settings%nk)
 
 	status = status + datablock_get_double_default(options, option_section, "numin", 0.1D0, settings%numin)
 	status = status + datablock_get_double_default(options, option_section, "numax", 5.0D0, settings%numax)
@@ -46,15 +46,15 @@ function setup(options) result(result)
 		stop
 	endif
 
-	WRITE(*,*) 'z min:', settings%zmin
-	WRITE(*,*) 'z max:', settings%zmax
-	WRITE(*,*) 'number of z:', settings%nz
-	WRITE(*,*)
+	!WRITE(*,*) 'z min:', settings%zmin
+	!WRITE(*,*) 'z max:', settings%zmax
+	!WRITE(*,*) 'number of z:', settings%nz
+	!WRITE(*,*)
 
-	WRITE(*,*) 'k min:', settings%kmin
-	WRITE(*,*) 'k max:', settings%kmax
-	WRITE(*,*) 'number of k:', settings%nk
-	WRITE(*,*)
+	!WRITE(*,*) 'k min:', settings%kmin
+	!WRITE(*,*) 'k max:', settings%kmax
+	!WRITE(*,*) 'number of k:', settings%nk
+	!WRITE(*,*)
 
 
 	result = c_loc(settings)

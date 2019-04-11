@@ -38,18 +38,12 @@ explanation: |
     (Though the CosmoSIS team are of course happy to help with connecting the code 
     into CosmoSIS pipelines).
 
-    Possible use linear relationship between A and eta0 by using mead1d.py module before hmcode module.
+    You can apply the linear relationship between A and eta0 by using mead1d.py module before hmcode module.
 
-    Important notice -- k, z setting must be the same as camb in this version. 
+    z,k settings are read from linear matter power spectrum
 
 params:
-    zmin: "Real, min redshift to save output P(k,z)"
-    zmax: "Real, max redshift to save P(k,z)"
-    nz:   "Integer, number of redshift samples in P(k,z)"
-    kmin: "Real, min wavenumber to save output P(k,z), in Mpc/h"
-    kmax: "Real, max wavenumber to save P(k,z), in Mpc/h"
-    nk:   "Integer, number of wavenumber samples in P(k,z)"
-
+            
 inputs:
     cosmological_parameters:
         omega_b:  "real, baryon density fraction today"
