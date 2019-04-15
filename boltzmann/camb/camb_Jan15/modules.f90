@@ -526,20 +526,17 @@
     real(dl), optional, intent(in) :: in_tol
     real(dl) dtauda, rombint !diff of tau w.CP%r.t a and integration
     external dtauda, rombint
-    ! COSMOSIS - add status return to rombint
-    integer status
 
     if (present(in_tol)) then
         atol = in_tol
     else
         atol = tol/1000/exp(AccuracyBoost-1)
     end if
-    !DeltaTime=rombint(dtauda,a1,a2,atol)
 
-    ! COSMOSIS - add status return to rombint
-    status=0
-    DeltaTime=rombint(dtauda,a1,a2,atol, status)
-    if (status/=0) call GlobalError(" DeltaTime failed to do the time integral (bad parameters?)", error_evolution)
+    DeltaTime=rombint(dtauda,a1,a2,atol)
+    if (DeltaTime==sentinel_error_double) then
+        call GlobalError(" DeltaTime failed to do the time integral (bad parameters?)", error_evolution)
+    endif
 
     end function DeltaTime
 

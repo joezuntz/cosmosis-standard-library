@@ -129,6 +129,11 @@
     do i=1,nde
         al=almin-almin/(nde-1)*(i-1)    !interpolate between amin and today
         fint=rombint(drdlna_de, al, 0._dl, atol)+4._dl*al
+
+        if (fint==sentinel_error_double) then
+            call GlobalError("Failed interpolrde using rombint")
+            exit
+        endif
         ade(i)=al
         rde(i)=dexp(fint) !rho_de*a^4 normalize to its value at today
     enddo
@@ -175,7 +180,11 @@
         goto 1
     endif
     h=xa(khi)-xa(klo)
-    if (h.eq.0.) stop 'bad xa input in splint'
+    if (h.eq.0.) then
+        call GlobalError("Error in cublic spline for dark energy ", error_evolution)
+        y=sentinel_error_double
+        return
+    endif
     a=(xa(khi)-x)/h
     b=(x-xa(klo))/h
     y=a*ya(klo)+b*ya(khi)+&

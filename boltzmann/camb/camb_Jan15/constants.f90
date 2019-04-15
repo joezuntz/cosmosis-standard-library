@@ -5,6 +5,10 @@
 
       integer, parameter :: dl = KIND(1.d0)
       integer, parameter :: sp = KIND(1.0)
+
+     ! Chosen to be a bit like the Healpix error value but not identical
+     real(dl), parameter :: sentinel_error_double = -2.6375e30
+
    end module Precision
 
   

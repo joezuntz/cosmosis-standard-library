@@ -154,8 +154,6 @@ contains
   real(dl), intent(in) :: akthom, tau0, Yhe 
   integer, intent(in) :: FeedbackLevel
   real(dl) astart
-  integer :: status ! COSMOSIS - reionization error handling
-  status = 0 ! COSMOSIS - reionization error handling
 
      ReionHist%akthom = akthom  
      ReionHist%fHe =  YHe/(mass_ratio_He_H*(1.d0-YHe))
@@ -198,14 +196,14 @@ contains
       !Get relevant times       
        astart=1.d0/(1.d0+Reion%redshift + Reion%delta_redshift*8)
        ! COSMOSIS - error check in rombint
-       ReionHist%tau_start = max(0.05_dl, rombint(dtauda,0._dl,astart,1d-3,status))
-       if (status/=0) call GlobalError("tau_start dtauda integral failed to converge", error_reionization)
+       ReionHist%tau_start = max(0.05_dl, rombint(dtauda,0._dl,astart,1d-3))
+       if (ReionHist%tau_start==sentinel_error_double) call GlobalError("tau_start dtauda integral failed to converge", error_reionization)
           !Time when a very small reionization fraction (assuming tanh fitting)
 
        ! COSMOSIS - error check in rombint
        ReionHist%tau_complete = min(tau0, &
-          ReionHist%tau_start+ rombint(dtauda,astart,1.d0/(1.d0+max(0.d0,Reion%redshift-Reion%delta_redshift*8)),1d-3,status))
-       if (status/=0) call GlobalError("tau_complete dtauda integral failed to converge", error_reionization)
+          ReionHist%tau_start+ rombint(dtauda,astart,1.d0/(1.d0+max(0.d0,Reion%redshift-Reion%delta_redshift*8)),1d-3))
+       if (ReionHist%tau_complete==sentinel_error_double) call GlobalError("tau_complete dtauda integral failed to converge", error_reionization)
 
     end if   
        
@@ -308,7 +306,10 @@ end function Reionization_GetOptDepth
        if (abs(try_b - try_t) < 2e-3/Reionization_AccuracyBoost) exit
        ! COSMOSIS - replace mpiStop error handler
        !if (i>100) call mpiStop('Reionization_zreFromOptDepth: failed to converge')
-       if (i>100) call GlobalError("Reionization_zreFromOptDepth: failed to converge", error_reionization)
+       if (i>100) then
+          call GlobalError("Reionization_zreFromOptDepth: failed to converge", error_reionization)
+          exit
+        endif
   end do
   
   
