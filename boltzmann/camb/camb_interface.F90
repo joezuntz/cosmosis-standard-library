@@ -319,16 +319,30 @@ module camb_interface_tools
 			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "w", w_array, nw_ppf)
 			status = status + datablock_get_double_array_1d(block, de_equation_of_state_section, "a", a_array, nw_ppf)
 			if (status .ne. 0) then
+				write(*,*) ""
+				write(*,*) "CAMB TABULATED W(A) ERROR:"
 				write(*,*) "Failed to read w(a) from de_equation_of_state"
+				write(*,*) ""
 				return
 			endif
 			if (nw_ppf .gt. nwmax) then
+				write(*,*) ""
+				write(*,*) "CAMB TABULATED W(A) ERROR:"
 				write(*,*) "The size of the w(a) table was too large ", nw_ppf, nwmax
+				write(*,*) ""
 				status=nw_ppf
 				return
 			endif
 			w_ppf(1:nw_ppf) = w_array(1:nw_ppf)
 			a_ppf(1:nw_ppf) = dlog(a_array(1:nw_ppf))  !a is stored as log(a)
+			if (a_array(1) > a_array(2)) then
+				write(*,*) ""
+				write(*,*) "CAMB TABULATED W(A) ERROR:"
+				write(*,*) "The tabulated w(a) in camb should have the scale factor a in increasing order"
+				write(*,*) ""
+				status = 1
+				return
+			endif
 			deallocate(w_array, a_array)
 			call setddwa()
 			call interpolrde()
