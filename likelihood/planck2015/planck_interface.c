@@ -338,10 +338,12 @@ int execute(c_datablock * block, configuration_data * config){
 		like += like_i;
 	}
 
+	if (status) return status;
+
 	for (int i=0; i<config->nlensing; i++){
 		// Compute the likelihood for this file.
 		double like_i = 0.0;
-		status = run_clik_cosmosis_lensing(block, config->clik_lensing_data[i], &like_i);
+		status |= run_clik_cosmosis_lensing(block, config->clik_lensing_data[i], &like_i);
 
 		//
 		char name[64];
@@ -357,5 +359,5 @@ int execute(c_datablock * block, configuration_data * config){
 	// Save the total likelihood
 	status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, "PLANCK2015_LIKE", like);
 
-	return 0;
+	return status;
 }
