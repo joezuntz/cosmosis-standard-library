@@ -10,6 +10,39 @@ import re
 import sys
 import scipy.interpolate as interp
 
+class Kernel(object):
+    """Class for storing n(z) kernel"""
+    def __init__(self, x, n, clip=1.e-5):
+        xmin, xmax = x.min(), x.max()
+        self.spline = interp.InterpolatedUnivariateSpline(x, n)
+        self.norm = self.spline.integral(x.min(), x.max())
+        if clip > 0.:
+            clipped_xmin = xmin
+            clipped_xmax = xmax
+            dx = (x[1]-x[0])/10.
+            area_min, area_max=0., 0.
+            clip = clip*self.norm
+            while area_min<clip:
+                area_min = self.spline.integral(xmin, clipped_xmin)
+                clipped_xmin += dx
+            while area_max<clip:
+                area_max = self.spline.integral(clipped_xmax, xmax)
+                clipped_xmax -= dx
+            xmin, xmax = clipped_xmin, clipped_xmax
+            num_x = np.ceil((xmax-xmin)/dx).astype(int)
+            x = np.linspace(xmin, xmax, num_x)
+            n = self.spline(x)
+        self.xmin, self.xmax = xmin, xmax
+        self.x = x
+        self.n = n
+        self.spline = interp.interp1d(x, n, bounds_error=False, fill_value=0.)
+
+    def get_chi_kernel(self, chi_of_z):
+        chi_vals = chi_of_z(self.x)
+        kernel_interp = interp.interp1d(chi_vals, self.n, bounds_error=False, fill_value=0.)
+        kernel_interp.chi_vals = chi_vals
+        return kernel_interp
+
 class Power3D(object):
     """
     Class representing the 3D power spectrum that enters the Limber calculation.
@@ -23,13 +56,23 @@ class Power3D(object):
     def __init__(self, suffix=""):
         if self.source_specific:
             self.section_name = self.section + suffix
+            try:
+                self.lin_section_name = self.lin_section + suffix
+            except AttributeError:
+                self.lin_section_name = None
         else:
             self.section_name = self.section
+            try:
+                self.lin_section_name = self.lin_section
+            except AttributeError:
+                self.lin_section_name = None
+
     def __hash__(self):
         return hash(self.section_name)
 
 class MatterPower3D(Power3D):
     section = "matter_power_nl"
+    lin_section = "matter_power_lin"
     source_specific = False
 
 class LinearMatterPower3D(Power3D):
@@ -146,21 +189,27 @@ class Spectrum(object):
 
         # Get the required kernels
         # maybe get from rescaled version of existing spectra
-        P, D = self.get_power_growth(block, bin1, bin2)
+        P = self.get_power(block, bin1, bin2)
 
         K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
 
         #Call the integral
-        c_ell = limber.limber(K1, K2, P, D, ell.astype(float), self.prefactor(block, bin1, bin2), 
+        c_ell = limber.limber(K1, K2, P, ell.astype(float), self.prefactor(block, bin1, bin2), 
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance )
-        self.clean_power_growth(P, D)
+        self.clean_power(P)
         return c_ell
 
-    def get_power_growth(self, block, bin1, bin2):
-        return self.source.power[self.power_3d], self.source.growth[self.power_3d]
+    def compute_exact(self, block, ell, bin1, bin2, chi_of_z, nchi, chi_pad):
+        P0_lin_interp, D_lin_interp = self.get_lin_power_growth(block, bin1, bin2)
 
-    def clean_power_growth(self, P, D):
+    def get_power(self, block, bin1, bin2):
+        return self.source.power[self.power_3d]
+
+    def get_power_sublin(self, block, bin1, bin2):
+        return self.source.power_sublin[self.power_3d]
+
+    def clean_power(self, P):
         # This gets done later for the base class
         return 0
 
@@ -175,9 +224,6 @@ class Spectrum(object):
     def prep_spectrum(self, *args, **kwargs):
         # no prep required for base class
         return 0
-
-
-
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -326,12 +372,26 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
+        self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 100)
+        do_exact_string = options.get_string(option_section, "do_exact", "")
+        self.do_exact_option_names = (do_exact_string.strip()).split(" ")
+        self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 20)
+        self.clip_nzs = options.get_double(option_section, "clip_nzs", 1.e-4)
+        #accuracy settins for exact integral
+        self.nchi = options.get_int(option_section, "nchi", 5000)
+        self.chi_pad = options.get_double(option_section, "chi_pad", 1.)
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
         print("Will project these spectra into 2D:")
         for spectrum in self.req_spectra:
             print("    - ", spectrum.get_name())
+            if spectrum.get_name() in self.do_exact_spectrum_names:
+                print("Doing exact calculation up to ell=%d"%(self.limber_ell_start))
+
+        #Sort out ells for exact calculation
+        if len(self.do_exact_spectrum_names) > 0:
+            self.ell_exact = np.floor(np.linspace(0, self.limber_ell_start-1, self.n_ell_exact))
 
         # Decide which kernels we will need to save.
         # The overall split is into A and B, the two samples we are correlating into.
@@ -342,6 +402,8 @@ class SpectrumCalculator(object):
         # The values are dictionaries where the keys are the bin numbers 1..nbin
         self.kernels_A = {}
         self.kernels_B = {}
+        self.py_kernels_A = {}
+        self.py_kernels_B = {}
         for spectrum in self.req_spectra:
             # names e.g. N_REDMAGIC, W_EUCLID
             kernel_a = spectrum.kernels[0] + "_" + spectrum.sample_a
@@ -349,6 +411,8 @@ class SpectrumCalculator(object):
             # one dictionary per named group
             self.kernels_A[kernel_a] = {}
             self.kernels_B[kernel_b] = {}
+            self.py_kernels_A[kernel_a] = {}
+            self.py_kernels_B[kernel_b] = {}
 
             # Special case - F kernel (fast shear+IA) needs W kernel too
             if spectrum.kernels[0]=="F":
@@ -357,7 +421,9 @@ class SpectrumCalculator(object):
                 self.kernels_B["W" + "_" + spectrum.sample_b] = {}
 
         self.power = {}
-        self.growth = {}
+        self.power_lin = {}
+        self.power_sublin = {}
+        self.growth_lin = {}
         self.outputs = {}
 
         # And the req ell ranges.
@@ -369,13 +435,14 @@ class SpectrumCalculator(object):
         self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
         self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
 
-
     def parse_requested_spectra(self, options):
         # Get the list of spectra that we want to compute.
         # The full list
         self.req_spectra = []
         self.req_power = set()
- 
+        self.req_power_lin = set()
+        self.do_exact_spectrum_names = [] 
+
         any_spectra_option_found = False
         for spectrum in self.spectrumType:
 
@@ -455,6 +522,10 @@ class SpectrumCalculator(object):
                     self.req_spectra.append(spectrum(self, power3D, kernel_a, kernel_b, save_name))
                     print("Calculating Limber: Kernel 1 = {}, Kernel 2 = {}, P_3D = {} --> Output: {}".format(
                         kernel_a, kernel_b, power3D.section_name, save_name))
+
+                    if name in self.do_exact_option_names:
+                        self.do_exact_spectrum_names.append(spectrum.get_name())
+                        self.req_power_lin.add(power3D)
                 except:
                     raise
                     raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
@@ -500,6 +571,7 @@ class SpectrumCalculator(object):
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
+        self.chi_of_z_pyspline = interp.interp1d(z_distance, chi_distance)
 
     def load_kernels(self, block):
         # During the setup we already decided what kernels (W(z) or N(z) splines)
@@ -532,6 +604,48 @@ class SpectrumCalculator(object):
             else:
                 # If not already cached we will have to load it freshly
                 self.load_kernel(block, kernel_name, kernel_dict)
+
+
+    def load_py_kernels(self, block, clip=-1):
+        #During the setup we already decided what kernels (W(z) or N(z) splines)
+        #we needed for the spectra we want to do.  Their names are stored in the
+        #kernels_A and kernels_B dictionaries.
+        for kernel_name, kernel_dict in self.py_kernels_A.items():
+            #Check for any old kernels that should have been cleaned up by the
+            #clean
+            # assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned "
+            #Load in the new kernel
+            if self.verbose:
+                print("Loading kernel {}".format(kernel_name))
+            self.load_py_kernel(block, kernel_name, kernel_dict, clip=clip)
+
+        #We are always using two kernels, which we call A and B
+        #Often these will be the same groups of kernels, but not
+        #always, so we may have to load them separately
+        for kernel_name, kernel_dict in self.py_kernels_B.items():
+            #Again, check for old kernels 
+            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
+            #Most of the time we are cross-correlating
+            #samples and the kernel will be the same for A and B
+            #In that case just refer to the one we already loaded
+            if kernel_name in self.py_kernels_A:
+            #Loop through all the loaded N(z), W(z)
+                if self.verbose:
+                    print("Already calculated {}".format(kernel_name))
+                for i,kernel in self.py_kernels_A[kernel_name].items():
+                    kernel_dict[i] = kernel
+            else:
+                #If not already cached we will have to load it freshly
+                self.load_py_kernel(block, kernel_name, kernel_dict, clip=clip)
+
+    def load_py_kernel(self, block, kernel_name, kernel_dict, clip=-1.):
+        sample_name = "nz_" + kernel_name[2:]
+        z = block[sample_name, 'z']
+        nbin = block[sample_name, 'nbin']
+        for i in range(nbin):
+            nz = block[sample_name, 'bin_{}'.format(i+1)]
+            zkernel = Kernel(z, nz, clip=clip)
+            kernel_dict[i] = zkernel.get_chi_kernel(self.chi_of_z_pyspline)
 
     def save_kernels(self, block, zmax):
         z = np.linspace(0.0, zmax, 1000)
@@ -619,13 +733,50 @@ class SpectrumCalculator(object):
         return kernel
 
 
-    def load_one_power(self,  block, powerType):
-        self.power[powerType], self.growth[powerType] = limber.load_power_growth_chi(
+    def load_one_power(self, block, powerType):
+        self.power[powerType] = limber.load_power_chi(
             block, self.chi_of_z, powerType.section_name, "k_h", "z", "p_k")
 
     def load_power(self, block):
         for powerType in self.req_power:
             self.load_one_power(block, powerType)
+
+    def load_power_lin(self, block, k_growth=1.e-3):
+        #For the exact projection integral we need
+        #i) A P_lin(k,z=0) python spline (this is added to self.power_lin_z0)
+        #ii) A D_lin(chi) python spline (this is added to self.growth_lin)
+        #iii) A (P_nl - P_lin) 2d (chi,k) GSLSpline to feed into the Limber calculation
+        #(this is added to self.power_sublin)
+        for powerType in self.req_power_lin:
+            #First make  P_lin(k,0) and D(chi) interpolators
+            z_lin, k_lin, P_lin = block.get_grid(block, powerType.lin_section_name, "z", "k_h", "p_k")
+            self.power_lin_z0[powerType] = interp.interp1d(np.log(k_lin), P_lin, bounds_error=False, fill_value=0.)
+            growth_ind = (np.abs(k_lin - k_growth)).argmin()
+            growth_vals = np.sqrt(np.divide(P_lin[:,growth_ind], P_lin[0,growth_ind], 
+                    out=np.zeros_like(P_lin[:,growth_ind]), where=P_lin[:,growth_ind]!=0.))  
+            chi_vals = self.chi_of_z_pyspline(z_lin)
+            self.growth_lin[powerType] = interp.interp1d(chi_vals, growth_vals, bounds_error=False, fill_value=0.)
+
+            #Now if this spectrum has a nonlinear power spectrum, we need also to
+            #generate the P_nl - P_lin spline to feed into Limber.
+            #In the case that P_lin is not exactly separable, we're actually better
+            #off using P_nl - D^2(chi)P_lin(0) here since that is what we're using in 
+            #the exact calculation
+            if powerType.section_name != powerType.lin_section_name:
+                z_nl, k_nl, P_nl_orig = block.get_grid(block, powerType.section_name, "z", "k_h", "p_k")
+                assert np.allcose(z_nl, z_lin, rtol=1.e-6)
+                #If k grid not the same, interpolate nl onto linear grid
+                if not np.allclose(k_nl, k_lin, rtol=1.e-5):
+                    P_nl = np.zeros_like(P_lin)
+                    for i in range(len(z_nl)):
+                        P_nl[i] = interp.interp1d(np.log(k_nl), P_nl_orig, bounds_error=False, 
+                                                  fill_value=(P_nl_orig[0], P_nl_orig[-1]))(np.log(k_lin))
+                    k_nl = k_lin
+                P_lin_from_growth = np.outer(growth_vals, P_lin[0])
+                P_sublin = P_nl - P_lin_from_growth
+                self.power_sublin[powerType] = GSLSpline2d(chi_vals, np.log(k), P_sublin.T)
+            else:
+                self.power_sublin[powerType] = None
 
     def compute_spectra(self, block, spectrum):
         spectrum_name = spectrum.get_name()
@@ -653,9 +804,15 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in range(jmax):
-                c_ell = spectrum.compute( block, self.ell, i, j, 
+                c_ell_limber = spectrum.compute( block, self.ell, i, j, 
                                           relative_tolerance=self.relative_tolerance, 
                                           absolute_tolerance=self.absolute_tolerance )
+                if spectrum_name in self.do_exact_spectrum_names:
+                    c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
+                        self.chi_of_z_pyspline, self.nchi, self.chi_pad)
+                else:
+                    c_ell = c_ell_limber
+
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
                 if self.get_kernel_peaks:
                     chi_peak, z_peak = spectrum.kernel_peak(block, i, j, self.a_of_chi)
@@ -666,7 +823,6 @@ class SpectrumCalculator(object):
     def clean(self):
         # need to manually delete power spectra we have loaded
         self.power.clear()
-        self.growth.clear()
 
         # spectra know how to delete themselves, in gsl_wrappers.py
         for name, kernels in self.kernels_A.items():
@@ -681,6 +837,7 @@ class SpectrumCalculator(object):
             # self.load_matter_power(block, self.chi_of_z)
             try:
                 self.load_kernels(block)
+                self.load_py_kernels(block, clip=self.clip_nzs)
             except NullSplineError:
                 sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
                 sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
@@ -692,6 +849,7 @@ class SpectrumCalculator(object):
             if self.save_kernel_zmax > 0:
                 self.save_kernels(block, self.save_kernel_zmax)
             self.load_power(block)
+            self.load_power_lin(block)
             for spectrum in self.req_spectra:
                 if self.verbose:
                     print("Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name()))

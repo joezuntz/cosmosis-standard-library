@@ -30,7 +30,6 @@ typedef struct limber_config{
     double K;
 } limber_config;
 
-
 // Do a flat universe Limber approximation integral, of the form:
 // C^{XY}(\ell) 
 // = A \int_0^{\chi_{\mathrm{max}}} 
@@ -41,9 +40,8 @@ typedef struct limber_config{
 
 // TODO - Fortran version
 
-int limber_integral(limber_config * config, gsl_spline * WX_red, 
-			       gsl_spline * WY_red, gsl_spline2d * P, gsl_spline * D_chi,
-			       int ext_order, double * cl_out);
-
+int limber_integral(limber_config * config, gsl_spline * WX, 
+			        gsl_spline * WY, gsl_spline2d * P,
+			        double * cl_out);	
 
 #endif
