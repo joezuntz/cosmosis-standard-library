@@ -9,6 +9,7 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
+from pk2cl import get_cl_exact
 
 class Kernel(object):
     """Class for storing n(z) kernel"""
@@ -39,7 +40,9 @@ class Kernel(object):
 
     def get_chi_kernel(self, chi_of_z):
         chi_vals = chi_of_z(self.x)
-        kernel_interp = interp.interp1d(chi_vals, self.n, bounds_error=False, fill_value=0.)
+        spl = interp.InterpolatedUnivariateSpline(chi_vals, self.n)
+        norm = spl.integral(chi_vals[0],chi_vals[-1])
+        kernel_interp = interp.interp1d(chi_vals, self.n/norm, bounds_error=False, fill_value=0.)
         kernel_interp.chi_vals = chi_vals
         return kernel_interp
 
@@ -81,6 +84,7 @@ class LinearMatterPower3D(Power3D):
 
 class GalaxyPower3D(Power3D):
     section = "galaxy_power"
+    lin_section = "galaxy_power_lin"
     source_specific = True
 
 class IntrinsicPower3D(Power3D):
@@ -200,14 +204,38 @@ class Spectrum(object):
         self.clean_power(P)
         return c_ell
 
-    def compute_exact(self, block, ell, bin1, bin2, chi_of_z, nchi, chi_pad):
+    def compute_exact(self, block, ell, bin1, bin2, chi_of_z, nchi, chi_pad_factor=2., maximum_chi_min_default=10.,
+        relative_tolerance_sublin=1.e-3, absolute_tolerance_sublin=0.):
+        #The 'exact' calculation is in two parts. Non-limber for the linear (separable) bit,
+        #and Limber for the non-linear part of P(k)
+        P_sublin = self.get_power_sublin(block, bin1, bin2)
+        K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
+        K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
+        c_ell_sublin = limber.limber(K1, K2, P_sublin, ell.astype(float), self.prefactor(block, bin1, bin2), 
+            rel_tol=relative_tolerance_sublin, abs_tol=absolute_tolerance_sublin )
+        self.clean_power(P_sublin)
+        print("c_ell_sublin:",c_ell_sublin)
+
         P0_lin_interp, D_lin_interp = self.get_lin_power_growth(block, bin1, bin2)
+        kernel1_interp = self.source.py_kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
+        kernel2_interp = self.source.py_kernels_B[self.kernels[-1] + "_" + self.sample_a][bin2]
+        chimin = max(kernel1_interp, kernel2_interp.chi_vals[0])
+        chimin = min(chimin, maximum_chi_min_default)
+        chimax = max(kernel1_interp.chi_vals[-1], kernel2_interp.chi_vals[-1])
+        cell = get_cl_exact(ell, chimin, chimax, nchi, kernel1_interp,
+            kernel2_interp, P0_lin_interp, D_lin_interp, chi_pad_factor=chi_pad_factor)
+        print("c_ell_lin:",cell)
+        return c_ell_sublin+cell
 
     def get_power(self, block, bin1, bin2):
         return self.source.power[self.power_3d]
 
     def get_power_sublin(self, block, bin1, bin2):
         return self.source.power_sublin[self.power_3d]
+
+    def get_lin_power_growth(self, block, bin1, bin2):
+        return (self.source.power_lin_z0[self.power_3d], 
+            self.source.growth_lin[self.power_3d])
 
     def clean_power(self, P):
         # This gets done later for the base class
@@ -372,14 +400,24 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
-        self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 100)
+        self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 300)
         do_exact_string = options.get_string(option_section, "do_exact", "")
+        self.exact_ell_max = options.get_double(option_section, "exact_lmax", -1)
         self.do_exact_option_names = (do_exact_string.strip()).split(" ")
-        self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 20)
+        self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 50)
         self.clip_nzs = options.get_double(option_section, "clip_nzs", 1.e-4)
         #accuracy settins for exact integral
         self.nchi = options.get_int(option_section, "nchi", 5000)
-        self.chi_pad = options.get_double(option_section, "chi_pad", 1.)
+        self.chi_pad_factor = options.get_double(option_section, "chi_pad_factor", 4.)
+        
+
+        #Sort out ells for exact calculation
+        if len(self.do_exact_option_names) > 0:
+            if self.exact_ell_max>0:
+                exact_ell_max = self.exact_ell_max
+            else:
+                exact_ell_max = self.limber_ell_start - 1
+            self.ell_exact = np.floor(np.linspace(0, exact_ell_max, self.n_ell_exact))
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -387,11 +425,7 @@ class SpectrumCalculator(object):
         for spectrum in self.req_spectra:
             print("    - ", spectrum.get_name())
             if spectrum.get_name() in self.do_exact_spectrum_names:
-                print("Doing exact calculation up to ell=%d"%(self.limber_ell_start))
-
-        #Sort out ells for exact calculation
-        if len(self.do_exact_spectrum_names) > 0:
-            self.ell_exact = np.floor(np.linspace(0, self.limber_ell_start-1, self.n_ell_exact))
+                print("Doing exact calculation up to ell=%d"%(self.ell_exact.max()))
 
         # Decide which kernels we will need to save.
         # The overall split is into A and B, the two samples we are correlating into.
@@ -421,7 +455,7 @@ class SpectrumCalculator(object):
                 self.kernels_B["W" + "_" + spectrum.sample_b] = {}
 
         self.power = {}
-        self.power_lin = {}
+        self.power_lin_z0 = {}
         self.power_sublin = {}
         self.growth_lin = {}
         self.outputs = {}
@@ -524,7 +558,7 @@ class SpectrumCalculator(object):
                         kernel_a, kernel_b, power3D.section_name, save_name))
 
                     if name in self.do_exact_option_names:
-                        self.do_exact_spectrum_names.append(spectrum.get_name())
+                        #self.do_exact_spectrum_names.append(spectrum.get_name())
                         self.req_power_lin.add(power3D)
                 except:
                     raise
@@ -611,6 +645,8 @@ class SpectrumCalculator(object):
         #we needed for the spectra we want to do.  Their names are stored in the
         #kernels_A and kernels_B dictionaries.
         for kernel_name, kernel_dict in self.py_kernels_A.items():
+            if kernel_name[0] != "N":
+                continue
             #Check for any old kernels that should have been cleaned up by the
             #clean
             # assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned "
@@ -623,6 +659,8 @@ class SpectrumCalculator(object):
         #Often these will be the same groups of kernels, but not
         #always, so we may have to load them separately
         for kernel_name, kernel_dict in self.py_kernels_B.items():
+            if kernel_name[0] != "N":
+                continue
             #Again, check for old kernels 
             assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
             #Most of the time we are cross-correlating
@@ -639,6 +677,9 @@ class SpectrumCalculator(object):
                 self.load_py_kernel(block, kernel_name, kernel_dict, clip=clip)
 
     def load_py_kernel(self, block, kernel_name, kernel_dict, clip=-1.):
+        kernel_type = kernel_name[0]
+        if kernel_type != "N":
+            raise NotImplementedError("Sorry, only implemented non-Limber for number density kernels")
         sample_name = "nz_" + kernel_name[2:]
         z = block[sample_name, 'z']
         nbin = block[sample_name, 'nbin']
@@ -749,11 +790,12 @@ class SpectrumCalculator(object):
         #(this is added to self.power_sublin)
         for powerType in self.req_power_lin:
             #First make  P_lin(k,0) and D(chi) interpolators
-            z_lin, k_lin, P_lin = block.get_grid(block, powerType.lin_section_name, "z", "k_h", "p_k")
-            self.power_lin_z0[powerType] = interp.interp1d(np.log(k_lin), P_lin, bounds_error=False, fill_value=0.)
+            z_lin, k_lin, P_lin = block.get_grid(powerType.lin_section_name, "z", "k_h", "p_k")
+            P_lin_z0 = P_lin[0,:]
+            self.power_lin_z0[powerType] = interp.interp1d(np.log(k_lin), P_lin[0], bounds_error=False, fill_value=0.)
             growth_ind = (np.abs(k_lin - k_growth)).argmin()
             growth_vals = np.sqrt(np.divide(P_lin[:,growth_ind], P_lin[0,growth_ind], 
-                    out=np.zeros_like(P_lin[:,growth_ind]), where=P_lin[:,growth_ind]!=0.))  
+                    out=np.zeros_like(P_lin[:,growth_ind]), where=P_lin[:,growth_ind]!=0.)) 
             chi_vals = self.chi_of_z_pyspline(z_lin)
             self.growth_lin[powerType] = interp.interp1d(chi_vals, growth_vals, bounds_error=False, fill_value=0.)
 
@@ -763,18 +805,23 @@ class SpectrumCalculator(object):
             #off using P_nl - D^2(chi)P_lin(0) here since that is what we're using in 
             #the exact calculation
             if powerType.section_name != powerType.lin_section_name:
-                z_nl, k_nl, P_nl_orig = block.get_grid(block, powerType.section_name, "z", "k_h", "p_k")
-                assert np.allcose(z_nl, z_lin, rtol=1.e-6)
+                z_nl, k_nl, P_nl_orig = block.get_grid(powerType.section_name, "z", "k_h", "p_k")
+                assert np.allclose(z_nl, z_lin, rtol=1.e-6)
                 #If k grid not the same, interpolate nl onto linear grid
-                if not np.allclose(k_nl, k_lin, rtol=1.e-5):
+                nl_is_on_lin_grid=True
+                if len(k_nl)!=len(k_lin):
+                    nl_is_on_lin_grid = False
+                elif not np.allclose(k_nl, k_lin, rtol=1.e-5):
+                    nl_is_on_lin_grid = False
+                if not nl_is_on_lin_grid:
                     P_nl = np.zeros_like(P_lin)
                     for i in range(len(z_nl)):
-                        P_nl[i] = interp.interp1d(np.log(k_nl), P_nl_orig, bounds_error=False, 
-                                                  fill_value=(P_nl_orig[0], P_nl_orig[-1]))(np.log(k_lin))
+                        P_nl[i] = interp.interp1d(np.log(k_nl), P_nl_orig[i], bounds_error=False, 
+                                                  fill_value=(P_nl_orig[i,0], P_nl_orig[i,-1]))(np.log(k_lin))
                     k_nl = k_lin
                 P_lin_from_growth = np.outer(growth_vals, P_lin[0])
                 P_sublin = P_nl - P_lin_from_growth
-                self.power_sublin[powerType] = GSLSpline2d(chi_vals, np.log(k), P_sublin.T)
+                self.power_sublin[powerType] = GSLSpline2d(chi_vals, np.log(k_nl), P_sublin.T)
             else:
                 self.power_sublin[powerType] = None
 
@@ -807,9 +854,13 @@ class SpectrumCalculator(object):
                 c_ell_limber = spectrum.compute( block, self.ell, i, j, 
                                           relative_tolerance=self.relative_tolerance, 
                                           absolute_tolerance=self.absolute_tolerance )
-                if spectrum_name in self.do_exact_spectrum_names:
+                if spectrum.option_name() in self.do_exact_option_names:
                     c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
-                        self.chi_of_z_pyspline, self.nchi, self.chi_pad)
+                        self.chi_of_z_pyspline, self.nchi, chi_pad_factor=self.chi_pad_factor)
+                    print("c_ell_exact:",c_ell_exact)
+                    print("c_ell_limber:",
+                          interp.InterpolatedUnivariateSpline(self.ell,c_ell_limber)(self.ell_exact))
+
                 else:
                     c_ell = c_ell_limber
 
@@ -823,6 +874,9 @@ class SpectrumCalculator(object):
     def clean(self):
         # need to manually delete power spectra we have loaded
         self.power.clear()
+        self.power_lin_z0.clear()
+        self.growth_lin.clear()
+        self.power_sublin.clear()
 
         # spectra know how to delete themselves, in gsl_wrappers.py
         for name, kernels in self.kernels_A.items():
