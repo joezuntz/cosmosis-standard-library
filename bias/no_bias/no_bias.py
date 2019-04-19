@@ -14,11 +14,13 @@ def execute(block, config):
     else:
         pk_section = names.matter_power_nl
     block._copy_section(pk_section, names.galaxy_power)
+    block._copy_section(names.matter_power_lin, names.galaxy_power+"_lin")
     # if using use_lin_power, we're assuming galaxies follow linear fluctuations
     # then the matter-galaxy cross power should be sqrt(P_lin*P_nl)
     if use_lin_power:
         print('WARNING: galaxy power and matter-galaxy power no consistent')
     block._copy_section(names.matter_power_nl, names.matter_galaxy_power)
+    block._copy_section(names.matter_power_lin, names.matter_galaxy_power+"_lin")
     if block.has_section("matter_intrinsic_power"):
         block._copy_section("matter_intrinsic_power", "galaxy_intrinsic_power")
     return 0
