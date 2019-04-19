@@ -361,3 +361,14 @@ int execute(c_datablock * block, configuration_data * config){
 
 	return status;
 }
+
+
+int cleanup(configuration_data * config){
+	for (int i=0; i<config->ndata; i++){
+		clik_cleanup(&(config->clik_data[i]));
+	}
+	for (int i=0; i<config->nlensing; i++){
+		clik_lensing_cleanup(&(config->clik_lensing_data[i]));
+	}
+	return 0;
+}
