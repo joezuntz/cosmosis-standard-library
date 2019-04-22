@@ -9,44 +9,7 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-from pk2cl import get_cl_exact
-
-class Kernel(object):
-    """Class for storing n(z) kernel"""
-    def __init__(self, x, n, clip=1.e-5):
-        xmin, xmax = x.min(), x.max()
-        self.spline = interp.InterpolatedUnivariateSpline(x, n)
-        self.norm = self.spline.integral(x.min(), x.max())
-        if clip > 0.:
-            clipped_xmin = xmin
-            clipped_xmax = xmax
-            dx = (x[1]-x[0])/10.
-            area_min, area_max=0., 0.
-            clip = clip*self.norm
-            while area_min<clip:
-                area_min = self.spline.integral(xmin, clipped_xmin)
-                clipped_xmin += dx
-            while area_max<clip:
-                area_max = self.spline.integral(clipped_xmax, xmax)
-                clipped_xmax -= dx
-            xmin, xmax = clipped_xmin, clipped_xmax
-            num_x = np.ceil((xmax-xmin)/dx).astype(int)
-            x = np.linspace(xmin, xmax, num_x)
-            n = self.spline(x)
-        self.xmin, self.xmax = xmin, xmax
-        self.x = x
-        self.n = n
-        self.spline = interp.interp1d(x, n, bounds_error=False, 
-            fill_value=0., kind='cubic')
-
-    def get_chi_kernel(self, chi_of_z):
-        chi_vals = chi_of_z(self.x)
-        spl = interp.InterpolatedUnivariateSpline(chi_vals, self.n)
-        norm = spl.integral(chi_vals[0],chi_vals[-1])
-        kernel_interp = interp.interp1d(chi_vals, self.n/norm, bounds_error=False, 
-            kind='cubic', fill_value=0.)
-        kernel_interp.chi_vals = chi_vals
-        return kernel_interp
+from pk2cl import get_cl_exact, Kernel, get_dlogchi, resample_power
 
 class Power3D(object):
     """
@@ -206,8 +169,8 @@ class Spectrum(object):
         self.clean_power(P)
         return c_ell
 
-    def compute_exact(self, block, ell, bin1, bin2, chi_of_z, nchi, chi_pad_upper=2., 
-        chi_pad_lower = 2., chi_min_fac=2., relative_tolerance_sublin=1.e-3, absolute_tolerance_sublin=0.):
+    def compute_exact(self, block, ell, bin1, bin2, chi_of_z, sig_over_dchi=10, dlogchi=-1, chi_pad_lower=2., 
+        chi_pad_upper = 2., relative_tolerance_sublin=1.e-3, absolute_tolerance_sublin=0.):
         #The 'exact' calculation is in two parts. Non-limber for the linear (separable) bit,
         #and Limber for the non-linear part of P(k)
         P_sublin = self.get_power_sublin(block, bin1, bin2)
@@ -221,11 +184,20 @@ class Spectrum(object):
         P0_lin_interp, D_lin_interp = self.get_lin_power_growth(block, bin1, bin2)
         kernel1_interp = self.source.py_kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
         kernel2_interp = self.source.py_kernels_B[self.kernels[-1] + "_" + self.sample_a][bin2]
+
+        #Set chimin and chimax according to chi ranges of kernels.
         chimin = min(kernel1_interp.chi_vals[0], kernel2_interp.chi_vals[0])
-        #chimin = min(chimin, chimin/ell.max()/chi_min_fac)
         chimax = max(kernel1_interp.chi_vals[-1], kernel2_interp.chi_vals[-1])
-        print("chimin, chimax:",chimin, chimax)
-        cell = get_cl_exact(ell, chimin, chimax, nchi, kernel1_interp,
+
+        if dlogchi<0:
+            sig = min(np.sqrt(kernel1_interp.var), np.sqrt(kernel2_interp.var))
+            #We want a maximum dchi that is sig / sig_over_dchi where sig is the 
+            #width of the narrower kernel.
+            dchi = sig / sig_over_dchi
+            dlogchi = get_dlogchi(dchi, chimax)
+
+        print("chimin, chimax, dlogchi:",chimin, chimax, dlogchi)
+        cell = get_cl_exact(ell, chimin, chimax, dlogchi, kernel1_interp,
             kernel2_interp, P0_lin_interp, D_lin_interp, chi_pad_upper=chi_pad_upper,
             chi_pad_lower=chi_pad_lower)
         print("c_ell_lin:",cell)
@@ -409,15 +381,12 @@ class SpectrumCalculator(object):
         self.exact_ell_max = options.get_double(option_section, "exact_lmax", -1)
         self.do_exact_option_names = (do_exact_string.strip()).split(" ")
         self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 5)
-        self.clip_nzs = options.get_double(option_section, "clip_nzs", 1.e-4)
+        self.clip_nzs = options.get_double(option_section, "clip_nzs", 1.e-5)
         #accuracy settins for exact integral
-        self.nchi = options.get_int(option_section, "nchi", 10000)
+        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 10)
+        self.dlogchi = options.get_int(option_section, "dlogchi", -1)
         self.chi_pad_upper = options.get_double(option_section, "chi_pad_upper", 2.)
         self.chi_pad_lower = options.get_double(option_section, "chi_pad_lower", 2.)
-        #set chi_min for Hankel transforms for exact calculation as 
-        #chi_min_hankel = chi_min / ell_max / chi_min_fac where chi_min is the chi_min
-        #for the kernel.
-        self.chi_min_fac = options.get_double(option_section, "chi_min_fac",1.)
 
         # And the req ell ranges.
         # We use log-spaced output
@@ -817,19 +786,11 @@ class SpectrumCalculator(object):
             #the exact calculation
             if powerType.section_name != powerType.lin_section_name:
                 z_nl, k_nl, P_nl_orig = block.get_grid(powerType.section_name, "z", "k_h", "p_k")
-                assert np.allclose(z_nl, z_lin, rtol=1.e-6)
+                assert np.allclose(z_nl, z_lin, rtol=1.e-8)
                 #If k grid not the same, interpolate nl onto linear grid
-                nl_is_on_lin_grid=True
-                if len(k_nl)!=len(k_lin):
-                    nl_is_on_lin_grid = False
-                elif not np.allclose(k_nl, k_lin, rtol=1.e-5):
-                    nl_is_on_lin_grid = False
-                if not nl_is_on_lin_grid:
-                    P_nl = np.zeros_like(P_lin)
-                    for i in range(len(z_nl)):
-                        P_nl[i] = interp.interp1d(np.log(k_nl), P_nl_orig[i], bounds_error=False, kind='cubic',
-                                                  fill_value=(P_nl_orig[i,0], P_nl_orig[i,-1]))(np.log(k_lin))
-                    k_nl = k_lin
+                P_nl = resample_power(k_nl, k_lin, P_nl_orig)
+                k_nl = k_lin
+                #Now get P_lin(k,chi) as P(k,0) * growth(chi)**2
                 P_lin_from_growth = np.outer(growth_vals**2, P_lin[0])
                 P_sublin = P_nl - P_lin_from_growth
                 self.power_sublin[powerType] = GSLSpline2d(chi_vals, np.log(k_nl), P_sublin.T)
@@ -866,8 +827,9 @@ class SpectrumCalculator(object):
                                           absolute_tolerance=self.absolute_tolerance )
                 if spectrum.option_name() in self.do_exact_option_names:
                     c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
-                        self.chi_of_z_pyspline, self.nchi, chi_pad_upper=self.chi_pad_upper,
-                        chi_pad_lower=self.chi_pad_lower, chi_min_fac=self.chi_min_fac )
+                        self.chi_of_z_pyspline, sig_over_dchi=self.sig_over_dchi, 
+                        dlogchi=self.dlogchi, chi_pad_lower=self.chi_pad_lower, 
+                        chi_pad_upper=self.chi_pad_upper)
                     print("c_ell_exact:",c_ell_exact)
                     print("c_ell_limber:",
                           interp.InterpolatedUnivariateSpline(self.ell,c_ell_limber)(self.ell_exact))
