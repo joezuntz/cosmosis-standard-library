@@ -16,7 +16,6 @@ class Power3D(object):
     Class representing the 3D power spectrum that enters the Limber calculation.
     Most Power spectra are source-specific, like intrinsic alignments and galaxy
     density.  Others are generic, like matter_power (linear and nonlinear)
-
     """
     # Must specify these:
     # section = "?????"
@@ -179,7 +178,6 @@ class Spectrum(object):
         c_ell_sublin = limber.limber(K1, K2, P_sublin, ell.astype(float), self.prefactor(block, bin1, bin2), 
             rel_tol=relative_tolerance_sublin, abs_tol=absolute_tolerance_sublin )
         self.clean_power(P_sublin)
-        print("c_ell_sublin:",c_ell_sublin)
 
         P0_lin_interp, D_lin_interp = self.get_lin_power_growth(block, bin1, bin2)
         kernel1_interp = self.source.py_kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
@@ -196,11 +194,11 @@ class Spectrum(object):
             dchi = sig / sig_over_dchi
             dlogchi = get_dlogchi(dchi, chimax)
 
-        print("chimin, chimax, dlogchi:",chimin, chimax, dlogchi)
+        #print("chimin, chimax, dlogchi:",chimin, chimax, dlogchi)
         cell = get_cl_exact(ell, chimin, chimax, dlogchi, kernel1_interp,
             kernel2_interp, P0_lin_interp, D_lin_interp, chi_pad_upper=chi_pad_upper,
             chi_pad_lower=chi_pad_lower)
-        print("c_ell_lin:",cell)
+        #print("c_ell_lin:",cell)
         return c_ell_sublin+cell
 
     def get_power(self, block, bin1, bin2):
@@ -376,34 +374,47 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
-        self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 200)
+        self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 300)
         do_exact_string = options.get_string(option_section, "do_exact", "")
-        self.exact_ell_max = options.get_double(option_section, "exact_lmax", -1)
         self.do_exact_option_names = (do_exact_string.strip()).split(" ")
-        self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 5)
+        self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 50)
         self.clip_nzs = options.get_double(option_section, "clip_nzs", 1.e-5)
         #accuracy settins for exact integral
         self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 10)
         self.dlogchi = options.get_int(option_section, "dlogchi", -1)
         self.chi_pad_upper = options.get_double(option_section, "chi_pad_upper", 2.)
         self.chi_pad_lower = options.get_double(option_section, "chi_pad_lower", 2.)
+        self.save_limber = options.get_bool(option_section, "save_limber", True)
+        self.limber_transition_end = options.get_double(option_section,
+            "limber_transition_end", -1.)
+        self.no_smooth_transition = options.get_bool(option_section, 
+            "no_smooth_transition", False)
+        if self.limber_transition_end<0:
+            self.limber_transition_end = 1.2*self.limber_ell_start
+        try:
+            assert self.limber_transition_end > self.limber_ell_start
+        except AssertionError as e:
+            print("limber_transition_end must be larger than limber_ell_start")
+            raise(e)
 
         # And the req ell ranges.
         # We use log-spaced output
         ell_min = options.get_double(option_section, "ell_min")
         ell_max = options.get_double(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
+
+        #Accuracy settings
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
         self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
         self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
 
         #Sort out ells for exact calculation
         if len(self.do_exact_option_names) > 0:
-            if self.exact_ell_max>0:
-                exact_ell_max = self.exact_ell_max
-            else:
-                exact_ell_max = self.limber_ell_start - 1
-            self.ell_exact = np.floor(np.linspace(0, exact_ell_max, self.n_ell_exact))
+            self.exact_ell_max = self.limber_ell_start
+            self.ell_exact = np.ceil(np.linspace(0., self.exact_ell_max, self.n_ell_exact))
+            #also slip limber_ell_start into the ell values for the limber calculation
+            low = self.ell<self.limber_ell_start
+            self.ell = np.concatenate((self.ell[low], np.array([self.limber_ell_start]), self.ell[~low]))
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -720,7 +731,6 @@ class SpectrumCalculator(object):
         W_dict = self.kernels_A[W_kernel_name]
         W = W_dict.get(i)
         if W is None:
-            print(sample_name, i+1)
             W = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
             if W is None:
                 raise ValueError("Could not load the W(z) splines needed for limber integral (fast shear+IA, name={} bin={})".format(sample_name, i+1))
@@ -826,16 +836,39 @@ class SpectrumCalculator(object):
                                           relative_tolerance=self.relative_tolerance, 
                                           absolute_tolerance=self.absolute_tolerance )
                 if spectrum.option_name() in self.do_exact_option_names:
+                    if self.save_limber:
+                        block[spectrum_name, "ell_limber"] = self.ell
+                        block[spectrum_name, 'bin_limber_{}_{}'.format(i+1,j+1)] = c_ell_limber
                     c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
                         self.chi_of_z_pyspline, sig_over_dchi=self.sig_over_dchi, 
                         dlogchi=self.dlogchi, chi_pad_lower=self.chi_pad_lower, 
                         chi_pad_upper=self.chi_pad_upper)
-                    print("c_ell_exact:",c_ell_exact)
-                    print("c_ell_limber:",
-                          interp.InterpolatedUnivariateSpline(self.ell,c_ell_limber)(self.ell_exact))
-                    use_limber_inds = self.ell>self.ell_exact[-1]
+
+                    use_limber_inds = np.where(self.ell>self.ell_exact[-1])[0]
+                    print(self.ell[use_limber_inds])
                     ell_out = np.concatenate((self.ell_exact, self.ell[use_limber_inds]))
                     c_ell = np.concatenate((c_ell_exact, c_ell_limber[use_limber_inds]))
+                    if not self.no_smooth_transition and len(use_limber_inds)>0:
+                        print("smoothing transition between exact and Limber")
+                        #find transition start and end indices
+                        transition_start_ind = len(self.ell_exact)-1
+                        transition_end_ind = np.argmin(np.abs(ell_out-self.limber_transition_end))
+                        ell_transition_end = ell_out[transition_end_ind]
+                        transition_inds = np.arange(transition_start_ind, transition_end_ind+1)
+                        transition_ells = ell_out[transition_inds]
+                        print(self.ell_exact[-1], self.ell[use_limber_inds[0]-1])
+                        cl_fracdiff_at_transition = c_ell_exact[-1]/c_ell_limber[use_limber_inds[0]-1] - 1.
+                        print(cl_fracdiff_at_transition)
+                        L_transition = transition_ells[-1]-transition_ells[0] 
+                        x = (ell_transition_end-transition_ells)/L_transition
+                        sin_filter = 1. - 0.5*(np.sin(np.pi*(x+0.5))+1)
+                        print(sin_filter)
+                        transition_filter = np.ones_like(c_ell)
+                        apply_filter_inds = transition_inds[1:]
+                        transition_filter[apply_filter_inds] = 1 + cl_fracdiff_at_transition*sin_filter[1:]
+                        print(transition_filter)
+                        c_ell *= transition_filter
+
                 else:
                     ell_out = self.ell
                     c_ell = c_ell_limber
