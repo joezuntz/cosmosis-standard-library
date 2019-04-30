@@ -9,6 +9,7 @@
 
 typedef struct configuration_data{
 	int ndata, nlensing;
+	bool save_separate_likelihoods;	
 	clik_object * clik_data[MAX_NUMBER_LIKES];
 	clik_lensing_object * clik_lensing_data[MAX_NUMBER_LIKES];
 
@@ -112,6 +113,24 @@ configuration_data * setup(c_datablock * options){
 		fprintf(stderr, "http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
 		fprintf(stderr, "or some are packaged with the planck2015 cosmosis module.\n");
 		exit(1);
+	}
+
+	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "save_separate_likelihoods", false, 
+		&(config->save_separate_likelihoods));
+
+	if (status){
+		fprintf(stderr, "Error reading save_separate_likelihoods parameter (boolean) in planck 2015\n");
+		exit(1);
+	}
+
+	if (config->save_separate_likelihoods){
+		printf("Will save each Planck likelihood separately (per file) to the block, as well as their sum\n");
+		printf("Note that in this case you must explicitly specify planck2015 in the likelihoods \n");
+		printf("list in the parameter file; you can't just leave it blank for cosmosis to determine,\n");
+		printf("because it will be wrong.\n");
+	}
+	else{
+		printf("Will save each a single total likelihood for all Planck likelihood files\n");
 	}
 
 	return config;
@@ -331,9 +350,11 @@ int execute(c_datablock * block, configuration_data * config){
 		status |= run_clik_cosmosis(block, config->clik_data[i], &like_i);
 
 		//
-		char name[64];
-		snprintf(name, 64, "PLANCK_LIKE_%d", i+1);
-		status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
+		if (config->save_separate_likelihoods){
+			char name[64];
+			snprintf(name, 64, "PLANCK_LIKE_%d", i+1);
+			status |= c_datablock_put_double(block, LIKELIHOODS_SECTION, name, like_i);
+		}
 
 		like += like_i;
 	}

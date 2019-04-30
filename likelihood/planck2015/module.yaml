@@ -51,6 +51,7 @@ params:
     data_2: "(string; optional) Additional likelihood files.  data_3, etc. allowed"
     lensing_1: (string; optional) File path to a Planck lensing likelihood (clik/plik) file. Need at least one of lensing_1 or data_1.
     lensing_2: "(string; optional) Additional lensing files.  data_3, etc. allowed."
+    save_separate_likelihoods: "(bool; optional) If true, save planck_like_1, planck_like_2, etc as well as the total."
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
