@@ -27,35 +27,14 @@ function setup(options) result(result)
     
     allocate(settings)
 
-    !status = status + datablock_get(options, option_section, "zmin", settings%zmin)
-    !status = status + datablock_get(options, option_section, "zmax", settings%zmax)
-    !status = status + datablock_get(options, option_section, "nz", settings%nz)
-
-
-    !status = status + datablock_get(options, option_section, "kmin", settings%kmin)
-    !status = status + datablock_get(options, option_section, "kmax", settings%kmax)
-    !status = status + datablock_get(options, option_section, "nk", settings%nk)
-
     status = status + datablock_get_double_default(options, option_section, "numin", 0.1D0, settings%numin)
     status = status + datablock_get_double_default(options, option_section, "numax", 5.0D0, settings%numax)
-
     status = status + datablock_get_logical_default(options, option_section, "feedback", .false., settings%feedback)
 
     if (status .ne. 0) then
         write(*,*) "One or more parameters not found for hmcode"
         stop
     endif
-
-    !WRITE(*,*) 'z min:', settings%zmin
-    !WRITE(*,*) 'z max:', settings%zmax
-    !WRITE(*,*) 'number of z:', settings%nz
-    !WRITE(*,*)
-
-    !WRITE(*,*) 'k min:', settings%kmin
-    !WRITE(*,*) 'k max:', settings%kmax
-    !WRITE(*,*) 'number of k:', settings%nk
-    !WRITE(*,*)
-
 
     result = c_loc(settings)
 
@@ -119,9 +98,7 @@ function execute(block,config) result(status)
         write(*,*) "Error reading parameters for Mead code"
         return
     endif
-!!!check sigma8
-!        status = status + datablock_get(block, cosmo, "sigma_8", sig8)
-!        WRITE (*,*) 'cosmosis linear sigma8', sig8 
+
  
     status = status + datablock_get_double_grid(block, linear_power, &
         "k_h", k_in, "z", z_in, "p_k", p_in)
@@ -131,19 +108,14 @@ function execute(block,config) result(status)
         return
     endif
 
- !Copy in k
- 
-!   allocate(cosi%k_plin(size(k_in)))
-!        cosi%k_plin = k_in
-
     ! doing the job of initialise_HM_cosmology
     ! 1. get linear pk(z) (for each z)
     ! 2. fill sigma table (for each z)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! --cosi ->cosm, As->Abary, ktab->k_plin(?), eta_0->eta0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! --hmcode only reads pk_lin at z = 0.
-        !when doing mead, camb needs to start from 0.0<- oldversion
-        !new hmcode take pkz input to label redshift of p_lin. 
- 
+    !when doing mead, camb needs to start from 0.0<- oldversion
+    !new hmcode take pkz input to label redshift of p_lin. 
+
     !Find the index of z where z==0
 
     !Copy in P(k) from the right part of P(k,z)
@@ -151,8 +123,7 @@ function execute(block,config) result(status)
     nz = size(z_in)
 
  
-! doing the job of assign_HM_cosmology
-
+    ! doing the job of assign_HM_cosmology
     cosi%om_m=om_m !The halo modelling in this version knows about neutrino
     cosi%om_v=om_v
     cosi%f_nu=om_nu/cosi%om_m
@@ -184,11 +155,10 @@ function execute(block,config) result(status)
     k=k_in
     !this was not here previously, take care of output k and pk
     !CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz)
-        ztab = z_in
+    ztab = z_in
         
     !Fill table for output power
     ALLOCATE(p_out(nk,nz))
- !!!test pklin difference
  
     !Loop over redshifts
     DO j=1,nz
@@ -197,9 +167,9 @@ function execute(block,config) result(status)
         !Sets the redshift
         z=ztab(j)
 
-        !Initiliasation for the halomodel calcualtion
+        !Initialisation for the halomodel calcualtion
         !Also normalises power spectrum (via sigma_8)
-                !and fills sigma(R) tables 
+        !and fills sigma(R) tables 
         CALL halomod_init(z,lut,cosi)
 
         !Loop over k values
