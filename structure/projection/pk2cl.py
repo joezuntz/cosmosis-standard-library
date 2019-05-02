@@ -92,7 +92,7 @@ def get_cl_limber(ells, chimin, chimax, kernel1_interp, kernel2_interp, pk_inter
     for i,ell in enumerate(ells):
         c_ell, c_ell_err = quad(limber_integrand, chimin, chimax, 
                              args = (ell, kernel1_interp, kernel2_interp, pk_interp_logk),
-                             epsrel=rel_tol, epsabs=abs_tol)
+                             epsrel=rel_tol, epsabs=abs_tol, limit=500)
         c_ells[i], c_ell_errs[i] = c_ell, c_ell_err
     return c_ells, c_ell_errs
 
@@ -165,9 +165,11 @@ def get_cl_exact(ells, chimin, chimax, dlogchi, kernel1_interp, kernel2_interp,
 def test():
     #Calculate C(l)s for a Gaussian redshift windows 
     #(of a couple of different widths) for ells:
-    ells = np.linspace(0, 200, 50)
+    ells = np.linspace(0, 1000, 100)
     mean_z = 1.
-    sigma_zs = [0.05, 0.1, 0.2]
+    sigma_zs = [0.05, 0.1, 0.3]
+    sig_over_dchi = 50
+    chi_pad_lower, chi_pad_upper = 3., 3.
 
     from os.path import join as pjoin
     from numpy import loadtxt
@@ -208,14 +210,17 @@ def test():
     #make sure linear and nonlinear P(k)s on same z grid
     assert np.allclose(z_nl, z_lin)
     Pk_nl = resample_power(k_nl, k_lin, Pk_nl)
-    print(Pk_nl.shape)
-    print(Pk_nl)
     k_nl = k_lin
 
     #make P_nl and P_nl - P_lin 2d splines
-    Pk_nl_sub = Pk_nl - np.outer(growth_vals**2, Pk_lin[0])
+    P_lin_from_growth = np.outer(growth_vals**2, Pk_lin[0])
+    Pk_nl_sub = Pk_nl - P_lin_from_growth
     pk_nl_interp_logk = RectBivariateSpline(chi_of_z_spline(z_nl), np.log(k_nl), Pk_nl)
     pk_sublin_interp_logk = RectBivariateSpline(chi_of_z_spline(z_nl), np.log(k_nl), Pk_nl_sub)
+
+    #Also make a P_lin 2d spline for testing
+    pk_lin_interp_logk = RectBivariateSpline(chi_of_z_spline(z_lin), np.log(k_lin), 
+                                              P_lin_from_growth)
 
     #Do calculation for Gaussian windows of a few different widths
     #make a plot showing fractional difference as a funcion of ell.
@@ -238,22 +243,27 @@ def test():
         #Exact calculation. For this we need to choose a dchi (and dlogchi)
         dchi = np.sqrt(chi_kernel.var) / 50 #choose a small dchi w.r.t to the width of the kernel.
         dlogchi = get_dlogchi(dchi, chi_kernel.chi_vals.max())
-        cl_sublin,_ = get_cl_limber(ells, chimin, chimin, chi_kernel, chi_kernel, pk_sublin_interp_logk)
+
+        cl_sublin,_ = get_cl_limber(ells, chimin, chimax, chi_kernel, chi_kernel, pk_sublin_interp_logk)
         cl_lin_exact = get_cl_exact(ells, chimin, chimax, dlogchi, chi_kernel, chi_kernel,
-                                    pk0_interp_logk, growth_interp)
+                                    pk0_interp_logk, growth_interp, chi_pad_lower=chi_pad_lower,
+                                    chi_pad_upper=chi_pad_upper)
+        #cl_lin_limber,_ = get_cl_limber(ells, chimin, chimax, chi_kernel, chi_kernel, pk_lin_interp_logk)
         cl_exact = cl_sublin + cl_lin_exact
+
 
         frac_diff_vals = cl_exact/cl_limber - 1
         pos = frac_diff_vals>0.
-        ax.plot(ells[pos], frac_diff_vals[pos], "-", label=r"$\sigma_z=%.2f$"%sigma_z,
+        ax.plot(ells[pos], frac_diff_vals[pos], ".", label=r"$\sigma_z=%.2f$"%sigma_z,
             color = colors[i] )
-        ax.plot(ells[~pos], frac_diff_vals[~pos], "--",
-            color = colors[i] )
+        ax.plot(ells[~pos], -frac_diff_vals[~pos], ".",
+            mec = colors[i], mfc='none' )
 
     ax.set_xlabel(r"$l$")
     ax.set_ylabel(r"$C_{\mathrm{exact}}(l)/C_{\mathrm{limber}}(l) - 1$")
     ax.set_yscale('log')
     ax.legend()
+    pylab.show()
     fig.savefig("cl_ratio.png")
     return
 

@@ -411,7 +411,15 @@ class SpectrumCalculator(object):
         #Sort out ells for exact calculation
         if len(self.do_exact_option_names) > 0:
             self.exact_ell_max = self.limber_ell_start
-            self.ell_exact = np.ceil(np.linspace(0., self.exact_ell_max, self.n_ell_exact))
+            #Make these ~log-spaced integers. Always do 0 and 1. Remove any repeated 
+            #entries. Note then that the number may not be exactly self.n_ell_exact,
+            #so update that afterwards.
+            self.ell_exact = np.ceil(np.linspace(1., self.exact_ell_max, self.n_ell_exact-1))
+            self.ell_exact = np.concatenate((np.array([0]), self.ell_exact))
+            _, unique_inds = np.unique(self.ell_exact, return_index=True)
+            self.ell_exact = self.ell_exact[unique_inds]
+            self.n_ell_exact = len(self.ell_exact)
+
             #also slip limber_ell_start into the ell values for the limber calculation
             low = self.ell<self.limber_ell_start
             self.ell = np.concatenate((self.ell[low], np.array([self.limber_ell_start]), self.ell[~low]))
@@ -845,30 +853,25 @@ class SpectrumCalculator(object):
                         chi_pad_upper=self.chi_pad_upper)
 
                     use_limber_inds = np.where(self.ell>self.ell_exact[-1])[0]
-                    print(self.ell[use_limber_inds])
                     ell_out = np.concatenate((self.ell_exact, self.ell[use_limber_inds]))
                     c_ell = np.concatenate((c_ell_exact, c_ell_limber[use_limber_inds]))
                     if not self.no_smooth_transition and len(use_limber_inds)>0:
-                        print("smoothing transition between exact and Limber")
+                        print("""applying smoothing transition in ell range [%f,%f]
+                         between exact and Limber predictions"""%(self.ell_exact[-1], self.limber_transition_end))
                         #find transition start and end indices
                         transition_start_ind = len(self.ell_exact)-1
                         transition_end_ind = np.argmin(np.abs(ell_out-self.limber_transition_end))
                         ell_transition_end = ell_out[transition_end_ind]
                         transition_inds = np.arange(transition_start_ind, transition_end_ind+1)
                         transition_ells = ell_out[transition_inds]
-                        print(self.ell_exact[-1], self.ell[use_limber_inds[0]-1])
                         cl_fracdiff_at_transition = c_ell_exact[-1]/c_ell_limber[use_limber_inds[0]-1] - 1.
-                        print(cl_fracdiff_at_transition)
                         L_transition = transition_ells[-1]-transition_ells[0] 
                         x = (ell_transition_end-transition_ells)/L_transition
                         sin_filter = 1. - 0.5*(np.sin(np.pi*(x+0.5))+1)
-                        print(sin_filter)
                         transition_filter = np.ones_like(c_ell)
                         apply_filter_inds = transition_inds[1:]
                         transition_filter[apply_filter_inds] = 1 + cl_fracdiff_at_transition*sin_filter[1:]
-                        print(transition_filter)
                         c_ell *= transition_filter
-
                 else:
                     ell_out = self.ell
                     c_ell = c_ell_limber
