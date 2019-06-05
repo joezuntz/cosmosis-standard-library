@@ -9,7 +9,9 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-from pk2cl import get_cl_exact, Kernel, get_dlogchi, resample_power
+from pk2cl_tools import limber_integral
+from kernel import TomoNzKernel
+#from pk2cl import get_cl_exact, Kernel, get_dlogchi, resample_power
 
 class Power3D(object):
     """
@@ -34,8 +36,25 @@ class Power3D(object):
             except AttributeError:
                 self.lin_section_name = None
 
+        self.chi_logk_spline = None
+
     def __hash__(self):
         return hash(self.section_name)
+
+    def load_from_block(self, block, chi_of_z):
+        z, k, pk = block.get_grid( self.section_name, "z", "k_h", "p_k" )
+        self.chi_vals = chi_of_z(z)
+        self.k_vals = k
+        self.logk_vals = np.log(k)
+        self.pk_vals = pk
+
+    def set_chi_logk_spline(self):
+        self.chi_logk_spline = interp.RectBivariateSpline(self.chi_vals, self.logk_vals, self.pk_vals)
+
+    def get_chi_logk_spline(self):
+        if self.chi_logk_spline is None:
+            self.set_chi_logk_spline()
+        return self.chi_logk_spline
 
 class MatterPower3D(Power3D):
     section = "matter_power_nl"
@@ -71,19 +90,17 @@ class GalaxyIntrinsicPower3D(Power3D):
     section = "galaxy_intrinsic_power"
     source_specific = True
 
-
 def lensing_prefactor(block):
     c_kms = 299792.4580
     omega_m = block[names.cosmological_parameters, "omega_m"]
     shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
     return shear_scaling
 
-
 class Spectrum(object):
     autocorrelation = False
     #These should make it more obvious if the values are not overwritten by subclasses
     power_3d_type = "?"
-    kernels = "??"
+    kernel_types = ("?", "?")
     name = "?"
     prefactor_power = np.nan
     # the default is no magnification. If the two fields are magnification terms
@@ -91,14 +108,11 @@ class Spectrum(object):
     # then subclasses should include 1 and/or 2 in this.
     magnification_prefactors = {}
 
-
-    def __init__(self, source, power_3d, sample_a=names.wl_number_density, 
-                 sample_b=names.wl_number_density, save_name=""):
+    def __init__(self, source, sample_a, sample_b, power_3d, save_name=""):
         # caches of n(z), w(z), P(k,z), etc.
         self.source = source
+        self.sample_a, self.sample_b = sample_a, sample_b
         self.power_3d = power_3d
-        self.sample_a = sample_a
-        self.sample_b = sample_b
         self.save_name = save_name
 
     def get_name(self):
@@ -107,8 +121,8 @@ class Spectrum(object):
         return self.name
 
     def nbins(self):
-        na = len(self.source.kernels_A[self.kernels[0] + "_" + self.sample_a])
-        nb = len(self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b])
+        na = self.source.kernels[self.sample_a].nbin
+        nb = self.source.kernels[self.sample_b].nbin
         return na, nb
 
     def is_autocorrelation(self):
@@ -152,20 +166,31 @@ class Spectrum(object):
         alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
         return 2 * (alpha[bin] - 1)
 
-    def compute(self, block, ell, bin1, bin2, relative_tolerance=1.e-3,
-                absolute_tolerance=0.):
 
-        # Get the required kernels
-        # maybe get from rescaled version of existing spectra
+    def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=10, 
+        chimin=None, chimax=None):
+
+        # Get the required power
         P = self.get_power(block, bin1, bin2)
 
-        K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
-        K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
+        # Get the kernels
+        K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
+        K2 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[1], bin2)
 
-        #Call the integral
-        c_ell = limber.limber(K1, K2, P, ell.astype(float), self.prefactor(block, bin1, bin2), 
-            rel_tol=relative_tolerance, abs_tol=absolute_tolerance )
-        self.clean_power(P)
+        #Need to choose a chimin, chimax and dchi for the integral.
+        #By default
+        if chimin is None:
+            chimin = max( K1.xmin_clipped, K2.xmin_clipped )
+        if chimax is None:
+            chimax = min( K1.xmax_clipped, K2.xmax_clipped )
+        if dchi is None:
+            dchi = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
+
+        pk_spline = P.get_chi_logk_spline()
+
+        c_ell, c_ell_err = limber_integral(K1, K2, pk_spline, ell.astype(float), chimin, 
+            chimax, dchi)
+
         return c_ell
 
     def compute_exact(self, block, ell, bin1, bin2, chi_of_z, sig_over_dchi=10, dlogchi=-1, chi_pad_lower=2., 
@@ -236,73 +261,72 @@ class Spectrum(object):
 class SpectrumType(Enum):
     class ShearShear(Spectrum):
         power_3d_type = MatterPower3D
-        kernels = "W W"
+        kernel_types = ("W", "W")
         autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
 
     class ShearIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
-        kernels = "W N"
+        kernel_types = ("W", "N")
         autocorrelation = False
         name = names.shear_cl_gi
         prefactor_power = 1
 
     class IntrinsicIntrinsic(Spectrum):
         power_3d_type = IntrinsicPower3D
-        kernels = "N N"
+        kernel_types = ("N", "N")
         autocorrelation = True
         name = names.shear_cl_ii
         prefactor_power = 0
 
     class IntrinsicbIntrinsicb(Spectrum):
         power_3d_type = IntrinsicBBPower3D
-        kernels = "N N"
+        kernel_types = ("N", "N")
         autocorrelation = True
         name = "shear_cl_bb"
         prefactor_power = 0
 
-    class PositionPosition(Spectrum):
-        power_3d_type = GalaxyPower3D
-        kernels = "N N"
+    class DensityDensity(Spectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "N")
         autocorrelation = True
-        name = "galaxy_cl"
+        name = "density_cl"
         prefactor_power = 0
 
-    class MagnificationPosition(Spectrum):
-        power_3d_type = MatterGalaxyPower3D
-        kernels = "W N"
+    class MagnificationDensity(Spectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("W", "N")
         autocorrelation = False
-        name = "magnification_galaxy_cl"
+        name = "magnification_density_cl"
         prefactor_power = 1
         magnification_prefactors = (1,)
 
-    #
     class MagnificationMagnification(Spectrum):
         power_3d_type = MatterPower3D
-        kernels = "W W"
+        kernel_types = ("W", "W")
         autocorrelation = True
         name = "magnification_cl"
         prefactor_power = 2
         magnification_prefactors = (1, 2)
 
-    class PositionShear(Spectrum):
-        power_3d_type = MatterGalaxyPower3D
-        kernels = "N W"
+    class DensityShear(Spectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "W")
         autocorrelation = False
-        name = "galaxy_shear_cl"
+        name = "density_shear_cl"
         prefactor_power = 1
 
-    class PositionIntrinsic(Spectrum):
-        power_3d_type = GalaxyIntrinsicPower3D
-        kernels = "N N"
+    class DensityIntrinsic(Spectrum):
+        power_3d_type = MatterIntrinsicPower3D
+        kernel_types = ("N", "N")
         autocorrelation = False
         name = "galaxy_intrinsic_cl"
         prefactor_power = 0
 
     class MagnificationIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
-        kernels = "W N"
+        kernel_types = ("W", "N")
         autocorrelation = False
         name = "magnification_intrinsic_cl"
         prefactor_power = 1
@@ -310,7 +334,7 @@ class SpectrumType(Enum):
 
     class MagnificationShear(Spectrum):
         power_3d_type = MatterPower3D
-        kernels = "W W"
+        kernel_types = ("W", "W")
         autocorrelation = False
         name = "magnification_shear_cl"
         prefactor_power = 2
@@ -318,28 +342,28 @@ class SpectrumType(Enum):
 
     class ShearCmbkappa(Spectrum):
         power_3d_type = MatterPower3D
-        kernels = "W K"
+        kernel_types = ("W", "K")
         autocorrelation = False
         name = "shear_cmbkappa_cl"
         prefactor_power = 2
 
     class CmbkappaCmbkappa(Spectrum):
         power_3d_type = MatterPower3D
-        kernels = "K K"
+        kernel_types = ("K", "K")
         autocorrelation = True
         name = "cmbkappa_cl"
         prefactor_power = 2
 
     class IntrinsicCmbkappa(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
-        kernels = "N K"
+        kernel_types = ("N", "K")
         autocorrelation = False
         name = "intrinsic_cmbkappa_cl"
         prefactor_power = 1
 
-    class PositionCmbkappa(Spectrum):
-        power_3d_type = MatterGalaxyPower3D
-        kernels = "N K"
+    class DensityCmbkappa(Spectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "K")
         autocorrelation = False
         name = "galaxy_cmbkappa_cl"
         prefactor_power = 1
@@ -351,14 +375,14 @@ class SpectrumType(Enum):
         components.  Only works for scale-independent IA/
         """
         power_3d_type = MatterPower3D
-        kernels = "F F"
+        kernel_types = ("F", "F")
         autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
 
-    class FastPositionShearIA(Spectrum):
-        power_3d_type = MatterGalaxyPower3D
-        kernels = "N F"
+    class FastDensityShearIA(Spectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "F")
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
@@ -374,21 +398,26 @@ class SpectrumCalculator(object):
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
+        
         self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 300)
         do_exact_string = options.get_string(option_section, "do_exact", "")
         self.do_exact_option_names = (do_exact_string.strip()).split(" ")
         self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 50)
-        self.clip_nzs = options.get_double(option_section, "clip_nzs", 1.e-5)
-        #accuracy settins for exact integral
+        self.clip_chi_kernels = options.get_double(option_section, "clip_chi_kernels", 1.e-6)
+        
+        #accuracy settings
         self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 10)
+
+        #accuracy settings for exact integral
         self.dlogchi = options.get_int(option_section, "dlogchi", -1)
         self.chi_pad_upper = options.get_double(option_section, "chi_pad_upper", 2.)
         self.chi_pad_lower = options.get_double(option_section, "chi_pad_lower", 2.)
         self.save_limber = options.get_bool(option_section, "save_limber", True)
+
         self.limber_transition_end = options.get_double(option_section,
             "limber_transition_end", -1.)
-        self.no_smooth_transition = options.get_bool(option_section, 
-            "no_smooth_transition", False)
+        self.smooth_limber_transition = options.get_bool(option_section, 
+            "smooth_limber_transition", True)
         if self.limber_transition_end<0:
             self.limber_transition_end = 1.2*self.limber_ell_start
         try:
@@ -405,8 +434,8 @@ class SpectrumCalculator(object):
 
         #Accuracy settings
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
-        self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
-        self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
+        #self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
+        #self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
 
         #Sort out ells for exact calculation
         if len(self.do_exact_option_names) > 0:
@@ -431,47 +460,27 @@ class SpectrumCalculator(object):
             print("    - ", spectrum.get_name())
             if spectrum.get_name() in self.do_exact_spectrum_names:
                 print("Doing exact calculation up to ell=%d"%(self.ell_exact.max()))
-
-        # Decide which kernels we will need to save.
-        # The overall split is into A and B, the two samples we are correlating into.
-        # Within each list of those we may need W(z) and N(z). These may be just
-        # a single group for a single galaxy sample, or they may be more complicated.
-        # The keys in kernels_A are things like "N_REDMAGIC" or "W_MAINSAMPLE", or if
-        # everything is left with the defaults just "N_WL_NUMBER_DENSITY" and "W_WL_NUMBER_DENSITY"
-        # The values are dictionaries where the keys are the bin numbers 1..nbin
-        self.kernels_A = {}
-        self.kernels_B = {}
-        self.py_kernels_A = {}
-        self.py_kernels_B = {}
-        for spectrum in self.req_spectra:
-            # names e.g. N_REDMAGIC, W_EUCLID
-            kernel_a = spectrum.kernels[0] + "_" + spectrum.sample_a
-            kernel_b = spectrum.kernels[-1] + "_" + spectrum.sample_b
-            # one dictionary per named group
-            self.kernels_A[kernel_a] = {}
-            self.kernels_B[kernel_b] = {}
-            self.py_kernels_A[kernel_a] = {}
-            self.py_kernels_B[kernel_b] = {}
-
-            # Special case - F kernel (fast shear+IA) needs W kernel too
-            if spectrum.kernels[0]=="F":
-                self.kernels_A["W" + "_" + spectrum.sample_a] = {}
-            if spectrum.kernels[-1]=="F":
-                self.kernels_B["W" + "_" + spectrum.sample_b] = {}
-
+   
+        self.kernels = {}
         self.power = {}
-        self.power_lin_z0 = {}
-        self.power_sublin = {}
-        self.growth_lin = {}
         self.outputs = {}
-
 
     def parse_requested_spectra(self, options):
         # Get the list of spectra that we want to compute.
-        # The full list
+        # List of Spectrum objects that we need to compute
         self.req_spectra = []
-        self.req_power = set()
-        self.req_power_lin = set()
+
+        # List of keys which determine which kernels are required. These
+        # are tuples of (kernel_type, sample_name), where kernel_type is 
+        # "N" or "W" (for number density and lensing respectively), and
+        # sample name determines the n(z) section i.e. nz_<sample_name>.
+        self.req_kernel_keys = set()
+
+        #List of power keys that determines which 3d power spectra
+        #are required for the spectra. These are tuples of (PowerType, suffix)
+        #where PowerType is a Power3d or child object and suffix
+        #is a suffix for the section name.
+        self.req_power_keys = set()
         self.do_exact_spectrum_names = [] 
 
         any_spectra_option_found = False
@@ -481,6 +490,7 @@ class SpectrumCalculator(object):
             #By default we just do the shear-shear spectrum.
             #everything else is not done by default
             name = spectrum.option_name()
+            name = name.replace("density", "position")
             try:
                 value = options[option_section, name]
             # if value is not set at all, skip
@@ -503,7 +513,7 @@ class SpectrumCalculator(object):
                     power3D = spectrum.power_3d_type()
                     self.req_spectra.append(spectrum(self, power3D))
                     print("Adding {}".format(power3D))
-                    self.req_power.add(power3D)
+                    self.req_power_sections.add(power3D)
                 continue
 
             # Otherwise it must be a string - enforce this.
@@ -520,7 +530,7 @@ class SpectrumCalculator(object):
             values = value.split()
             for value in values:
                 try:
-                    kernel_a, kernel_b = value.split('-', 1)
+                    sample_name_a, sample_name_b = value.split('-', 1)
                     # Optionally we can also name the spectrum, for example
                     # shear-shear = ska-ska:radio
                     # in which case the result will be saved into shear_cl_radio
@@ -533,49 +543,42 @@ class SpectrumCalculator(object):
                     # Can also allow
                     # #intrinsic-intrinsic = des_source-des_source:des_power:des_cl kids_source-kids_source:kids_power:kids_cl
                     # to use the suffix XXX or YYY on the IA and galaxy density 3D power spectrum inputs
-                    if ":" in kernel_b:
-                        kernel_b, save_name=kernel_b.split(":",1)
+                    if ":" in sample_name_b:
+                        sample_name_b, save_name=sample_name_b.split(":",1)
                         if ":" in save_name:
-                            power_suffix,save_name = save_name.split(':',1)
+                            power_suffix, save_name = save_name.split(':',1)
                             power_suffix = "_"+power_suffix
                         else:
                             power_suffix = ""
                     else:
                         save_name = ""
                         power_suffix = ""
-                    kernel_a = kernel_a.strip()
-                    kernel_b = kernel_b.strip()
+
+                    sample_name_a = sample_name_a.strip()
+                    sample_name_b = sample_name_b.strip()
+                    kernel_key_a = (spectrum.kernel_types[0], sample_name_a)
+                    kernel_key_b = (spectrum.kernel_types[0], sample_name_a)
+                    self.req_kernel_keys.add(kernel_key_a)
+                    self.req_kernel_keys.add(kernel_key_b)
 
                     #The self in the line below is not a mistake - the source objects
                     #for the spectrum class is the SpectrumCalculator itself
-                    power3D = spectrum.power_3d_type(power_suffix)
-                    self.req_power.add(power3D)
-                    self.req_spectra.append(spectrum(self, power3D, kernel_a, kernel_b, save_name))
+                    power_key = (spectrum.power_3d_type, power_suffix)
+                    self.req_power_keys.add(power_key)
+                    self.req_spectra.append(spectrum(self, sample_name_a, sample_name_b, power_key, save_name))
                     print("Calculating Limber: Kernel 1 = {}, Kernel 2 = {}, P_3D = {} --> Output: {}".format(
-                        kernel_a, kernel_b, power3D.section_name, save_name))
-
-                    if name in self.do_exact_option_names:
-                        #self.do_exact_spectrum_names.append(spectrum.get_name())
-                        self.req_power_lin.add(power3D)
+                        str(kernel_key_a), str(kernel_key_b), str(power_key), save_name))
                 except:
                     raise
-                    raise ValueError("To specify a P(k)->C_ell projection with one or more sets of two different n(z) samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use shear-shear=T to use the standard form.")
-
+                    raise ValueError("""To specify a P(k)->C_ell projection with one or more sets of two different n(z) 
+                        samples use the form shear-shear=sample1-sample2 sample3-sample4 ....  Otherwise just use 
+                        shear-shear=T to use the standard form.""")
 
         #If no other spectra are specified, just do the shear-shear spectrum.
         if not any_spectra_option_found:
             print()
-            print("No spectra requested in the parameter file so I will ")
-            print("Assume you just want shear-shear, because it's the best one.")
-            print()
-            power3D = self.spectrumType.ShearShear.power_3d_type()
-            shear_shear = self.spectrumType.ShearShear.value(self, power3D)
-            self.req_spectra.append(shear_shear)
-            self.req_power.append(power3D)
-        elif not self.req_spectra:
-            print()
-            print("You switched off all the spectra in the parameter file")
-            print("for project_2d.  I will go along with this and just do nothing,")
+            print("No spectra requested in the parameter file.")  
+            print("I will go along with this and just do nothing,")
             print("but if you get a crash later this is probably why.")
             print()
 
@@ -602,182 +605,35 @@ class SpectrumCalculator(object):
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
         self.chi_of_z = GSLSpline(z_distance, chi_distance)
-        self.chi_of_z_pyspline = interp.interp1d(z_distance, chi_distance, kind='cubic')
+        self.chi_of_z = interp.interp1d(z_distance, chi_distance, kind='cubic', bounds_error=True)
 
     def load_kernels(self, block):
         # During the setup we already decided what kernels (W(z) or N(z) splines)
-        # we needed for the spectra we want to do.  Their names are stored in the
-        # kernels_A and kernels_B dictionaries.
-        for kernel_name, kernel_dict in self.kernels_A.items():
-            # Check for any old kernels that should have been cleaned up by the
-            # clean
-            # assert (len(kernel_dict) == 0), "Internal cosmosis error: old cosmology not properly cleaned"
-            # Load in the new kernel
-            if self.verbose:
-                print("Loading kernel {}".format(kernel_name))
-            self.load_kernel(block, kernel_name, kernel_dict)
-
-        # We are always using two kernels, which we call A and B
-        # Often these will be the same groups of kernels, but not
-        # always, so we may have to load them separately
-        for kernel_name, kernel_dict in self.kernels_B.items():
-            # Again, check for old kernels
-            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
-            # Most of the time we are cross-correlating
-            # samples and the kernel will be the same for A and B
-            # In that case just refer to the one we already loaded
-            if kernel_name in self.kernels_A:
-                # Loop through all the loaded N(z), W(z)
-                if self.verbose:
-                    print("Already calculated {}".format(kernel_name))
-                for i,kernel in self.kernels_A[kernel_name].items():
-                    kernel_dict[i] = kernel
+        # we needed for the spectra we want to do. Load them now and add to the 
+        # self.kernels dictionary.
+        for key in self.req_kernel_keys:
+            kernel_type, sample_name = key
+            if sample_name not in self.kernels:
+                section_name = "nz_"+sample_name
+                self.kernels[sample_name] = TomoNzKernel.from_block(block, section_name, norm=True)
+            if kernel_type == "N":
+                self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, clip=self.clip_chi_kernels)
+            elif kernel_type == "W":
+                self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, clip=self.clip_chi_kernels) 
             else:
-                # If not already cached we will have to load it freshly
-                self.load_kernel(block, kernel_name, kernel_dict)
-
-
-    def load_py_kernels(self, block, clip=-1):
-        #During the setup we already decided what kernels (W(z) or N(z) splines)
-        #we needed for the spectra we want to do.  Their names are stored in the
-        #kernels_A and kernels_B dictionaries.
-        for kernel_name, kernel_dict in self.py_kernels_A.items():
-            if kernel_name[0] != "N":
-                continue
-            #Check for any old kernels that should have been cleaned up by the
-            #clean
-            # assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned "
-            #Load in the new kernel
-            if self.verbose:
-                print("Loading kernel {}".format(kernel_name))
-            self.load_py_kernel(block, kernel_name, kernel_dict, clip=clip)
-
-        #We are always using two kernels, which we call A and B
-        #Often these will be the same groups of kernels, but not
-        #always, so we may have to load them separately
-        for kernel_name, kernel_dict in self.py_kernels_B.items():
-            if kernel_name[0] != "N":
-                continue
-            #Again, check for old kernels 
-            assert len(kernel_dict) == 0, "Internal cosmosis error: old cosmology not properly cleaned"
-            #Most of the time we are cross-correlating
-            #samples and the kernel will be the same for A and B
-            #In that case just refer to the one we already loaded
-            if kernel_name in self.py_kernels_A:
-            #Loop through all the loaded N(z), W(z)
-                if self.verbose:
-                    print("Already calculated {}".format(kernel_name))
-                for i,kernel in self.py_kernels_A[kernel_name].items():
-                    kernel_dict[i] = kernel
-            else:
-                #If not already cached we will have to load it freshly
-                self.load_py_kernel(block, kernel_name, kernel_dict, clip=clip)
-
-    def load_py_kernel(self, block, kernel_name, kernel_dict, clip=-1.):
-        kernel_type = kernel_name[0]
-        if kernel_type != "N":
-            raise NotImplementedError("Sorry, only implemented non-Limber for number density kernels")
-        sample_name = "nz_" + kernel_name[2:]
-        z = block[sample_name, 'z']
-        nbin = block[sample_name, 'nbin']
-        for i in range(nbin):
-            nz = block[sample_name, 'bin_{}'.format(i+1)]
-            zkernel = Kernel(z, nz, clip=clip)
-            kernel_dict[i] = zkernel.get_chi_kernel(self.chi_of_z_pyspline)
-
-    def save_kernels(self, block, zmax):
-        z = np.linspace(0.0, zmax, 1000)
-        chi = self.chi_of_z(z)
-        for kernel_name, kernel_dict in list(self.kernels_A.items()) + list(self.kernels_B.items()):
-            section = "kernel_" + kernel_name
-            block[section, "z"] = z
-            block[section, "chi"] = chi
-            for bin_i, kernel in kernel_dict.items():
-                key = "bin_{}".format(bin_i)
-                if not block.has_value(section, key):
-                    nz = kernel(chi)
-                    block[section, key] = nz
-
-    def load_kernel(self, block, kernel_name, kernel_dict):
-        # the name is of the form N_SAMPLENAME or W_SAMPLENAME, or K_SAMPLENAME
-        kernel_type = kernel_name[0]
-        sample_name = "nz_" + kernel_name[2:]
-        if kernel_name[2:] == names.wl_number_density:
-            sample_name = names.wl_number_density
-
-        if kernel_type == "K":
-            nbin = 1
-        else:
-            z = block[sample_name, 'z']
-            nbin = block[sample_name, 'nbin']
-
-        #Now load n(z) or W(z) for each bin in the range
-        for i in range(nbin):
-            if kernel_type=="N":
-                kernel = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
-            elif kernel_type=="W":
-                kernel = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
-            elif kernel_type=="K":
-                if self.chi_star is None:
-                    raise ValueError(
-                        "Need to calculate chistar (comoving distance to last scattering) e.g. with camb to use CMB lensing.")
-                kernel = limber.get_cmb_kappa_spline(self.chi_max, self.chi_star, self.a_of_chi)
-            elif kernel_type=="F":
-                kernel = self.get_combined_shear_ia_spline(block, kernel_name, sample_name, i, z)
-            else:
-                raise ValueError("Unknown kernel type {0} ({1})".format(kernel_type, kernel_name))
-            if kernel is None:
-                raise ValueError(
-                    "Could not load one of the W(z) or n(z) splines needed for limber integral (name={}, type={}, bin={})".format(
-                        kernel_name, kernel_type, i + 1))
-            kernel_dict[i] = kernel
-
-    def get_combined_shear_ia_spline(self, block, kernel_name, sample_name, i, z):
-        # Get basic W spline that this thing starts from.
-        # Might have it already or need to make it fresh (and store it)
-        W_kernel_name = "W_"+kernel_name[2:]
-        W_dict = self.kernels_A[W_kernel_name]
-        W = W_dict.get(i)
-        if W is None:
-            W = limber.get_named_w_spline(block, sample_name, i+1, z, self.chi_max, self.a_of_chi)
-            if W is None:
-                raise ValueError("Could not load the W(z) splines needed for limber integral (fast shear+IA, name={} bin={})".format(sample_name, i+1))
-            W_dict[i] = W
-
-        # This one is quick to calculate so I won't mess around caching it
-        N = limber.get_named_nchi_spline(block, sample_name, i+1, z, self.a_of_chi, self.chi_of_z)
-
-        # Check that the P_II(k,z) does not
-        z1, k1, P_II = block.get_grid(names.intrinsic_power, "z", "k_h", "p_k")
-        z2, k2, P_GI = block.get_grid(names.matter_intrinsic_power, "z", "k_h", "p_k")
-        assert np.allclose(k1, k2), "Non-matching PII and PGI in the  Fast Shear+IA C_ell calculator"
-        assert np.allclose(z1, z2), "Non-matching PII and PGI in the  Fast Shear+IA C_ell calculator"
-
-        chi = self.chi_of_z(z)
-        chi1 = self.chi_of_z(z1)
-
-        if (P_GI[:,0]==0).all():
-            # If there are no intrinsic alignments we can just use W
-            kernel = W
-        else:
-            F1 = P_II[:,0] / P_GI[:,0]
-            F_test = P_II[:,-1] / P_GI[:,-1]
-            assert np.allclose(F1,F_test), "Scale dependent IA cannot be used with Fast Shear+IA C_ell calculator"
-            F = GSLSpline(chi1, F1)
-            Q = W(chi) + F(chi) * N(chi) / lensing_prefactor(block)
-            kernel = GSLSpline(chi, Q)
-
-        return kernel
-
-
-    def load_one_power(self, block, powerType):
-        self.power[powerType] = limber.load_power_chi(
-            block, self.chi_of_z, powerType.section_name, "k_h", "z", "p_k")
+                raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 
     def load_power(self, block):
-        for powerType in self.req_power:
-            self.load_one_power(block, powerType)
-
+        #Loop through keys in self.req_power_keys, initializing the Power3d
+        #instances and adding to the self.power dictionary.
+        for power_key in self.req_power_keys:
+            powertype, suffix = power_key
+            power = powertype(suffix)
+            power.load_from_block(block, self.chi_of_z)
+            #if power.lin_section_name is not None:
+            #    power.load_from_block(linear=True)
+            self.power[power_key] = power
+    
     def load_power_lin(self, block, k_growth=1.e-3):
         #For the exact projection integral we need
         #i) A P_lin(k,z=0) python spline (this is added to self.power_lin_z0)
@@ -840,62 +696,57 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in range(jmax):
-                c_ell_limber = spectrum.compute( block, self.ell, i, j, 
-                                          relative_tolerance=self.relative_tolerance, 
-                                          absolute_tolerance=self.absolute_tolerance )
-                if spectrum.option_name() in self.do_exact_option_names:
-                    if self.save_limber:
-                        block[spectrum_name, "ell_limber"] = self.ell
-                        block[spectrum_name, 'bin_limber_{}_{}'.format(i+1,j+1)] = c_ell_limber
-                    c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
-                        self.chi_of_z_pyspline, sig_over_dchi=self.sig_over_dchi, 
-                        dlogchi=self.dlogchi, chi_pad_lower=self.chi_pad_lower, 
-                        chi_pad_upper=self.chi_pad_upper)
+                c_ell = spectrum.compute_limber(block, self.ell, i+1, j+1, sig_over_dchi=10)
 
-                    use_limber_inds = np.where(self.ell>self.ell_exact[-1])[0]
-                    ell_out = np.concatenate((self.ell_exact, self.ell[use_limber_inds]))
-                    c_ell = np.concatenate((c_ell_exact, c_ell_limber[use_limber_inds]))
-                    if not self.no_smooth_transition and len(use_limber_inds)>0:
-                        print("""applying smoothing transition in ell range [%f,%f]
-                         between exact and Limber predictions"""%(self.ell_exact[-1], self.limber_transition_end))
-                        #find transition start and end indices
-                        transition_start_ind = len(self.ell_exact)-1
-                        transition_end_ind = np.argmin(np.abs(ell_out-self.limber_transition_end))
-                        ell_transition_end = ell_out[transition_end_ind]
-                        transition_inds = np.arange(transition_start_ind, transition_end_ind+1)
-                        transition_ells = ell_out[transition_inds]
-                        cl_fracdiff_at_transition = c_ell_exact[-1]/c_ell_limber[use_limber_inds[0]-1] - 1.
-                        L_transition = transition_ells[-1]-transition_ells[0] 
-                        x = (ell_transition_end-transition_ells)/L_transition
-                        sin_filter = 1. - 0.5*(np.sin(np.pi*(x+0.5))+1)
-                        transition_filter = np.ones_like(c_ell)
-                        apply_filter_inds = transition_inds[1:]
-                        transition_filter[apply_filter_inds] = 1 + cl_fracdiff_at_transition*sin_filter[1:]
-                        c_ell *= transition_filter
-                else:
-                    ell_out = self.ell
-                    c_ell = c_ell_limber
+                #c_ell_limber = spectrum.compute( block, self.ell, i, j, 
+                #                          relative_tolerance=self.relative_tolerance, 
+                #                          absolute_tolerance=self.absolute_tolerance )
+                #if spectrum.option_name() in self.do_exact_option_names:
+                #    if self.save_limber:
+                #        block[spectrum_name, "ell_limber"] = self.ell
+                #        block[spectrum_name, 'bin_limber_{}_{}'.format(i+1,j+1)] = c_ell_limber
+                #    c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
+                #        self.chi_of_z_pyspline, sig_over_dchi=self.sig_over_dchi, 
+                #        dlogchi=self.dlogchi, chi_pad_lower=self.chi_pad_lower, 
+                #        chi_pad_upper=self.chi_pad_upper)
+#
+                #    use_limber_inds = np.where(self.ell>self.ell_exact[-1])[0]
+                #    ell_out = np.concatenate((self.ell_exact, self.ell[use_limber_inds]))
+                #    c_ell = np.concatenate((c_ell_exact, c_ell_limber[use_limber_inds]))
+                #    if self.smooth_limber_transition and len(use_limber_inds)>0:
+                #        print("""applying smoothing transition in ell range [%f,%f]
+                #         between exact and Limber predictions"""%(self.ell_exact[-1], self.limber_transition_end))
+                #        #find transition start and end indices
+                #        transition_start_ind = len(self.ell_exact)-1
+                #        transition_end_ind = np.argmin(np.abs(ell_out-self.limber_transition_end))
+                #        ell_transition_end = ell_out[transition_end_ind]
+                #        transition_inds = np.arange(transition_start_ind, transition_end_ind+1)
+                #        transition_ells = ell_out[transition_inds]
+                #        cl_fracdiff_at_transition = c_ell_exact[-1]/c_ell_limber[use_limber_inds[0]-1] - 1.
+                #        L_transition = transition_ells[-1]-transition_ells[0] 
+                #        x = (ell_transition_end-transition_ells)/L_transition
+                #        sin_filter = 1. - 0.5*(np.sin(np.pi*(x+0.5))+1)
+                #        transition_filter = np.ones_like(c_ell)
+                #        apply_filter_inds = transition_inds[1:]
+                #        transition_filter[apply_filter_inds] = 1 + cl_fracdiff_at_transition*sin_filter[1:]
+                #        c_ell *= transition_filter
+                #else:
+                #    ell_out = self.ell
+                #    c_ell = c_ell_limber
 
-                block[spectrum_name, sep_name] = ell_out
+
+                block[spectrum_name, sep_name] = self.ell
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
-                if self.get_kernel_peaks:
-                    chi_peak, z_peak = spectrum.kernel_peak(block, i, j, self.a_of_chi)
-                    block[spectrum_name, "chi_peak_{}_{}".format(i + 1, j + 1)] = chi_peak
-                    block[spectrum_name, "z_peak_{}_{}".format(i + 1, j + 1)] = z_peak
-                    block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i + 1, j + 1)] = 60 * np.degrees(1 / chi_peak)
 
     def clean(self):
         # need to manually delete power spectra we have loaded
         self.power.clear()
-        self.power_lin_z0.clear()
-        self.growth_lin.clear()
-        self.power_sublin.clear()
+        #self.power_lin_z0.clear()
+        #self.growth_lin.clear()
+        #self.power_sublin.clear()
 
         # spectra know how to delete themselves, in gsl_wrappers.py
-        for name, kernels in self.kernels_A.items():
-            kernels.clear()
-        for kernels in self.kernels_B.values():
-            kernels.clear()
+        self.kernels.clear()
         self.outputs.clear()
 
     def execute(self, block):
@@ -904,7 +755,7 @@ class SpectrumCalculator(object):
             # self.load_matter_power(block, self.chi_of_z)
             try:
                 self.load_kernels(block)
-                self.load_py_kernels(block, clip=self.clip_nzs)
+                #self.load_py_kernels(block, clip=self.clip_nzs)
             except NullSplineError:
                 sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
                 sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
@@ -916,7 +767,7 @@ class SpectrumCalculator(object):
             if self.save_kernel_zmax > 0:
                 self.save_kernels(block, self.save_kernel_zmax)
             self.load_power(block)
-            self.load_power_lin(block)
+            #self.load_power_lin(block)
             for spectrum in self.req_spectra:
                 if self.verbose:
                     print("Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.get_name()))
