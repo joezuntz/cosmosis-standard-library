@@ -167,7 +167,7 @@ class Spectrum(object):
         return 2 * (alpha[bin] - 1)
 
 
-    def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=10, 
+    def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
         chimin=None, chimax=None):
 
         # Get the required power
@@ -407,7 +407,7 @@ class SpectrumCalculator(object):
         self.clip_chi_kernels = options.get_double(option_section, "clip_chi_kernels", 1.e-6)
         
         #accuracy settings
-        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 10)
+        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 100.)
 
         #accuracy settings for exact integral
         self.dlogchi = options.get_int(option_section, "dlogchi", -1)
@@ -621,11 +621,13 @@ class SpectrumCalculator(object):
                 section_name = "nz_"+sample_name
                 self.kernels[sample_name] = TomoNzKernel.from_block(block, section_name, norm=True)
             if kernel_type == "N":
+                print("setting up N(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, self.dchidz, 
                     clip=self.clip_chi_kernels)
             elif kernel_type == "W":
+                print("setting up W(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, self.dchidz, self.a_of_chi, 
-                    self.chi_distance, clip=self.clip_chi_kernels) 
+                    clip=self.clip_chi_kernels) 
             else:
                 raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 
