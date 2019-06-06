@@ -174,8 +174,9 @@ class Spectrum(object):
         P = self.get_power(block, bin1, bin2)
 
         # Get the kernels
+        print(bin1, bin2)
         K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
-        K2 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[1], bin2)
+        K2 = (self.source.kernels[self.sample_b]).get_kernel_spline(self.kernel_types[1], bin2)
 
         #Need to choose a chimin, chimax and dchi for the integral.
         #By default
@@ -292,7 +293,7 @@ class SpectrumType(Enum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "N")
         autocorrelation = True
-        name = "density_cl"
+        name = "galaxy_cl"
         prefactor_power = 0
 
     class MagnificationDensity(Spectrum):
@@ -315,7 +316,7 @@ class SpectrumType(Enum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "W")
         autocorrelation = False
-        name = "density_shear_cl"
+        name = "galaxy_shear_cl"
         prefactor_power = 1
 
     class DensityIntrinsic(Spectrum):
@@ -697,6 +698,11 @@ class SpectrumCalculator(object):
         block[spectrum_name, 'is_auto'] = spectrum.is_autocorrelation()
 
         spectrum.prep_spectrum( block, self.chi_of_z, na, nbin2=nb)
+
+        print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
+
+        print("kernels:",self.kernels)
+
         for i in range(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
             #but save both orderings to the block to account for different ordering
