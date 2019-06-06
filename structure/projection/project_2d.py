@@ -191,6 +191,7 @@ class Spectrum(object):
         c_ell, c_ell_err = limber_integral(K1, K2, pk_spline, ell.astype(float), chimin, 
             chimax, dchi)
 
+        c_ell *= self.prefactor(block, bin1, bin2)
         return c_ell
 
     def compute_exact(self, block, ell, bin1, bin2, chi_of_z, sig_over_dchi=10, dlogchi=-1, chi_pad_lower=2., 
@@ -604,8 +605,11 @@ class SpectrumCalculator(object):
             self.chi_star = None
         self.chi_max = chi_distance.max()
         self.a_of_chi = GSLSpline(chi_distance, a_distance)
-        self.chi_of_z = GSLSpline(z_distance, chi_distance)
-        self.chi_of_z = interp.interp1d(z_distance, chi_distance, kind='cubic', bounds_error=True)
+        #self.chi_of_z = GSLSpline(z_distance, chi_distance)
+        self.a_of_chi = interp.InterpolatedUnivariateSpline(chi_distance, a_distance)
+        self.chi_of_z = interp.InterpolatedUnivariateSpline(z_distance, chi_distance)
+        self.dchidz = self.chi_of_z.derivative()
+        self.chi_distance = chi_distance
 
     def load_kernels(self, block):
         # During the setup we already decided what kernels (W(z) or N(z) splines)
@@ -617,9 +621,11 @@ class SpectrumCalculator(object):
                 section_name = "nz_"+sample_name
                 self.kernels[sample_name] = TomoNzKernel.from_block(block, section_name, norm=True)
             if kernel_type == "N":
-                self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, clip=self.clip_chi_kernels)
+                self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, self.dchidz, 
+                    clip=self.clip_chi_kernels)
             elif kernel_type == "W":
-                self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, clip=self.clip_chi_kernels) 
+                self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, self.dchidz, self.a_of_chi, 
+                    self.chi_distance, clip=self.clip_chi_kernels) 
             else:
                 raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 
@@ -696,7 +702,7 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in range(jmax):
-                c_ell = spectrum.compute_limber(block, self.ell, i+1, j+1, sig_over_dchi=10)
+                c_ell = spectrum.compute_limber(block, self.ell, i+1, j+1, sig_over_dchi=self.sig_over_dchi)
 
                 #c_ell_limber = spectrum.compute( block, self.ell, i, j, 
                 #                          relative_tolerance=self.relative_tolerance, 
