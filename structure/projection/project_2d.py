@@ -409,6 +409,7 @@ class SpectrumCalculator(object):
         
         #accuracy settings
         self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 100.)
+        self.shear_kernel_nchi = options.get_int(option_section, "shear_kernel_nchi", 5000)
 
         #accuracy settings for exact integral
         self.dlogchi = options.get_int(option_section, "dlogchi", -1)
@@ -628,7 +629,7 @@ class SpectrumCalculator(object):
             elif kernel_type == "W":
                 print("setting up W(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, self.dchidz, self.a_of_chi, 
-                    clip=self.clip_chi_kernels) 
+                    clip=self.clip_chi_kernels, nchi=self.shear_kernel_nchi) 
             else:
                 raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 
