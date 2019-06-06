@@ -16,7 +16,7 @@ class KernelSpline(object):
         if start>0:
             start-=1
             self.y[start]=0.
-        if end<len(x):
+        if end<len(x)-1:
             end+=1
             self.y[end]=0.
 
@@ -48,7 +48,7 @@ class KernelSpline(object):
         self.mean = np.sum(dx * x_mid * y_mid) / np.sum(dx * y_mid)
         var = np.sum(dx * (x_mid - self.mean)**2 * y_mid) / np.sum(dx*y_mid)
         self.sigma = np.sqrt(var)
-        print("Setup kernel with mean(chi), sigma(chi) = %.3f, %.3f"%(self.mean, self.sigma))
+        #print("Setup kernel with mean(chi), sigma(chi) = %.3f, %.3f"%(self.mean, self.sigma))
 
     def __call__(self, x, fill_value=0.):
         if fill_value is not None:
