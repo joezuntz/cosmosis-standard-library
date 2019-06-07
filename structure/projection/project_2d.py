@@ -169,7 +169,6 @@ class Spectrum(object):
         alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
         return 2 * (alpha[bin] - 1)
 
-
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
         chimin=None, chimax=None):
 
@@ -229,7 +228,7 @@ class Spectrum(object):
             kernel2_interp, P0_lin_interp, D_lin_interp, chi_pad_upper=chi_pad_upper,
             chi_pad_lower=chi_pad_lower)
         #print("c_ell_lin:",cell)
-        return c_ell_sublin+cell
+        return c_ell_sublin + cell
 
     def get_power(self, block, bin1, bin2):
         return self.source.power[self.power_3d]
@@ -238,8 +237,8 @@ class Spectrum(object):
         return self.source.power_sublin[self.power_3d]
 
     def get_lin_power_growth(self, block, bin1, bin2):
-        return (self.source.power_lin_z0[self.power_3d], 
-            self.source.growth_lin[self.power_3d])
+        return ( self.source.power_lin_z0[self.power_3d], 
+            self.source.growth_lin[self.power_3d] )
 
     def clean_power(self, P):
         # This gets done later for the base class
@@ -429,11 +428,7 @@ class SpectrumCalculator(object):
         ell_min = options.get_double(option_section, "ell_min")
         ell_max = options.get_double(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
-
-        #Accuracy settings
         self.ell = np.logspace(np.log10(ell_min), np.log10(ell_max), n_ell)
-        #self.absolute_tolerance = options.get_double(option_section, "limber_abs_tol", 0.)
-        #self.relative_tolerance = options.get_double(option_section, "limber_rel_tol", 1.e-3)
 
         #Sort out ells for exact calculation
         if len(self.do_exact_option_names) > 0:
