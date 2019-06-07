@@ -37,6 +37,9 @@ class Power3D(object):
                 self.lin_section_name = None
 
         self.chi_logk_spline = None
+        self.linear_z0_spline = None
+        self.linear_growth_spline = None
+        self.sublin_z0_spline = None
 
     def __hash__(self):
         return hash(self.section_name)
@@ -241,14 +244,6 @@ class Spectrum(object):
     def clean_power(self, P):
         # This gets done later for the base class
         return 0
-
-    def kernel_peak(self, block, bin1, bin2, a_of_chi):
-        K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
-        K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
-        chi_peak = limber.get_kernel_peak(K1, K2)
-        a_peak = a_of_chi(chi_peak)
-        z_peak = 1. / a_peak - 1
-        return chi_peak, z_peak
 
     def prep_spectrum(self, *args, **kwargs):
         # no prep required for base class
