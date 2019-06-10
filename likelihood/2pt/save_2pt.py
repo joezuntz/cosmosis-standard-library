@@ -16,24 +16,38 @@ from twopoint_cosmosis import type_table
 import gaussian_covariance
 from spec_tools import TheorySpectrum, SpectrumInterp, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
 
-def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False ):
+
+def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False, two_thirds_midpoint=False):
     """
     Get scales
     """
     if logspaced:
         log_lims = np.linspace( np.log(x_min), np.log(x_max), nbins+1 )
         lims = np.exp(log_lims)
-        log_mids = 0.5*( log_lims[:-1] + log_lims[1:] )
-        mids = np.exp( log_mids )
+        if two_thirds_midpoint:
+            xmin = lims[:-1]
+            xmax = lims[1:]
+            mids = (2./3.) * (xmax**3 - xmin**3) / (xmax**2 - xmin**2)
+        else:
+            xmin = log_lims[:-1]
+            xmax = log_lims[1:]
+            log_mids = 0.5*(xmin + xmax)
+            mids = np.exp(log_mids)
     else:
-        lims = np.linspace( x_min, x_max, nbins+1 )
-        mids = 0.5 * ( lims[:-1] + lims[1:] )
+        lims = np.linspace(x_min, x_max, nbins+1)
+        xmin = lims[:-1]
+        xmax = lims[1:]
+        if two_thirds_midpoint:
+            mids = (2./3.) * (xmax**3 - xmin**3) / (xmax**2 - xmin**2)
+        else:
+            mids = 0.5 * (xmin + xmax)
+
     return lims, mids
 
-def get_ell_scales( ell_min, ell_max, nbins, logspaced=True ):
+def get_ell_scales( ell_min, ell_max, nbins, logspaced=True, two_thirds_midpoint=False):
     #ells should be integers. So get scales using get_scales and then 
     #convert
-    lims, mids = get_scales( ell_min, ell_max, nbins )
+    lims, mids = get_scales( ell_min, ell_max, nbins, logspaced=logspaced, two_thirds_midpoint=two_thirds_midpoint)
     ell_lims = (np.floor(lims)).astype(int)
     ell_mids = np.exp( 0.5 * ( np.log(ell_lims[1:]) + np.log(ell_lims[:-1]) ) )
     return ell_lims, ell_mids
@@ -57,6 +71,7 @@ def setup(options):
     logspaced = options.get_bool(option_section, "logspaced", True)
     make_covariance = options.get_bool(option_section, "make_covariance", False)
     angle_units = options.get_string(option_section, "angle_units", "")
+    two_thirds_midpoint = options.get_bool(option_section, "two_thirds_midpoint", False)
 
     config = { "make_covariance": make_covariance,
                "logspaced": logspaced, 
@@ -81,7 +96,8 @@ def setup(options):
         theta_min = options.get_double(option_section, "theta_min")
         theta_max = options.get_double(option_section, "theta_max")
         n_theta = options.get_int(option_section, "n_theta")
-        theta_lims, theta_mids = get_scales(theta_min, theta_max, n_theta)
+        theta_lims, theta_mids = get_scales(theta_min, theta_max, n_theta,
+            logspaced=logspaced, two_thirds_midpoint=two_thirds_midpoint)
 
         #Work out what units we're working with
         if angle_units == "":
@@ -115,7 +131,8 @@ def setup(options):
         ell_min = options.get_int(option_section, "ell_min")
         ell_max = options.get_int(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
-        ell_lims, ell_mids = get_ell_scales( ell_min, ell_max, n_ell )
+        ell_lims, ell_mids = get_ell_scales( ell_min, ell_max, n_ell,
+            logspaced=logspaced, two_thirds_midpoint=two_thirds_midpoint)
         config['angle_lims'] = ell_lims
         config['angle_mids'] = ell_mids
         config['angle_lims_userunits'] = config['angle_lims']
