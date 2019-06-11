@@ -12,10 +12,76 @@ import time
 
 inv_sqrt2pi = 1./np.sqrt(2*np.pi)
 
-def limber_integral(kernel1, kernel2, pk_interp_logk, ells, chimin, chimax, dchi,
-    method="trapz"):
-    print("""Doing Limber integral with method %s between 
-        chi_min: %.2e and chi_max: %.2e with step size %.2e"""%(method, chimin, chimax, dchi))
+def nearest_power_of_2(x):
+    #Find nearest, greater power of 2 to x. 
+    return 1<<(x-1).bit_length()
+
+def get_dlogchi(dchi, chimax):
+    #Since our chi values need to be log-spaced (for the fftlog), this dchi
+    #will correspond to the last chi increment. Hence our dlogchi is given by
+    #dlogchi = log(chi_N) - log(chi_{N-1}) = log(chi_N / chi_{N-1})
+    #We can substitute chi_N = chimax and chi_{N-1} = chi_N - dchi to get
+    #dlogchi = log(chimax / (chimax - dchi))
+    dlogchi = np.log(chimax / (chimax-dchi))
+    return dlogchi
+
+def exact_integral(ells, kernel1_interp, kernel2_interp, pk0_interp_logk, growth_interp,
+                    chimin, chimax, dlogchi, chi_pad_upper=1., chi_pad_lower=1., 
+                    verbose=True):
+    """full integral is \int_0^\inf k^{-1} dk P(k,0) I_1(k) I_2(k)
+    where I_1(k) = \int_0^{\inf} k dr_1 F_1(r_1) r^{-0.5} D(r_1) J_{l+0.5}(kr_1),
+    and F_1(r_1) is the radial kernel for tracer 1.
+    We want to use a fftlog for the I_1(k) calculation, so write it in the form 
+    I_1(k) = \int_0^{\inf} k dr_1 f_1(r_1) J_{mu}(kr_1).
+    So f_1(r_1_) = F_1(r_1) D(r_1) r^{-0.5}
+    We actually do the integral in log(k), so calculate \int_0^\inf dlogk P(k,0) I_1(k) I_2(k).
+    """
+    q=0
+    assert chimin>0.
+    log_chimin, log_chimax = np.log(chimin), np.log(chimax)
+    if verbose:
+        print("padding chi values by e^%.2f/%.2f at lower/upper ends"%(chi_pad_lower,chi_pad_upper))
+    log_chimin_padded, log_chimax_padded = log_chimin-chi_pad_lower, log_chimax+chi_pad_upper
+    nchi_orig = np.ceil((log_chimax-log_chimin)/dlogchi).astype(int)
+    nchi = nearest_power_of_2(nchi_orig) #use nchi that is a power of 2 for fast fft.
+    log_chi_vals = np.linspace(log_chimin_padded, log_chimax_padded, nchi)
+    chi_vals = np.exp(log_chi_vals)
+    if verbose:
+        print("chimin padded, chimax padded, nchi padded:", chi_vals[0], chi_vals[-1], len(chi_vals))
+    growth_vals = growth_interp(chi_vals)
+    kernel1_vals = kernel1_interp(chi_vals)
+    auto=False
+    if kernel2_interp is kernel1_interp:
+        kernel2_vals = kernel1_vals
+    else:
+        kernel2_vals = kernel2_interp(chi_vals)
+
+    cell = np.zeros_like(ells)
+    for i_ell, ell in enumerate(ells):
+
+        f1_vals = kernel1_vals * growth_vals * np.power(chi_vals, -0.5)
+        k_vals, I_1 = fft_log(chi_vals, f1_vals, q, ell+0.5)
+        if auto:
+            I_2 = I_1
+        else:
+            f2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
+            _, I_2 = fft_log(chi_vals, f2_vals, q, ell+0.5)
+        logk_vals = np.log(k_vals)
+        pk_vals = pk0_interp_logk(logk_vals)
+        #Now we can compute the full integral \int_0^{\inf} k dk P(k,0) I_1(k) I_2(k)
+        #We are values logspaced in k, so calculate as \int_0^{inf} dlog(k) P(k,0) I_1(k) I_2(k)
+        integrand_vals = pk_vals * I_1 * I_2
+        #Spline and integrate the integrand.
+        integrand_interp = IUS(logk_vals, integrand_vals)
+        integral = integrand_interp.integral(logk_vals.min(), logk_vals.max())
+        cell[i_ell] = integral
+    return cell
+
+def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi,
+    method="trapz", verbose=False):
+    if verbose:
+        print("""Doing Limber integral with method %s between 
+            chi_min: %.2e and chi_max: %.2e with step size %.2e"""%(method, chimin, chimax, dchi))
     assert chimin>0.
     c_ells, c_ell_errs = np.zeros_like(ells), np.zeros_like(ells)
     chi_vals = np.arange(chimin, chimax+dchi, dchi)
