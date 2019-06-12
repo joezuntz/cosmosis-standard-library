@@ -85,14 +85,6 @@ def execute(block, config):
 
     nbina, nbinb = block[cl_section, 'nbin_a'], block[cl_section, 'nbin_b']
 
-    #Copy over info from 
-    #block[output_section, "nbin_a"] = nbina
-    #block[output_section, "nbin_b"] = nbinb
-#
-    #block[output_section, "theta"] = thetas
-    #block[output_section, "save_name"] = save_name
-    #block.put_metadata(output_section, "theta", "unit", "radians")
-
     if not isinstance(output_section, tuple):
         output_section = (output_section,)
         legfacs = (legfacs,)
