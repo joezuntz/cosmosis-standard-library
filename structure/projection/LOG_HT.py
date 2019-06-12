@@ -135,7 +135,7 @@ def u_m_vals_new(m,mu,q,kr,L):
     
     return u_m 
     
-def fft_log(k,f_k,q,mu):
+def fft_log(k,f_k,q,mu,kr=None):
 
 
     if ((q+mu) < -1) :
@@ -175,7 +175,8 @@ def fft_log(k,f_k,q,mu):
     m=np.fft.rfftfreq(N,d=1.)*float(N)
     # make r vector 
     #kr=get_k0(float(N),mu,q,1/k0,L,k0)
-    kr=mu+0.5
+    if kr is None:
+        kr=mu+0.5
     r0=kr/k0
     log_r0=log(r0)
     
