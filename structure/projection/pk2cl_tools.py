@@ -77,6 +77,85 @@ def exact_integral(ells, kernel1_interp, kernel2_interp, pk0_interp_logk, growth
         cell[i_ell] = integral
     return cell
 
+def exact_integral_rsd(ells, kernel1_interp, kernel2_interp,
+    pk0_interp_logk, growth_interp, chimin, chimax, dlogchi,
+    b1_1, b1_2, f_interp, 
+    chi_pad_upper=2., chi_pad_lower=2., 
+    verbose=True ):
+
+    L_0s = (2*ells**2+2*ells-1)/(2*ells+3)/(2*ells-1)
+    L_1s = -ells*(ells-1)/(2*ells-1)/(2*ells+1)
+    L_2s = -(ells+1)*(ells+2)/(2*ells+1)/(2*ells+3)
+    q=0
+    assert chimin>0.
+    log_chimin, log_chimax = np.log(chimin), np.log(chimax)
+    if verbose:
+        print("padding chi values by e^%.2f/%.2f at lower/upper ends"%(chi_pad_lower,chi_pad_upper))
+    log_chimin_padded, log_chimax_padded = log_chimin-chi_pad_lower, log_chimax+chi_pad_upper
+    nchi_orig = np.ceil((log_chimax-log_chimin)/dlogchi).astype(int)
+    nchi = nearest_power_of_2(nchi_orig) #use nchi that is a power of 2 for fast fft.
+    log_chi_vals = np.linspace(log_chimin_padded, log_chimax_padded, nchi)
+    chi_vals = np.exp(log_chi_vals)
+    if verbose:
+        print("chimin padded, chimax padded, nchi padded:", chi_vals[0], chi_vals[-1], len(chi_vals))
+    growth_vals = growth_interp(chi_vals)
+    kernel1_vals = kernel1_interp(chi_vals)
+    auto=False
+    if kernel2_interp is kernel1_interp:
+        kernel2_vals = kernel1_vals
+        auto=True
+    else:
+        kernel2_vals = kernel2_interp(chi_vals)
+
+    f_vals = f_interp(chi_vals) #dlnD/dlna at each chi value
+
+    cell = np.zeros_like(ells)
+
+    #kernel1_deriv_vals = kernel1_interp.derivative()(chi_vals)
+    #kernel2_deriv_vals = kernel2_interp.derivative()(chi_vals)
+
+    for i_ell, ell in enumerate(ells):
+        f1_vals = kernel1_vals * growth_vals * np.power(chi_vals, -0.5)
+        k_vals, I_1 = fft_log(chi_vals, f1_vals, q, ell+0.5)
+        #multiply this term by bias 
+        I_1 *= b1_1
+
+        #Now rsd part.
+        f1_rsd_vals = f1_vals * f_vals
+        k_vals_check, I_1_0 = fft_log(chi_vals, f1_rsd_vals, q, ell+0.5)
+        k_vals_check, I_1_1 = fft_log(chi_vals, f1_rsd_vals, q, ell-1.5, kr=ell+1)
+        assert np.allclose(k_vals_check, k_vals)
+        k_vals_check, I_1_2 = fft_log(chi_vals, f1_rsd_vals, q, ell+2.5, kr=ell+1)
+        assert np.allclose(k_vals_check, k_vals)
+        I_1_rsd = L_0s[i_ell]*I_1_0 + L_1s[i_ell]*I_1_1 + L_2s[i_ell]*I_1_2
+
+        if auto:
+            I_2 = I_1
+            I_2_rsd = I_1_rsd
+        else:
+            f2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
+            _, I_2 = fft_log(chi_vals, f2_vals, q, ell+0.5)
+            #multiply normal term by bias
+            I_2 *= b1_2
+            
+            #Now rsd part
+            f2_rsd_vals = f2_vals * f_vals
+            k_vals_check, I_2_0 = fft_log(chi_vals, f2_rsd_vals, q, ell+0.5)
+            k_vals_check, I_2_1 = fft_log(chi_vals, f2_rsd_vals, q, ell-1.5, kr=ell+1)
+            k_vals_check, I_2_2 = fft_log(chi_vals, f2_rsd_vals, q, ell+2.5, kr=ell+1)
+            I_2_rsd = L_0s[i_ell]*I_2_0 + L_1s[i_ell]*I_2_1 + L_2s[i_ell]*I_2_2
+
+        logk_vals = np.log(k_vals)
+        pk_vals = pk0_interp_logk(logk_vals)
+        #Now we can compute the full integral \int_0^{\inf} k dk P(k,0) I_1(k) I_2(k)
+        #We are values logspaced in k, so calculate as \int_0^{inf} dlog(k) P(k,0) I_1(k) I_2(k)
+        integrand_vals = pk_vals * (I_1 + I_1_rsd) * (I_2 + I_2_rsd)
+        #Spline and integrate the integrand.
+        integrand_interp = IUS(logk_vals, integrand_vals)
+        integral = integrand_interp.integral(logk_vals.min(), logk_vals.max())
+        cell[i_ell] = integral
+    return cell
+
 def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi,
     method="trapz", verbose=False):
     if verbose:

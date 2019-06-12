@@ -9,13 +9,18 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-from pk2cl_tools import limber_integral, get_dlogchi, exact_integral, nearest_power_of_2
+from pk2cl_tools import limber_integral, get_dlogchi, exact_integral, nearest_power_of_2, exact_integral_rsd
 from kernel import TomoNzKernel
 #from pk2cl import get_cl_exact, Kernel, get_dlogchi, resample_power
 
 #for timing 
 from timeit import default_timer as timer
 from datetime import timedelta
+
+def growth_factor_lahav(z, omega_m, omega_lambda):
+    a = omega_m * (1+z)**3
+    b = omega_m * (1+z) - (omega_m + omega_lambda -1)*(1+z)**2 + omega_lambda
+    return (a/b)**(4./7)
 
 class Power3D(object):
     """
@@ -71,7 +76,7 @@ class Power3D(object):
         P_lin_z0 = P_lin[0,:] 
         self.lin_z0_logk_spline = interp.InterpolatedUnivariateSpline(np.log(k_lin), P_lin_z0)
 
-        #Calculate growth factor for exact integral
+        #Calculate growth for exact integral
         #Use (P(k=k_growth, z)/P(k=k_growth, z=0))^0.5
         #Actually just grab closet slice to k_growth
         growth_ind = (np.abs(k_lin-k_growth)).argmin()
@@ -89,6 +94,14 @@ class Power3D(object):
         P_lin_from_growth = np.outer(growth_vals**2, P_lin_z0_resamp)
         P_sublin_vals = self.pk_vals - P_lin_from_growth
         self.sublin_spline = interp.RectBivariateSpline(self.chi_vals, self.logk_vals, P_sublin_vals)
+
+        #When doing RSD, we also need f(a(\chi)) = dln(D(a(chi)))/dlna
+        a_vals = 1/(1+self.z_vals)
+        lnD_of_lna_spline = interp.InterpolatedUnivariateSpline(np.log(a_vals)[::-1], np.log(growth_vals)[::-1])
+        f_vals = (lnD_of_lna_spline.derivative())(np.log(a_vals))
+        self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(self.chi_vals, f_vals)
+        omega_m = block["cosmological_parameters", "omega_m"]
+        omega_lambda = block["cosmological_parameters", "omega_lambda"]
 
 class MatterPower3D(Power3D):
     section = "matter_power_nl"
@@ -226,11 +239,16 @@ class Spectrum(object):
         return c_ell
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
-        chimin=None, chimax=None, dchi_limber=None):
+        chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
         #and then Limber for the non-linear part (P_nl-P_lin)
 
+        #base class doesn't handle rsd, so raise error if do_rsd=True
+        if do_rsd:
+            raise ValueError("%s can't handle do_rsd=True"%self.__name__)
+
         # Get the kernels
+
         K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
         K2 = (self.source.kernels[self.sample_b]).get_kernel_spline(self.kernel_types[1], bin2)
 
@@ -310,6 +328,78 @@ class Spectrum(object):
         # no prep required for base class
         return 0
 
+class LingalLingalSpectrum(Spectrum):
+
+    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
+     sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1., 
+     chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
+        #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
+        #and then Limber for the non-linear part (P_nl-P_lin)
+
+        # Get the kernels
+        K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
+        K2 = (self.source.kernels[self.sample_b]).get_kernel_spline(self.kernel_types[1], bin2)
+
+        lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, bin1, bin2)
+        
+        #Need to choose a chimin, chimax and dchi for the integral.
+        #By default
+        if chimin is None:
+            chimin = max( K1.xmin_clipped, K2.xmin_clipped )
+        if chimax is None:
+            chimax = min( K1.xmax_clipped, K2.xmax_clipped )
+        if dlogchi is None:
+            sig = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
+            #We want a maximum dchi that is sig / sig_over_dchi where sig is the 
+            #width of the narrower kernel.
+            dchi = sig / sig_over_dchi
+            dlogchi = get_dlogchi(dchi, chimax)
+
+        #Exact calculation with linear P(k)
+        f_of_chi_spline = (self.source.power[self.power_key]).f_of_chi_spline
+        if do_rsd:
+            print("DOING RSD, YAY")
+            c_ell = exact_integral_rsd(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
+            chimin, chimax, dlogchi, self.bias_vals_a[bin1], self.bias_vals_b[bin2], f_of_chi_spline, 
+            chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower
+                )
+        else:
+            c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
+                 chimin, chimax, dlogchi, chi_pad_upper=chi_pad_upper,
+                chi_pad_lower=chi_pad_lower)
+            c_ell *= self.bias_vals_a[bin1] * self.bias_vals_b[bin2]
+
+        #Limber with P_nl-P_lin
+        P_sublin_spline = self.get_power_sublin(block, bin1, bin2)
+        if dchi_limber is None:
+            assert (sig_over_dchi is not None)
+            dchi_limber = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
+
+        c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin, 
+            chimax, dchi_limber)
+
+        c_ell += c_ell_sublin
+        c_ell *= self.prefactor(block, bin1, bin2)
+
+        return c_ell
+
+    def prep_spectrum(self, block):
+        #Load in bias values for each bin
+        self.bias_vals_a = {}
+        self.bias_vals_b = {}
+        if self.kernel_types[0] == "N":
+            nbin = self.source.kernels[self.sample_a].nbin
+            for i in range(1,nbin+1):
+                self.bias_vals_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+        if self.kernel_types[1] == "N":
+            if self.sample_b == self.sample_a:
+                self.bias_vals_b = self.bias_vals_a
+            else:
+                nbin = self.source.kernels[self.sample_b].nbin
+                for i in range(1,nbin+1):
+                    self.bias_vals_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
+
+
 # This is pretty cool.
 # You can make an enumeration class which
 # contains a list of possible options for something.
@@ -323,6 +413,7 @@ class SpectrumType(Enum):
         autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
+        has_rsd = False
 
     class ShearIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
@@ -330,6 +421,7 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = names.shear_cl_gi
         prefactor_power = 1
+        has_rsd = False
 
     class IntrinsicIntrinsic(Spectrum):
         power_3d_type = IntrinsicPower3D
@@ -337,6 +429,7 @@ class SpectrumType(Enum):
         autocorrelation = True
         name = names.shear_cl_ii
         prefactor_power = 0
+        has_rsd = False
 
     class IntrinsicbIntrinsicb(Spectrum):
         power_3d_type = IntrinsicBBPower3D
@@ -344,6 +437,7 @@ class SpectrumType(Enum):
         autocorrelation = True
         name = "shear_cl_bb"
         prefactor_power = 0
+        has_rsd = False
 
     #class DensityDensity(Spectrum):
     #    power_3d_type = MatterPower3D
@@ -358,6 +452,7 @@ class SpectrumType(Enum):
         autocorrelation = True
         name = "galaxy_cl"
         prefactor_power = 0
+        has_rsd = False
 
     class MagnificationDensity(Spectrum):
         power_3d_type = MatterPower3D
@@ -366,6 +461,7 @@ class SpectrumType(Enum):
         name = "magnification_density_cl"
         prefactor_power = 1
         magnification_prefactors = (1,)
+        has_rsd = False
 
     class MagnificationMagnification(Spectrum):
         power_3d_type = MatterPower3D
@@ -374,13 +470,15 @@ class SpectrumType(Enum):
         name = "magnification_cl"
         prefactor_power = 2
         magnification_prefactors = (1, 2)
+        has_rsd = False
 
-    class DensityShear(Spectrum):
+    class PositionShear(Spectrum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "W")
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
+        has_rsd = False
 
     class DensityIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
@@ -388,6 +486,7 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_intrinsic_cl"
         prefactor_power = 0
+        has_rsd = False
 
     class MagnificationIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
@@ -396,6 +495,7 @@ class SpectrumType(Enum):
         name = "magnification_intrinsic_cl"
         prefactor_power = 1
         magnification_prefactors = (1,)
+        has_rsd = False
 
     class MagnificationShear(Spectrum):
         power_3d_type = MatterPower3D
@@ -404,6 +504,7 @@ class SpectrumType(Enum):
         name = "magnification_shear_cl"
         prefactor_power = 2
         magnification_prefactors = (1,)
+        has_rsd = False
 
     class ShearCmbkappa(Spectrum):
         power_3d_type = MatterPower3D
@@ -411,6 +512,7 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "shear_cmbkappa_cl"
         prefactor_power = 2
+        has_rsd = False
 
     class CmbkappaCmbkappa(Spectrum):
         power_3d_type = MatterPower3D
@@ -418,6 +520,7 @@ class SpectrumType(Enum):
         autocorrelation = True
         name = "cmbkappa_cl"
         prefactor_power = 2
+        has_rsd = False
 
     class IntrinsicCmbkappa(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
@@ -425,6 +528,7 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "intrinsic_cmbkappa_cl"
         prefactor_power = 1
+        has_rsd = False
 
     class DensityCmbkappa(Spectrum):
         power_3d_type = MatterPower3D
@@ -432,6 +536,7 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_cmbkappa_cl"
         prefactor_power = 1
+        has_rsd = False
 
     class FastShearShearIA(Spectrum):
         """
@@ -444,6 +549,7 @@ class SpectrumType(Enum):
         autocorrelation = True
         name = names.shear_cl
         prefactor_power = 2
+        has_rsd = False
 
     class FastDensityShearIA(Spectrum):
         power_3d_type = MatterPower3D
@@ -451,6 +557,85 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_power = 1
+        has_rsd = False
+
+    class LingalLingal(LingalLingalSpectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "N")
+        autocorrelation = True
+        name = "galaxy_cl"
+        prefactor_power = 0   
+        has_rsd = True
+
+class LingalLingalSpectrum(Spectrum):
+
+    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
+     sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1., 
+     chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
+        #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
+        #and then Limber for the non-linear part (P_nl-P_lin)
+
+        # Get the kernels
+        K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
+        K2 = (self.source.kernels[self.sample_b]).get_kernel_spline(self.kernel_types[1], bin2)
+
+        lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, bin1, bin2)
+        
+        #Need to choose a chimin, chimax and dchi for the integral.
+        #By default
+        if chimin is None:
+            chimin = max( K1.xmin_clipped, K2.xmin_clipped )
+        if chimax is None:
+            chimax = min( K1.xmax_clipped, K2.xmax_clipped )
+        if dlogchi is None:
+            sig = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
+            #We want a maximum dchi that is sig / sig_over_dchi where sig is the 
+            #width of the narrower kernel.
+            dchi = sig / sig_over_dchi
+            dlogchi = get_dlogchi(dchi, chimax)
+
+        #Exact calculation with linear P(k)
+        f_of_chi_spline = (self.source.power[self.power_key]).f_of_chi_spline
+        if do_rsd:
+            c_ell = exact_integral_rsd(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
+            chimin, chimax, dlogchi, self.bias_vals_a[bin1], self.bias_vals_b[bin2], f_of_chi_spline, 
+            chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower
+                )
+        else:
+            c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
+                 chimin, chimax, dlogchi, chi_pad_upper=chi_pad_upper,
+                chi_pad_lower=chi_pad_lower)
+            c_ell *= self.bias_vals_a[bin1] * self.bias_vals_b[bin2]
+
+        #Limber with P_nl-P_lin
+        P_sublin_spline = self.get_power_sublin(block, bin1, bin2)
+        if dchi_limber is None:
+            assert (sig_over_dchi is not None)
+            dchi_limber = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
+
+        c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin, 
+            chimax, dchi_limber)
+
+        c_ell += c_ell_sublin
+        c_ell *= self.prefactor(block, bin1, bin2)
+
+        return c_ell
+
+    def prep_spectrum(self, block):
+        #Load in bias values for each bin
+        self.bias_vals_a = {}
+        self.bias_vals_b = {}
+        if self.kernel_types[0] == "N":
+            nbin = self.source.kernels[self.sample_a].nbin
+            for i in range(1,nbin+1):
+                self.bias_vals_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+        if self.kernel_types[1] == "N":
+            if self.sample_b == self.sample_a:
+                self.bias_vals_b = self.bias_vals_a
+            else:
+                nbin = self.source.kernels[self.sample_b].nbin
+                for i in range(1,nbin+1):
+                    self.bias_vals_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
 
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
@@ -521,15 +706,11 @@ class SpectrumCalculator(object):
             _, unique_inds = np.unique(self.ell_exact, return_index=True)
             self.ell_exact = self.ell_exact[unique_inds]
             self.n_ell_exact = len(self.ell_exact)
+            self.do_rsd = options.get_bool(option_section, "do_rsd", False)
             self.exact_kwargs = { "sig_over_dchi": sig_over_dchi_exact,
                                "dlogchi": self.dlogchi,
                                "chi_pad_lower": self.chi_pad_lower,
                                "chi_pad_upper": self.chi_pad_upper}
-
-            #also slip limber_ell_start into the ell values for the limber calculation
-            #as it's nice to have both methods at the transition.
-            #low = self.ell_limber<self.limber_ell_start
-            #self.ell_limber = np.concatenate((self.ell_limber[low], np.array([self.limber_ell_start]), self.ell_limber[~low]))
         else:
             self.exact_kwargs = None
 
@@ -757,7 +938,7 @@ class SpectrumCalculator(object):
         #Save is_auto 
         block[spectrum.section_name, 'is_auto'] = spectrum.is_autocorrelation()
 
-        spectrum.prep_spectrum( block, self.chi_of_z, na, nbin2=nb)
+        spectrum.prep_spectrum( block )
 
         print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
 
@@ -770,49 +951,15 @@ class SpectrumCalculator(object):
             for j in range(jmax):
 
                 if spectrum.section_name in self.do_exact_section_names:
+                    exact_kwargs = dict(self.exact_kwargs)
+                    if spectrum.has_rsd:
+                        exact_kwargs["do_rsd"] = self.do_rsd
                     ell, c_ell = spectrum.compute(block, self.ell_limber, i+1, j+1, 
                         sig_over_dchi_limber=self.sig_over_dchi, ell_exact=self.ell_exact,
-                        exact_kwargs=self.exact_kwargs)
+                        exact_kwargs=exact_kwargs)
                 else:
                     ell, c_ell = spectrum.compute(block, self.ell_limber, i+1, j+1, 
                         sig_over_dchi_limber=self.sig_over_dchi)
-
-                #c_ell_limber = spectrum.compute( block, self.ell, i, j, 
-                #                          relative_tolerance=self.relative_tolerance, 
-                #                          absolute_tolerance=self.absolute_tolerance )
-                #if spectrum.option_name() in self.do_exact_option_names:
-                #    if self.save_limber:
-                #        block[spectrum_name, "ell_limber"] = self.ell
-                #        block[spectrum_name, 'bin_limber_{}_{}'.format(i+1,j+1)] = c_ell_limber
-                #    c_ell_exact = spectrum.compute_exact(block, self.ell_exact, i, j, 
-                #        self.chi_of_z_pyspline, sig_over_dchi=self.sig_over_dchi, 
-                #        dlogchi=self.dlogchi, chi_pad_lower=self.chi_pad_lower, 
-                #        chi_pad_upper=self.chi_pad_upper)
-#
-                #    use_limber_inds = np.where(self.ell>self.ell_exact[-1])[0]
-                #    ell_out = np.concatenate((self.ell_exact, self.ell[use_limber_inds]))
-                #    c_ell = np.concatenate((c_ell_exact, c_ell_limber[use_limber_inds]))
-                #    if self.smooth_limber_transition and len(use_limber_inds)>0:
-                #        print("""applying smoothing transition in ell range [%f,%f]
-                #         between exact and Limber predictions"""%(self.ell_exact[-1], self.limber_transition_end))
-                #        #find transition start and end indices
-                #        transition_start_ind = len(self.ell_exact)-1
-                #        transition_end_ind = np.argmin(np.abs(ell_out-self.limber_transition_end))
-                #        ell_transition_end = ell_out[transition_end_ind]
-                #        transition_inds = np.arange(transition_start_ind, transition_end_ind+1)
-                #        transition_ells = ell_out[transition_inds]
-                #        cl_fracdiff_at_transition = c_ell_exact[-1]/c_ell_limber[use_limber_inds[0]-1] - 1.
-                #        L_transition = transition_ells[-1]-transition_ells[0] 
-                #        x = (ell_transition_end-transition_ells)/L_transition
-                #        sin_filter = 1. - 0.5*(np.sin(np.pi*(x+0.5))+1)
-                #        transition_filter = np.ones_like(c_ell)
-                #        apply_filter_inds = transition_inds[1:]
-                #        transition_filter[apply_filter_inds] = 1 + cl_fracdiff_at_transition*sin_filter[1:]
-                #        c_ell *= transition_filter
-                #else:
-                #    ell_out = self.ell
-                #    c_ell = c_ell_limber
-
 
                 block[spectrum.section_name, sep_name] = ell
                 block[spectrum.section_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
