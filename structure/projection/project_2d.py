@@ -473,8 +473,8 @@ class SpectrumCalculator(object):
         self.clip_chi_kernels = options.get_double(option_section, "clip_chi_kernels", 1.e-6)
         
         #accuracy settings
-        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 100.)
-        self.shear_kernel_nchi = options.get_int(option_section, "shear_kernel_nchi", 5000)
+        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 50.)
+        self.shear_kernel_nchi = options.get_int(option_section, "shear_kernel_nchi", 2000)
 
         self.limber_transition_end = options.get_double(option_section,
             "limber_transition_end", -1.)
