@@ -562,7 +562,6 @@ class LingalLingalSpectrum(Spectrum):
                 for i in range(1,nbin+1):
                     self.bias_vals_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
 
-
 # This is pretty cool.
 # You can make an enumeration class which
 # contains a list of possible options for something.
@@ -1037,8 +1036,6 @@ class SpectrumCalculator(object):
         else:
             self.chi_star = None
         self.chi_max = chi_distance.max()
-        self.a_of_chi = GSLSpline(chi_distance, a_distance)
-        #self.chi_of_z = GSLSpline(z_distance, chi_distance)
         self.a_of_chi = interp.InterpolatedUnivariateSpline(chi_distance, a_distance)
         self.chi_of_z = interp.InterpolatedUnivariateSpline(z_distance, chi_distance)
         self.dchidz = self.chi_of_z.derivative()
@@ -1081,9 +1078,7 @@ class SpectrumCalculator(object):
     def load_lensing_prefactor(self, block):
         self.lensing_prefactor = lensing_prefactor(block)
 
-    def compute_spectra(self, block, spectrum):
-
-        print("doing spectrum:", spectrum.section_name)
+    def compute_spectrum(self, block, spectrum):
 
         #Save some info about the spectrum
         block[spectrum.section_name, "save_name"] = spectrum.save_name
@@ -1135,15 +1130,20 @@ class SpectrumCalculator(object):
         self.lensing_prefactor = None
 
     def execute(self, block):
+        """
+        Execute the pipeline step by loading the relevant data from the block
+        (distance splines, kernels, P(k)s) and compute the C(l)s.
+        """
         try:
+            #Load distance splines
             self.load_distance_splines(block)
-            # self.load_matter_power(block, self.chi_of_z)
+
+            #Load the kernels.
             try:
                 t0 = timer()
                 self.load_kernels(block)
                 t1 = timer()
                 print("time to set up kernels: %s"%(str(timedelta(seconds=(t1-t0)))))
-                #self.load_py_kernels(block, clip=self.clip_nzs)
             except NullSplineError:
                 sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
                 sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
@@ -1154,17 +1154,22 @@ class SpectrumCalculator(object):
                 return 1
             if self.save_kernel_zmax > 0:
                 self.save_kernels(block, self.save_kernel_zmax)
+
+            #Load the P(k)s
             t0 = timer()
             self.load_power(block)
+
+            #Load the lensing prefactor
             self.load_lensing_prefactor(block)
             t1 = timer()
             print("time to load power: %s"%(str(timedelta(seconds=(t1-t0)))))
-            #self.load_power_lin(block)
+
+            #Now loop through the required spectra calling the compute function
             for spectrum in self.req_spectra:
                 t0 = timer()
                 if self.verbose:
                     print("Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.section_name))
-                self.compute_spectra(block, spectrum)
+                self.compute_spectrum(block, spectrum)
                 t1 = timer()
                 print("time to compute spectrum %s: %s"%(spectrum.section_name, str(timedelta(seconds=(t1-t0)))) )
         finally:
