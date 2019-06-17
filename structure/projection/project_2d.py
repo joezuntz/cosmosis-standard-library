@@ -11,7 +11,6 @@ import sys
 import scipy.interpolate as interp
 from pk2cl_tools import limber_integral, get_dlogchi, exact_integral, nearest_power_of_2, exact_integral_rsd
 from kernel import TomoNzKernel
-#from pk2cl import get_cl_exact, Kernel, get_dlogchi, resample_power
 
 #for timing 
 from timeit import default_timer as timer
@@ -26,12 +25,29 @@ class Power3D(object):
     """
     Class representing the 3D power spectrum that enters the Limber calculation.
     Most Power spectra are source-specific, like intrinsic alignments and galaxy
-    density.  Others are generic, like matter_power (linear and nonlinear)
+    density.  Others are generic, like the matter power spectrum. The base class
+    is not intended to be called directly, and inherited classes must
+    specify these:
+    - section : str
+        name of section to read P(k) from
+    - source_specific : bool
+        Whether or not this is source-specifc
+    and may specify
+    - lin_section : str
+        A corresponding linear version of the P(k) to use in the exact
+        projection calculation.
     """
-    # Must specify these:
-    # section = "?????"
-    # source_specific = None
     def __init__(self, suffix=""):
+        """
+        Initialize a Power3D instance. This sets the section name
+        from which to read in the P(k) data.
+
+        Parameters
+        ----------
+        suffix: str
+            append this suffix to self.section to form section_name
+            from which to read in P(k) data.
+        """
         if self.source_specific:
             self.section_name = self.section + suffix
             try:
@@ -45,6 +61,7 @@ class Power3D(object):
             except AttributeError:
                 self.lin_section_name = None
 
+        #These splines get set later, since they are cosmology dependent
         self.chi_logk_spline = None
         self.lin_z0_logk_spline = None
         self.lin_growth_spline = None
@@ -54,6 +71,16 @@ class Power3D(object):
         return hash(self.section_name)
 
     def load_from_block(self, block, chi_of_z):
+        """
+        Load the z, k, and P(k) values from the block,
+        and set the P(chi, log(k)) spline.
+        Parameters
+        ----------
+        block: DataBlock instance
+            block from which to read data
+        chi_of_z:
+            chi(z) spline 
+        """
         z, k, pk = block.get_grid( self.section_name, "z", "k_h", "p_k" )
         self.z_vals = z
         self.chi_vals = chi_of_z(z)
@@ -61,14 +88,34 @@ class Power3D(object):
         self.logk_vals = np.log(k)
         self.pk_vals = pk
 
+        self.set_chi_logk_spline()
+
     def set_chi_logk_spline(self):
+        """
+        Set P(chi, log(k)) spline
+        """
         self.chi_logk_spline = interp.RectBivariateSpline(self.chi_vals, self.logk_vals, self.pk_vals)
 
     def set_nonlimber_splines(self, block, chi_of_z, k_growth=1.e-3):
-        #For the exact projection integral we need
-        #i) A P_lin(k,z=0) python spline (this is added to self.power_lin_z0)
-        #ii) A D_lin(chi) python spline (this is added to self.growth_lin)
-        #iii) A (P_nl - P_lin) 2d (chi,k) spline to feed into the Limber calculation
+        """
+        Set up various splines etc. needed for the exact projection
+        calculation
+        For the exact projection integral we need
+        i) A P_lin(k,z=0) python spline, this is assigned to self.lin_z0_logk_spline
+        ii) A D_lin(chi) python spline, this is assigned to self.lin_growth_spline
+        iii) A (P_nl - P_lin) 2d (chi,k) spline to feed into the Limber calculation,
+        this is assigned to self.sublin_spline.
+
+        Parameters
+        ----------
+        block: DataBlock instance
+            block from which to read data
+        chi_of_z: python spline (e.g. from interp1d or InterpolatedUnivariateSpline)
+            chi(z) spline 
+        k_growth: float
+            Value of k (in linear regime) at which to caluclate growth factor from
+            the linear power spectrum.
+        """
         z_lin, k_lin, P_lin = block.get_grid(self.lin_section_name, "z", "k_h", "p_k")
         chi_lin = chi_of_z(z_lin)
         
@@ -97,11 +144,12 @@ class Power3D(object):
 
         #When doing RSD, we also need f(a(\chi)) = dln(D(a(chi)))/dlna
         a_vals = 1/(1+self.z_vals)
+        #Make ln(D)(ln(a)) spline
         lnD_of_lna_spline = interp.InterpolatedUnivariateSpline(np.log(a_vals)[::-1], np.log(growth_vals)[::-1])
+        #And take derivative
         f_vals = (lnD_of_lna_spline.derivative())(np.log(a_vals))
+        #Now can set f(chi) spline.
         self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(self.chi_vals, f_vals)
-        omega_m = block["cosmological_parameters", "omega_m"]
-        omega_lambda = block["cosmological_parameters", "omega_lambda"]
 
 class MatterPower3D(Power3D):
     section = "matter_power_nl"
@@ -912,7 +960,6 @@ class SpectrumCalculator(object):
             powertype, suffix, do_exact = power_options
             power = powertype(suffix)
             power.load_from_block(block, self.chi_of_z)
-            power.set_chi_logk_spline()
             if do_exact:
                 print("setting nonlimber splines for power", powertype, suffix)
                 power.set_nonlimber_splines(block, self.chi_of_z)
