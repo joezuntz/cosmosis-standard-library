@@ -192,16 +192,27 @@ def lensing_prefactor(block):
     return shear_scaling
 
 class Spectrum(object):
+    """
+    Class for calculating a specific type of P(k,z) -> C(l) projection
+    integral. Again this base class is not meant to be called directly.
+    Child classes should specify:
+    autocorrelation: bool
+        whether this is an autocorrelation (note e.g. a shear-shear 
+        correlation between two samples counts as an autocorrelation 
+        in this context)
+    kernel_types: (str, str)
+        tuple specifying the two kernel types e.g. "W" for lensing,
+        "N" for number counts
+    name: str
+        default section name for this spectrum e.g. shear_cl 
+    prefactor_type: (str, str)
+        tuple of prefactor type e.g. "lensing", None, "mag"
+    """
     autocorrelation = False
     #These should make it more obvious if the values are not overwritten by subclasses
-    power_3d_key = ("?", "?")
     kernel_types = ("?", "?")
     name = "?"
-    prefactor_power = np.nan
-    # the default is no magnification. If the two fields are magnification terms
-    # that should pick up factors of 2 alpha_i - 1
-    # then subclasses should include 1 and/or 2 in this.
-    magnification_prefactors = {}
+    prefactor_type = ("", "")
 
     def __init__(self, source, sample_a, sample_b, power_key, save_name=""):
         # caches of n(z), w(z), P(k,z), etc.
@@ -236,25 +247,33 @@ class Spectrum(object):
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
         return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
-    def prefactor(self, block, bin1, bin2):
-        if self.prefactor_power == 0:
-            # This should be okay for the magnification terms
-            # since none of those have prefactor_power==0
-            return 1.0
-        c_kms = 299792.4580
-        omega_m = block[names.cosmological_parameters, "omega_m"]
-        shear_scaling = 1.5 * (100.0 * 100.0) / (c_kms * c_kms) * omega_m
-        f = shear_scaling ** self.prefactor_power
-        if 1 in self.magnification_prefactors:
-            f *= self.magnification_prefactor(block, bin1)
-        if 2 in self.magnification_prefactors:
-            f *= self.magnification_prefactor(block, bin2)
+    def get_prefactor(self, block, bin1, bin2):
+        """
+        Get prefactors for C(l) (e.g. for lensing or magnification)
+        """
+        prefactor = 1
+        #first prefactor
+        if prefactor_type[0] is None:
+            pass
+        elif prefactor_type[0]=="lensing":
+            prefactor *= self.source.lensing_prefactor
+        elif prefactor_type[0]=="mag":
+            prefactor *= self.get_magnifaction_prefactor(self, block, bin1)
+
+        #second prefactor
+        if prefactor_type[1] is None:
+            pass
+        elif prefactor_type[1]=="lensing":
+            prefactor *= self.source.lensing_prefactor
+        elif prefactor_type[1]=="mag":
+            prefactor *= self.get_magnifaction_prefactor(self, block, bin2)
+
         return f
 
     # Some spectra include a magnification term for one or both bins.
     # In those cases an additional term from the galaxy luminosity
     # function is included in the prefactor.
-    def magnification_prefactor(self, block, bin):
+    def get_magnifaction_prefactor(self, block, bin):
         # Need to move this so that it references a particular
         # galaxy sample not the generic galaxy_luminosity_function
         alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
@@ -262,7 +281,38 @@ class Spectrum(object):
 
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
         chimin=None, chimax=None):
+        """
+        Calculate the Limber integral
+        C(l) = \int d(chi) K_a(chi) K_b(chi) P(ell+0.5/chi, chi) / chi^2
 
+        Most common usage will be to set dchi, chimin, chimax = None
+        chimin and chimax will then be extracted from the kernels,
+        and dchi will be calculated from the kernel width and sig_over_dchi
+
+        Parameters
+        ----------
+        block: DataBlock instance
+            block from which to read data
+        ell: float array
+            np.array of ell values at which to calculate C(l)
+        bin1: int
+            first tomographic bin index (starting from 1)
+        bin2: int
+            second tomographic bin index (starting from 2)
+        dchi: float
+            spacing in dchi at which to compute integral
+        sig_over_dchi: float
+            ratio between width of kernel sigma and dchi
+        chimin:
+            minimum chi for integral over chi
+        chimax:
+            maximum chi for integral over chi
+
+        Returns
+        -------
+        c_ell: float array
+            array of C(l) values
+        """
         # Get the required power
         P_chi_logk_spline = self.get_power_spline(block, bin1, bin2)
 
@@ -288,18 +338,52 @@ class Spectrum(object):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
-        #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
-        #and then Limber for the non-linear part (P_nl-P_lin)
+        """
+        The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
+        and then Limber for the non-linear part (P_nl-P_lin)
+        Parameters
+        ----------
+        block: DataBlock instance
+            block from which to read data
+        ell: float array
+            np.array of ell values at which to calculate C(l)
+        bin1: int
+            first tomographic bin index (starting from 1)
+        bin2: int
+            second tomographic bin index (starting from 2)
+        dchi: float
+            spacing in dchi at which to compute integral
+        sig_over_dchi: float
+            ratio between width of kernel sigma and dchi
+        chimin:
+            minimum chi for integral over chi
+        chimax:
+            maximum chi for integral over chi
+        chi_pad_lower:
+            extend the integral over log(chi) lower limit by
+            this factor (maybe required for good fftlog behaviour)
+        chi_pad_upper:
+            extend the integral over log(chi) upper limit by
+            this factor (maybe required for good fftlog behaviour)
+        dchi_limber:
+            chi spacing to use for Limber integral part of calculation
+
+        Returns
+        -------
+        c_ell: float array
+            array of C(l) values
+
+        """
 
         #base class doesn't handle rsd, so raise error if do_rsd=True
         if do_rsd:
             raise ValueError("%s can't handle do_rsd=True"%self.__name__)
 
         # Get the kernels
-
         K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
         K2 = (self.source.kernels[self.sample_b]).get_kernel_spline(self.kernel_types[1], bin2)
 
+        # Get the P(log(k), z=0) and growth(chi) splines
         lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, bin1, bin2)
         
         #Need to choose a chimin, chimax and dchi for the integral.
@@ -315,21 +399,22 @@ class Spectrum(object):
             dchi = sig / sig_over_dchi
             dlogchi = get_dlogchi(dchi, chimax)
 
-        #Exact calculation with linear P(k)
+        #Call the exact calculation with linear P(k) spline
         c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
             chimin, chimax, dlogchi, chi_pad_upper=chi_pad_upper,
             chi_pad_lower=chi_pad_lower)
 
-        #Limber with P_nl-P_lin
+        #Now call Limber integral with P_nl-P_lin
         P_sublin_spline = self.get_power_sublin(block, bin1, bin2)
         if dchi_limber is None:
             assert (sig_over_dchi is not None)
             dchi_limber = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
-
         c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin, 
             chimax, dchi_limber)
 
+        #Sum the two terms.
         c_ell += c_ell_sublin
+        #apply prefactor.
         c_ell *= self.prefactor(block, bin1, bin2)
 
         return c_ell
@@ -337,6 +422,31 @@ class Spectrum(object):
     def compute(self, block, ell_limber, bin1, bin2, 
         dchi_limber=None, sig_over_dchi_limber=100., chimin=None, chimax=None, 
         ell_exact=None, exact_kwargs=None, cut_ell_limber=True):
+        """
+        Do the C(l) calculation via calling compute_limber and/or compute_exact.
+        Parameters
+        ----------
+        block: DataBlock instance
+            block from which to read data
+        ell_limber: float array
+            np.array of ell values at which to calculate C(l) via Limber
+        bin1: int
+            first tomographic bin index (starting from 1)
+        bin2: int
+            second tomographic bin index (starting from 2)
+        dchi_limber: float
+            spacing in dchi at which to compute limber integral
+        sig_over_dchi_limber: float
+            ratio between width of kernel sigma and dchi for limber integral
+        chimin: float
+            minimum chi for integral over chi
+        chimax: float
+            maximum chi for integral over chi
+        ell_exact: np.array
+            ell values for exact integral
+        exact_kwargs: dict
+            Dictionary of keyword arguments for the exact integral
+        """
 
         if ell_exact is not None:
             if cut_ell_limber:
@@ -377,6 +487,11 @@ class Spectrum(object):
         return 0
 
 class LingalLingalSpectrum(Spectrum):
+    """
+    Class for calculating clustering C(l) for a linearly biased galaxy 
+    sample. We overwrite the exact calculation to include the option
+    to do RSD.
+    """
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
      sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1., 
@@ -460,7 +575,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "W")
         autocorrelation = True
         name = names.shear_cl
-        prefactor_power = 2
+        prefactor_type = ("lensing", "lensing")
         has_rsd = False
 
     class ShearIntrinsic(Spectrum):
@@ -468,7 +583,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "N")
         autocorrelation = False
         name = names.shear_cl_gi
-        prefactor_power = 1
+        prefactor_type = ("lensing", None)
         has_rsd = False
 
     class IntrinsicIntrinsic(Spectrum):
@@ -476,7 +591,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "N")
         autocorrelation = True
         name = names.shear_cl_ii
-        prefactor_power = 0
+        prefactor_type = (None, None)
         has_rsd = False
 
     class IntrinsicbIntrinsicb(Spectrum):
@@ -484,7 +599,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "N")
         autocorrelation = True
         name = "shear_cl_bb"
-        prefactor_power = 0
+        prefactor_type = (None, None)
         has_rsd = False
 
     #class DensityDensity(Spectrum):
@@ -499,7 +614,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "N")
         autocorrelation = True
         name = "galaxy_cl"
-        prefactor_power = 0
+        prefactor_type = (None, None)
         has_rsd = False
 
     class MagnificationDensity(Spectrum):
@@ -507,8 +622,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "N")
         autocorrelation = False
         name = "magnification_density_cl"
-        prefactor_power = 1
-        magnification_prefactors = (1,)
+        prefactor_type = ("mag", None)
         has_rsd = False
 
     class MagnificationMagnification(Spectrum):
@@ -516,8 +630,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "W")
         autocorrelation = True
         name = "magnification_cl"
-        prefactor_power = 2
-        magnification_prefactors = (1, 2)
+        prefactor_type = ("mag", "mag")
         has_rsd = False
 
     class PositionShear(Spectrum):
@@ -525,7 +638,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "W")
         autocorrelation = False
         name = "galaxy_shear_cl"
-        prefactor_power = 1
+        prefactor_type = (None, "lensing")
         has_rsd = False
 
     class DensityIntrinsic(Spectrum):
@@ -533,7 +646,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "N")
         autocorrelation = False
         name = "galaxy_intrinsic_cl"
-        prefactor_power = 0
+        prefactor_type = (None, None)
         has_rsd = False
 
     class MagnificationIntrinsic(Spectrum):
@@ -541,8 +654,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "N")
         autocorrelation = False
         name = "magnification_intrinsic_cl"
-        prefactor_power = 1
-        magnification_prefactors = (1,)
+        prefactor_type = ("mag", None)
         has_rsd = False
 
     class MagnificationShear(Spectrum):
@@ -550,8 +662,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "W")
         autocorrelation = False
         name = "magnification_shear_cl"
-        prefactor_power = 2
-        magnification_prefactors = (1,)
+        prefactor_type = ("mag", "lensing")
         has_rsd = False
 
     class ShearCmbkappa(Spectrum):
@@ -559,7 +670,7 @@ class SpectrumType(Enum):
         kernel_types = ("W", "K")
         autocorrelation = False
         name = "shear_cmbkappa_cl"
-        prefactor_power = 2
+        prefactor_type = ("lensing", "lensing")
         has_rsd = False
 
     class CmbkappaCmbkappa(Spectrum):
@@ -567,7 +678,7 @@ class SpectrumType(Enum):
         kernel_types = ("K", "K")
         autocorrelation = True
         name = "cmbkappa_cl"
-        prefactor_power = 2
+        prefactor_type = ("lensing", "lensing")
         has_rsd = False
 
     class IntrinsicCmbkappa(Spectrum):
@@ -575,7 +686,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "K")
         autocorrelation = False
         name = "intrinsic_cmbkappa_cl"
-        prefactor_power = 1
+        prefactor_type = (None, "lensing")
         has_rsd = False
 
     class DensityCmbkappa(Spectrum):
@@ -583,7 +694,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "K")
         autocorrelation = False
         name = "galaxy_cmbkappa_cl"
-        prefactor_power = 1
+        prefactor_type = (None, "lensing")
         has_rsd = False
 
     class FastShearShearIA(Spectrum):
@@ -596,7 +707,7 @@ class SpectrumType(Enum):
         kernel_types = ("F", "F")
         autocorrelation = True
         name = names.shear_cl
-        prefactor_power = 2
+        prefactor_type = ("","")
         has_rsd = False
 
     class FastDensityShearIA(Spectrum):
@@ -604,7 +715,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "F")
         autocorrelation = False
         name = "galaxy_shear_cl"
-        prefactor_power = 1
+        prefactor_type = ("","")
         has_rsd = False
 
     class LingalLingal(LingalLingalSpectrum):
@@ -612,7 +723,7 @@ class SpectrumType(Enum):
         kernel_types = ("N", "N")
         autocorrelation = True
         name = "galaxy_cl"
-        prefactor_power = 0   
+        prefactor_type = (None, None)
         has_rsd = True
 
 class LingalLingalSpectrum(Spectrum):
@@ -967,6 +1078,9 @@ class SpectrumCalculator(object):
             self.power[power_key] = power
             print power_options, power.lin_growth_spline
 
+    def load_lensing_prefactor(self, block):
+        self.lensing_prefactor = lensing_prefactor(block)
+
     def compute_spectra(self, block, spectrum):
 
         print("doing spectrum:", spectrum.section_name)
@@ -1014,13 +1128,11 @@ class SpectrumCalculator(object):
     def clean(self):
         # need to manually delete power spectra we have loaded
         self.power.clear()
-        #self.power_lin_z0.clear()
-        #self.growth_lin.clear()
-        #self.power_sublin.clear()
 
         # spectra know how to delete themselves, in gsl_wrappers.py
         self.kernels.clear()
         self.outputs.clear()
+        self.lensing_prefactor = None
 
     def execute(self, block):
         try:
@@ -1044,6 +1156,7 @@ class SpectrumCalculator(object):
                 self.save_kernels(block, self.save_kernel_zmax)
             t0 = timer()
             self.load_power(block)
+            self.load_lensing_prefactor(block)
             t1 = timer()
             print("time to load power: %s"%(str(timedelta(seconds=(t1-t0)))))
             #self.load_power_lin(block)
