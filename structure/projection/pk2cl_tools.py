@@ -266,7 +266,7 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
                 k_vals_check, I_2_1 = fft_log(chi_vals, f2_rsd_vals, 0, ell-1.5, kr=ell+1)
                 k_vals_check, I_2_2 = fft_log(chi_vals, f2_rsd_vals, 0, ell+2.5, kr=ell+1)
                 I_2_rsd = L_0s[i_ell]*I_2_0 + L_1s[i_ell]*I_2_1 + L_2s[i_ell]*I_2_2
-            I_2 += I_2_rsd
+                I_2 += I_2_rsd
 
         logk_vals = np.log(k_vals)
         pk_vals = pk0_interp_logk(logk_vals)
