@@ -275,7 +275,8 @@ class Spectrum(object):
     def get_magnifaction_prefactor(self, block, bin):
         # Need to move this so that it references a particular
         # galaxy sample not the generic galaxy_luminosity_function
-        alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, "alpha_binned"]))
+        alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, 
+            "alpha_binned"]))
         return 2 * (alpha[bin] - 1)
 
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
@@ -335,7 +336,8 @@ class Spectrum(object):
         c_ell *= self.get_prefactor(block, bin1, bin2)
         return c_ell
 
-    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
+        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         """
         The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
@@ -408,8 +410,8 @@ class Spectrum(object):
         if dchi_limber is None:
             assert (sig_over_dchi is not None)
             dchi_limber = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
-        c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin, 
-            chimax, dchi_limber)
+        c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, 
+            chimin, chimax, dchi_limber)
 
         #Sum the two terms.
         c_ell += c_ell_sublin
@@ -453,7 +455,8 @@ class Spectrum(object):
                 
         #Do Limber calculation
         cl_limber = self.compute_limber(block, ell_limber, bin1, bin2,
-            dchi=dchi_limber, sig_over_dchi=sig_over_dchi_limber, chimin=chimin, chimax=chimax)
+            dchi=dchi_limber, sig_over_dchi=sig_over_dchi_limber, 
+            chimin=chimin, chimax=chimax)
 
         ell_out = ell_limber
         cl_out = cl_limber
@@ -491,7 +494,6 @@ class LingalLingalSpectrum(Spectrum):
     sample. We overwrite the exact calculation to include the option
     to do RSD.
     """
-
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
      sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1., 
      chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
@@ -502,7 +504,8 @@ class LingalLingalSpectrum(Spectrum):
         K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
         K2 = (self.source.kernels[self.sample_b]).get_kernel_spline(self.kernel_types[1], bin2)
 
-        lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, bin1, bin2)
+        lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, 
+            bin1, bin2)
         
         #Need to choose a chimin, chimax and dchi for the integral.
         #By default
@@ -542,6 +545,8 @@ class LingalLingalSpectrum(Spectrum):
 
         c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin, 
             chimax, dchi_limber)
+        #need to apply bias to this too
+        c_ell_sublin *= self.bias_values_a[bin1] * self.bias_values_b[bin2]
 
         c_ell += c_ell_sublin
         c_ell *= self.get_prefactor(block, bin1, bin2)
@@ -550,29 +555,64 @@ class LingalLingalSpectrum(Spectrum):
 
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
         chimin=None, chimax=None):
-        print("calling compute_limber from LingalLingalSpectrum")
+        print("calling compute_limber from LingalLingal")
         #same as the base class but we multiply by galaxy bias
         c_ell = super(LingalLingalSpectrum, self).compute_limber(block, 
             ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
             chimin=None, chimax=None)
         return c_ell * self.bias_values_a[bin1] * self.bias_values_b[bin2]
 
-
     def prep_spectrum(self, block):
         #Load in bias values for each bin
         self.bias_values_a = {}
         self.bias_values_b = {}
-        if self.kernel_types[0] == "N":
-            nbin = self.source.kernels[self.sample_a].nbin
-            for i in range(1,nbin+1):
-                self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
-        if self.kernel_types[1] == "N":
-            if self.sample_b == self.sample_a:
-                self.bias_values_b = self.bias_values_a
-            else:
-                nbin = self.source.kernels[self.sample_b].nbin
-                for i in range(1,nbin+1):
-                    self.bias_values_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
+        #Make sure kernel_types are both "N"
+        assert self.kernel_types[0] == self.kernel_types[1] == "N"
+        nbin = self.source.kernels[self.sample_a].nbin
+        for i in range(1, nbin+1):
+            self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+        if self.sample_b == self.sample_a:
+            self.bias_values_b = self.bias_values_a
+        else:
+            nbin = self.source.kernels[self.sample_b].nbin
+            for i in range(1, nbin+1):
+                self.bias_values_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
+
+class LingalShearSpectrum(Spectrum):
+    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
+        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
+        try:
+            assert do_rsd==False
+        except AssertionError as e:
+            print("rsd not yet implemented for LingalShearSpectrum")
+            raise(e)
+        #Call the exact calculation from the base class
+        c_ell = super(LingalShearSpectrum, self).compute_exact(block, 
+            ell, bin1, bin2, dlogchi=dlogchi, sig_over_dchi=sig_over_dchi, 
+            chi_pad_lower=chi_pad_lower, chi_pad_upper=chi_pad_upper, 
+            chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
+            do_rsd=do_rsd)
+        #Apply a linear bias and return
+        c_ell *= self.bias_values_a[bin1]
+        return c_ell
+
+    def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
+        chimin=None, chimax=None):
+        c_ell = super(LingalShearSpectrum, self).compute_limber(block,
+            ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
+            chimin=None, chimax=None)
+        return c_ell * self.bias_values_a[bin1]
+
+    def prep_spectrum(self, block):
+        #Load in bias values for first sample
+        assert self.kernel_types[0] == "N"
+        self.bias_values_a = {}
+        nbin = self.source.kernels[self.sample_a].nbin
+        for i in range(1, nbin+1):
+            self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+        
+
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -752,15 +792,20 @@ class SpectrumCalculator(object):
         
         self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 300)
         do_exact_string = options.get_string(option_section, "do_exact", "")
-
         if do_exact_string=="":
             self.do_exact_option_names=[]
         else:
             self.do_exact_option_names = (do_exact_string.strip()).split(" ")
+        auto_only_string = options.get_string(option_section, "auto_only", "")
+        if auto_only_string=="":
+            self.auto_only_option_names=[]
+        else:
+            self.auto_only_option_names = (auto_only_string.strip()).split(" ")
+
         self.clip_chi_kernels = options.get_double(option_section, "clip_chi_kernels", 1.e-6)
         
         #accuracy settings
-        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 500.)
+        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 50.)
         self.shear_kernel_nchi = options.get_int(option_section, "shear_kernel_nchi", 2000)
 
         self.limber_transition_end = options.get_double(option_section,
@@ -878,6 +923,7 @@ class SpectrumCalculator(object):
         #the exact calclation and thus need to load in extra stuff
         self.req_power_options = set()
         self.do_exact_section_names = [] 
+        self.auto_only_section_names = []
 
         any_spectra_option_found = False
         for spectrum in self.spectrumType:
@@ -895,6 +941,14 @@ class SpectrumCalculator(object):
 
             # If we find any of the options set then record that
             any_spectra_option_found = True
+
+
+            if isinstance(value, bool):
+                if value:
+                    print("""You need to provide an argument
+                        sample_a-sample_b for which to calculate
+                        spectrum %s"""%(spectrum.name()))
+                continue
 
             # There are various ways a user can describe the spectra:
             # string of form  euclid-lsst
@@ -970,6 +1024,9 @@ class SpectrumCalculator(object):
                     else:
                         power_options = power_key + (False,)
                     self.req_power_options.add(power_options)
+
+                    if option_name in self.auto_only_option_names:
+                        self.auto_only_section_names.append(s.section_name)
                     
                     print("Calculating Limber: Kernel 1 = {}, Kernel 2 = {}, P_3D = {},{} --> Output: {}".format(
                         str(kernel_key_a), str(kernel_key_b), str(power_key[0]), 
@@ -1078,6 +1135,9 @@ class SpectrumCalculator(object):
             #for cross-correlations we must do both
             jmax = i+1 if spectrum.is_autocorrelation() else nb
             for j in range(jmax):
+                if spectrum.section_name in self.auto_only_section_names:
+                    if j!=i:
+                        continue
 
                 if spectrum.section_name in self.do_exact_section_names:
                     exact_kwargs = dict(self.exact_kwargs)
