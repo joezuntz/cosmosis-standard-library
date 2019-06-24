@@ -42,7 +42,7 @@ explanation: |
 
     z,k settings are read from linear matter power spectrum
 
-params:
+params: {}
             
 inputs:
     cosmological_parameters:

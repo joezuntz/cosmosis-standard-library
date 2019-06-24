@@ -15,3 +15,8 @@ assumptions:
 explanation: |
     "Use this module to enter the python debugger at the desired point in a cosmosis module list."
 
+params: {}
+
+inputs: {}
+
+outputs: {}
