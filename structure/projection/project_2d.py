@@ -1,8 +1,6 @@
 # coding:utf-8
 import os
-import ctypes as ct
 import numpy as np
-from gsl_wrappers import GSLSpline, NullSplineError, GSLSpline2d, BICUBIC
 from cosmosis.datablock import names, option_section, BlockError
 from enum34 import Enum
 import re
