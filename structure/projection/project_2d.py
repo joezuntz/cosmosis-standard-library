@@ -506,6 +506,8 @@ class LingalLingalSpectrum(Spectrum):
 
         lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, 
             bin1, bin2)
+
+        print("lin_growth_spline",lin_growth_spline)
         
         #Need to choose a chimin, chimax and dchi for the integral.
         #By default
@@ -579,6 +581,7 @@ class LingalLingalSpectrum(Spectrum):
                 self.bias_values_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
 
 class LingalShearSpectrum(Spectrum):
+
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
         sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
@@ -777,6 +780,14 @@ class SpectrumType(Enum):
         prefactor_type = (None, None)
         has_rsd = True
 
+    class LingalShear(LingalShearSpectrum):
+        autocorrelation = False
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "W")
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_type = (None, "lensing")
+        has_rsd = False
       
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
@@ -1021,9 +1032,11 @@ class SpectrumCalculator(object):
                         except KeyError:
                             pass
                         self.do_exact_section_names.append(s.section_name)
+                        self.req_power_options.add(power_options)
                     else:
                         power_options = power_key + (False,)
-                    self.req_power_options.add(power_options)
+                        if (power_key+(True,)) not in self.req_power_options:                            
+                            self.req_power_options.add(power_options)
 
                     if option_name in self.auto_only_option_names:
                         self.auto_only_section_names.append(s.section_name)
