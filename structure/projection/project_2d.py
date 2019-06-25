@@ -15,11 +15,6 @@ from kernel import TomoNzKernel
 from timeit import default_timer as timer
 from datetime import timedelta
 
-def growth_factor_lahav(z, omega_m, omega_lambda):
-    a = omega_m * (1+z)**3
-    b = omega_m * (1+z) - (omega_m + omega_lambda -1)*(1+z)**2 + omega_lambda
-    return (a/b)**(4./7)
-
 class Power3D(object):
     """
     Class representing the 3D power spectrum that enters the Limber calculation.
