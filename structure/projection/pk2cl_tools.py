@@ -39,102 +39,6 @@ def get_dlogchi(dchi, chimax):
     dlogchi = np.log(chimax / (chimax-dchi))
     return dlogchi
 
-#def exact_integral(ells, kernel1_interp, kernel2_interp, pk0_interp_logk, growth_interp,
-#                    chimin, chimax, dlogchi, chi_pad_upper=1., chi_pad_lower=1., 
-#                    verbose=True):
-#    """
-#    Do the exact P(k,chi)->C_l projection integral
-#    The full integral is 
-#    \int_0^\inf dk k^{-1} P(k,0) I_1(k) I_2(k)
-#    where I_x(k) = \int_0^{\inf} dr k F_x(r) r^{-0.5} D(r) J_{l+0.5}(kr),
-#    and F_x(r_1) is the radial kernel for tracer x and D(r) is the growth factor
-#
-#    We want to use a fftlog for the I_x(k) calculation, so write it in the form 
-#    I_x(k) = \int_0^{\inf} k dr f_x(r) J_{mu}(kr).
-#    So f_x(r) = F_x(r) D(r_1) r^{-0.5}
-#    We actually do the integral in log(k), so calculate 
-#    \int_0^\inf dlogk P(k,0) I_1(k) I_2(k).
-#
-#    Parameters
-#    ----------
-#    ells : np.array
-#        np.array of ell values to compute C(l) for.
-#    kernel1_interp: spline
-#        Spline of F_1(chi)
-#    kernel2_interp: spline
-#        Spline of F_2(chi)
-#    pk0_interp_logk: spline
-#        Spline of P(log(k), z=0)
-#    growth_interp: spline
-#        Spline of growth(chi)
-#    chimin: float
-#        minimum chi for integral over chi
-#    chimax: float
-#        maximum chi for integral over chi
-#    chi_pad_lower: float
-#        extend the integral over log(chi) lower limit by
-#        this factor (maybe required for good fftlog behaviour)
-#    chi_pad_upper: float
-#        extend the integral over log(chi) upper limit by
-#        this factor (maybe required for good fftlog behaviour)
-#    dlogchi: float
-#        spacing to use in integral over log(chi)
-#
-#    Returns
-#    -------
-#    cell: float array
-#        np.array of C(l) values.
-#
-#    """
-#    #we do the integral in log(chi), so ensure the lower integration limit is >0
-#    assert chimin>0.
-#    #Calculate (optoinally padded) integration ranges in log(chi)
-#    log_chimin, log_chimax = np.log(chimin), np.log(chimax)
-#    if verbose:
-#        print("padding chi values by e^%.2f/%.2f at lower/upper ends"%(chi_pad_lower,chi_pad_upper))
-#    log_chimin_padded, log_chimax_padded = log_chimin-chi_pad_lower, log_chimax+chi_pad_upper
-#
-#    #Calculate number of chis, nchi, from ranges and dlogchi, and then
-#    #adjust dlogchi slightly so that nchi is a power of 2. This 
-#    #makes the fftlog faster.
-#    nchi_orig = np.ceil((log_chimax-log_chimin)/dlogchi).astype(int)
-#    nchi = nearest_power_of_2(nchi_orig) #use nchi that is a power of 2 for fast fft.
-#    log_chi_vals = np.linspace(log_chimin_padded, log_chimax_padded, nchi)
-#    chi_vals = np.exp(log_chi_vals)
-#    if verbose:
-#        print("chimin padded, chimax padded, nchi padded:", chi_vals[0], chi_vals[-1], len(chi_vals))
-#
-#    #Compute growth and kernel values at the specified chi values
-#    #from the appropriate splines
-#    growth_vals = growth_interp(chi_vals)
-#    kernel1_vals = kernel1_interp(chi_vals)
-#    auto=False
-#    if kernel2_interp is kernel1_interp:
-#        kernel2_vals = kernel1_vals
-#    else:
-#        kernel2_vals = kernel2_interp(chi_vals)
-#
-#    #Now loop through C(ls) doing the integral
-#    cell = np.zeros_like(ells)
-#    for i_ell, ell in enumerate(ells):
-#        f1_vals = kernel1_vals * growth_vals * np.power(chi_vals, -0.5)
-#        k_vals, I_1 = fft_log(chi_vals, f1_vals, 0, ell+0.5)
-#        if auto:
-#            I_2 = I_1
-#        else:
-#            f2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
-#            _, I_2 = fft_log(chi_vals, f2_vals, 0, ell+0.5)
-#        logk_vals = np.log(k_vals)
-#        pk_vals = pk0_interp_logk(logk_vals)
-#        #Now we can compute the full integral \int_0^{\inf} k dk P(k,0) I_1(k) I_2(k)
-#        #We are values logspaced in k, so calculate as \int_0^{inf} dlog(k) P(k,0) I_1(k) I_2(k)
-#        integrand_vals = pk_vals * I_1 * I_2
-#        #Spline and integrate the integrand.
-#        integrand_interp = IUS(logk_vals, integrand_vals)
-#        integral = integrand_interp.integral(logk_vals.min(), logk_vals.max())
-#        cell[i_ell] = integral
-#    return cell
-
 def exact_integral(ells, kernel1_interp, kernel2_interp,
     pk0_interp_logk, growth_interp, chimin, chimax, dlogchi, 
     do_rsd=False, b1_1=None, b1_2=None, f_interp=None, 
@@ -196,20 +100,19 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
     cell: float array
         np.array of C(l) values.
     """
-    print(b1_1)
-
-
     assert chimin>0.
     log_chimin, log_chimax = np.log(chimin), np.log(chimax)
     if verbose:
-        print("padding chi values by e^%.2f/%.2f at lower/upper ends"%(chi_pad_lower,chi_pad_upper))
+        print("""padding chi values by e^%.2f/%.2f at 
+            lower/upper ends"""%(chi_pad_lower,chi_pad_upper))
     log_chimin_padded, log_chimax_padded = log_chimin-chi_pad_lower, log_chimax+chi_pad_upper
     nchi_orig = np.ceil((log_chimax-log_chimin)/dlogchi).astype(int)
     nchi = nearest_power_of_2(nchi_orig) #use nchi that is a power of 2 for fast fft.
     log_chi_vals = np.linspace(log_chimin_padded, log_chimax_padded, nchi)
     chi_vals = np.exp(log_chi_vals)
     if verbose:
-        print("chimin padded, chimax padded, nchi padded:", chi_vals[0], chi_vals[-1], len(chi_vals))
+        print("chimin padded, chimax padded, nchi padded:", 
+            chi_vals[0], chi_vals[-1], len(chi_vals))
     growth_vals = growth_interp(chi_vals)
     kernel1_vals = kernel1_interp(chi_vals)
     auto=False
@@ -240,12 +143,18 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
         #Now rsd part.
         if do_rsd:
             f1_rsd_vals = f1_vals * f_vals
-            k_vals_check, I_1_0 = fft_log(chi_vals, f1_rsd_vals, 0, ell+0.5)
-            k_vals_check, I_1_1 = fft_log(chi_vals, f1_rsd_vals, 0, ell-1.5, kr=ell+1)
+            k_vals_check, I_1_0 = fft_log(chi_vals, 
+                f1_rsd_vals, 0, ell+0.5)
+            if ell>1:
+                k_vals_check, I_1_m2 = fft_log(chi_vals, 
+                    f1_rsd_vals, 0, ell-1.5, kr=ell+1)
+            else:
+                I_1_m2 = 0.
             assert np.allclose(k_vals_check, k_vals)
-            k_vals_check, I_1_2 = fft_log(chi_vals, f1_rsd_vals, 0, ell+2.5, kr=ell+1)
+            k_vals_check, I_1_p2 = fft_log(chi_vals, 
+                f1_rsd_vals, 0, ell+2.5, kr=ell+1)
             assert np.allclose(k_vals_check, k_vals)
-            I_1_rsd = L_0s[i_ell]*I_1_0 + L_1s[i_ell]*I_1_1 + L_2s[i_ell]*I_1_2
+            I_1_rsd = L_0s[i_ell]*I_1_0 + L_m2s[i_ell]*I_1_m2 + L_p2s[i_ell]*I_1_p2
             I_1 += I_1_rsd
 
         if auto:
@@ -262,10 +171,16 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
             if do_rsd:
                 #Now rsd part
                 f2_rsd_vals = f2_vals * f_vals
-                k_vals_check, I_2_0 = fft_log(chi_vals, f2_rsd_vals, 0, ell+0.5)
-                k_vals_check, I_2_1 = fft_log(chi_vals, f2_rsd_vals, 0, ell-1.5, kr=ell+1)
-                k_vals_check, I_2_2 = fft_log(chi_vals, f2_rsd_vals, 0, ell+2.5, kr=ell+1)
-                I_2_rsd = L_0s[i_ell]*I_2_0 + L_1s[i_ell]*I_2_1 + L_2s[i_ell]*I_2_2
+                k_vals_check, I_2_0 = fft_log(chi_vals, 
+                    f2_rsd_vals, 0, ell+0.5)
+                if ell>1:
+                    k_vals_check, I_2_m2 = fft_log(chi_vals, 
+                        f2_rsd_vals, 0, ell-1.5, kr=ell+1)
+                else:
+                    I_2_m2 = 0.
+                k_vals_check, I_2_p2 = fft_log(chi_vals, 
+                    f2_rsd_vals, 0, ell+2.5, kr=ell+1)
+                I_2_rsd = L_0s[i_ell]*I_2_0 + L_m2s[i_ell]*I_2_m2 + L_p2s[i_ell]*I_2_p2
                 I_2 += I_2_rsd
 
         logk_vals = np.log(k_vals)
@@ -275,7 +190,8 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
         integrand_vals = pk_vals * I_1 * I_2
         #Spline and integrate the integrand.
         integrand_interp = IUS(logk_vals, integrand_vals)
-        integral = integrand_interp.integral(logk_vals.min(), logk_vals.max())
+        integral = integrand_interp.integral(logk_vals.min(), 
+            logk_vals.max())
         cell[i_ell] = integral
     return cell
 
