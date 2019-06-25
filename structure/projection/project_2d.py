@@ -1109,7 +1109,6 @@ class SpectrumCalculator(object):
                 power.set_nonlimber_splines(block, self.chi_of_z)
             power_key = (powertype, suffix)
             self.power[power_key] = power
-            print power_options, power.lin_growth_spline
 
     def load_lensing_prefactor(self, block):
         self.lensing_prefactor = lensing_prefactor(block)
