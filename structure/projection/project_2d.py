@@ -250,7 +250,8 @@ class Spectrum(object):
         elif self.prefactor_type[0]=="lensing":
             prefactor *= self.source.lensing_prefactor
         elif self.prefactor_type[0]=="mag":
-            prefactor *= self.get_magnifaction_prefactor(self, block, bin1)
+            prefactor *= self.get_magnifaction_prefactor(self, block, 
+                self.sample_a, bin1)
 
         #second prefactor
         if self.prefactor_type[1] is None:
@@ -258,19 +259,22 @@ class Spectrum(object):
         elif self.prefactor_type[1]=="lensing":
             prefactor *= self.source.lensing_prefactor
         elif self.prefactor_type[1]=="mag":
-            prefactor *= self.get_magnifaction_prefactor(self, block, bin2)
+            prefactor *= self.get_magnifaction_prefactor(self, block, 
+                self.sample_b, bin2)
 
         return prefactor
 
     # Some spectra include a magnification term for one or both bins.
-    # In those cases an additional term from the galaxy luminosity
-    # function is included in the prefactor.
-    def get_magnifaction_prefactor(self, block, bin):
-        # Need to move this so that it references a particular
-        # galaxy sample not the generic galaxy_luminosity_function
-        alpha = np.atleast_1d(np.array(block[names.galaxy_luminosity_function, 
-            "alpha_binned"]))
-        return 2 * (alpha[bin] - 1)
+    # In those cases an additional term which quantifies the response
+    # of the number density to kappa is required as a prefactor
+    # We use the convention from 0911.2454 such that this prefactor
+    # is 2*(alpha-1). For a given sample and redshift bin i, alpha is 
+    # read from section "mag_alpha_<sample>" and value alpha_<i>
+    # e.g. mag_alpha_redmagic, alpha_3 for the 3rd redshift bin of sample
+    # redmagic
+    def get_magnification_prefactor(self, block, sample, bin_num):
+        alpha = block[ "mag_alpha_%s"%sample, "alpha_%d"%bin_num ]
+        return 2 * (alpha - 1)
 
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
         chimin=None, chimax=None):
@@ -608,7 +612,43 @@ class LingalShearSpectrum(Spectrum):
         for i in range(1, nbin+1):
             self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
         
+class LingalMagnificationSpectrum(Spectrum):
 
+    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
+        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
+        try:
+            assert do_rsd==False
+        except AssertionError as e:
+            print("rsd not yet implemented for LingalMagnificationSpectrum")
+            raise(e)
+        #Call the exact calculation from the base class
+        c_ell = super(LingalShearSpectrum, self).compute_exact(block, 
+            ell, bin1, bin2, dlogchi=dlogchi, sig_over_dchi=sig_over_dchi, 
+            chi_pad_lower=chi_pad_lower, chi_pad_upper=chi_pad_upper, 
+            chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
+            do_rsd=do_rsd)
+        #Apply a linear bias and return
+        c_ell *= self.bias_values_a[bin1]
+        return c_ell
+
+    def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
+        chimin=None, chimax=None):
+        #Call the Limber calculation from the base class
+        c_ell = super(LingalShearSpectrum, self).compute_limber(block,
+            ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
+            chimin=None, chimax=None)
+        #Apply a linear bias and return
+        return c_ell * self.bias_values_a[bin1]
+
+    def prep_spectrum(self, block):
+        #Load in bias values for first sample
+        assert self.kernel_types[0] == "N"
+        self.bias_values_a = {}
+        nbin = self.source.kernels[self.sample_a].nbin
+        for i in range(1, nbin+1):
+            self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+        
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -780,6 +820,15 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_type = (None, "lensing")
+        has_rsd = False
+
+    class LingalMagnification(LingalMagnificationSpectrum):
+        autocorrelation = False
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "W")
+        autocorrelation = False
+        name = "galaxy_magnification_cl"
+        prefactor_type = (None, "mag")
         has_rsd = False
       
 class SpectrumCalculator(object):
