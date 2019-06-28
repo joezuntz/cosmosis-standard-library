@@ -2,7 +2,7 @@ module mead_settings_mod
     type mead_settings
         logical :: noisy
         logical :: feedback
-        integer :: n_baryon_param
+        logical :: one_baryon_param
         !real(8) :: kmin, kmax
         !integer :: nk
 
@@ -10,6 +10,8 @@ module mead_settings_mod
 
         real(8) :: zmin, zmax
         integer :: nz
+
+        character(len=256) :: linear_ps_section_name, output_section_name
 
     end type mead_settings
 
@@ -36,7 +38,11 @@ function setup(options) result(result)
     status = status + datablock_get_double_default(options, option_section, "zmax", real(3.0, kind=8), settings%zmax)
     status = status + datablock_get_int_default(options, option_section, "nz", -1, settings%nz)
 
-    status = status + datablock_get_int_default(options, option_section, "n_baryon_parameter", 2, settings%n_baryon_param)
+    status = status + datablock_get_logical_default(options, option_section, "one_baryon_parameter", .false., settings%one_baryon_param)
+
+    status = datablock_get_string_default(options, option_section, "input_section_name", matter_power_lin_section, settings%linear_ps_section_name)
+    status = datablock_get_string_default(options, option_section, "output_section_name", matter_power_nl_section, settings%output_section_name)
+
 
     if (status .ne. 0) then
         write(*,*) "One or more parameters not found for hmcode"
@@ -64,8 +70,6 @@ function execute(block,config) result(status)
     integer, parameter :: LOG_SPACING = 1
     character(*), parameter :: cosmo = cosmological_parameters_section
     character(*), parameter :: halo = halo_model_parameters_section
-    character(*), parameter :: linear_power = matter_power_lin_section
-    character(*), parameter :: nl_power = matter_power_nl_section
 
     real(4) :: p1h, p2h,pfull, plin, z
     integer :: i,j,nk,nz, massive_nu
@@ -100,7 +104,7 @@ function execute(block,config) result(status)
     status = status + datablock_get_double_default(block, cosmo, "wa", 0.0D0, wa)
     status = status + datablock_get_double_default(block, halo, "A", 3.13D0, halo_as)
     
-    if(settings%n_baryon_param /= 1) then
+    if(settings%one_baryon_param) then
         status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
     else
         halo_eta0 = 1.03-0.11*halo_as
@@ -112,7 +116,7 @@ function execute(block,config) result(status)
     endif
 
  
-    status = status + datablock_get_double_grid(block, linear_power, &
+    status = status + datablock_get_double_grid(block, settings%linear_ps_section_name, &
         "k_h", k_in, "z", z_in, "p_k", p_in)
 
     if (status .ne. 0 ) then
@@ -215,7 +219,7 @@ function execute(block,config) result(status)
     z_out = ztab
     !Convert k to k/h to match other modules
     !Output results to cosmosis
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p_k", p_out)
+    status = datablock_put_double_grid(block, settings%output_section_name, "k_h", k_out, "z", z_out, "p_k", p_out)
 
     !Free memory
     deallocate(k)
