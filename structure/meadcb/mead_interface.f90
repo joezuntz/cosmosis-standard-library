@@ -2,13 +2,14 @@ module mead_settings_mod
     type mead_settings
         logical :: noisy
         logical :: feedback
+        integer :: n_baryon_param
         !real(8) :: kmin, kmax
         !integer :: nk
 
         real(8) :: numin, numax
 
-        !real(8) :: zmin, zmax
-        !integer :: nz
+        real(8) :: zmin, zmax
+        integer :: nz
 
     end type mead_settings
 
@@ -27,9 +28,15 @@ function setup(options) result(result)
     
     allocate(settings)
 
-    status = status + datablock_get_double_default(options, option_section, "numin", 0.1D0, settings%numin)
-    status = status + datablock_get_double_default(options, option_section, "numax", 5.0D0, settings%numax)
+    status = status + datablock_get_double_default(options, option_section, "numin", real(0.1, kind=8), settings%numin)
+    status = status + datablock_get_double_default(options, option_section, "numax", real(5.0, kind=8), settings%numax)
     status = status + datablock_get_logical_default(options, option_section, "feedback", .false., settings%feedback)
+
+    status = status + datablock_get_double_default(options, option_section, "zmin", real(0.0, kind=8), settings%zmin)
+    status = status + datablock_get_double_default(options, option_section, "zmax", real(3.0, kind=8), settings%zmax)
+    status = status + datablock_get_int_default(options, option_section, "nz", -1, settings%nz)
+
+    status = status + datablock_get_int_default(options, option_section, "n_baryon_parameter", 2, settings%n_baryon_param)
 
     if (status .ne. 0) then
         write(*,*) "One or more parameters not found for hmcode"
@@ -92,7 +99,12 @@ function execute(block,config) result(status)
     status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w)
     status = status + datablock_get_double_default(block, cosmo, "wa", 0.0D0, wa)
     status = status + datablock_get_double_default(block, halo, "A", 3.13D0, halo_as)
-    status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
+    
+    if(settings%n_baryon_param /= 1) then
+        status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
+    else
+        halo_eta0 = 1.03-0.11*halo_as
+    endif
 
     if (status .ne. 0 ) then
         write(*,*) "Error reading parameters for Mead code"
@@ -120,8 +132,12 @@ function execute(block,config) result(status)
 
     !Copy in P(k) from the right part of P(k,z)
     nk = size(k_in)
-    nz = size(z_in)
 
+    if(settings%nz > 0) then
+        nz = settings%nz
+    else
+        nz = size(z_in)
+    endif
  
     ! doing the job of assign_HM_cosmology
     cosi%om_m=om_m !The halo modelling in this version knows about neutrino
@@ -147,15 +163,17 @@ function execute(block,config) result(status)
     !Also the P is 2D as we get z also
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ALLOCATE(k(size(k_in)))
-    ALLOCATE(ztab(size(z_in)))
+    ALLOCATE(k(nk))
+    ALLOCATE(ztab(nz))
         
     !Set the output ranges in k and z
-   ! CALL fill_table(log(real(settings%kmin)),log(real(settings%kmax)),k,settings%nk)
-    k=k_in
     !this was not here previously, take care of output k and pk
-    !CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz)
-    ztab = z_in
+    k = k_in
+    if(settings%nz > 0) then
+        CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz)
+    else
+        ztab = z_in
+    endif
         
     !Fill table for output power
     ALLOCATE(p_out(nk,nz))
