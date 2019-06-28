@@ -38,12 +38,17 @@ explanation: |
     (Though the CosmoSIS team are of course happy to help with connecting the code 
     into CosmoSIS pipelines).
 
-    You can apply the linear relationship between A and eta0 by using mead1d.py module before hmcode module.
+    k settings are read from linear matter power spectrum
 
-    z,k settings are read from linear matter power spectrum
-
-params: {}
-            
+params:
+    feedback: "bool, verbosity of output"
+    nz: "integer, default=-1. Number of redshifts to evaluate the nonlinear powerspectrum at. nz=-1 uses the redshifts of the input linear power spectrum"
+    zmin: "real, default=0. Lower end of the output redshifts. Only used when nz > 0"
+    zmax: "real, default=3.0. Upper end of the output redshifts. Only used when nz > 0"
+    one_baryon_parameter: "bool, default=False. Number of baryon parameters to use. If True, use the relationship eta0 = 1.03-0.11*A to calculate eta from A."
+    input_section_name: "string, default=matter_power_lin. Name of section that holds linear power spectrum"
+    output_section_name: "string, default=matter_power_nl. Name of section that nonlienar power spectrum gets written to"
+      
 inputs:
     cosmological_parameters:
         omega_b:  "real, baryon density fraction today"
