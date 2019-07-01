@@ -6,8 +6,6 @@ module mead_settings_mod
         !real(8) :: kmin, kmax
         !integer :: nk
 
-        real(8) :: numin, numax
-
         real(8) :: zmin, zmax
         integer :: nz
 
@@ -29,9 +27,6 @@ function setup(options) result(result)
     status = 0
     
     allocate(settings)
-
-    status = status + datablock_get_double_default(options, option_section, "numin", real(0.1, kind=8), settings%numin)
-    status = status + datablock_get_double_default(options, option_section, "numax", real(5.0, kind=8), settings%numax)
     status = status + datablock_get_logical_default(options, option_section, "feedback", .false., settings%feedback)
 
     status = status + datablock_get_double_default(options, option_section, "zmin", real(0.0, kind=8), settings%zmin)
