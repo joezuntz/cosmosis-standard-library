@@ -104,7 +104,7 @@ function execute(block,config) result(status)
     status = status + datablock_get_double_default(block, cosmo, "wa", 0.0D0, wa)
     status = status + datablock_get_double_default(block, halo, "A", 3.13D0, halo_as)
     
-    if(settings%one_baryon_param) then
+    if(.not. settings%one_baryon_param) then
         status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
     else
         halo_eta0 = 1.03-0.11*halo_as
