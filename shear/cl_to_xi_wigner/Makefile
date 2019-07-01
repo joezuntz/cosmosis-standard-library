@@ -1,18 +1,15 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-
 USER_CFLAGS = -std=c99 -Wall -Wextra -Werror -Wno-unknown-pragmas -pedantic
-USER_CFLAGS += -Ofast
+USER_CFLAGS += -Ofast  -march=native -mfpmath=sse
 USER_LDFLAGS = -lm
 
+.PHONY: all clean
 
-all: tessore_wigner.so
+all: wigner_d.so
 
 clean:
-	rm -f tessore_wigner.so
+	rm -f wigner_d.so
 
-tessore_wigner.so: transform.c wigner_d.c
+wigner_d.so: wigner_d.c
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o $@ $^ $(LDLIBS)
-
-
-.PHONY: all clean

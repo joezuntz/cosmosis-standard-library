@@ -96,7 +96,7 @@ void wigner_d(int l0, int l1, int n, int m, double theta, double* d)
     j = n*m;
 #else
     t = _mm_set_pd(0, d0);
-    o = _mm_set_pd1(1);
+    o = _mm_set1_pd(1);
     j = _mm_set_pd(n, m);
     z = _mm_set_pd(1, -n*m);
 #endif
@@ -118,14 +118,14 @@ void wigner_d(int l0, int l1, int n, int m, double theta, double* d)
         if(l >= l0)
             *(d++) = d0;
 #else
-        r = _mm_set_pd1(l);
+        r = _mm_set1_pd(l);
         s = _mm_sub_pd(o, _mm_div_pd(o, _mm_add_pd(r, j)));
         r = _mm_sub_pd(o, _mm_div_pd(o, _mm_sub_pd(r, j)));
         s = _mm_mul_pd(r, s);
         r = _mm_sub_pd(o, s);
         s = _mm_mul_pd(_mm_unpacklo_pd(r, s), _mm_unpackhi_pd(r, s));
         
-        r = _mm_add_pd(_mm_set_pd(1, l*x), _mm_div_pd(z, _mm_set_pd1(l-1)));
+        r = _mm_add_pd(_mm_set_pd(1, l*x), _mm_div_pd(z, _mm_set1_pd(l-1)));
         r = _mm_mul_pd(_mm_mul_pd(r, _mm_sqrt_pd(s)), t);
         r = _mm_hsub_pd(r, r);
         t = _mm_unpacklo_pd(r, t);
