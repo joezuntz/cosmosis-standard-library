@@ -250,7 +250,7 @@ class Spectrum(object):
         elif self.prefactor_type[0]=="lensing":
             prefactor *= self.source.lensing_prefactor
         elif self.prefactor_type[0]=="mag":
-            prefactor *= self.get_magnifaction_prefactor(self, block, 
+            prefactor *= self.get_magnification_prefactor(self, block, 
                 self.sample_a, bin1)
 
         #second prefactor
@@ -259,7 +259,7 @@ class Spectrum(object):
         elif self.prefactor_type[1]=="lensing":
             prefactor *= self.source.lensing_prefactor
         elif self.prefactor_type[1]=="mag":
-            prefactor *= self.get_magnifaction_prefactor(self, block, 
+            prefactor *= self.get_magnification_prefactor(self, block, 
                 self.sample_b, bin2)
 
         return prefactor
