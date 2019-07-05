@@ -250,8 +250,8 @@ class Spectrum(object):
         elif self.prefactor_type[0]=="lensing":
             prefactor *= self.source.lensing_prefactor
         elif self.prefactor_type[0]=="mag":
-            prefactor *= self.get_magnification_prefactor(self, block, 
-                self.sample_a, bin1)
+            prefactor *= self.get_magnification_prefactor(block, 
+                self.sample_a, bin1) * self.source.lensing_prefactor
 
         #second prefactor
         if self.prefactor_type[1] is None:
@@ -259,8 +259,8 @@ class Spectrum(object):
         elif self.prefactor_type[1]=="lensing":
             prefactor *= self.source.lensing_prefactor
         elif self.prefactor_type[1]=="mag":
-            prefactor *= self.get_magnification_prefactor(self, block, 
-                self.sample_b, bin2)
+            prefactor *= self.get_magnification_prefactor(block, 
+                self.sample_b, bin2) * self.source.lensing_prefactor
 
         return prefactor
 
@@ -458,7 +458,6 @@ class Spectrum(object):
         ell_out = ell_limber
         cl_out = cl_limber
         if ell_exact is not None:
-            print("doing exact calculation for ells", ell_exact)
             #also do exact calculation
             cl_exact = self.compute_exact(block, ell_exact, bin1, bin2, **exact_kwargs)        
             use_limber = ell_limber > ell_exact[-1]
@@ -623,7 +622,7 @@ class LingalMagnificationSpectrum(Spectrum):
             print("rsd not yet implemented for LingalMagnificationSpectrum")
             raise(e)
         #Call the exact calculation from the base class
-        c_ell = super(LingalShearSpectrum, self).compute_exact(block, 
+        c_ell = super(LingalMagnificationSpectrum, self).compute_exact(block, 
             ell, bin1, bin2, dlogchi=dlogchi, sig_over_dchi=sig_over_dchi, 
             chi_pad_lower=chi_pad_lower, chi_pad_upper=chi_pad_upper, 
             chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
@@ -635,7 +634,7 @@ class LingalMagnificationSpectrum(Spectrum):
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
         chimin=None, chimax=None):
         #Call the Limber calculation from the base class
-        c_ell = super(LingalShearSpectrum, self).compute_limber(block,
+        c_ell = super(LingalMagnificationSpectrum, self).compute_limber(block,
             ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
             chimin=None, chimax=None)
         #Apply a linear bias and return
@@ -949,8 +948,8 @@ class SpectrumCalculator(object):
         for spectrum in self.req_spectra:
             print("    - ", spectrum.section_name)
             if spectrum.section_name in self.do_exact_section_names:
-                print("Doing exact calculation up to ell=%d"%(self.ell_exact.max()))
-
+                print("Doing exact calculation for %d ells"%self.n_ell_exact)
+                print("up to ell=%d"%(self.ell_exact.max()))
 
         self.kernels = {}
         self.power = {}
