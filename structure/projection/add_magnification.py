@@ -46,6 +46,7 @@ def execute(block, config):
         gal_mag_ells = block["galaxy_magnification_cl", 'ell']
         mag_mag_ells = block["magnification_cl", "ell"]
         resample_gal_mag = False
+        resample_mag_mag = False
         if len(gal_mag_ells) != len(ells):
             resample_gal_mag = True
         elif not np.allclose(gal_mag_ells, ells):

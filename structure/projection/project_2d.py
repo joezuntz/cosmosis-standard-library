@@ -1050,7 +1050,7 @@ class SpectrumCalculator(object):
                     sample_name_a = sample_name_a.strip()
                     sample_name_b = sample_name_b.strip()
                     kernel_key_a = (spectrum.kernel_types[0], sample_name_a)
-                    kernel_key_b = (spectrum.kernel_types[0], sample_name_a)
+                    kernel_key_b = (spectrum.kernel_types[0], sample_name_b)
                     self.req_kernel_keys.add(kernel_key_a)
                     self.req_kernel_keys.add(kernel_key_b)
 
