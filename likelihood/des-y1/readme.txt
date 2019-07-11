@@ -6,4 +6,3 @@ If you use it please cite:
 
 For an example of its use please see the config files in:
     ${COSMOSIS_SRC_DIR}/examples/des-y1
-
