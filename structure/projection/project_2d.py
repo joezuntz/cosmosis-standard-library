@@ -688,13 +688,6 @@ class SpectrumType(Enum):
         prefactor_type = (None, None)
         has_rsd = False
 
-    #class DensityDensity(Spectrum):
-    #    power_3d_type = MatterPower3D
-    #    kernel_types = ("N", "N")
-    #    autocorrelation = True
-    #    name = "galaxy_cl"
-    #    prefactor_power = 0
-
     class PositionPosition(Spectrum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "N")
