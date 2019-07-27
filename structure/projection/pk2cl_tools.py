@@ -195,6 +195,10 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
         cell[i_ell] = integral
     return cell
 
+
+def I_l_integral_brute_force(ell, chi_min, chi_max, kernel_interp, 
+    growth_interp, )
+
 def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi,
     method="trapz", verbose=False):
     """
@@ -230,7 +234,11 @@ def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi
     if verbose:
         print("""Doing Limber integral with method %s between 
             chi_min: %.2e and chi_max: %.2e with step size %.2e"""%(method, chimin, chimax, dchi))
-    assert chimin>0.
+    try:
+        assert chimin>=0.
+    except AssertionError as e:
+        print("found chimin = %f"%chmin)
+        raise(e)
 
     #Initialize c_ell and error arrays.
     c_ells, c_ell_errs = np.zeros_like(ells), np.nan * np.ones_like(ells)
