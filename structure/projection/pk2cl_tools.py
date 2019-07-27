@@ -195,10 +195,6 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
         cell[i_ell] = integral
     return cell
 
-
-def I_l_integral_brute_force(ell, chi_min, chi_max, kernel_interp, 
-    growth_interp, )
-
 def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi,
     method="trapz", verbose=False):
     """
