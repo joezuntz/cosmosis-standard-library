@@ -233,7 +233,7 @@ def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi
     try:
         assert chimin>=0.
     except AssertionError as e:
-        print("found chimin = %f"%chmin)
+        print("found chimin = %f"%chimin)
         raise(e)
 
     #Initialize c_ell and error arrays.

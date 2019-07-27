@@ -3,7 +3,7 @@ import scipy.interpolate as interp
 
 class KernelSpline(object):
     def __init__(self, x, y, clip=1.e-6, ymin=1.e-12, 
-        norm=True, is_pos=True):
+        norm=True, is_pos=True, xmin_clipped_min=0.1):
         """
         A class for splining Kernels. For use in
         integrals, it's useful to find xmin and
@@ -64,6 +64,10 @@ class KernelSpline(object):
             cumsum_y[pos_diff], self.x[pos_diff])
         self.xmin_clipped = cumsum_of_x_spline(clip)
         self.xmax_clipped = cumsum_of_x_spline(1-clip)
+
+        if xmin_clipped_min>0:
+            if self.xmin_clipped<xmin_clipped_min:
+                self.xmin_clipped = xmin_clipped_min
 
         #Also compute a mean and width. Again, use the absolute value
         #of y here to avoid strange results when kernels go negatvie
