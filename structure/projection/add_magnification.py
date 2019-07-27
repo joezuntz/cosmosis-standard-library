@@ -93,6 +93,7 @@ def execute(block, config):
         for i in range(nbin_pos):
             for j in range(nbin_shear):
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
+                block["galaxy_shear_cl_gG", bin_ij] = block["galaxy_shear_cl", bin_ij]
                 block["galaxy_shear_cl", bin_ij] += (
                     block["magnification_shear_cl", bin_ij]
                     )                    
