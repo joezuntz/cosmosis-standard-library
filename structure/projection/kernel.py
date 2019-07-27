@@ -2,15 +2,37 @@ import numpy as np
 import scipy.interpolate as interp
 
 class KernelSpline(object):
-    def __init__(self, x, y, clip=1.e-6, min_xmin=0.1, ymin=1.e-12, norm=True):
+    def __init__(self, x, y, clip=1.e-6, ymin=1.e-12, 
+        norm=True, is_pos=True):
+        """
+        A class for splining Kernels. For use in
+        integrals, it's useful to find xmin and
+        xmax as finite integration limits that will
+        miss only some very small fraction (clip) of the 
+        integral over the kernel. For kernels that
+        are not strictly positive, we use the integral
+        over the absolute value of the kernel
+        because this seems conservative.
+
+        Parameters
+        ----------
+        x: numpy array
+            Array of x values
+        y: numpy array
+            Array of y values
+        is_pos: bool (optional)
+            assert that all y values are >=0. 
+        """
+
         self.x = x
-        assert np.all(y>=0.)
+        if is_pos:
+            assert np.all(y>=0.)
         self.y = y
 
         #Find out if we've got zeros or very small values padding
         #the kernel - remove those that are unnecessary.
-        quick_norm = np.sum(np.diff(x) * y[:-1])
-        too_small = self.y/quick_norm < ymin
+        quick_norm = np.sum(np.diff(x) * np.abs(y[:-1]))
+        too_small = np.abs(self.y)/quick_norm < ymin
         good_inds, = np.where(~too_small)
         start, end = good_inds[0], good_inds[-1]
         if start>0:
@@ -23,7 +45,7 @@ class KernelSpline(object):
         self.x, self.y = self.x[start:end+1], self.y[start:end+1]
         self.xmin, self.xmax = self.x[0], self.x[-1]
 
-        #Find range of indices at start and end of kernel that are too small
+        #Setup spline and normalize if norm=True.
         self.spline = interp.InterpolatedUnivariateSpline(self.x, self.y)
         self.norm = self.spline.integral(self.x[0], self.x[-1])
         if norm==True:
@@ -33,20 +55,24 @@ class KernelSpline(object):
 
         #Compute a mimumim and maximum chi below and above which
         #a fraction clip of the integral is contained
-        cumsum_y = (np.cumsum(self.y)-self.y[0])/(np.sum(self.y)-self.y[0]) #cumsum_y goes from 0 to 1
+        abs_y = np.abs(self.y)
+        cumsum_y = (np.cumsum(abs_y)-abs_y[0])/(np.sum(abs_y)-abs_y[0]) #cumsum_y goes from 0 to 1
         pos_diff = np.zeros(len(cumsum_y), dtype=bool)
         pos_diff[0] = True
         pos_diff[1:] = np.diff(cumsum_y)>0.
-        cumsum_of_x_spline = interp.InterpolatedUnivariateSpline(cumsum_y[pos_diff], self.x[pos_diff])
+        cumsum_of_x_spline = interp.InterpolatedUnivariateSpline(
+            cumsum_y[pos_diff], self.x[pos_diff])
         self.xmin_clipped = cumsum_of_x_spline(clip)
         self.xmax_clipped = cumsum_of_x_spline(1-clip)
 
-        #Also compute a mean and width
+        #Also compute a mean and width. Again, use the absolute value
+        #of y here to avoid strange results when kernels go negatvie
         dx = np.diff(self.x)
         x_mid = 0.5*(self.x[:-1]+self.x[1:])
-        y_mid = 0.5*(self.y[:-1]+self.y[1:])
-        self.mean = np.sum(dx * x_mid * y_mid) / np.sum(dx * y_mid)
-        var = np.sum(dx * (x_mid - self.mean)**2 * y_mid) / np.sum(dx*y_mid)
+        abs_y_mid = 0.5*(abs_y[:-1]+abs_y[1:])
+        self.mean = np.sum(dx * x_mid * abs_y_mid) / np.sum(dx * abs_y_mid)
+        var = np.sum(dx * (x_mid - self.mean)**2 * abs_y_mid) / np.sum(dx*abs_y_mid)
+        assert var>0.
         self.sigma = np.sqrt(var)
         #print("Setup kernel with mean(chi), sigma(chi) = %.3f, %.3f"%(self.mean, self.sigma))
 
@@ -98,17 +124,63 @@ class TomoNzKernel(object):
             nchi_spline = self.nchi_splines[i]
             chi_vals = np.linspace(0., nchi_spline.xmax, nchi)
             a_vals = a_of_chi(chi_vals)
+            """
             w_of_chi = np.zeros_like(chi_vals)
             for j,chi in enumerate(chi_vals):
                 #integral \int_{chi}^{chi_max} dchi' n(chi') * (chi' - chi)/chi'
                 chi_start = max(chi, nchi_spline.xmin)
-                integrand = np.where(nchi_spline.x>chi, nchi_spline.y * (nchi_spline.x - chi)/nchi_spline.x, 0.)
-                integrand_spline = interp.InterpolatedUnivariateSpline(nchi_spline.x, integrand)
-                w_of_chi[j] = chi * integrand_spline.integral(chi_start, nchi_spline.xmax) / a_vals[j]
-            self.wchi_splines[i] = KernelSpline(chi_vals, w_of_chi, norm=False)
+                integrand = np.where(nchi_spline.x>chi, 
+                    nchi_spline.y * (nchi_spline.x - chi)/nchi_spline.x, 0.)
+                integrand_spline = interp.InterpolatedUnivariateSpline(
+                    nchi_spline.x, integrand)
+                w_of_chi[j] = chi * integrand_spline.integral(
+                    chi_start, nchi_spline.xmax) / a_vals[j]
+            """
+            w_of_chi_vals = self.get_wofchi_vals(chi_vals, a_vals, nchi_spline)
+            self.wchi_splines[i] = KernelSpline(chi_vals, w_of_chi_vals, 
+                norm=False)
+
+    def get_wofchi_vals(self, chi_vals, a_vals, nchi_spline):
+        w_of_chi = np.zeros_like(chi_vals)
+        for j,chi in enumerate(chi_vals):
+            #integral \int_{chi}^{chi_max} dchi' n(chi') * (chi' - chi)/chi'
+            chi_start = max(chi, nchi_spline.xmin)
+            integrand = np.where(nchi_spline.x>chi, 
+                nchi_spline.y * (nchi_spline.x - chi)/nchi_spline.x, 0.)
+            integrand_spline = interp.InterpolatedUnivariateSpline(
+                nchi_spline.x, integrand)
+            w_of_chi[j] = chi * integrand_spline.integral(
+                chi_start, nchi_spline.xmax) / a_vals[j]
+        return w_of_chi
+
+    def set_combined_shear_ia_splines(self, chi_of_z, dchidz, a_of_chi, 
+        F_of_chi_spline, lensing_prefactor, clip=1.e-6, nchi=5000):
+
+        if len(self.nchi_splines) == 0:
+            self.set_nofchi_splines(chi_of_z, dchidz, clip=clip)
+        self.shear_ia_splines = {}
+        for i in range(1, self.nbin+1):
+            nchi_spline = self.nchi_splines[i]
+            chi_vals = np.linspace(0., nchi_spline.xmax, nchi)
+            a_vals = a_of_chi(chi_vals)
+            w_of_chi_vals = self.get_wofchi_vals(chi_vals, a_vals, nchi_spline)
+            #Now add IA part. This is F(chi) * n(chi) / lensing_prefactor
+            ia_kernel_vals = (F_of_chi_spline(chi_vals) * 
+                nchi_spline(chi_vals) / lensing_prefactor)
+            w_of_chi_vals += ia_kernel_vals
+            #For a negative IA amplitude, the kernel may 
+            #have negative values, so call KernelSpline with
+            #is_pos=False.
+            self.shear_ia_splines[i] = KernelSpline(chi_vals, 
+                w_of_chi_vals, norm=False, is_pos=False)
 
     def get_kernel_spline(self, kernel_type, bin_number):
         if kernel_type == "N":
             return self.nchi_splines[bin_number]
         elif kernel_type == "W":
             return self.wchi_splines[bin_number]
+        elif kernel_type == "F":
+            return self.shear_ia_splines[bin_number]
+        else:
+            raise ValueError("""Invalid kernel_type: %s, 
+                should be one of N, W or F"""%(kernel_type))

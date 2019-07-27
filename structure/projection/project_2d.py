@@ -13,6 +13,21 @@ from kernel import TomoNzKernel
 from timeit import default_timer as timer
 from datetime import timedelta
 
+def compute_c1_baseline():
+    C1_M_sun = 5e-14  # h^-2 M_S^-1 Mpc^3
+    M_sun = 1.9891e30  # kg
+    Mpc_in_m = 3.0857e22  # meters
+    C1_SI = C1_M_sun / M_sun * (Mpc_in_m)**3  # h^-2 kg^-1 m^3
+    # rho_crit_0 = 3 H^2 / 8 pi G
+    G = 6.67384e-11  # m^3 kg^-1 s^-2
+    H = 100 #h km s^-1 Mpc^-1
+    H_SI = H * 1000.0 / Mpc_in_m  # h s^-1
+    rho_crit_0 = 3 * H_SI**2 / (8 * np.pi * G)  # h^2 kg m^-3
+    f = C1_SI * rho_crit_0
+    return f
+
+C1_RHOCRIT = compute_c1_baseline()
+
 class Power3D(object):
     """
     Class representing the 3D power spectrum that enters the Limber calculation.
@@ -129,7 +144,8 @@ class Power3D(object):
         #the exact calculation
         #We may also need to resample the linear P(k) on the nl grid :/
         assert np.allclose(z_lin, self.z_vals)
-        P_lin_z0_resamp = interp.interp1d(np.log(k_lin), P_lin_z0, kind="cubic", bounds_error=False, fill_value=0.)(self.logk_vals)
+        P_lin_z0_resamp = interp.interp1d(np.log(k_lin), P_lin_z0, 
+            kind="cubic", bounds_error=False, fill_value=0.)(self.logk_vals)
         P_lin_from_growth = np.outer(growth_vals**2, P_lin_z0_resamp)
         P_sublin_vals = self.pk_vals - P_lin_from_growth
         self.sublin_spline = interp.RectBivariateSpline(self.chi_vals, self.logk_vals, P_sublin_vals)
@@ -177,7 +193,7 @@ class GalaxyIntrinsicPower3D(Power3D):
     section = "galaxy_intrinsic_power"
     source_specific = True
 
-def lensing_prefactor(block):
+def get_lensing_prefactor(block):
     c_kms = 299792.4580
     omega_m = block[names.cosmological_parameters, "omega_m"]
     shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
@@ -467,21 +483,25 @@ class Spectrum(object):
         return ell_out, cl_out
 
     def get_power_spline(self, block, bin1, bin2):
-        return (self.source.power[self.power_key]).chi_logk_spline
+        return self.pk_chi_logk_spline
 
     def get_power_sublin(self, block, bin1, bin2):
-        return (self.source.power[self.power_key]).sublin_spline
+        return self.pk_sublin_spline
 
     def get_lin_power_growth(self, block, bin1, bin2):
-        p = self.source.power[self.power_key]
-        return p.lin_z0_logk_spline, p.lin_growth_spline
+        return self.pk_lin_z0_logk_spline, self.lin_growth_spline
 
     def clean_power(self, P):
         # This gets done later for the base class
         return 0
 
     def prep_spectrum(self, *args, **kwargs):
-        # no prep required for base class
+        #set the P(k) splines required 
+        p = self.source.power[self.power_key]
+        self.pk_chi_logk_spline = p.chi_logk_spline
+        self.pk_sublin_spline = p.sublin_spline
+        self.pk_lin_z0_logk_spline = p.lin_z0_logk_spline
+        self.lin_growth_spline = p.lin_growth_spline
         return 0
 
 class LingalLingalSpectrum(Spectrum):
@@ -525,14 +545,14 @@ class LingalLingalSpectrum(Spectrum):
             #and call integral with do_rsd=True and passing linear bias 
             #and f(chi)
             c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
-            chimin, chimax, dlogchi, do_rsd=True, b1_1=self.bias_values_a[bin1], 
-            b1_2=self.bias_values_b[bin2], f_interp=f_of_chi_spline, 
+            chimin, chimax, dlogchi, do_rsd=True, b1_1=self.lin_bias_values_a[bin1], 
+            b1_2=self.lin_bias_values_b[bin2], f_interp=f_of_chi_spline, 
             chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower
                 )
         else:
             c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
-                 chimin, chimax, dlogchi, do_rsd=False, b1_1=self.bias_values_a[bin1],
-                 b1_2=self.bias_values_b[bin2], chi_pad_upper=chi_pad_upper,
+                 chimin, chimax, dlogchi, do_rsd=False, b1_1=self.lin_bias_values_a[bin1],
+                 b1_2=self.lin_bias_values_b[bin2], chi_pad_upper=chi_pad_upper,
                 chi_pad_lower=chi_pad_lower)
 
         #Limber with P_nl-P_lin
@@ -544,7 +564,7 @@ class LingalLingalSpectrum(Spectrum):
         c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin, 
             chimax, dchi_limber)
         #need to apply bias to this too
-        c_ell_sublin *= self.bias_values_a[bin1] * self.bias_values_b[bin2]
+        c_ell_sublin *= self.lin_bias_values_a[bin1] * self.lin_bias_values_b[bin2]
 
         c_ell += c_ell_sublin
         c_ell *= self.get_prefactor(block, bin1, bin2)
@@ -558,23 +578,23 @@ class LingalLingalSpectrum(Spectrum):
         c_ell = super(LingalLingalSpectrum, self).compute_limber(block, 
             ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
             chimin=None, chimax=None)
-        return c_ell * self.bias_values_a[bin1] * self.bias_values_b[bin2]
+        return c_ell * self.lin_bias_values_a[bin1] * self.lin_bias_values_b[bin2]
 
     def prep_spectrum(self, block):
         #Load in bias values for each bin
-        self.bias_values_a = {}
-        self.bias_values_b = {}
+        self.lin_bias_values_a = {}
+        self.lin_bias_values_b = {}
         #Make sure kernel_types are both "N"
         assert self.kernel_types[0] == self.kernel_types[1] == "N"
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
         if self.sample_b == self.sample_a:
-            self.bias_values_b = self.bias_values_a
+            self.lin_bias_values_b = self.lin_bias_values_a
         else:
             nbin = self.source.kernels[self.sample_b].nbin
             for i in range(1, nbin+1):
-                self.bias_values_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]            
+                self.lin_bias_values_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]
 
 class LingalShearSpectrum(Spectrum):
 
@@ -593,7 +613,7 @@ class LingalShearSpectrum(Spectrum):
             chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
             do_rsd=do_rsd)
         #Apply a linear bias and return
-        c_ell *= self.bias_values_a[bin1]
+        c_ell *= self.lin_bias_values_a[bin1]
         return c_ell
 
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
@@ -601,15 +621,15 @@ class LingalShearSpectrum(Spectrum):
         c_ell = super(LingalShearSpectrum, self).compute_limber(block,
             ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
             chimin=None, chimax=None)
-        return c_ell * self.bias_values_a[bin1]
+        return c_ell * self.lin_bias_values_a[bin1]
 
     def prep_spectrum(self, block):
         #Load in bias values for first sample
         assert self.kernel_types[0] == "N"
-        self.bias_values_a = {}
+        self.lin_bias_values_a = {}
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
         
 class LingalMagnificationSpectrum(Spectrum):
 
@@ -628,7 +648,7 @@ class LingalMagnificationSpectrum(Spectrum):
             chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
             do_rsd=do_rsd)
         #Apply a linear bias and return
-        c_ell *= self.bias_values_a[bin1]
+        c_ell *= self.lin_bias_values_a[bin1]
         return c_ell
 
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
@@ -638,16 +658,85 @@ class LingalMagnificationSpectrum(Spectrum):
             ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
             chimin=None, chimax=None)
         #Apply a linear bias and return
-        return c_ell * self.bias_values_a[bin1]
+        return c_ell * self.lin_bias_values_a[bin1]
 
     def prep_spectrum(self, block):
         #Load in bias values for first sample
         assert self.kernel_types[0] == "N"
-        self.bias_values_a = {}
+        self.lin_bias_values_a = {}
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
-        
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+
+def NLGalNLGalSpectrum(LingalLingalSpectrum):
+    """
+    Class for computing galaxy C(l) with non-linear bias models. For this case
+    the linear power spectrum used in the exact calculation is still 
+    just the linear matter power spectrum (and the b_1 values are passed 
+    along with this). We also need to construct the non-Linear P(k) using fast-pt.
+    """
+    def prep_spectrum(self, block, pt_type):
+        #assign pt_type
+        self.pt_type = pt_type
+
+        #Load bias values into a dictionary
+        self.bias_values_a, self.lin_bias_values_a = load_bias_values(
+            block, self.sample_a, pt_type)
+        if self.sample_a == self.sample_b:
+            self.bias_values_b = self.bias_values_b
+        else:
+            self.bias_values_b, self.lin_bias_values_b = load_bias_values(
+                block, self.sample_b, pt_type)
+
+        #Get power spectrum terms from fastpt. These
+        #will be used later to P_gg for a given bin 
+        #combination 
+        self.k_nl_bias, self.Pk_gg_basis_funcs = fpt.get_Pk_basis_funcs(
+            block, self.pt_type, output_nl_grid=True)
+
+        self.pk_chi_logk_spline = None
+        self.pk_sublin_spline = None
+
+    def compute(args, **kwargs):
+        super(NLGalNLGalSpectrum, self).compute(args, **kwargs)
+        self.pk_chi_logk_spline = None
+        self.pk_sublin_spline = None
+
+    def load_bias_values(self, block, sample, pt_type):
+        #Load bias values from the block
+        nbin = self.source.kernels[sample].nbin
+        bias_values = {}
+        lin_bias_values = {}
+        for i in range(1, nbin+1):
+            bias_values[i] = fpt.get_bias_params_bin(block, 
+                bin_num, pt_type, "bias_%d"%sample)
+            lin_bias_values[i] = bias_values[i]["b1E"]
+        return bias_values, lin_bias_values
+
+    #The next two methods are different to the base
+    #class since for this spectrum type we construct
+    #the P(k)s on the fly. Kinda annoying tbh.
+    #But oh well. We'll hack something together
+    #for now.
+    def get_power_spline(self, block, bin1, bin2):
+        #This is the full non-linear galaxy power spectrum
+        #(a sum of terms calculated by fast-pt). Call the
+        #fast-pt interface code for this.
+        P_gg, P_gg_terms = fpt.get_PXX(self.bias_values_a, 
+            self.bias_values_b, self.Pk_gg_basis_funcs, self.pt_type)
+        self.P_gg_chi_logk_spline = RectBivariateSpline(
+            self.chi_vals, np.log(self.k_nl_bias), P_gg)
+
+        return self.P_gg_chi_logk_spline
+
+    def get_power_sublin(self, block, bin1, bin2):
+        #This is the full 3d P_gg minus the linear part,
+        #where the linear part is in fact growth^2 * P_lin(z=0,k)
+        if self.P_gg_chi_logk_spline is None:
+            self.get_power_spline(block, bin1, bin2)
+
+        return (self.source.power[self.power_key]).sublin_spline
+
 
 # This is pretty cool.
 # You can make an enumeration class which
@@ -780,21 +869,23 @@ class SpectrumType(Enum):
         """
         Variant method of Shear+IA calculation that
         does the integral all at once including the shear 
-        components.  Only works for scale-independent IA/
+        components.  Only works for IA with P_II(k) 
+        and P_GI(k) proportional to the 
+        matter power spectrum.
         """
         power_3d_type = MatterPower3D
         kernel_types = ("F", "F")
         autocorrelation = True
         name = names.shear_cl
-        prefactor_type = ("","")
+        prefactor_type = ("lensing","lensing")
         has_rsd = False
 
-    class FastDensityShearIA(Spectrum):
+    class FastPositionShearIA(Spectrum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "F")
         autocorrelation = False
         name = "galaxy_shear_cl"
-        prefactor_type = ("","")
+        prefactor_type = (None, "lensing")
         has_rsd = False
 
     class LingalLingal(LingalLingalSpectrum):
@@ -1133,8 +1224,33 @@ class SpectrumCalculator(object):
                     clip=self.clip_chi_kernels)
             elif kernel_type == "W":
                 print("setting up W(chi) kernel for sample %s"%sample_name)
-                self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, self.dchidz, self.a_of_chi, 
-                    clip=self.clip_chi_kernels, nchi=self.shear_kernel_nchi) 
+                self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, 
+                    self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels, 
+                    nchi=self.shear_kernel_nchi)
+
+            elif kernel_type == "F":
+                print("""setting up combined shear and IA kernel
+                    for sample %s"""%sample_name)
+                #This is the combined shear and IA kernel. We need to calculate 
+                #F(z) = - A *(z/z0)**alpha * C1_RHOCRIT * Omega_m / growth(z)
+                ia_params = "intrinsic_alignment_parameters"
+                a_ia = block[ia_params, "A"]
+                alpha = block.get_double(ia_params, "alpha", 0.)
+                z0 = block.get_double(ia_params, "z0", 0.5)
+                z,k,pk_lin = block.get_grid(names.matter_power_lin,
+                    "z", "k_h", "p_k")
+                k_growth = 1.e-3
+                growth_ind = np.argmin(np.abs(k-k_growth))
+                growth_vals = np.sqrt(pk_lin[:, growth_ind]/pk_lin[0, growth_ind])
+                omega_m = block[names.cosmological_parameters, "omega_m"]
+                F_of_z = (-1 * a_ia * C1_RHOCRIT * ((1+z)/(1+z0))**alpha 
+                    * omega_m / growth_vals)
+                F_of_chi_spline = interp.InterpolatedUnivariateSpline(
+                    self.chi_of_z(z), F_of_z)
+                self.kernels[sample_name].set_combined_shear_ia_splines(
+                    self.chi_of_z, self.dchidz, self.a_of_chi, F_of_chi_spline, 
+                    self.lensing_prefactor, clip=self.clip_chi_kernels, 
+                    nchi=self.shear_kernel_nchi)
             else:
                 raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 
@@ -1152,7 +1268,7 @@ class SpectrumCalculator(object):
             self.power[power_key] = power
 
     def load_lensing_prefactor(self, block):
-        self.lensing_prefactor = lensing_prefactor(block)
+        self.lensing_prefactor = get_lensing_prefactor(block)
 
     def compute_spectrum(self, block, spectrum):
 
@@ -1217,7 +1333,11 @@ class SpectrumCalculator(object):
             #Load distance splines
             self.load_distance_splines(block)
 
+            #Load the lensing prefactor
+            self.load_lensing_prefactor(block)
+
             #Load the kernels.
+            self.load_kernels(block)
             try:
                 t0 = timer()
                 self.load_kernels(block)
@@ -1238,8 +1358,6 @@ class SpectrumCalculator(object):
             t0 = timer()
             self.load_power(block)
 
-            #Load the lensing prefactor
-            self.load_lensing_prefactor(block)
             t1 = timer()
             print("time to load power: %s"%(str(timedelta(seconds=(t1-t0)))))
 
@@ -1254,7 +1372,6 @@ class SpectrumCalculator(object):
         finally:
             self.clean()
         return 0
-
 
 def setup(options):
     return SpectrumCalculator(options)
