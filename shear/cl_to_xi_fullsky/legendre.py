@@ -47,7 +47,6 @@ def get_legfactors_00(ells, thetas):
     legfacs = np.zeros((n_theta, n_ell))
     for it, t in enumerate(thetas):
         legfacs[it] = (2 * ells + 1) * lpn(ells[-1], np.cos(t))[0] / 4. / PI
-    legfacs[:, 0] = 0.
     return legfacs
 
 def get_legfactors_02(ells, thetas):
