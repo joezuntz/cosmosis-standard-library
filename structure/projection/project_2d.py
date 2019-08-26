@@ -577,8 +577,8 @@ class LingalLingalSpectrum(Spectrum):
         chimin=None, chimax=None):
         #same as the base class but we multiply by galaxy bias
         c_ell = super(LingalLingalSpectrum, self).compute_limber(block, 
-            ell, bin1, bin2, dchi=None, sig_over_dchi=100., 
-            chimin=None, chimax=None)
+            ell, bin1, bin2, dchi=dchi, sig_over_dchi=sig_over_dchi, 
+            chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1] * self.lin_bias_values_b[bin2]
 
     def prep_spectrum(self, block):
@@ -624,8 +624,8 @@ class LingalShearSpectrum(Spectrum):
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
         chimin=None, chimax=None):
         c_ell = super(LingalShearSpectrum, self).compute_limber(block,
-            ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
-            chimin=None, chimax=None)
+            ell, bin1, bin2, dchi=dchi, sig_over_dchi=sig_over_dchi.,
+            chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1]
 
     def prep_spectrum(self, block):
@@ -663,14 +663,54 @@ class LingalMagnificationSpectrum(Spectrum):
         chimin=None, chimax=None):
         #Call the Limber calculation from the base class
         c_ell = super(LingalMagnificationSpectrum, self).compute_limber(block,
-            ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
-            chimin=None, chimax=None)
+            ell, bin1, bin2, dchi=dchi, sig_over_dchi=sig_over_dchi,
+            chimin=chimin, chimax=chimax)
         #Apply a linear bias and return
         return c_ell * self.lin_bias_values_a[bin1]
 
     def prep_spectrum(self, block):
         #Call the parent prep_spectrum
         super(LingalMagnificationSpectrum, self).prep_spectrum(
+            block)
+        #Then also load in bias values for first sample
+        assert self.kernel_types[0] == "N"
+        self.lin_bias_values_a = {}
+        nbin = self.source.kernels[self.sample_a].nbin
+        for i in range(1, nbin+1):
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+
+class LingalIntrinsicSpectrum(Spectrum):
+
+    def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
+        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
+        try:
+            assert do_rsd==False
+        except AssertionError as e:
+            print("rsd not yet implemented for LingalMagnificationSpectrum")
+            raise(e)
+        #Call the exact calculation from the base class
+        c_ell = super(LingalIntrinsicSpectrum, self).compute_exact(block, 
+            ell, bin1, bin2, dlogchi=dlogchi, sig_over_dchi=sig_over_dchi, 
+            chi_pad_lower=chi_pad_lower, chi_pad_upper=chi_pad_upper, 
+            chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
+            do_rsd=do_rsd)
+        #Apply a linear bias and return
+        c_ell *= self.lin_bias_values_a[bin1]
+        return c_ell
+
+    def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
+        chimin=None, chimax=None):
+        #Call the Limber calculation from the base class
+        c_ell = super(LingalIntrinsicSpectrum, self).compute_limber(block,
+            ell, bin1, bin2, dchi=dchi, sig_over_dchi=sig_over_dchi,
+            chimin=chimin, chimax=chimax)
+        #Apply a linear bias and return
+        return c_ell * self.lin_bias_values_a[bin1]
+
+    def prep_spectrum(self, block):
+        #Call the parent prep_spectrum
+        super(LingalIntrinsicSpectrum, self).prep_spectrum(
             block)
         #Then also load in bias values for first sample
         assert self.kernel_types[0] == "N"
@@ -954,6 +994,14 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_magnification_cl"
         prefactor_type = (None, "mag")
+        has_rsd = False
+
+    class LingalIntrinsic(LingalIntrinsicSpectrum):
+        power_3d_type = MatterIntrinsicPower3D
+        kernel_types = ("N", "N")
+        autocorrelation = False
+        name = "galaxy_intrinsic_cl"
+        prefactor_type = (None, None)
         has_rsd = False
       
 class SpectrumCalculator(object):
@@ -1327,7 +1375,7 @@ class SpectrumCalculator(object):
         block[spectrum.section_name, 'nbin_b'] = nb
         #Save is_auto 
         block[spectrum.section_name, 'is_auto'] = spectrum.is_autocorrelation()
-
+        #Call prep_spectrum
         spectrum.prep_spectrum( block )
 
         print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
