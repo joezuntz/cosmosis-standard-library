@@ -124,7 +124,7 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
 
     if do_rsd:
         #Get Legendre coefficients
-        L_0s = (2*ells**2+2*ells-1)/(2*ells+3)/(2*ells-1)
+        L_0s = (2*ells*ells+2*ells-1)/(2*ells+3)/(2*ells-1)
         L_m2s = -ells*(ells-1)/(2*ells-1)/(2*ells+1)
         L_p2s = -(ells+1)*(ells+2)/(2*ells+1)/(2*ells+3)
         assert b1_1 is not None
@@ -159,8 +159,6 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
 
         if auto:
             I_2 = I_1
-            if do_rsd:
-                I_2 += I_1_rsd
         else:
             f2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
             _, I_2 = fft_log(chi_vals, f2_vals, 0, ell+0.5)
