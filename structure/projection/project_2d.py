@@ -624,7 +624,7 @@ class LingalShearSpectrum(Spectrum):
     def compute_limber(self, block, ell, bin1, bin2, dchi=None, sig_over_dchi=100.,
         chimin=None, chimax=None):
         c_ell = super(LingalShearSpectrum, self).compute_limber(block,
-            ell, bin1, bin2, dchi=dchi, sig_over_dchi=sig_over_dchi.,
+            ell, bin1, bin2, dchi=dchi, sig_over_dchi=sig_over_dchi,
             chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1]
 
