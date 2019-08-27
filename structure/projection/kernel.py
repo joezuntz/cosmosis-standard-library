@@ -121,25 +121,14 @@ class TomoNzKernel(object):
         for i in range(1, self.nbin+1):
             self.nchi_splines[i] = KernelSpline(chi, self.nzs[i]/dchidz, clip=clip) 
 
-    def set_wofchi_splines(self, chi_of_z, dchidz, a_of_chi, clip=1.e-6, nchi=5000):
+    def set_wofchi_splines(self, chi_of_z, dchidz, a_of_chi, clip=1.e-6, dchi=1.):
         if len(self.nchi_splines) == 0:
             self.set_nofchi_splines(chi_of_z, dchidz, clip=clip)
         for i in range(1, self.nbin+1):
             nchi_spline = self.nchi_splines[i]
+            nchi = int(np.ceil(nchi_spline.xmax/dchi))
             chi_vals = np.linspace(0., nchi_spline.xmax, nchi)
             a_vals = a_of_chi(chi_vals)
-            """
-            w_of_chi = np.zeros_like(chi_vals)
-            for j,chi in enumerate(chi_vals):
-                #integral \int_{chi}^{chi_max} dchi' n(chi') * (chi' - chi)/chi'
-                chi_start = max(chi, nchi_spline.xmin)
-                integrand = np.where(nchi_spline.x>chi, 
-                    nchi_spline.y * (nchi_spline.x - chi)/nchi_spline.x, 0.)
-                integrand_spline = interp.InterpolatedUnivariateSpline(
-                    nchi_spline.x, integrand)
-                w_of_chi[j] = chi * integrand_spline.integral(
-                    chi_start, nchi_spline.xmax) / a_vals[j]
-            """
             w_of_chi_vals = self.get_wofchi_vals(chi_vals, a_vals, nchi_spline)
             self.wchi_splines[i] = KernelSpline(chi_vals, w_of_chi_vals, 
                 norm=False)
@@ -158,13 +147,14 @@ class TomoNzKernel(object):
         return w_of_chi
 
     def set_combined_shear_ia_splines(self, chi_of_z, dchidz, a_of_chi, 
-        F_of_chi_spline, lensing_prefactor, clip=1.e-6, nchi=5000):
+        F_of_chi_spline, lensing_prefactor, clip=1.e-6, dchi=1.):
 
         if len(self.nchi_splines) == 0:
             self.set_nofchi_splines(chi_of_z, dchidz, clip=clip)
         self.shear_ia_splines = {}
         for i in range(1, self.nbin+1):
             nchi_spline = self.nchi_splines[i]
+            nchi = int(np.ceil(nchi_spline.xmax/dchi))
             chi_vals = np.linspace(0., nchi_spline.xmax, nchi)
             a_vals = a_of_chi(chi_vals)
             w_of_chi_vals = self.get_wofchi_vals(chi_vals, a_vals, nchi_spline)
