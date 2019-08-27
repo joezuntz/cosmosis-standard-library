@@ -74,7 +74,8 @@ class TheorySpectrum(object):
     noise_var is a the noise variance per mode for each redshift bin
     """
     def __init__( self, name, types, nbin_a, nbin_b, angle_vals, 
-        spec_interps, is_auto, noise_var_per_mode=None):
+        spec_interps, is_auto, noise_var_per_mode=None,
+        auto_only = False):
         self.name = name
         self.types = types
         self.angle_vals = angle_vals
@@ -85,6 +86,9 @@ class TheorySpectrum(object):
         #self.set_spec_interps()
         self.nbin_a = nbin_a
         self.nbin_b = nbin_b
+        self.auto_only = auto_only
+        if self.auto_only:
+            assert self.is_auto
         self._set_bin_pairs()
         #Check bin pairs correspond to keys in spec_arrays
         for bin_pair in self.bin_pairs:
@@ -102,6 +106,8 @@ class TheorySpectrum(object):
             else:
                 j_start = 1
             for j in range(j_start, self.nbin_b+1):
+                if self.auto_only:
+                    if j!=i: continue
                 self.bin_pairs.append((i,j))
 
     def cut_bin_pair(self, bin_pair):
@@ -109,7 +115,7 @@ class TheorySpectrum(object):
         self.spec_interps.pop(bin_pair)
 
     @classmethod
-    def from_block( cls, block, section_name ):
+    def from_block( cls, block, section_name, auto_only ):
         #section_name is either e.g. shear_cl or shear_cl_<save_name>
 
         spectrum_name = section_name
@@ -130,6 +136,7 @@ class TheorySpectrum(object):
         # for cross correlations we must save bin_ji as well as bin_ij.
         # but not for auto-correlations. Also the numbers of bins can be different
         is_auto = block.get_bool( section_name, "is_auto" )
+
         if block.has_value(section_name, "nbin_a"):
             nbin_a = block[section_name, "nbin_a"]
             nbin_b = block[section_name, "nbin_b"]
@@ -148,6 +155,9 @@ class TheorySpectrum(object):
             else:
                 jstart = 1
             for j in range(jstart, nbin_b+1):
+                if auto_only:
+                    if j!=i:
+                        continue
                 if is_auto:
                     # Load and interpolate from the block
                     bin_name = bin_format.format(i, j)
@@ -161,7 +171,7 @@ class TheorySpectrum(object):
                 spec_interps[ (i, j) ] = SpectrumInterp( sep_values, spec )
 
         return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
-            spec_interps, is_auto )
+            spec_interps, is_auto, auto_only=auto_only )
 
     def get_spectrum_measurement( self, angle_vals, kernels, output_name,
         angle_units='arcmin', windows="SAMPLE", angle_lims=None):
