@@ -1031,8 +1031,8 @@ class SpectrumCalculator(object):
         self.clip_chi_kernels = options.get_double(option_section, "clip_chi_kernels", 1.e-6)
         
         #accuracy settings
-        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 50.)
-        self.shear_kernel_nchi = options.get_int(option_section, "shear_kernel_nchi", 2000)
+        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 20.)
+        self.shear_kernel_dchi = options.get_double(option_section, "shear_kernel_dchi", 10.)
 
         self.limber_transition_end = options.get_double(option_section,
             "limber_transition_end", -1.)
@@ -1316,7 +1316,7 @@ class SpectrumCalculator(object):
                 print("setting up W(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, 
                     self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels, 
-                    nchi=self.shear_kernel_nchi)
+                    dchi=self.shear_kernel_dchi)
 
             elif kernel_type == "F":
                 print("""setting up combined shear and IA kernel
@@ -1340,7 +1340,7 @@ class SpectrumCalculator(object):
                 self.kernels[sample_name].set_combined_shear_ia_splines(
                     self.chi_of_z, self.dchidz, self.a_of_chi, F_of_chi_spline, 
                     self.lensing_prefactor, clip=self.clip_chi_kernels, 
-                    nchi=self.shear_kernel_nchi)
+                    dchi=self.shear_kernel_dchi)
             else:
                 raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 
