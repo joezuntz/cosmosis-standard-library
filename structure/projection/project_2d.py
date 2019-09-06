@@ -6,8 +6,10 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-from pk2cl_tools import limber_integral, get_dlogchi, exact_integral, nearest_power_of_2
+from pk2cl_tools import limber_integral, get_dlogchi
 from kernel import TomoNzKernel
+#from pk2cl_tools import exact_integral_fftlogxiao as exact_integral
+from pk2cl_tools import exact_integral
 
 from fastpt_interface import get_Pk_basis_funcs, get_bias_params_bin, get_PXX, get_PXm
 
@@ -352,7 +354,7 @@ class Spectrum(object):
         return c_ell
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         """
         The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
@@ -513,7 +515,7 @@ class LingalLingalSpectrum(Spectrum):
     to do RSD.
     """
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
-     sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1., 
+     sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2., 
      chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
         #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
         #and then Limber for the non-linear part (P_nl-P_lin)
@@ -549,7 +551,7 @@ class LingalLingalSpectrum(Spectrum):
             c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
             chimin, chimax, dlogchi, do_rsd=True, b1_1=self.lin_bias_values_a[bin1], 
             b1_2=self.lin_bias_values_b[bin2], f_interp=f_of_chi_spline, 
-            chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower
+            chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower, 
                 )
         else:
             c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
@@ -604,7 +606,7 @@ class LingalLingalSpectrum(Spectrum):
 class LingalShearSpectrum(Spectrum):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         try:
             assert do_rsd==False
@@ -642,7 +644,7 @@ class LingalShearSpectrum(Spectrum):
 class LingalMagnificationSpectrum(Spectrum):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         try:
             assert do_rsd==False
@@ -682,7 +684,7 @@ class LingalMagnificationSpectrum(Spectrum):
 class LingalIntrinsicSpectrum(Spectrum):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         try:
             assert do_rsd==False
@@ -1031,8 +1033,8 @@ class SpectrumCalculator(object):
         self.clip_chi_kernels = options.get_double(option_section, "clip_chi_kernels", 1.e-6)
         
         #accuracy settings
-        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 20.)
-        self.shear_kernel_dchi = options.get_double(option_section, "shear_kernel_dchi", 10.)
+        self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 50.)
+        self.shear_kernel_dchi = options.get_double(option_section, "shear_kernel_dchi", 5.)
 
         self.limber_transition_end = options.get_double(option_section,
             "limber_transition_end", -1.)
@@ -1062,7 +1064,7 @@ class SpectrumCalculator(object):
             "ell_max_logspaced", -1.)
         n_ell_logspaced = options.get_int(option_section, "n_ell_logspaced",-1)
         if n_ell_logspaced>0:
-            assert ell_min_logspaced>=0.
+            assert ell_min_logspaced>0.
             assert ell_max_logspaced>0.
             self.ell = np.logspace(np.log10(ell_min_logspaced), 
                 np.log10(ell_max_logspaced), n_ell_logspaced)
@@ -1071,9 +1073,8 @@ class SpectrumCalculator(object):
         ell_min_linspaced = options.get_int(option_section, "ell_min_linspaced",-1)
         ell_max_linspaced = options.get_int(option_section, "ell_max_linspaced", -1)
         n_ell_linspaced = options.get_int(option_section, "n_ell_linspaced", -1)
-        if ell_min_linspaced>=0:
+        if n_ell_linspaced>0:
             assert ell_max_linspaced>0
-            assert n_ell_linspaced>0
             linear_ells = np.linspace(ell_min_linspaced, ell_max_linspaced, 
                 n_ell_linspaced)
             if len(self.ell>0):
@@ -1104,6 +1105,7 @@ class SpectrumCalculator(object):
             #_, unique_inds = np.unique(self.ell_exact, return_index=True)
             #self.ell_exact = self.ell_exact[unique_inds]
             ell_exact = self.ell[ self.ell < self.limber_ell_start ]
+            self.ell = self.ell[ self.ell >= self.limber_ell_start ]
             ell_exact = np.floor(ell_exact)
             self.ell_exact = np.unique(ell_exact)
             self.n_ell_exact = len(self.ell_exact)
