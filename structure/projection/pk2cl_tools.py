@@ -232,7 +232,7 @@ def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
     \sqrt(2/pi) \int_0^\inf k^3 d(logk) P(k,0) I_1(k) I_2(k).
 
     We also optionally do RSD. In this case, 
-    I_x(k)=I_x(k,l) = \int_0^\infty dr/r (q(r)j_l(kr) +
+    I_x(k)=I_x(k,l) = \int_0^\infty dr/r (q(r)j_l(kr) -
     n(r)f(r)D(r)j_l''(kr))
     where f(r) is [dlnD/dlna](r) the logarithmic growth rate.
 
@@ -333,7 +333,7 @@ def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
     #Set up fftlog instances
     fftlog_1 = Fftlog(chi_vals, w1_vals, **pad_and_extrap_kwargs)
     if do_rsd_1:
-        fftlog_rsd_1 = Fftlog(chi_vals, w1_rsd_vals, **pad_and_extrap_kwargs)
+        fftlog_rsd_1 = Fftlog(chi_vals, w1_rsd_vals, nu=1.01, **pad_and_extrap_kwargs)
 
     if not auto:
         fftlog_2 = Fftlog(chi_vals, w2_vals, **pad_and_extrap_kwargs)
@@ -351,7 +351,7 @@ def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
             k_vals_check, I_1_rsd = fftlog_rsd_1.fftlog_ddj(
                 ell)
             assert np.allclose(k_vals_check, k_vals)
-            I_1 += I_1_rsd
+            I_1 -= I_1_rsd
 
         if auto:
             I_2 = I_1
@@ -367,7 +367,7 @@ def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
                 k_vals_check, I_2_rsd = fftlog_rsd_2.fftlog_ddj(
                     ell)
                 assert np.allclose(k_vals_check, k_vals)
-                I_2 += I_2_rsd
+                I_2 -= I_2_rsd
 
         logk_vals = np.log(k_vals)
         pk_vals = pk0_interp_logk(logk_vals)
