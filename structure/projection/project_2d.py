@@ -8,8 +8,8 @@ import sys
 import scipy.interpolate as interp
 from pk2cl_tools import limber_integral, get_dlogchi
 from kernel import TomoNzKernel
-from pk2cl_tools import exact_integral_fftlogxiao as exact_integral
-#from pk2cl_tools import exact_integral
+#from pk2cl_tools import exact_integral_fftlogxiao as exact_integral
+from pk2cl_tools import exact_integral
 
 from fastpt_interface import get_Pk_basis_funcs, get_bias_params_bin, get_PXX, get_PXm
 

@@ -192,7 +192,7 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
                     k_vals_check, F_2_m2 = fft_log(chi_vals, 
                         w2_rsd_vals, 0, ell-1.5, kr=ell+1)
                 else:
-                    I_2_m2 = 0.
+                    F_2_m2 = 0.
                 k_vals_check, F_2_p2 = fft_log(chi_vals, 
                     w2_rsd_vals, 0, ell+2.5, kr=ell+1)
                 F_2_rsd = (L_0s[i_ell]*F_2_0 + L_m2s[i_ell]*F_2_m2 
@@ -333,12 +333,12 @@ def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
     #Set up fftlog instances
     fftlog_1 = Fftlog(chi_vals, w1_vals, **pad_and_extrap_kwargs)
     if do_rsd_1:
-        fftlog_rsd_1 = Fftlog(chi_vals, w1_rsd_vals, nu=1.01, **pad_and_extrap_kwargs)
+        fftlog_rsd_1 = Fftlog(chi_vals, w1_rsd_vals, nu=1.1, **pad_and_extrap_kwargs)
 
     if not auto:
         fftlog_2 = Fftlog(chi_vals, w2_vals, **pad_and_extrap_kwargs)
         if do_rsd_2:
-            fftlog_rsd_2 = Fftlog(chi_vals, w2_rsd_vals, **pad_and_extrap_kwargs)
+            fftlog_rsd_2 = Fftlog(chi_vals, w2_rsd_vals, nu=1.1, **pad_and_extrap_kwargs)
 
     for i_ell, ell in enumerate(ells):
         k_vals, I_1 = fftlog_1.fftlog(ell)
