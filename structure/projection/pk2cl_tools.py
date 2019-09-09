@@ -44,7 +44,7 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
     pk0_interp_logk, growth_interp, chimin, chimax, dlogchi, 
     do_rsd=False, b1_1=None, b1_2=None, f_interp=None, 
     chi_pad_upper=2., chi_pad_lower=2., 
-    verbose=True):
+    verbose=False ):
     """
     Do the exact P(k,chi)->C_l projection integral
     The full integral is 
