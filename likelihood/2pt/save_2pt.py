@@ -77,12 +77,17 @@ def setup(options):
                "logspaced": logspaced, 
                "angle_units": angle_units }
 
-    def read_list(key):
-        s = options.get_string(option_section, key)
+    def read_list(key, default=""):
+        s = options.get_string(option_section, key, default)
         return s.split()
 
     #Get the spectrum section names
     config["spectrum_sections"] = read_list("spectrum_sections")
+    auto_only_sections = read_list("auto_only")
+    if auto_only_sections is not "":
+        config["auto_only"] = [(s in auto_only_sections) for s in config["spectrum_sections"]]
+    else:
+        config["auto_only"] = []
 
     #And output names (name of extensions in output fits files)
     if options.has_value(option_section, "output_extensions" ):
@@ -222,6 +227,7 @@ def execute(block, config):
     print("Generating twopoint file with the following spectra:")
     print(config['spectrum_sections'])
     for i_spec in range( len(config["spectrum_sections"]) ):
+        auto_only = config["auto_only"][i_spec]
         spectrum_section = config["spectrum_sections"][i_spec]
         output_extension = config["output_extensions"][i_spec]
 
@@ -231,14 +237,19 @@ def execute(block, config):
         kernel_name_a, kernel_name_b = "nz_"+sample_a, "nz_"+sample_b
         
         #Get kernels
-        if (kernel_name_a not in [ k.name for k in kernels ]) and (kernel_name_a not in no_kernel_found):
+        if ((kernel_name_a not in [ k.name for k in kernels ]) 
+            and (kernel_name_a not in no_kernel_found)):
             if block.has_section(kernel_name_a):
-                kernels.append( twopoint.NumberDensity.from_block( block, kernel_name_a ) )
+                kernels.append( 
+                    twopoint.NumberDensity.from_block( 
+                        block, kernel_name_a ) )
             else:
                 no_kernel_found.append(kernel_name_a)
         if kernel_name_b not in [ k.name for k in kernels ]:
             if block.has_section(kernel_name_b):
-                kernels.append( twopoint.NumberDensity.from_block( block, kernel_name_b ) )
+                kernels.append( 
+                    twopoint.NumberDensity.from_block( 
+                        block, kernel_name_b ) )
             else:
                 no_kernel_found.append(kernel_name_b)
 
@@ -246,7 +257,8 @@ def execute(block, config):
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
 
-        theory_spec = TheorySpectrum.from_block( block, spectrum_section )
+        theory_spec = TheorySpectrum.from_block( block, 
+            spectrum_section, auto_only=auto_only )
         theory_spec_list.append(theory_spec)
 
         #get angle_units
@@ -254,15 +266,17 @@ def execute(block, config):
             angle_units = config['angle_units'].name
         else:
             angle_units = None
-        spec_meas_list.append( theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
-            (kernel_name_a, kernel_name_b), output_extension, angle_lims = config['angle_lims_userunits'], 
+        spec_meas_list.append( 
+            theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+            (kernel_name_a, kernel_name_b), output_extension, 
+            angle_lims = config['angle_lims_userunits'], 
             angle_units=angle_units ) )
         
         if make_covariance:
             if real_space:
                 #In this case we also need the corresponding Cl spectra to generate the covariance
                 cl_section = config["cl_sections"][i_spec]
-                cl_spec = TheorySpectrum.from_block( block, cl_section )
+                cl_spec = TheorySpectrum.from_block( block, cl_section, auto_only=False )
                 cl_theory_spec_list.append( cl_spec )
                 #Check cls have the same bin pairings as their corresponding real-space spectra
                 try:

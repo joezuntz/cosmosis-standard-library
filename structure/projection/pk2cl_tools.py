@@ -9,6 +9,7 @@ from scipy.integrate import quad
 import sys
 from LOG_HT import fft_log
 import time
+from fftlog import Fftlog
 
 inv_sqrt2pi = 1./np.sqrt(2*np.pi)
 
@@ -47,15 +48,21 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
     """
     Do the exact P(k,chi)->C_l projection integral
     The full integral is 
-    \int_0^\inf dk k^{-1} P(k,0) I_1(k) I_2(k)
-    where I_x(k) = \int_0^{\inf} dr k F_x(r) r^{-0.5} D(r) J_{l+0.5}(kr),
-    and F_x(r_1) is the radial kernel for tracer x and D(r) is the growth factor
+    \int_0^\inf dk k P(k,0) I_1(k) I_2(k)
+    where I_x(k) = \int_0^{\inf} dr W_x(r) r^{-0.5} D(r) J_{l+0.5}(kr),
+    and W_x(r_1) is the radial kernel for tracer x and D(r) is the growth factor
 
-    We want to use a fftlog for the I_x(k) calculation, so write it in the form 
-    I_x(k) = \int_0^{\inf} k dr f_x(r) J_{mu}(kr).
-    So f_x(r) = F_x(r) D(r_1) r^{-0.5}
-    We actually do the integral in log(k), so calculate 
-    \int_0^\inf dlogk P(k,0) I_1(k) I_2(k).
+    Here we use Joe's fftlog function for the I_x(k) calculation.
+    This assumes the form 
+    F(k) = \int_0^{\inf} k dr w(r) J_{mu}(kr). 
+    So if we set w(r) = F_x(r) r^{-0.5} D(r), we need
+    to divide out by a two factors (one for each of 
+    I_1 and I_2) of k at the end i.e. F(k) = kI(k)
+
+    So we do the integral as 
+    \int_0^\inf k^{-1} dk P(k,0) * (k*I_1(k)) * (k*I_2(k)).
+    We actually do it on logk i.e.
+    \int_0^\inf dlogk P(k,0) * (k*I_1(k)) * (k*I_2(k)).
 
     We also optionally do RSD. In this case, I_x(k)=I_x(k,l)
     I_x(k,l) = \int_0^{\inf} k dr f_x(r) * [ J_{mu}(kr)
@@ -100,6 +107,9 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
     cell: float array
         np.array of C(l) values.
     """
+
+    #Assert that chimin>0 since we're going to do the integral
+    #in log(chi)
     assert chimin>0.
     log_chimin, log_chimax = np.log(chimin), np.log(chimax)
     if verbose:
@@ -117,79 +127,260 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
     kernel1_vals = kernel1_interp(chi_vals)
     auto=False
     if kernel2_interp is kernel1_interp:
-        kernel2_vals = kernel1_vals
-        auto=True
-    else:
-        kernel2_vals = kernel2_interp(chi_vals)
+        auto = True
+        assert b1_1==b1_2
 
-    if do_rsd:
+    #Only implemented case where both samples have rsd
+    do_rsd_1 = do_rsd_2 = do_rsd
+    if do_rsd_1 or do_rsd_2:
         #Get Legendre coefficients
         L_0s = (2*ells*ells+2*ells-1)/(2*ells+3)/(2*ells-1)
         L_m2s = -ells*(ells-1)/(2*ells-1)/(2*ells+1)
         L_p2s = -(ells+1)*(ells+2)/(2*ells+1)/(2*ells+3)
-        assert b1_1 is not None
         assert f_interp is not None
         f_vals = f_interp(chi_vals) #dlnD/dlna at each chi value
+
+    w1_vals = kernel1_vals * growth_vals * np.power(chi_vals, -0.5)
+    if do_rsd_1:
+        w1_rsd_vals = w1_vals * f_vals
+
+    if not auto:
+        kernel2_vals = kernel2_interp(chi_vals)
+        w2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
+        if do_rsd_2:
+            w2_rsd_vals = w2_vals * f_vals
 
     cell = np.zeros_like(ells)
 
     for i_ell, ell in enumerate(ells):
-        f1_vals = kernel1_vals * growth_vals * np.power(chi_vals, -0.5)
-        k_vals, I_1 = fft_log(chi_vals, f1_vals, 0, ell+0.5)
+        k_vals, F_1 = fft_log(chi_vals, w1_vals, 0, ell+0.5)
+
+        #multiply this term by bias 
+        if b1_1 is not None:
+            F_1 *= b1_1
+
+        #Now rsd part.
+        if do_rsd_1:
+            k_vals_check, F_1_0 = fft_log(chi_vals, 
+                w1_rsd_vals, 0, ell+0.5)
+            if ell>1:
+                k_vals_check, F_1_m2 = fft_log(chi_vals, 
+                    w1_rsd_vals, 0, ell-1.5, kr=ell+1)
+            else:
+                F_1_m2 = 0.
+            assert np.allclose(k_vals_check, k_vals)
+            k_vals_check, F_1_p2 = fft_log(chi_vals, 
+                w1_rsd_vals, 0, ell+2.5, kr=ell+1)
+            assert np.allclose(k_vals_check, k_vals)
+            F_1_rsd = L_0s[i_ell]*F_1_0 + L_m2s[i_ell]*F_1_m2 + L_p2s[i_ell]*F_1_p2
+            F_1 += F_1_rsd
+
+        if auto:
+            F_2 = F_1
+        else:
+            _, F_2 = fft_log(chi_vals, w2_vals, 0, ell+0.5)
+
+            #multiply normal term by bias
+            if b1_2 is not None:
+                F_2 *= b1_2
+            
+            if do_rsd_2:
+                #Now rsd part
+                k_vals_check, F_2_0 = fft_log(chi_vals, 
+                    w2_rsd_vals, 0, ell+0.5)
+                if ell>1:
+                    k_vals_check, F_2_m2 = fft_log(chi_vals, 
+                        w2_rsd_vals, 0, ell-1.5, kr=ell+1)
+                else:
+                    F_2_m2 = 0.
+                k_vals_check, F_2_p2 = fft_log(chi_vals, 
+                    w2_rsd_vals, 0, ell+2.5, kr=ell+1)
+                F_2_rsd = (L_0s[i_ell]*F_2_0 + L_m2s[i_ell]*F_2_m2 
+                    + L_p2s[i_ell]*F_2_p2)
+                F_2 += F_2_rsd
+
+        logk_vals = np.log(k_vals)
+        pk_vals = pk0_interp_logk(logk_vals)
+        #Now we can compute the full integral \int_0^{\inf} k^{-1} dk P(k,0) F_1(k) F_2(k)
+        #We are values logspaced in k, so calculate as \int_0^{inf} dlog(k) P(k,0) F_1(k) F_2(k)
+        integrand_vals = pk_vals * F_1 * F_2
+        #Spline and integrate the integrand.
+        integrand_interp = IUS(logk_vals, integrand_vals)
+        integral = integrand_interp.integral(logk_vals.min(), 
+            logk_vals.max())
+        cell[i_ell] = integral
+    return cell
+
+def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
+    pk0_interp_logk, growth_interp, chimin, chimax, dlogchi, 
+    do_rsd=False, b1_1=None, b1_2=None, f_interp=None, 
+    chi_pad_upper=1., chi_pad_lower=1., chi_extrap_upper=1.,
+    chi_extrap_lower=1., verbose=True):
+    """
+    Do the exact P(k,chi)->C_l projection integral
+    The full integral is 
+    2/pi \int_0^\inf dk k^2 P(k,0) I_1(k) I_2(k)
+    where I_x(k,r) = \int_0^{\inf} dr W_x(r) D(r) j_{l}(kr),
+    and W_x(r) is the radial kernel for tracer x 
+    and D(r) is the growth factor
+
+    We want to use an fftlog for the I_x(k) calculation. Xiao's
+    code does F(k) = \int_0^\infty dr / r * q(r) * j_\ell(kr)
+    so in our case q(r)/r = W_x(r) D(r) so q(r) = r W_x(r) D(r).
+
+    We actually do the integral in log(k), so calculate 
+    \sqrt(2/pi) \int_0^\inf k^3 d(logk) P(k,0) I_1(k) I_2(k).
+
+    We also optionally do RSD. In this case, 
+    I_x(k)=I_x(k,l) = \int_0^\infty dr/r (q(r)j_l(kr) -
+    n(r)f(r)D(r)j_l''(kr))
+    where f(r) is [dlnD/dlna](r) the logarithmic growth rate.
+
+    Parameters
+    ----------
+    ells : np.array
+        np.array of ell values to compute C(l) for.
+    kernel1_interp: spline
+        Spline of F_1(chi)
+    kernel2_interp: spline
+        Spline of F_2(chi)
+    pk0_interp_logk: spline
+        Spline of P(log(k), z=0)
+    growth_interp: spline
+        Spline of growth(chi)
+    chimin: float
+        minimum chi for integral over chi
+    chimax: float
+        maximum chi for integral over chi
+    chi_pad_lower: float
+        Pad f(chi) with zeros up to this factor
+        times chimax
+    chi_pad_upper: float
+        Pad f(chi) with zeros down to this factor
+        times chimax
+    chi_extrap_upper: float
+    chi_extrap_lower: float
+    dlogchi: float
+        spacing to use in integral over log(chi)
+    do_rsd: boolN_
+        Include RSD
+    b1_1: float
+        Value of linear bias for sample 1 (required for RSD calculation)
+    b1_2: float
+        Value of linear bias for sample 2 (required for RSD calculation)
+    f_interp: spline
+        Spline of growth function dlog(D)/dloga as a function of chi.
+
+    Returns
+    -------
+    cell: float array
+        np.array of C(l) values.
+    """
+    chi_pad_upper=chi_pad_lower=1.
+    #chi_extrap_upper=chi_extrap_lower=2.
+    assert chimin>0.
+    log_chimin, log_chimax = np.log(chimin), np.log(chimax)
+    nchi = np.ceil((log_chimax-log_chimin)/dlogchi).astype(int)
+    #nchi = nearest_power_of_2(nchi_orig) #use nchi that is a power of 2 for fast fft.
+    log_chi_vals = np.linspace(log_chimin, log_chimax, nchi)
+
+    if chi_pad_upper>0.:
+        assert chi_pad_lower==chi_pad_upper
+        N_pad = (np.ceil(float(chi_pad_upper)/dlogchi)).astype(int)
+    else:
+        N_pad = 0
+    if chi_extrap_upper>0.:
+        N_extrap_upper = (np.ceil(float(chi_extrap_upper)/dlogchi)).astype(int)
+    else:
+        N_extrap_upper = 0
+    if chi_extrap_lower>0.:
+        N_extrap_lower = (np.ceil(float(chi_extrap_lower)/dlogchi)).astype(int)
+    else:
+        N_extrap_lower = 0    
+    print("chmin, chimax:", chimin, chimax)
+    print("nchi:", nchi, N_pad)
+    pad_and_extrap_kwargs = {"N_pad": N_pad, "N_extrap_low": N_extrap_lower,
+                             "N_extrap_high": N_extrap_upper}
+    print("pad and extrap kwargs:", pad_and_extrap_kwargs)
+
+    chi_vals = np.exp(log_chi_vals)
+    growth_vals = growth_interp(chi_vals)
+    growth_vals = growth_interp(chi_vals)
+    kernel1_vals = kernel1_interp(chi_vals)
+    auto=False
+    if kernel2_interp is kernel1_interp:
+        auto = True
+        assert b1_1==b1_2
+
+    #Only implemented case where both samples have rsd
+    do_rsd_1 = do_rsd_2 = do_rsd
+    if do_rsd_1 or do_rsd_2:
+        assert f_interp is not None
+        f_vals = f_interp(chi_vals) #dlnD/dlna at each chi value
+
+    w1_vals = kernel1_vals * growth_vals * chi_vals
+    if do_rsd_1:
+        w1_rsd_vals = w1_vals * f_vals
+
+    if not auto:
+        kernel2_vals = kernel2_interp(chi_vals)
+        w2_vals = kernel2_vals * growth_vals * chi_vals
+        if do_rsd_2:
+            w2_rsd_vals = w2_vals * f_vals
+
+    #output array for C(l)s
+    cell = np.zeros_like(ells)
+    #Set up fftlog instances
+    fftlog_1 = Fftlog(chi_vals, w1_vals, **pad_and_extrap_kwargs)
+    if do_rsd_1:
+        fftlog_rsd_1 = Fftlog(chi_vals, w1_rsd_vals, nu=1.1, **pad_and_extrap_kwargs)
+
+    if not auto:
+        fftlog_2 = Fftlog(chi_vals, w2_vals, **pad_and_extrap_kwargs)
+        if do_rsd_2:
+            fftlog_rsd_2 = Fftlog(chi_vals, w2_rsd_vals, nu=1.1, **pad_and_extrap_kwargs)
+
+    for i_ell, ell in enumerate(ells):
+        k_vals, I_1 = fftlog_1.fftlog(ell)
         #multiply this term by bias 
         if b1_1 is not None:
             I_1 *= b1_1
 
         #Now rsd part.
         if do_rsd:
-            f1_rsd_vals = f1_vals * f_vals
-            k_vals_check, I_1_0 = fft_log(chi_vals, 
-                f1_rsd_vals, 0, ell+0.5)
-            if ell>1:
-                k_vals_check, I_1_m2 = fft_log(chi_vals, 
-                    f1_rsd_vals, 0, ell-1.5, kr=ell+1)
-            else:
-                I_1_m2 = 0.
+            k_vals_check, I_1_rsd = fftlog_rsd_1.fftlog_ddj(
+                ell)
             assert np.allclose(k_vals_check, k_vals)
-            k_vals_check, I_1_p2 = fft_log(chi_vals, 
-                f1_rsd_vals, 0, ell+2.5, kr=ell+1)
-            assert np.allclose(k_vals_check, k_vals)
-            I_1_rsd = L_0s[i_ell]*I_1_0 + L_m2s[i_ell]*I_1_m2 + L_p2s[i_ell]*I_1_p2
-            I_1 += I_1_rsd
+            I_1 -= I_1_rsd
 
         if auto:
             I_2 = I_1
         else:
-            f2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
-            _, I_2 = fft_log(chi_vals, f2_vals, 0, ell+0.5)
+            k_vals, I_2 = fftlog_2.fftlog(ell)
+
             #multiply normal term by bias
             if b1_2 is not None:
                 I_2 *= b1_2
             
             if do_rsd:
                 #Now rsd part
-                f2_rsd_vals = f2_vals * f_vals
-                k_vals_check, I_2_0 = fft_log(chi_vals, 
-                    f2_rsd_vals, 0, ell+0.5)
-                if ell>1:
-                    k_vals_check, I_2_m2 = fft_log(chi_vals, 
-                        f2_rsd_vals, 0, ell-1.5, kr=ell+1)
-                else:
-                    I_2_m2 = 0.
-                k_vals_check, I_2_p2 = fft_log(chi_vals, 
-                    f2_rsd_vals, 0, ell+2.5, kr=ell+1)
-                I_2_rsd = L_0s[i_ell]*I_2_0 + L_m2s[i_ell]*I_2_m2 + L_p2s[i_ell]*I_2_p2
-                I_2 += I_2_rsd
+                k_vals_check, I_2_rsd = fftlog_rsd_2.fftlog_ddj(
+                    ell)
+                assert np.allclose(k_vals_check, k_vals)
+                I_2 -= I_2_rsd
 
         logk_vals = np.log(k_vals)
         pk_vals = pk0_interp_logk(logk_vals)
-        #Now we can compute the full integral \int_0^{\inf} k dk P(k,0) I_1(k) I_2(k)
-        #We are values logspaced in k, so calculate as \int_0^{inf} dlog(k) P(k,0) I_1(k) I_2(k)
-        integrand_vals = pk_vals * I_1 * I_2
+        #Now we can compute the full integral 
+        #2/pi * \int_0^{\inf} k^2 dk P(k,0) I_1(k) I_2(k)
+        #We are values logspaced in k, so calculate as 
+        #2/pi * \int_0^{inf} k^3 dlog(k) P(k,0) I_1(k) I_2(k)
+        integrand_vals =k_vals * k_vals * k_vals * pk_vals * I_1 * I_2
         #Spline and integrate the integrand.
         integrand_interp = IUS(logk_vals, integrand_vals)
         integral = integrand_interp.integral(logk_vals.min(), 
             logk_vals.max())
+        integral *= 2./np.pi
         cell[i_ell] = integral
     return cell
 

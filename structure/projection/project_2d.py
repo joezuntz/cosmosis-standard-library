@@ -6,8 +6,10 @@ from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-from pk2cl_tools import limber_integral, get_dlogchi, exact_integral, nearest_power_of_2
+from pk2cl_tools import limber_integral, get_dlogchi
 from kernel import TomoNzKernel
+#from pk2cl_tools import exact_integral_fftlogxiao as exact_integral
+from pk2cl_tools import exact_integral
 
 from fastpt_interface import get_Pk_basis_funcs, get_bias_params_bin, get_PXX, get_PXm
 
@@ -352,7 +354,7 @@ class Spectrum(object):
         return c_ell
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         """
         The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
@@ -513,7 +515,7 @@ class LingalLingalSpectrum(Spectrum):
     to do RSD.
     """
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
-     sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1., 
+     sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2., 
      chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
         #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
         #and then Limber for the non-linear part (P_nl-P_lin)
@@ -547,7 +549,7 @@ class LingalLingalSpectrum(Spectrum):
             c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
             chimin, chimax, dlogchi, do_rsd=True, b1_1=self.lin_bias_values_a[bin1], 
             b1_2=self.lin_bias_values_b[bin2], f_interp=f_of_chi_spline, 
-            chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower
+            chi_pad_upper=chi_pad_upper, chi_pad_lower=chi_pad_lower, 
                 )
         else:
             c_ell = exact_integral(ell, K1, K2, lin_z0_logk_spline, lin_growth_spline,
@@ -602,7 +604,7 @@ class LingalLingalSpectrum(Spectrum):
 class LingalShearSpectrum(Spectrum):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         try:
             assert do_rsd==False
@@ -640,7 +642,7 @@ class LingalShearSpectrum(Spectrum):
 class LingalMagnificationSpectrum(Spectrum):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         try:
             assert do_rsd==False
@@ -680,7 +682,7 @@ class LingalMagnificationSpectrum(Spectrum):
 class LingalIntrinsicSpectrum(Spectrum):
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
-        sig_over_dchi=10., chi_pad_lower=1., chi_pad_upper=1.,
+        sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
         try:
             assert do_rsd==False
@@ -717,30 +719,31 @@ class LingalIntrinsicSpectrum(Spectrum):
         for i in range(1, nbin+1):
             self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
 
-def NLGalNLGalSpectrum(LingalLingalSpectrum):
+class NlgalNlgalSpectrum(LingalLingalSpectrum):
     """
     Class for computing galaxy C(l) with non-linear bias models. For this case
     the linear power spectrum used in the exact calculation is still 
     just the linear matter power spectrum (and the b_1 values are passed 
     along with this). We also need to construct the non-Linear P(k) using fast-pt.
     """
-    def prep_spectrum(self, block, pt_type):
+    def prep_spectrum(self, block, pt_type="oneloop_eul_bk"):
         #assign pt_type
         self.pt_type = pt_type
 
         #Load bias values into a dictionary
-        self.bias_values_a, self.lin_bias_values_a = load_bias_values(
+        self.bias_values_a, self.lin_bias_values_a = self.load_bias_values(
             block, self.sample_a, pt_type)
         if self.sample_a == self.sample_b:
-            self.bias_values_b = self.bias_values_b
+            self.bias_values_b = self.bias_values_a
+            self.lin_bias_values_b = self.lin_bias_values_a
         else:
-            self.bias_values_b, self.lin_bias_values_b = load_bias_values(
+            self.bias_values_b, self.lin_bias_values_b = self.load_bias_values(
                 block, self.sample_b, pt_type)
 
         #Get power spectrum terms from fastpt. These
         #will be used later to form P_gg for a given bin 
         #combination 
-        self.k_nl_bias, self.Pk_gg_basis_funcs = get_Pk_basis_funcs(
+        self.k_nl_bias, self.Pk_basis_funcs = get_Pk_basis_funcs(
             block, self.pt_type, output_nl_grid=True)
 
         p = self.source.power[self.power_key]
@@ -751,35 +754,36 @@ def NLGalNLGalSpectrum(LingalLingalSpectrum):
 
         #get_power_spline and get_power_sublin check these
         #attributes to see whether they need to call set_power
-        self.bin1_current, self.bin2_current = None, None
+        self.current_bin1, self.current_bin2 = None, None
 
-    def compute(args, **kwargs):
-        super(NLGalNLGalSpectrum, self).compute(args, **kwargs)
-        #Set these to None just in case we try to re-use
-        #them when we shouldn't
-        self.pk_chi_logk_spline = None
-        self.pk_sublin_spline = None
+    #def compute(args, **kwargs):
+    #    super(NlgalNlgalSpectrum, self).compute(args, **kwargs)
+    #    #Set these to None just in case we try to re-use
+    #    #them when we shouldn't
+    #    self.pk_chi_logk_spline = None
+    #    self.pk_sublin_spline = None
 
     def load_bias_values(self, block, sample, pt_type):
         #Load bias values from the block
         nbin = self.source.kernels[sample].nbin
         bias_values = {}
         lin_bias_values = {}
-        for i in range(1, nbin+1):
-            bias_values[i] = get_bias_params_bin(block, 
-                bin_num, pt_type, "bias_%d"%sample)
-            lin_bias_values[i] = bias_values[i]["b1E"]
+        for bin_num in range(1, nbin+1):
+            bias_values[bin_num] = get_bias_params_bin(block, 
+                bin_num, pt_type, "bias_%s"%sample)
+            lin_bias_values[bin_num] = bias_values[bin_num]["b1E"]
         return bias_values, lin_bias_values
 
     #The P(k)s for the non-linear bias classes work
     #a bit differently, annoyingly.
     def set_power(self, block, bin1, bin2):
         #Record the current bin pair
-        self.bin1_current, self.bin2_current = bin1, bin2
+        self.current_bin1, self.current_bin2 = bin1, bin2
 
         #Get the full non-linear P_gg(k) from fastpt
-        P_gg, P_gg_terms = get_PXX(self.bias_values_a, 
-            self.bias_values_b, self.Pk_gg_basis_funcs, self.pt_type)
+        P_gg, P_gg_terms = get_PXX(self.bias_values_a[bin1], 
+            self.bias_values_b[bin2], self.Pk_basis_funcs, 
+            self.pt_type)
         #We inherit the compute method (and thus 
         #compute_limber and compute_exact methods)
         #from LingalLingalSpectrum, which expects the 
@@ -787,19 +791,21 @@ def NLGalNLGalSpectrum(LingalLingalSpectrum):
         #then multiplies by the galaxy bias after the fact.
         #So we set self.pk_chi_logk_spline to 
         #P_gg / lin_bias_1 / lin_bias_2
-        blin_1 = self.lin_bias_values_a[bin1-1] 
-        blin_2 = self.lin_bias_values_b[bin2-1]
-        P_gg_div_bias = (P_gg / blin1 / blin2)
-        self.pk_chi_logk_spline = RectBivariateSpline(
-            self.chi_vals, np.log(self.k_nl_bias),
+        blin_1 = self.lin_bias_values_a[bin1] 
+        blin_2 = self.lin_bias_values_b[bin2]
+        P_gg_div_bias = (P_gg / blin_1 / blin_2)
+        chi_vals = self.source.power[self.power_key].chi_vals
+        self.pk_chi_logk_spline = interp.RectBivariateSpline(
+            chi_vals, np.log(self.k_nl_bias),
             P_gg_div_bias)
         #Now we need the P-P_lin term to use in the
         #Limber part of compute_exact. Again, this should
         #be divided by the linear bias factors, since 
         #these are applied in LingalLingalSpectrum.compute_exact
-        P_sublin = P_gg_div_bias - P_gg_terms["Plin_from_growth"]
-        self.pk_sublin_spline = RectBivariateSpline(
-            self.chi_vals, np.log(self.k_nl_bias),
+        P_sublin = (P_gg_div_bias - 
+            self.Pk_basis_funcs["Plin_from_growth"])
+        self.pk_sublin_spline = interp.RectBivariateSpline(
+            chi_vals, np.log(self.k_nl_bias),
             P_sublin)
 
     def get_power_spline(self, block, bin1, bin2):
@@ -815,6 +821,94 @@ def NLGalNLGalSpectrum(LingalLingalSpectrum):
         #call self.set_power
         if (self.current_bin1!=bin1 or 
             self.current_bin2!=bin2):
+            self.set_power(block, bin1, bin2)
+        return self.pk_sublin_spline        
+
+class NlgalShearSpectrum(LingalShearSpectrum):
+    """
+    Class for computing galaxy C(l) with non-linear bias models. For this case
+    the linear power spectrum used in the exact calculation is still 
+    just the linear matter power spectrum (and the b_1 values are passed 
+    along with this). We also need to construct the non-Linear P(k) using fast-pt.
+    """
+    def prep_spectrum(self, block, pt_type="oneloop_eul_bk"):
+        #assign pt_type
+        self.pt_type = pt_type
+
+        #Load bias values into a dictionary
+        self.bias_values_a, self.lin_bias_values_a = self.load_bias_values(
+            block, self.sample_a, pt_type)
+
+        #Get power spectrum terms from fastpt. These
+        #will be used later to form P_gm for a given bin 
+        #combination 
+        self.k_nl_bias, self.Pk_basis_funcs = get_Pk_basis_funcs(
+            block, self.pt_type, output_nl_grid=True)
+
+        p = self.source.power[self.power_key]
+        self.pk_chi_logk_spline = None #Set these to None as
+        self.pk_sublin_spline = None #they depend on the bin pair
+        self.pk_lin_z0_logk_spline = p.lin_z0_logk_spline
+        self.lin_growth_spline = p.lin_growth_spline
+
+        #get_power_spline and get_power_sublin check these
+        #attributes to see whether they need to call set_power
+        self.current_bin1 = None
+
+    def load_bias_values(self, block, sample, pt_type):
+        #Load bias values from the block
+        nbin = self.source.kernels[sample].nbin
+        bias_values = {}
+        lin_bias_values = {}
+        for bin_num in range(1, nbin+1):
+            bias_values[bin_num] = get_bias_params_bin(block, 
+                bin_num, pt_type, "bias_%s"%sample)
+            lin_bias_values[bin_num] = bias_values[bin_num]["b1E"]
+        return bias_values, lin_bias_values
+
+    #The P(k)s for the non-linear bias classes work
+    #a bit differently, annoyingly.
+    def set_power(self, block, bin1, bin2):
+        #Record the current bin pair
+        self.current_bin1 = bin1
+
+        #Get the full non-linear P_gg(k) from fastpt
+        P_gm, P_gm_terms = get_PXm(self.bias_values_a[bin1], 
+            self.Pk_basis_funcs, self.pt_type)
+        #We inherit the compute method (and thus 
+        #compute_limber and compute_exact methods)
+        #from LingalShearSpectrum, which expects the 
+        #non-linear P(k) in self.pk_chi_logk_spline, and 
+        #then multiplies by the galaxy bias after the fact.
+        #So we set self.pk_chi_logk_spline to 
+        #P_gm / lin_bias_1
+        blin_1 = self.lin_bias_values_a[bin1] 
+        P_gm_div_bias = (P_gm / blin_1 )
+        chi_vals = self.source.power[self.power_key].chi_vals
+        self.pk_chi_logk_spline = interp.RectBivariateSpline(
+            chi_vals, np.log(self.k_nl_bias),
+            P_gm_div_bias)
+        #Now we need the P-P_lin term to use in the
+        #Limber part of compute_exact. Again, this should
+        #be divided by the linear bias factors, since 
+        #these are applied in LingalLingalSpectrum.compute_exact
+        P_sublin = (P_gm_div_bias - 
+            self.Pk_basis_funcs["Plin_from_growth"])
+        self.pk_sublin_spline = interp.RectBivariateSpline(
+            chi_vals, np.log(self.k_nl_bias),
+            P_sublin)
+
+    def get_power_spline(self, block, bin1, bin2):
+        #If current bin pair does not match bin1, bin2,
+        #call self.set_power
+        if self.current_bin1!=bin1:
+            self.set_power(block, bin1, bin2)
+        return self.pk_chi_logk_spline
+
+    def get_power_sublin(self, block, bin1, bin2):
+        #If current bin pair does not match bin1, bin2,
+        #call self.set_power
+        if self.current_bin1!=bin1:
             self.set_power(block, bin1, bin2)
         return self.pk_sublin_spline        
 
@@ -1002,6 +1096,23 @@ class SpectrumType(Enum):
         prefactor_type = (None, None)
         has_rsd = False
       
+    class NlgalNlgal(NlgalNlgalSpectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "N")
+        autocorrelation = True
+        name = "galaxy_cl"
+        prefactor_type = (None, None)
+        has_rsd = True
+
+    class NlgalShear(NlgalShearSpectrum):
+        autocorrelation = False
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "W")
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_type = (None, "lensing")
+        has_rsd = False
+
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
     # types, for example ones done with modified gravity changes.
@@ -1030,7 +1141,7 @@ class SpectrumCalculator(object):
         
         #accuracy settings
         self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 50.)
-        self.shear_kernel_nchi = options.get_int(option_section, "shear_kernel_nchi", 2000)
+        self.shear_kernel_dchi = options.get_double(option_section, "shear_kernel_dchi", 5.)
 
         self.limber_transition_end = options.get_double(option_section,
             "limber_transition_end", -1.)
@@ -1060,7 +1171,7 @@ class SpectrumCalculator(object):
             "ell_max_logspaced", -1.)
         n_ell_logspaced = options.get_int(option_section, "n_ell_logspaced",-1)
         if n_ell_logspaced>0:
-            assert ell_min_logspaced>=0.
+            assert ell_min_logspaced>0.
             assert ell_max_logspaced>0.
             self.ell = np.logspace(np.log10(ell_min_logspaced), 
                 np.log10(ell_max_logspaced), n_ell_logspaced)
@@ -1069,9 +1180,8 @@ class SpectrumCalculator(object):
         ell_min_linspaced = options.get_int(option_section, "ell_min_linspaced",-1)
         ell_max_linspaced = options.get_int(option_section, "ell_max_linspaced", -1)
         n_ell_linspaced = options.get_int(option_section, "n_ell_linspaced", -1)
-        if ell_min_linspaced>=0:
+        if n_ell_linspaced>0:
             assert ell_max_linspaced>0
-            assert n_ell_linspaced>0
             linear_ells = np.linspace(ell_min_linspaced, ell_max_linspaced, 
                 n_ell_linspaced)
             if len(self.ell>0):
@@ -1102,6 +1212,7 @@ class SpectrumCalculator(object):
             #_, unique_inds = np.unique(self.ell_exact, return_index=True)
             #self.ell_exact = self.ell_exact[unique_inds]
             ell_exact = self.ell[ self.ell < self.limber_ell_start ]
+            self.ell = self.ell[ self.ell >= self.limber_ell_start ]
             ell_exact = np.floor(ell_exact)
             self.ell_exact = np.unique(ell_exact)
             self.n_ell_exact = len(self.ell_exact)
@@ -1314,7 +1425,7 @@ class SpectrumCalculator(object):
                 print("setting up W(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, 
                     self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels, 
-                    nchi=self.shear_kernel_nchi)
+                    dchi=self.shear_kernel_dchi)
 
             elif kernel_type == "F":
                 print("""setting up combined shear and IA kernel
@@ -1338,7 +1449,7 @@ class SpectrumCalculator(object):
                 self.kernels[sample_name].set_combined_shear_ia_splines(
                     self.chi_of_z, self.dchidz, self.a_of_chi, F_of_chi_spline, 
                     self.lensing_prefactor, clip=self.clip_chi_kernels, 
-                    nchi=self.shear_kernel_nchi)
+                    dchi=self.shear_kernel_dchi)
             else:
                 raise ValueError("Invalid kernel type: %s. Should be 'N' or 'W'"%kernel_type)
 

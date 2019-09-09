@@ -15,12 +15,13 @@ from cosmosis.datablock import names
 def get_Pk_basis_funcs(block, pt_type, 
     matter_power_lin_name=names.matter_power_lin,     
     matter_power_nl_name=names.matter_power_nl, 
-    output_on_nl_grid= True, use_nl_for_k2=True,
+    output_nl_grid=True, use_pnl_for_k2=True,
     k_growth=1.e-3, fpt_upsample=4):
     """
     Get the z=0,k-dependent basis functions required 
     to construct the galaxy-galaxy
     and galaxy-matter power spectra for a given pt_type
+
 
     Parameters
     ----------
@@ -119,7 +120,7 @@ def get_Pk_basis_funcs(block, pt_type,
             PXXNL_out[key] = np.outer(growth**4, pk)
 
     elif pt_type in ['oneloop_eul_bk']:
-        PXXNL_b1b2bsb3nl = fastpt.one_loop_dd_bias_b3nl(Plin_klin_fpt, C_window=.75)
+        PXXNL_b1b2bsb3nl = fastpt.one_loop_dd_bias_b3nl(Plin_fpt, C_window=.75)
         PXXNL_b1b2bsb3nl_z0 = {"Pd1d2" : PXXNL_b1b2bsb3nl[2],
             "Pd2d2" : PXXNL_b1b2bsb3nl[3], "Pd1s2" : PXXNL_b1b2bsb3nl[4],
             "Pd2s2" : PXXNL_b1b2bsb3nl[5], "Ps2s2" : PXXNL_b1b2bsb3nl[6],
@@ -127,14 +128,15 @@ def get_Pk_basis_funcs(block, pt_type,
 
         if output_nl_grid:   
             # interpolate to nl k grid.
-            for key, pk in PXXNL_b1b2bsb3nl_z0:
+            for key, pk in PXXNL_b1b2bsb3nl_z0.iteritems():
                 if key == "sig4":
-                    PXXNL_b1b2bsb3nl_z0[key] = PXXNL_lpt[8]*np.ones_like(knl)
-                PXXNL_b1b2bsb3nl_z0[key] = intspline(log_klin_fpt, pk)(log_knl)
+                    PXXNL_b1b2bsb3nl_z0[key] = pk*np.ones_like(knl)
+                else:
+                    PXXNL_b1b2bsb3nl_z0[key] = intspline(log_klin_fpt, pk)(log_knl)
 
         #Apply growth factor to make k,z arrays
         PXXNL_out = {}
-        for key, pk in PXXNL_b1b2bsb3nl_z0:
+        for key, pk in PXXNL_b1b2bsb3nl_z0.iteritems():
             PXXNL_out[key] = np.outer(growth**4, pk)
 
     else:
@@ -188,7 +190,7 @@ def get_Pk_basis_funcs(block, pt_type,
 
         PXXNL_out["Pnl"] = pnl_on_fpt_grid
         Plin_out = np.outer(growth**2, Plin_klin_fpt)
-        PXXNL_out["Plin"] = Plin_out
+        PXXNL_out["Plin_from_growth"] = Plin_out
 
         #Now add k^2P(k) term
         knl2_matrix = np.tile(klin_fpt ** 2, (Pnl.shape[0], 1))
@@ -291,7 +293,7 @@ def get_PXm(bias_values, Pk_basis_funcs, pt_type):
 
     elif pt_type in ['oneloop_eul_bk']:
         b1E, b2E, bsE, b3nl, bk = (bias_values["b1E"], bias_values["b2E"],
-            bias_values["bsE"], bias_values["b3nl"], bias_values["bk"])
+            bias_values["bsE"], bias_values["b3nlE"], bias_values["bkE"])
 
         PXmNL_terms["Pd1d1"] = b1E * Pk_basis_funcs["Pnl"]
         PXmNL_terms["Pd1d2"] = 0.5 * b2E * Pk_basis_funcs["Pd1d2"]
@@ -299,8 +301,8 @@ def get_PXm(bias_values, Pk_basis_funcs, pt_type):
         PXmNL_terms["sig3nl"] = 0.5 * b3nl * Pk_basis_funcs["sig3nl"]
         PXmNL_terms["k2P"] = bk * Pk_basis_funcs["k2P"]
 
-        PXmNL = (PXmNL_terms["Pd1d1"] + PXmNL_terms["Pd1d2"] + PXmNL_terms["Pd1s2"],
-            PXmNL_terms["sig3nl"] + PXmNL_terms["k2P"])
+        PXmNL = (PXmNL_terms["Pd1d1"] + PXmNL_terms["Pd1d2"] + PXmNL_terms["Pd1s2"]
+            + PXmNL_terms["sig3nl"] + PXmNL_terms["k2P"])
     else:
         raise ValueError("pt_type %s is not valid"%(pt_type))
     # print 'ending PXm array'
@@ -362,7 +364,6 @@ def get_PXX(bias_values_bin1, bias_values_bin2, Pk_basis_funcs, pt_type):
     elif pt_type == "oneloop_eul_bk": 
         Pk_terms["Pd1d1"] = (bv1["b1E"] * bv2["b1E"] 
             * Pk_basis_funcs["Pnl"])
-
         Pk_terms["Pd1d2"] = (0.5 * (bv1["b1E"]*bv2["b2E"] 
             + bv2["b1E"]*bv1["b2E"]) * Pk_basis_funcs["Pd1d2"])
         
@@ -376,11 +377,11 @@ def get_PXX(bias_values_bin1, bias_values_bin2, Pk_basis_funcs, pt_type):
         
         Pk_terms["Ps2s2"] = 0.25 * bv1["bsE"]*bv2["bsE"] * Pk_basis_funcs["Ps2s2"]
         
-        Pk_terms["sig3nl"] = ((bv1["b1E"]*bv2["b3nl"] + 
-            bv2["b1E"]*bv1["bsE"]) * Pk_basis_funcs["sig3nl"])
+        Pk_terms["sig3nl"] = ((bv1["b1E"]*bv2["b3nlE"] + 
+            bv2["b1E"]*bv1["b3nlE"]) * Pk_basis_funcs["sig3nl"])
         
-        Pk_terms["k2P"] = ((bv1["b1E"]*bv2["bk"] 
-            + bv2["b1E"]*bv1["bk"]) * Pk_basis_funcs["k2P"])
+        Pk_terms["k2P"] = ((bv1["b1E"]*bv2["bkE"] 
+            + bv2["b1E"]*bv1["bkE"]) * Pk_basis_funcs["k2P"])
 
         PXXNL = (Pk_terms["Pd1d1"] + Pk_terms["Pd1d2"] + Pk_terms["Pd2d2"] 
             + Pk_terms["Pd1s2"] + Pk_terms["Pd2s2"] + Pk_terms["Ps2s2"]
@@ -389,4 +390,4 @@ def get_PXX(bias_values_bin1, bias_values_bin2, Pk_basis_funcs, pt_type):
     else:
         raise ValueError("pt_type %s is not valid"%(pt_type))
 
-    return PXXNL, PXXNL_terms
+    return PXXNL, Pk_terms
