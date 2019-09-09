@@ -77,14 +77,17 @@ def setup(options):
                "logspaced": logspaced, 
                "angle_units": angle_units }
 
-    def read_list(key):
-        s = options.get_string(option_section, key)
+    def read_list(key, default=""):
+        s = options.get_string(option_section, key, default)
         return s.split()
 
     #Get the spectrum section names
     config["spectrum_sections"] = read_list("spectrum_sections")
     auto_only_sections = read_list("auto_only")
-    config["auto_only"] = [(s in auto_only_sections) for s in config["spectrum_sections"]]
+    if auto_only_sections is not "":
+        config["auto_only"] = [(s in auto_only_sections) for s in config["spectrum_sections"]]
+    else:
+        config["auto_only"] = []
 
     #And output names (name of extensions in output fits files)
     if options.has_value(option_section, "output_extensions" ):
@@ -273,7 +276,7 @@ def execute(block, config):
             if real_space:
                 #In this case we also need the corresponding Cl spectra to generate the covariance
                 cl_section = config["cl_sections"][i_spec]
-                cl_spec = TheorySpectrum.from_block( block, cl_section )
+                cl_spec = TheorySpectrum.from_block( block, cl_section, auto_only=False )
                 cl_theory_spec_list.append( cl_spec )
                 #Check cls have the same bin pairings as their corresponding real-space spectra
                 try:
