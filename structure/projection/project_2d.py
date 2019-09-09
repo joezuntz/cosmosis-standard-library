@@ -525,8 +525,6 @@ class LingalLingalSpectrum(Spectrum):
         lin_z0_logk_spline, lin_growth_spline  = self.get_lin_power_growth(block, 
             bin1, bin2)
 
-        print("lin_growth_spline",lin_growth_spline)
-        
         #Need to choose a chimin, chimax and dchi for the integral.
         #By default
         if chimin is None:
