@@ -19,7 +19,21 @@ CL2XI_TYPES=["00","02+","22+","22-"]
 Class for interpolating spectra
 """
 class SpectrumInterp(object):
-    def __init__(self, angle, spec, bounds_error=True):
+    def __init__(self, angle, spec, bounds_error=False):
+        assert np.all(angle>=0)
+        #Check if the angle array starts with zero - 
+        #this will affect how we interpolate
+        starts_with_zero=False
+        self.spec0 = 0.
+        if angle[0]<1.e-9:
+            #if the first angle value is 0,
+            #record the first spec value as self.spec0
+            #and then set angle and spec arrays to 
+            #skip the first element.
+            starts_with_zero=True
+            self.spec0 = spec[0]
+            angle, spec = angle[1:], spec[1:]
+
         if np.all(spec > 0):
             self.interp_func = interp1d(np.log(angle), np.log(
                 spec), bounds_error=bounds_error, fill_value=-np.inf)
@@ -41,6 +55,7 @@ class SpectrumInterp(object):
             self.y_func = lambda y: y
 
     def __call__(self, angle):
+        non_zero = angle>1.e-12
         interp_vals = self.x_func(angle)
         try:
             spec = self.y_func( self.interp_func(interp_vals) )
@@ -48,26 +63,7 @@ class SpectrumInterp(object):
             interp_vals[0] *= 1+1.e-9
             interp_vals[-1] *= 1-1.e-9
             spec = self.y_func( self.interp_func(interp_vals) )
-        """
-        if self.interp_type == 'loglog':
-            interp_vals = np.log(angle)
-
-            try:
-                spec = np.exp(self.interp_func(interp_vals))
-            except ValueError:
-                interp_vals[0] *= 1+1.e-9
-                interp_vals[-1] *= 1-1.e-9
-                print(interp_vals)
-                print(self.interp_func.x)
-                spec = np.exp(self.interp_func(interp_vals))
-
-        elif self.interp_type == 'minus_loglog':
-            spec = -np.exp(self.interp_func(np.log(angle)))
-        else:
-            assert self.interp_type == "log_ang"
-            spec = self.interp_func(np.log(angle))
-        """
-        return spec
+        return np.where(non_zero, spec, self.spec0)
 
 class TheorySpectrum(object):
     """Tomographic theory spectrum
@@ -115,7 +111,7 @@ class TheorySpectrum(object):
         self.spec_interps.pop(bin_pair)
 
     @classmethod
-    def from_block( cls, block, section_name, auto_only ):
+    def from_block( cls, block, section_name, auto_only=False ):
         #section_name is either e.g. shear_cl or shear_cl_<save_name>
 
         spectrum_name = section_name
@@ -414,7 +410,8 @@ class ClCov( object ):
                                 cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, 
                                 ell_min=ell_lims[0], noise_only=noise_only )
                             #Now bin this diaginal covariance
-                            #Var(binned_cl) = Sum_i Var(C(l_i)) / (# of ell in bin)^2
+                            #Var(binned_cl) = \sum_l Var(w_l^2 C(l)) / (\sum_l w_l)^2
+                            #where w_l = 2*l+1
                             cl_var_binned = np.zeros(n_ell)
                             for ell_bin, (ell_low, ell_high) in enumerate(zip(ell_lims[:-1], ell_lims[1:])):
                                 #Get the ell values for this bin:
@@ -422,8 +419,13 @@ class ClCov( object ):
                                 #Get the indices in cl_var_binned these correspond to:
                                 ell_vals_bin_inds = ell_vals_bin - ell_lims[0]
                                 cl_var_unbinned_bin = cl_var_unbinned[ell_vals_bin_inds]
-                                cl_var_binned[ell_bin] = (np.sum((2*ell_vals_bin+1) * cl_var_unbinned_bin) 
-                                    / np.sum(2*ell_vals_bin+1))
+                                weights_unbinned = 2*ell_vals_bin + 1.
+                                #cl_var_binned[ell_bin] = (np.sum((2*ell_vals_bin+1) * cl_var_unbinned_bin) 
+                                #    / np.sum(2*ell_vals_bin+1))
+                                numerator = np.sum(weights_unbinned**2 * cl_var_unbinned_bin)
+                                demoninator = (weights_unbinned.sum())**2
+                                cl_var_binned[ell_bin] = (numerator/demoninator)
+
                             cov_blocks[i_bp, j_bp] = cl_var_binned
 
                         #Now work out where this goes in the full covariance matrix
@@ -500,7 +502,7 @@ def real_space_cov( cl_cov, cl_specs, cl2xi_types, ell_max, angle_lims_rad,
                     #We've already done it if its an auto-correlation i.e. i_xi==j_xi and
                     #j_bp is less than i_bp 
                     if (i_xi == j_xi) and cl_spec_i.is_auto and ( j_bp < i_bp ):
-                        cov_blocks[i_xi, j_xi, i_bp, j_bp] = cov_blocks[i_xi, j_xi, j_bp, i_bp]
+                        xi_cov_block = cov_blocks[i_xi, j_xi, j_bp, i_bp]
                     else:
                         #Get the full cl covariance, and the pure noise part - we're going to transform
                         #the latter analytically...
@@ -531,7 +533,7 @@ def real_space_cov( cl_cov, cl_specs, cl2xi_types, ell_max, angle_lims_rad,
                         xi_cov_block_signal_mixed, angle_mids = downsample_block( angle_lims_rad_upsampled, 
                             angle_mids_rad_upsampled, xi_cov_block_signal_mixed_upsampled, ntheta )
                         xi_cov_block = xi_cov_block_signal_mixed + np.diag(xi_cov_block_noise_noise_diag)
-                        cov_blocks[i_xi, j_xi, i_bp, j_bp] = xi_cov_block
+                    cov_blocks[i_xi, j_xi, i_bp, j_bp] = xi_cov_block
 
     #construct full covariance
     covmat = np.zeros((n_dv, n_dv))
