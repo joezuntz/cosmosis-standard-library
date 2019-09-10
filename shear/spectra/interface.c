@@ -55,6 +55,7 @@ typedef struct shear_spectrum_config {
 int destroy_and_null(Interpolator2D ** P){
 	if (*P) destroy_interp_2d(*P);
 	*P = NULL;
+        return 0;
 }
 
 void * setup(c_datablock * options){
@@ -265,6 +266,7 @@ int get_wchi_array(c_datablock * block, const char * nz_section,
 
 	// tidy up bin-specific data
 	gsl_spline_free(W);
+        return 0;
 }
 
 
@@ -623,6 +625,9 @@ int rescale_spectrum(c_datablock * block, spectrum_type_t spectrum_type, int nbi
 		case magnification_shear:
 			in_section = choose_output_section(shear_shear, config);
 			break;
+                default:
+                        return -1;
+                
 	}
 
 	// The l sampling can be copied directly across to the new section
@@ -951,4 +956,5 @@ int cleanup(void * config_in)
 	// setup
 	shear_spectrum_config * config = (shear_spectrum_config*) config_in;
 	free(config);
+        return 0;
 }
