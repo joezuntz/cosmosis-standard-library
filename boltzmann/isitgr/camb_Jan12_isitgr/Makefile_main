@@ -43,7 +43,7 @@ $(BISPECTRUM).o: lensing.o modules.o
 cmbmain.o: lensing.o $(NONLINEAR).o $(EQUATIONS).o $(BISPECTRUM).o
 camb.o: cmbmain.o
 Matrix_utils.o: utils.o
-camb: $(e) $(DRIVER)
+camb: $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(DRIVER) -o $@
 
 $(CAMBLIB): $(CAMBOBJ)
