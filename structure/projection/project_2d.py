@@ -500,7 +500,13 @@ class Spectrum(object):
         return 0
 
     def prep_spectrum(self, *args, **kwargs):
-        #set the P(k) splines required 
+        """This is called prior to calculating the C(l)s
+        for a given spectrum and sets the P(k) splines 
+        required for the calculation. For the base 
+        class this stuff could be done in __init__
+        but for child classes having this extra method
+        is more useful. 
+        """
         p = self.source.power[self.power_key]
         self.pk_chi_logk_spline = p.chi_logk_spline
         self.pk_sublin_spline = p.sublin_spline
@@ -511,14 +517,13 @@ class Spectrum(object):
 class LingalLingalSpectrum(Spectrum):
     """
     Class for calculating clustering C(l) for a linearly biased galaxy 
-    sample. We overwrite the exact calculation to include the option
-    to do RSD.
+    sample. We overwrite the exact calculation to include RSD.
     """
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
      sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2., 
      chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
-        #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
-        #and then Limber for the non-linear part (P_nl-P_lin)
+        # Same as Spectrum.compute_exact, with the do_rsd option
+        # allowed. 
 
         # Get the kernels
         K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
@@ -721,13 +726,23 @@ class LingalIntrinsicSpectrum(Spectrum):
 
 class NlgalNlgalSpectrum(LingalLingalSpectrum):
     """
-    Class for computing galaxy C(l) with non-linear bias models. For this case
-    the linear power spectrum used in the exact calculation is still 
-    just the linear matter power spectrum (and the b_1 values are passed 
-    along with this). We also need to construct the non-Linear P(k) using fast-pt.
+    Class for computing galaxy C(l) with non-linear bias models. 
+    For this case the linear power spectrum used in the exact 
+    calculation is still just the linear matter power spectrum 
+    (and the b_1 values are passed along with this). We also 
+    construct the non-linear P(k) using fast-pt, on a bin 
+    pair-by-bin pair basis. This non-linear P(k) is used for the 
+    Limber calculation, and to construct the P_nl-P_lin spline
+    used for the non-linear correction in the exact calculation. 
+    Since we inherit the compute method from LingalLingal, which
+    applies the galaxy bias factors after the computing the C(l)s
+    we divide P_nl by the linear bias factors when setting
+    self.pk_chi_logk_spline and self.pk_sublin_spline.
+    We might want to revise how that all works at some point
+    as it seems a bit clumsy. But oh well.
     """
     def prep_spectrum(self, block, pt_type="oneloop_eul_bk"):
-        #assign pt_type
+        
         self.pt_type = pt_type
 
         #Load bias values into a dictionary
