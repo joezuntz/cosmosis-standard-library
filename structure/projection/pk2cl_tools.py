@@ -143,12 +143,22 @@ def exact_integral(ells, kernel1_interp, kernel2_interp,
     w1_vals = kernel1_vals * growth_vals * np.power(chi_vals, -0.5)
     if do_rsd_1:
         w1_rsd_vals = w1_vals * f_vals
+        try:
+            assert b1_1 is not None
+        except AssertionError as e:
+            print("do_rsd_1 is true, but b1_1=None.")
+            raise(e)
 
     if not auto:
         kernel2_vals = kernel2_interp(chi_vals)
         w2_vals = kernel2_vals * growth_vals * np.power(chi_vals, -0.5)
         if do_rsd_2:
             w2_rsd_vals = w2_vals * f_vals
+            try:
+                assert b1_2 is not None
+            except AssertionError as e:
+                print("do_rsd_2 is true, but b1_2=None")
+                raise(e)
 
     cell = np.zeros_like(ells)
 
