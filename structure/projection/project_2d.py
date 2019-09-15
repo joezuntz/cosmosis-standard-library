@@ -771,13 +771,6 @@ class NlgalNlgalSpectrum(LingalLingalSpectrum):
         #attributes to see whether they need to call set_power
         self.current_bin1, self.current_bin2 = None, None
 
-    #def compute(args, **kwargs):
-    #    super(NlgalNlgalSpectrum, self).compute(args, **kwargs)
-    #    #Set these to None just in case we try to re-use
-    #    #them when we shouldn't
-    #    self.pk_chi_logk_spline = None
-    #    self.pk_sublin_spline = None
-
     def load_bias_values(self, block, sample, pt_type):
         #Load bias values from the block
         nbin = self.source.kernels[sample].nbin
