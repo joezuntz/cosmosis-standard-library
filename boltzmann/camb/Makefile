@@ -1,6 +1,5 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-USER_FFLAGS=-I.
 #USER_LDFLAGS=-lcosmosis_fortran
 
 export EQUATIONS ?= equations_ppf
@@ -9,6 +8,7 @@ export RECOMBINATION ?= recfast
 INTERFACE=camb.so
 CAMBLIB=libcamb_$(RECOMBINATION).so
 CAMBDIR=${PWD}/camb_Jan15
+USER_FFLAGS=-I. -Wl,-rpath,$(CAMBDIR)
 
 all: $(INTERFACE)
 
