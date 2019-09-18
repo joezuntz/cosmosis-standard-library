@@ -19,7 +19,6 @@ extern "C" {
 void*
 setup(cosmosis::DataBlock* options)
 {
-  assert(options);
   int verbosity;
   int default_verbosity = 2;
   int error = 0;
