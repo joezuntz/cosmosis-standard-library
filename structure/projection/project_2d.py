@@ -692,7 +692,7 @@ class LingalIntrinsicSpectrum(Spectrum):
         try:
             assert do_rsd==False
         except AssertionError as e:
-            print("rsd not yet implemented for LingalMagnificationSpectrum")
+            print("rsd not yet implemented for LingalIntrinsicSpectrum")
             raise(e)
         #Call the exact calculation from the base class
         c_ell = super(LingalIntrinsicSpectrum, self).compute_exact(block, 
@@ -1213,7 +1213,7 @@ class SpectrumCalculator(object):
         self.save_limber = options.get_bool(option_section, "save_limber", True)
 
         if len(self.do_exact_option_names)>0:
-            sig_over_dchi_exact = options.get_double(option_section, "sig_over_dchi_exact", 10.)
+            sig_over_dchi_exact = options.get_double(option_section, "sig_over_dchi_exact", 20.)
             self.exact_ell_max = self.limber_ell_start
             #self.ell_exact = np.ceil(np.linspace(1., self.exact_ell_max, self.n_ell_exact-1))
             #self.ell_exact = np.concatenate((np.array([0]), self.ell_exact))
@@ -1490,8 +1490,11 @@ class SpectrumCalculator(object):
             block[spectrum.section_name, 'nbin'] = na
         block[spectrum.section_name, 'nbin_a'] = na
         block[spectrum.section_name, 'nbin_b'] = nb
-        #Save is_auto 
+        #Save is_auto (whether this is an autocorrelation)
         block[spectrum.section_name, 'is_auto'] = spectrum.is_autocorrelation()
+        #Save auto_only - whether we've only computed autocorrelations 
+        block[spectrum.section_name, 'auto_only'] = (
+            spectrum.section_name in self.auto_only_section_names)
         #Call prep_spectrum
         spectrum.prep_spectrum( block )
 

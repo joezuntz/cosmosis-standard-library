@@ -56,8 +56,15 @@ def execute(block, config):
         elif not np.allclose(mag_mag_ells, ells):
             resample_mag_mag = True
 
+        #Get auto_only - if True, only auto-correlations for galaxy_cl
+        #were computed.
+        auto_only = block.get_bool(names.galaxy_cl, "auto_only", False)
+
         for i in range(nbin_pos):
             for j in range(i + 1):
+                if (i!=j and auto_only):
+                    continue
+
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
                 bin_ji = 'bin_{1}_{0}'.format(i + 1, j + 1)
                 block["galaxy_cl_gg", bin_ij] = block[names.galaxy_cl, bin_ij]
