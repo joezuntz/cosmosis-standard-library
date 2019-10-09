@@ -34,6 +34,9 @@ module camb_interface_tools
 	integer, parameter :: MATTER_POWER_LIN_            =  1
 	integer, parameter :: MATTER_POWER_LIN_CDM_BARYON  =  2
 	integer, parameter :: MATTER_POWER_LIN_BOTH        =  3
+	integer, parameter :: MATTER_POWER_LIN_WEYL        =  4
+	integer, parameter :: MATTER_POWER_LIN_WEYL_MATTER =  5
+	integer, parameter :: MATTER_POWER_LIN_ALL         =  8
 
 	integer :: sterile_neutrino = 0
 	real(dl) :: delta_neff = 0.0
@@ -495,6 +498,10 @@ module camb_interface_tools
 			status  =  status  +  camb_interface_save_transfer__ (block, MATTER_POWER_LIN_CDM_BARYON)
 		endif
 
+		if  (iand (matter_power_lin_version, MATTER_POWER_LIN_WEYL)  .ne.  0)  then
+			status  =  status  +  camb_interface_save_transfer__ (block, MATTER_POWER_LIN_WEYL)
+		endif
+
       end function camb_interface_save_transfer
 
 
@@ -513,6 +520,8 @@ module camb_interface_tools
 			call Transfer_GetMatterPowerData  (MT, PK, 1)
 		elseif (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_CDM_BARYON)  then
 			call Transfer_GetMatterPowerData  (MT, PK, 1, var1=transfer_nonu, var2=transfer_nonu)
+		elseif (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_WEYL)  then
+			call Transfer_GetMatterPowerData  (MT, PK, 1, var1=transfer_Weyl, var2=transfer_Weyl)
 		endif
 
 		nz = CP%Transfer%num_redshifts
@@ -613,6 +622,8 @@ module camb_interface_tools
 			datablock_section  =  matter_power_lin_section
 		elseif  (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_CDM_BARYON)  then
 			datablock_section  =  matter_power_lin_cdm_baryon_section
+		elseif  (matter_power_lin_version__  .eq.  MATTER_POWER_LIN_WEYL)  then
+			datablock_section  =  "weyl_curvature_spectrum"
 		endif
 
 		status = datablock_put_double_grid(block, datablock_section, &

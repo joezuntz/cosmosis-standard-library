@@ -2,7 +2,7 @@ include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 #USER_CFLAGS= -I ../limber -I ${GSL_INC}
 #USER_LDFLAGS= -L../limber -llimber -lcosmosis -L ${GSL_LIB} -lgsl -lgslcblas 
-USER_CFLAGS= -I ${GSL_INC}  -O0 -fsanitize=undefined
+USER_CFLAGS= -I ${GSL_INC}  -O2
 USER_LDFLAGS= -lcosmosis -L ${GSL_LIB} -lgsl -lgslcblas 
 
 all: src/spec_tools.so
