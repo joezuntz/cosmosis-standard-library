@@ -100,8 +100,9 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
                 if lens_bin not in self.gammat_scale_cuts:
                     self.gammat_scale_cuts[lens_bin] = scale_cut
                 else:
-                    print("ignoring gammat minimum scale cut for bin pair %d,%d = %f"%(lens_bin, source_bin, scale_cut[0]))
-                    print("using %f instead"%(self.gammat_scale_cuts[lens_bin][0]))
+                    if scale_cut != self.gammat_scale_cuts[lens_bin]:
+                        print("ignoring gammat minimum scale cut for bin pair %d,%d = %f"%(lens_bin, source_bin, scale_cut))
+                        print("using %f instead"%(self.gammat_scale_cuts[lens_bin]))
 
         # Now check for completely cut bins
         # example:
@@ -132,10 +133,12 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
             else:
                 data_points = 0
             if name in self.used_names:
-                print("    - {}  {} data points after cuts {}".format(name,  data_points, "  [using in likelihood]"))
+                print("    - {}  {} data points after cuts {}".format(
+                    name,  data_points, "  [using in likelihood]"))
                 total_data_points += data_points
             else:
-                print("    - {}  {} data points after cuts {}".format(name, data_points, "  [not using in likelihood]"))
+                print("    - {}  {} data points after cuts {}".format(
+                    name, data_points, "  [not using in likelihood]"))
         print("Total data points used = {}".format(total_data_points))
 
         # Convert all units to radians.  The units in cosmosis are all
@@ -152,12 +155,13 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
         # Make sure
         if len(datavector) == 0:
             raise ValueError(
-                "No data was chosen to be used from 2-point data file {0}. It was either not selectedin data_sets or cut out".format(filename))
+                """No data was chosen to be used from 2-point data file {0}. 
+                It was either not selectedin data_sets or cut out""".format(filename))
 
         #get covariance - this is what we start from before any analytic marginalization
         self.cov_orig = self.build_covariance()
         self.inv_cov_orig = np.linalg.inv( self.cov_orig )
-        print("cov slog(det):", np.linalg.slogdet(self.cov_orig))
+        print("orig cov slog(det):", np.linalg.slogdet(self.cov_orig))
         self.logdet_fac = 0.
         #use self.det_fac to record changes in covariance determinant when we've applied
         #analytic marginalization terms - this is required to normalize the likelihood
@@ -357,6 +361,7 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
             if self.sigma_a>0.:
                 X = self.sigma_a**-2 * np.identity(UCinvV.shape[0]) + UCinvV 
             else:
+                #infinite prior case
                 X = UCinvV
             Xinv = np.linalg.inv(X)
             Y = np.matmul( Xinv, np.matmul( V, self.inv_cov_orig ) )
