@@ -667,7 +667,6 @@ class TwoPointFile(object):
         mask_points = np.array(indices)
         masks = []
         for s in self.spectra:
-            print("len", len(s))
             mask = np.ones(len(s), dtype=bool)
             if s.name == spectrum_name:
                 mask[mask_points] = False

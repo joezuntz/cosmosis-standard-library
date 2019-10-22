@@ -428,9 +428,8 @@ class ClCov( object ):
                         covmat[ cov_inds_T ] = np.diag(cl_var_binned)
 
         print("Completed covariance")
-        print("slog det:", np.linalg.slogdet(covmat))
-        print("condition number:", np.linalg.cond(covmat))
-        print(covmat)
+        print("   Signed log det:", np.linalg.slogdet(covmat))
+        print("   Condition number:", np.linalg.cond(covmat))
         return covmat, cl_lengths
 
 
