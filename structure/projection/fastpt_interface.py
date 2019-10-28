@@ -379,7 +379,7 @@ def get_PXX(bias_values_bin1, bias_values_bin2, Pk_basis_funcs, pt_type):
         
         Pk_terms["Ps2s2"] = 0.25 * bv1["bsE"]*bv2["bsE"] * Pk_basis_funcs["Ps2s2"]
         
-        Pk_terms["sig3nl"] = ((bv1["b1E"]*bv2["b3nlE"] + 
+        Pk_terms["sig3nl"] = (0.5*(bv1["b1E"]*bv2["b3nlE"] + 
             bv2["b1E"]*bv1["b3nlE"]) * Pk_basis_funcs["sig3nl"])
         
         Pk_terms["k2P"] = ((bv1["b1E"]*bv2["bkE"] 

@@ -500,7 +500,13 @@ class Spectrum(object):
         return 0
 
     def prep_spectrum(self, *args, **kwargs):
-        #set the P(k) splines required 
+        """This is called prior to calculating the C(l)s
+        for a given spectrum and sets the P(k) splines 
+        required for the calculation. For the base 
+        class this stuff could be done in __init__
+        but for child classes having this extra method
+        is more useful. 
+        """
         p = self.source.power[self.power_key]
         self.pk_chi_logk_spline = p.chi_logk_spline
         self.pk_sublin_spline = p.sublin_spline
@@ -511,14 +517,13 @@ class Spectrum(object):
 class LingalLingalSpectrum(Spectrum):
     """
     Class for calculating clustering C(l) for a linearly biased galaxy 
-    sample. We overwrite the exact calculation to include the option
-    to do RSD.
+    sample. We overwrite the exact calculation to include RSD.
     """
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
      sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2., 
      chimin=None, chimax=None, dchi_limber=None, do_rsd=True):
-        #The 'exact' calculation is in two parts. Non-limber for the separable linear contribution, 
-        #and then Limber for the non-linear part (P_nl-P_lin)
+        # Same as Spectrum.compute_exact, with the do_rsd option
+        # allowed. 
 
         # Get the kernels
         K1 = (self.source.kernels[self.sample_a]).get_kernel_spline(self.kernel_types[0], bin1)
@@ -687,7 +692,7 @@ class LingalIntrinsicSpectrum(Spectrum):
         try:
             assert do_rsd==False
         except AssertionError as e:
-            print("rsd not yet implemented for LingalMagnificationSpectrum")
+            print("rsd not yet implemented for LingalIntrinsicSpectrum")
             raise(e)
         #Call the exact calculation from the base class
         c_ell = super(LingalIntrinsicSpectrum, self).compute_exact(block, 
@@ -721,13 +726,23 @@ class LingalIntrinsicSpectrum(Spectrum):
 
 class NlgalNlgalSpectrum(LingalLingalSpectrum):
     """
-    Class for computing galaxy C(l) with non-linear bias models. For this case
-    the linear power spectrum used in the exact calculation is still 
-    just the linear matter power spectrum (and the b_1 values are passed 
-    along with this). We also need to construct the non-Linear P(k) using fast-pt.
+    Class for computing galaxy C(l) with non-linear bias models. 
+    For this case the linear power spectrum used in the exact 
+    calculation is still just the linear matter power spectrum 
+    (and the b_1 values are passed along with this). We also 
+    construct the non-linear P(k) using fast-pt, on a bin 
+    pair-by-bin pair basis. This non-linear P(k) is used for the 
+    Limber calculation, and to construct the P_nl-P_lin spline
+    used for the non-linear correction in the exact calculation. 
+    Since we inherit the compute method from LingalLingal, which
+    applies the galaxy bias factors after the computing the C(l)s
+    we divide P_nl by the linear bias factors when setting
+    self.pk_chi_logk_spline and self.pk_sublin_spline.
+    We might want to revise how that all works at some point
+    as it seems a bit clumsy. But oh well.
     """
     def prep_spectrum(self, block, pt_type="oneloop_eul_bk"):
-        #assign pt_type
+        
         self.pt_type = pt_type
 
         #Load bias values into a dictionary
@@ -755,13 +770,6 @@ class NlgalNlgalSpectrum(LingalLingalSpectrum):
         #get_power_spline and get_power_sublin check these
         #attributes to see whether they need to call set_power
         self.current_bin1, self.current_bin2 = None, None
-
-    #def compute(args, **kwargs):
-    #    super(NlgalNlgalSpectrum, self).compute(args, **kwargs)
-    #    #Set these to None just in case we try to re-use
-    #    #them when we shouldn't
-    #    self.pk_chi_logk_spline = None
-    #    self.pk_sublin_spline = None
 
     def load_bias_values(self, block, sample, pt_type):
         #Load bias values from the block
@@ -1205,7 +1213,7 @@ class SpectrumCalculator(object):
         self.save_limber = options.get_bool(option_section, "save_limber", True)
 
         if len(self.do_exact_option_names)>0:
-            sig_over_dchi_exact = options.get_double(option_section, "sig_over_dchi_exact", 10.)
+            sig_over_dchi_exact = options.get_double(option_section, "sig_over_dchi_exact", 20.)
             self.exact_ell_max = self.limber_ell_start
             #self.ell_exact = np.ceil(np.linspace(1., self.exact_ell_max, self.n_ell_exact-1))
             #self.ell_exact = np.concatenate((np.array([0]), self.ell_exact))
@@ -1482,8 +1490,11 @@ class SpectrumCalculator(object):
             block[spectrum.section_name, 'nbin'] = na
         block[spectrum.section_name, 'nbin_a'] = na
         block[spectrum.section_name, 'nbin_b'] = nb
-        #Save is_auto 
+        #Save is_auto (whether this is an autocorrelation)
         block[spectrum.section_name, 'is_auto'] = spectrum.is_autocorrelation()
+        #Save auto_only - whether we've only computed autocorrelations 
+        block[spectrum.section_name, 'auto_only'] = (
+            spectrum.section_name in self.auto_only_section_names)
         #Call prep_spectrum
         spectrum.prep_spectrum( block )
 
