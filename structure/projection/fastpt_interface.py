@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline as intspline
 from scipy.interpolate import RectBivariateSpline
 
-sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/cosmosis-des-library/tcp/fast_pt/')
+#sys.path.insert(0, os.environ['COSMOSIS_SRC_DIR'] + '/cosmosis-des-library/tcp/fast_pt/')
 #import FASTPT_2_1.FASTPT as FASTPT
 #from FASTPT_2_1.P_extend import k_extend
 import fastpt_develop.FASTPT as FASTPT
