@@ -15,11 +15,11 @@ all: fgas.so
 
 # ... and then provide the command to compile it, perhaps
 # like this for a simple example in C:
-src/libclusters.a:
+src/libclusters.so:
 	$(MAKE) -C src
 
-fgas.so: fgas_cosmosis.cpp src/libclusters.a
-	$(CXX) $(CXXFLAGS) fgas_cosmosis.cpp -shared -o fgas.so $(LDFLAGS) src/libclusters.a
+fgas.so: fgas_cosmosis.cpp src/libclusters.so
+	$(CXX) $(CXXFLAGS) fgas_cosmosis.cpp -shared -o fgas.so $(LDFLAGS) src/libclusters.so
 
 #Replace this to put in some kind of test command for
 #your module, if you have one.

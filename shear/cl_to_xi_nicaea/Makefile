@@ -12,3 +12,4 @@ nicaea_interface.so: $(OBJS)
 
 clean:
 	rm -f nicaea_interface.so
+	rm -rf nicaea_interface.so.dSYM

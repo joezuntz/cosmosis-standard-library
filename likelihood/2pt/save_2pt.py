@@ -160,7 +160,12 @@ def setup(options):
         config["number_density_lss_arcmin2"] = get_arr("number_density_lss_arcmin2")
         config["number_density_shear_rad2"] = perarcmin2_to_perrad2(config["number_density_shear_arcmin2"])
         config["number_density_lss_rad2"] = perarcmin2_to_perrad2(config["number_density_lss_arcmin2"])        
-        config['sigma_e'] = get_arr("sigma_e")
+        if (options.has_value(option_section, 'sigma_e') 
+            and not options.has_value(option_section, 'sigma_e_total')):
+            raise ValueError("""The parameter sigma_e should now be specified as sigma_e_total instead.
+The input value should be sigma_e_total = sqrt(2) * sigma_e_per_component""")
+
+        config['sigma_e_total'] = get_arr("sigma_e_total")
         config['fsky'] = options[option_section, "fsky"] 
         config['upsample_cov'] = options.get_int(option_section, "upsample_cov", 10)
         if config['upsample_cov'] < 2:
@@ -225,7 +230,7 @@ def execute(block, config):
     #If we're generating the covariance for real space spectra, also 
     #generate a TheorySpectrum for the corresponding Cl.
     print("Generating twopoint file with the following spectra:")
-    print(config['spectrum_sections'])
+    print("    ", config['spectrum_sections'])
     for i_spec in range( len(config["spectrum_sections"]) ):
         auto_only = config["auto_only"][i_spec]
         spectrum_section = config["spectrum_sections"][i_spec]
@@ -323,7 +328,7 @@ def execute(block, config):
                 if (cl_spec.types[0] == cl_spec.types[1]):
                     if cl_spec.types[0].name == "galaxy_shear_emode_fourier":
                         noise = ([ (s**2 / 2 / n) for (s,n) in 
-                                 zip(config['sigma_e'],config['number_density_shear_rad2']) ])
+                                 zip(config['sigma_e_total'],config['number_density_shear_rad2']) ])
                     elif cl_spec.types[0].name == "galaxy_position_fourier":
                         noise = [ 1./n for n in config['number_density_lss_rad2'] ]
                     else:

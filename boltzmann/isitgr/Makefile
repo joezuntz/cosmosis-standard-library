@@ -7,7 +7,7 @@ export EQUATIONS ?= equations
 export RECOMBINATION ?= recfast
 
 INTERFACE=camb.so
-CAMBLIB=libcamb.a
+CAMBLIB=libcamb.so
 CAMBDIR=camb_Jan12_isitgr
 
 all: $(INTERFACE)
