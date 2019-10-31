@@ -499,7 +499,7 @@ class Spectrum(object):
         # This gets done later for the base class
         return 0
 
-    def prep_spectrum(self, *args, **kwargs):
+    def prep_spectrum(self, block, **kwargs):
         """This is called prior to calculating the C(l)s
         for a given spectrum and sets the P(k) splines 
         required for the calculation. For the base 
@@ -586,7 +586,7 @@ class LingalLingalSpectrum(Spectrum):
             chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1] * self.lin_bias_values_b[bin2]
 
-    def prep_spectrum(self, block):
+    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
         #Call the parent prep_spectrum
         super(LingalLingalSpectrum, self).prep_spectrum(
             block)
@@ -597,13 +597,15 @@ class LingalLingalSpectrum(Spectrum):
         assert self.kernel_types[0] == self.kernel_types[1] == "N"
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, 
+                                              "%s%d"%(lin_bias_prefix,i)]
         if self.sample_b == self.sample_a:
             self.lin_bias_values_b = self.lin_bias_values_a
         else:
             nbin = self.source.kernels[self.sample_b].nbin
             for i in range(1, nbin+1):
-                self.lin_bias_values_b[i] = block["bias_%s"%self.sample_b, "b%d"%i]
+                self.lin_bias_values_b[i] = block["bias_%s"%self.sample_b, 
+                                                  "%s%d"%(lin_bias_prefix,i)]
         return 0
 
 class LingalShearSpectrum(Spectrum):
@@ -633,7 +635,7 @@ class LingalShearSpectrum(Spectrum):
             chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1]
 
-    def prep_spectrum(self, block):
+    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
         #Call the parent prep_spectrum
         super(LingalShearSpectrum, self).prep_spectrum(
             block)
@@ -642,7 +644,8 @@ class LingalShearSpectrum(Spectrum):
         self.lin_bias_values_a = {}
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, 
+                                              "%s%d"%(lin_bias_prefix,i)]
         
 class LingalMagnificationSpectrum(Spectrum):
 
@@ -673,7 +676,7 @@ class LingalMagnificationSpectrum(Spectrum):
         #Apply a linear bias and return
         return c_ell * self.lin_bias_values_a[bin1]
 
-    def prep_spectrum(self, block):
+    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
         #Call the parent prep_spectrum
         super(LingalMagnificationSpectrum, self).prep_spectrum(
             block)
@@ -682,7 +685,8 @@ class LingalMagnificationSpectrum(Spectrum):
         self.lin_bias_values_a = {}
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, 
+                                              "%s%d"%(lin_bias_prefix,i)]
 
 class LingalIntrinsicSpectrum(Spectrum):
 
@@ -713,7 +717,7 @@ class LingalIntrinsicSpectrum(Spectrum):
         #Apply a linear bias and return
         return c_ell * self.lin_bias_values_a[bin1]
 
-    def prep_spectrum(self, block):
+    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
         #Call the parent prep_spectrum
         super(LingalIntrinsicSpectrum, self).prep_spectrum(
             block)
@@ -722,7 +726,8 @@ class LingalIntrinsicSpectrum(Spectrum):
         self.lin_bias_values_a = {}
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
-            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, "b%d"%i]
+            self.lin_bias_values_a[i] = block["bias_%s"%self.sample_a, 
+                                              "%s%d"%(lin_bias_prefix,i)]
 
 class NlgalNlgalSpectrum(LingalLingalSpectrum):
     """
@@ -741,7 +746,7 @@ class NlgalNlgalSpectrum(LingalLingalSpectrum):
     We might want to revise how that all works at some point
     as it seems a bit clumsy. But oh well.
     """
-    def prep_spectrum(self, block, pt_type="oneloop_eul_bk"):
+    def prep_spectrum(self, block, pt_type="oneloop_eul_bk", **kwargs):
         
         self.pt_type = pt_type
 
@@ -839,7 +844,7 @@ class NlgalShearSpectrum(LingalShearSpectrum):
     just the linear matter power spectrum (and the b_1 values are passed 
     along with this). We also need to construct the non-Linear P(k) using fast-pt.
     """
-    def prep_spectrum(self, block, pt_type="oneloop_eul_bk"):
+    def prep_spectrum(self, block, pt_type="oneloop_eul_bk", **kwargs):
         #assign pt_type
         self.pt_type = pt_type
 
@@ -1062,6 +1067,14 @@ class SpectrumType(Enum):
         prefactor_type = ("lensing","lensing")
         has_rsd = False
 
+    class FastLingalShearIA(LingalShearSpectrum):
+        autocorrelation = False
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "F")
+        name = "galaxy_shear_cl"
+        prefactor_type = (None, "lensing")
+        has_rsd = False
+
     class FastPositionShearIA(Spectrum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "F")
@@ -1079,7 +1092,6 @@ class SpectrumType(Enum):
         has_rsd = True
 
     class LingalShear(LingalShearSpectrum):
-        autocorrelation = False
         power_3d_type = MatterPower3D
         kernel_types = ("N", "W")
         autocorrelation = False
@@ -1232,6 +1244,11 @@ class SpectrumCalculator(object):
                                   "do_rsd": self.do_rsd }
         else:
             self.exact_kwargs = None
+
+        #Galaxy bias stuff for Lingal* spectra
+        self.lin_bias_prefix = options.get_string(option_section,
+                                                  "lin_bias_prefix",
+                                                  "b")
 
         # Check which spectra we are requested to calculate
         self.parse_requested_spectra(options)
@@ -1496,7 +1513,7 @@ class SpectrumCalculator(object):
         block[spectrum.section_name, 'auto_only'] = (
             spectrum.section_name in self.auto_only_section_names)
         #Call prep_spectrum
-        spectrum.prep_spectrum( block )
+        spectrum.prep_spectrum( block, lin_bias_prefix=self.lin_bias_prefix )
 
         print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
 
