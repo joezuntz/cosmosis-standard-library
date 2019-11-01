@@ -2,13 +2,14 @@ module mead_settings_mod
     type mead_settings
         logical :: noisy
         logical :: feedback
+        logical :: one_baryon_param
         !real(8) :: kmin, kmax
         !integer :: nk
 
-        real(8) :: numin, numax
+        real(8) :: zmin, zmax
+        integer :: nz
 
-        !real(8) :: zmin, zmax
-        !integer :: nz
+        character(len=256) :: linear_ps_section_name, output_section_name
 
     end type mead_settings
 
@@ -26,10 +27,17 @@ function setup(options) result(result)
     status = 0
     
     allocate(settings)
-
-    status = status + datablock_get_double_default(options, option_section, "numin", 0.1D0, settings%numin)
-    status = status + datablock_get_double_default(options, option_section, "numax", 5.0D0, settings%numax)
     status = status + datablock_get_logical_default(options, option_section, "feedback", .false., settings%feedback)
+
+    status = status + datablock_get_double_default(options, option_section, "zmin", real(0.0, kind=8), settings%zmin)
+    status = status + datablock_get_double_default(options, option_section, "zmax", real(3.0, kind=8), settings%zmax)
+    status = status + datablock_get_int_default(options, option_section, "nz", -1, settings%nz)
+
+    status = status + datablock_get_logical_default(options, option_section, "one_baryon_parameter", .false., settings%one_baryon_param)
+
+    status = datablock_get_string_default(options, option_section, "input_section_name", matter_power_lin_section, settings%linear_ps_section_name)
+    status = datablock_get_string_default(options, option_section, "output_section_name", matter_power_nl_section, settings%output_section_name)
+
 
     if (status .ne. 0) then
         write(*,*) "One or more parameters not found for hmcode"
@@ -57,8 +65,6 @@ function execute(block,config) result(status)
     integer, parameter :: LOG_SPACING = 1
     character(*), parameter :: cosmo = cosmological_parameters_section
     character(*), parameter :: halo = halo_model_parameters_section
-    character(*), parameter :: linear_power = matter_power_lin_section
-    character(*), parameter :: nl_power = matter_power_nl_section
 
     real(4) :: p1h, p2h,pfull, plin, z
     integer :: i,j,nk,nz, massive_nu
@@ -92,7 +98,12 @@ function execute(block,config) result(status)
     status = status + datablock_get_double_default(block, cosmo, "w", -1.0D0, w)
     status = status + datablock_get_double_default(block, cosmo, "wa", 0.0D0, wa)
     status = status + datablock_get_double_default(block, halo, "A", 3.13D0, halo_as)
-    status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
+    
+    if(.not. settings%one_baryon_param) then
+        status = status + datablock_get_double_default(block, halo, "eta_0", 0.603D0, halo_eta0)
+    else
+        halo_eta0 = 1.03-0.11*halo_as
+    endif
 
     if (status .ne. 0 ) then
         write(*,*) "Error reading parameters for Mead code"
@@ -100,7 +111,7 @@ function execute(block,config) result(status)
     endif
 
  
-    status = status + datablock_get_double_grid(block, linear_power, &
+    status = status + datablock_get_double_grid(block, settings%linear_ps_section_name, &
         "k_h", k_in, "z", z_in, "p_k", p_in)
 
     if (status .ne. 0 ) then
@@ -120,8 +131,12 @@ function execute(block,config) result(status)
 
     !Copy in P(k) from the right part of P(k,z)
     nk = size(k_in)
-    nz = size(z_in)
 
+    if(settings%nz > 0) then
+        nz = settings%nz
+    else
+        nz = size(z_in)
+    endif
  
     ! doing the job of assign_HM_cosmology
     cosi%om_m=om_m !The halo modelling in this version knows about neutrino
@@ -147,15 +162,17 @@ function execute(block,config) result(status)
     !Also the P is 2D as we get z also
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ALLOCATE(k(size(k_in)))
-    ALLOCATE(ztab(size(z_in)))
+    ALLOCATE(k(nk))
+    ALLOCATE(ztab(nz))
         
     !Set the output ranges in k and z
-   ! CALL fill_table(log(real(settings%kmin)),log(real(settings%kmax)),k,settings%nk)
-    k=k_in
     !this was not here previously, take care of output k and pk
-    !CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz)
-    ztab = z_in
+    k = k_in
+    if(settings%nz > 0) then
+        CALL fill_table(real(settings%zmin),real(settings%zmax),ztab,settings%nz)
+    else
+        ztab = z_in
+    endif
         
     !Fill table for output power
     ALLOCATE(p_out(nk,nz))
@@ -197,7 +214,7 @@ function execute(block,config) result(status)
     z_out = ztab
     !Convert k to k/h to match other modules
     !Output results to cosmosis
-    status = datablock_put_double_grid(block,nl_power, "k_h", k_out, "z", z_out, "p_k", p_out)
+    status = datablock_put_double_grid(block, settings%output_section_name, "k_h", k_out, "z", z_out, "p_k", p_out)
 
     !Free memory
     deallocate(k)

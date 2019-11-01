@@ -478,5 +478,6 @@ int cleanup(void * config_in)
 	// Free the memory that we allocated in the 
 	// setup
 	shear_spectrum_config * config = (shear_spectrum_config*) config_in;
-	free(config);	
+	free(config);
+        return 0;
 }

@@ -9,6 +9,7 @@ wmap_shift.so: wmap_shift.f90
 
 clean:
 	rm -f *.o *.mod wmap_shift.so
+	rm -rf wmap_shift.so.dSYM
 
 test:
 	@echo Alas, wmap_shift has no tests

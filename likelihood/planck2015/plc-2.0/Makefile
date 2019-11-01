@@ -51,7 +51,7 @@ IFORTRUNTIME = -L$(IFORTLIBPATH) -lintlc -limf -lsvml -liomp5 -lifportmt -lifcor
 # gfortran
 # if you are using gfortran set here where the lib are installed
 # and check the runtime libs
-GFORTRANLIBPATH = /usr/lib/x86_64-linux-gnu
+GFORTRANLIBPATH = /usr/lib
 GFORTRANRUNTIME = -L$(GFORTRANLIBPATH) -lgfortran -lgomp
 
 # if you are on linux and using mkl, you need to set this 
@@ -346,12 +346,12 @@ $(CLIKLIB): | $(ODIR) $(ODIR)/.print_info $(ODIR)/.test_cfitsio
 $(BDIR)/libclik.$(SO): $(CLIKLIB) 
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
 	# JZ changed LD to FC to help with linking
-	$(FC)  $(SHARED)   $^ -o $@  $(LAPACK) $(LDFLAG)
+	$(FC)  $(SHARED)  $(LAPACK) $(LDFLAG) $^ -o $@
 
 $(BDIR)/libclik_f90.$(SO): $(BDIR)/libclik.$(SO) $(addprefix $(ODIR)/,clik_fortran.o clik.f90.o)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
 	# JZ changed LD to FC to help with linking
-	$(FC) $(SHARED)   $^ -o $@ $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik
+	$(FC) $(SHARED)  $(LDFLAG) $(LAPACK) -L$(BDIR) -lclik $^ -o $@
 
 $(BDIR)/clik_example_C: $(ODIR)/clik_example_c.o $(BDIR)/libclik.$(SO)
 	@$(ECHO) "build $(BLUE_COLOR)$(@) $(NO_COLOR)"
