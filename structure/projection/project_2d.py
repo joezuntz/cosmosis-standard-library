@@ -925,6 +925,7 @@ class NlgalShearSpectrum(LingalShearSpectrum):
             self.set_power(block, bin1, bin2)
         return self.pk_sublin_spline        
 
+
 # This is pretty cool.
 # You can make an enumeration class which
 # contains a list of possible options for something.
@@ -1131,6 +1132,15 @@ class SpectrumType(Enum):
         autocorrelation = False
         name = "galaxy_shear_cl"
         prefactor_type = (None, "lensing")
+        has_rsd = False
+
+    class NlgalMagnificationSpectrum(NlgalShearSpectrum):
+        autocorrelation = False
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "W")
+        autocorrelation = False
+        name = "galaxy_magnification_cl"
+        prefactor_type = (None, "mag")
         has_rsd = False
 
 class SpectrumCalculator(object):
