@@ -244,6 +244,9 @@ module camb_interface_tools
 		logical :: perturbations
 		type(CambParams) :: params
 		integer :: sterile_neutrino
+		real(8) :: nu_mass_1
+		character(9) :: param_name
+		integer :: i
 		real(8), dimension(:), allocatable :: w_array, a_array
 		character(*), parameter :: cosmo = cosmological_parameters_section
 		perturbations = (mode .eq. CAMB_MODE_CMB) .or. (mode .eq. CAMB_MODE_ALL)
@@ -281,9 +284,10 @@ module camb_interface_tools
 			status = status + datablock_get_int_default(block, cosmo, "sterile_neutrino", default_sterile_neutrinos, sterile_neutrino)
 			status = status + datablock_get_double_default(block, cosmo, "massless_nu", params%Num_Nu_massless, params%Num_Nu_massless)
 			status = status + datablock_get_int_default(block, cosmo, "massive_nu", default_massive_nu, params%Num_Nu_massive)
+			! We check to see 
+			status = status + datablock_get_double_default(block, cosmo, "nu_mass_1", -1000.0d0, nu_mass_1)
 
-			!  We have coded for two massive neturino scenarios so far:
-			!  sterile neutrinos, and a single massive neutrino.
+			!  Scenario 1: sterile neutrinos
 			if (sterile_neutrino > 0) then
 				status = status + datablock_get_double(block, cosmo, "delta_neff", delta_neff)
 				status = status + datablock_get_double(block, cosmo, "sterile_mass_fraction", sterile_mass_fraction)
@@ -295,16 +299,38 @@ module camb_interface_tools
 				params%nu_mass_degeneracies(2) = delta_neff
 				params%nu_mass_fractions(1) = (1.0 - sterile_mass_fraction) 
 				params%nu_mass_fractions(2) = sterile_mass_fraction
+			! Scenario 2: single massive nu
 			elseif (params%Num_Nu_massive == 1) then
 				params%Nu_mass_eigenstates = 1
 				params%nu_mass_numbers(1) = 1
 				params%Nu_mass_fractions(1) = 1.0
 				params%share_delta_neff = .true.
-            		elseif (params%Num_Nu_massive == 3) then
-                		params%Nu_mass_eigenstates = 1
-                		params%nu_mass_numbers(1) = 3
-                		params%Nu_mass_fractions(1) = 1.0
-                                params%share_delta_neff = .true.
+			! Scenario 3: individually specified masses
+			elseif (nu_mass_1 .ge. -999.) then
+				! Loop through the neutrinos that we have and
+				! get a mass for each
+				params%nu_mass_numbers(1:params%Num_Nu_massive) = 1
+				params%Nu_mass_eigenstates = params%Num_Nu_massive
+				do i=1,params%Num_Nu_massive
+					write(param_name, '(A8,I1)') "nu_mass_", i
+					status = status + datablock_get_double_default(block, cosmo, param_name, -1000.0d0, params%Nu_mass_fractions(i))
+					if (params%Nu_mass_fractions(i) < -999.) then
+						write(*,*) "Must set all nu masses if you set any of them"
+						status = status + 1
+						exit
+					endif
+
+				enddo
+				params%Nu_mass_fractions(1:params%Num_Nu_massive) = &
+								params%Nu_mass_fractions(1:params%Num_Nu_massive) / &
+								sum(params%Nu_mass_fractions(1:params%Num_Nu_massive))
+				params%share_delta_neff = .true.
+			! Scenario 3: one mass eigenstate
+			elseif (params%Num_Nu_massive == 3) then
+				params%Nu_mass_eigenstates = 1
+				params%nu_mass_numbers(1) = 3
+				params%Nu_mass_fractions(1) = 1.0
+				params%share_delta_neff = .true.
 			elseif (params%Num_Nu_massive == 0) then
 				write(*,*) 'You need massive_nu>0 to have any omega_nu!=0'
 				status=1
