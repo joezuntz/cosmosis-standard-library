@@ -92,7 +92,7 @@ inputs:
         w:  "real, w(z=0) equation of state of dark energy (default -1.0). ignored if use_tabulated_w=T"
         wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0). ignored if use_tabulated_w=T"
         cs2_de:  "real, dark energy sound speed/c (default 1.0)"
-        nu_mass_{i}: "real, mass of neutrino where i=1..massive_nu.  Default is -1000, in which case the mass is split evenly between them"
+        nu_mass_{i}: "real, mass of neutrino where i=1..massive_nu.  Default is -1000, in which case three neutrinos is expected and all are given the same mass"
     de_equation_of_state_section:
         a: "1D real array, only used if use_tabulated_w=T. Sample points for generic w(a)"
         w: "1D real array, only used if use_tabulated_w=T. Sample values for generic w(a)"
