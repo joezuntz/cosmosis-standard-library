@@ -25,12 +25,17 @@ class PlanckPythonLikelihood(GaussianLikelihood):
             use_low_ell_bins=use_low_ell_bins, data_directory=data_directory)
         x = None
 
-        use_data_from_testoutput = self.options.get_string(
-            "use_data_from_testoutput",
+        #We optionally allow the user to provide a cosmosis
+        #test sampler output directory here, which will be
+        #used to set the CMB datavector. This allows for 
+        #generating Planck like constraints at a cosmology 
+        #of your choice.
+        use_data_from_test = self.options.get_string(
+            "use_data_from_test",
             "")
-        if use_data_from_testoutput != "":
-            print("using cmb data from %s"%use_data_from_testoutput)
-            y = self.get_data_points_from_test_output(use_data_from_testoutput)
+        if use_data_from_test != "":
+            print("using cmb data from %s"%use_data_from_test)
+            y = self.get_data_points_from_test_output(use_data_from_test)
         else:
             y = self.calculator.mu
         return x, y
