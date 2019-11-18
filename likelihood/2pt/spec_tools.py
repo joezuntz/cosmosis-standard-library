@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as np
 import twopoint
 from twopoint_cosmosis import type_table
@@ -288,7 +288,7 @@ def downsample_block( angle_lims_orig, angle_mids_orig, cov_orig, n_out ):
     #weight by dtheta*angle_mid (weighting by n_pairs geometric expectation)
     dtheta = angle_lims_orig[1:]-angle_lims_orig[:-1]
     assert cov_orig.shape[0]%n_out == 0
-    norig_per_nout = cov_orig.shape[0]/n_out
+    norig_per_nout = cov_orig.shape[0]//n_out
     cov_out = np.zeros( (n_out, n_out) )
     angle_mids_out = np.zeros( n_out )
     weights = angle_mids_orig * dtheta
@@ -493,9 +493,11 @@ def real_space_cov( cl_cov, cl_specs, cl2xi_types, ell_max, angle_lims_rad,
                     else:
                         #Get the full cl covariance, and the pure noise part - we're going to transform
                         #the latter analytically...
-                        cl_cov_block = cl_cov.get_cov_diag_ijkl( cl_spec_i.name, cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, 
+                        cl_cov_block = cl_cov.get_cov_diag_ijkl( cl_spec_i.name, 
+                            cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, 
                             noise_only=noise_only )
-                        cl_cov_noise_noise = cl_cov.get_cov_diag_ijkl( cl_spec_i.name, cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, noise_only=True )
+                        cl_cov_noise_noise = cl_cov.get_cov_diag_ijkl( cl_spec_i.name, 
+                            cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, noise_only=True )
                         cl_cov_block_signal_mixed = cl_cov_block - cl_cov_noise_noise 
                         xi_cov_block_signal_mixed_upsampled = np.matmul( F_i_l, 
                                                               np.matmul( np.diag(cl_cov_block_signal_mixed), 
