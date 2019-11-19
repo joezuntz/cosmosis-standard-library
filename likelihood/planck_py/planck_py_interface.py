@@ -24,8 +24,32 @@ class PlanckPythonLikelihood(GaussianLikelihood):
         self.calculator = planck_lite_py.PlanckLitePy(year=year, spectra=spectra, 
             use_low_ell_bins=use_low_ell_bins, data_directory=data_directory)
         x = None
-        y = self.calculator.mu
+
+        #We optionally allow the user to provide a cosmosis
+        #test sampler output directory here, which will be
+        #used to set the CMB datavector. This allows for 
+        #generating Planck like constraints at a cosmology 
+        #of your choice.
+        use_data_from_test = self.options.get_string(
+            "use_data_from_test",
+            "")
+        if use_data_from_test != "":
+            print("using cmb data from %s"%use_data_from_test)
+            y = self.get_data_points_from_test_output(use_data_from_test)
+        else:
+            y = self.calculator.mu
         return x, y
+
+    def get_data_points_from_test_output(self, test_output_dir):
+        cmb_dir = os.path.join(test_output_dir, "cmb_cl")
+        ell = np.loadtxt(os.path.join(cmb_dir, "ell.txt")).astype(int)
+        tt = np.loadtxt(os.path.join(cmb_dir, 'tt.txt'))
+        te = np.loadtxt(os.path.join(cmb_dir, 'te.txt'))
+        ee = np.loadtxt(os.path.join(cmb_dir, 'ee.txt'))
+
+        y = self.calculator.make_mean_vector(tt, te, ee, ellmin=ell.min())
+        y = self.calculator._cut_vector(y)
+        return y
 
     def build_covariance(self):
         return self.calculator.cov
