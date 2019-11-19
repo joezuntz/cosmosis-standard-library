@@ -419,12 +419,8 @@ class ClCov( object ):
                                 #Get the indices in cl_var_binned these correspond to:
                                 ell_vals_bin_inds = ell_vals_bin - ell_lims[0]
                                 cl_var_unbinned_bin = cl_var_unbinned[ell_vals_bin_inds]
-                                weights_unbinned = 2*ell_vals_bin + 1.
-                                #cl_var_binned[ell_bin] = (np.sum((2*ell_vals_bin+1) * cl_var_unbinned_bin) 
-                                #    / np.sum(2*ell_vals_bin+1))
-                                numerator = np.sum(weights_unbinned**2 * cl_var_unbinned_bin)
-                                demoninator = (weights_unbinned.sum())**2
-                                cl_var_binned[ell_bin] = (numerator/demoninator)
+                                cl_var_binned[ell_bin] = np.sum((2*ell_vals_bin+1)**2 * 
+                                    cl_var_unbinned_bin) / np.sum(2*ell_vals_bin+1)**2
 
                             cov_blocks[i_bp, j_bp] = cl_var_binned
 
