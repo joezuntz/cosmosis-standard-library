@@ -49,7 +49,7 @@ def execute(block, config):
 
     shear_shear = sec_names['shear_shear']
     shear_shear_bb = sec_names['shear_shear_bb']
-    shear_shear_gg = sec_names['shear_shear']
+    shear_shear_gg = sec_names['shear_shear_gg']
     galaxy_shear = sec_names['galaxy_shear']
     galaxy_intrinsic = sec_names['galaxy_intrinsic']
     shear_intrinsic = sec_names['shear_intrinsic']
