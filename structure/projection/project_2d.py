@@ -1242,7 +1242,7 @@ class SpectrumCalculator(object):
             #_, unique_inds = np.unique(self.ell_exact, return_index=True)
             #self.ell_exact = self.ell_exact[unique_inds]
             ell_exact = self.ell[ self.ell < self.limber_ell_start ]
-            self.ell = self.ell[ self.ell >= self.limber_ell_start ]
+            self.ell_limber = self.ell[ self.ell >= self.limber_ell_start ]
             ell_exact = np.floor(ell_exact)
             self.ell_exact = np.unique(ell_exact)
             self.n_ell_exact = len(self.ell_exact)
@@ -1542,7 +1542,7 @@ class SpectrumCalculator(object):
                     exact_kwargs = dict(self.exact_kwargs)
                     if spectrum.has_rsd:
                         exact_kwargs["do_rsd"] = self.do_rsd
-                    ell, c_ell = spectrum.compute(block, self.ell, i+1, j+1, 
+                    ell, c_ell = spectrum.compute(block, self.ell_limber, i+1, j+1, 
                         sig_over_dchi_limber=self.sig_over_dchi, ell_exact=self.ell_exact,
                         exact_kwargs=exact_kwargs)
                 else:
