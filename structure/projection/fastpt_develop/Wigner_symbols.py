@@ -15,7 +15,10 @@
 '''
 
 import numpy as np
-from scipy.misc import factorial 
+try:
+	from scipy.misc import factorial
+except ImportError:
+	from scipy.special import factorial
 import sys
 
 
