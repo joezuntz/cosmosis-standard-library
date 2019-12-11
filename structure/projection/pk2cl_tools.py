@@ -14,8 +14,9 @@ from fftlog import Fftlog
 inv_sqrt2pi = 1./np.sqrt(2*np.pi)
 
 def nearest_power_of_2(x):
+    return 2**int(np.ceil(np.log2(x)))
     #Find nearest, greater power of 2 to x. 
-    return 1<<(x-1).bit_length()
+    # return 1<<(int(x)-1).bit_length()
 
 def get_dlogchi(dchi, chimax):
     """
