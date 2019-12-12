@@ -70,12 +70,19 @@ def setup(options):
     #First of all get the angular scales/binning
     logspaced = options.get_bool(option_section, "logspaced", True)
     make_covariance = options.get_bool(option_section, "make_covariance", False)
+    copy_covariance = options.get_string(option_section, "copy_covariance", "")
     angle_units = options.get_string(option_section, "angle_units", "")
     two_thirds_midpoint = options.get_bool(option_section, "two_thirds_midpoint", False)
 
-    config = { "make_covariance": make_covariance,
-               "logspaced": logspaced, 
-               "angle_units": angle_units }
+    if copy_covariance and make_covariance:
+        raise ValueError("You can only set one of make_covariance and copy_covariance")
+
+    config = {
+        "make_covariance": make_covariance,
+        "copy_covariance": copy_covariance,
+        "logspaced": logspaced, 
+        "angle_units": angle_units
+    }
 
     def read_list(key):
         s = options.get_string(option_section, key)
@@ -210,6 +217,7 @@ def execute(block, config):
     overwrite = config['overwrite']
 
     make_covariance = config['make_covariance']
+    copy_covariance = config['copy_covariance']
 
     print("Saving two-point data to {}".format(filename))
 
@@ -349,6 +357,20 @@ def execute(block, config):
             assert covmat.shape[0] == sum([len(s.value) for s in spec_meas_list])
             covmat_info = twopoint.CovarianceMatrixInfo( 'COVMAT', [s.name for s in spec_meas_list],
                                                          [len(s.value) for s in spec_meas_list], covmat )
+    
+    elif copy_covariance:
+        parent_file = twopoint.TwoPointFile.from_fits(copy_covariance)
+        # check that covariances match
+        for s1, s2 in zip(spec_meas_list, parent_file.spectra):
+            if s1.name != s2.name:
+                raise ValueError("Different spectrum order in parent file")
+            if len(s1) != len(s2):
+                raise ValueError("Different spectrum lengths in parent file")
+            if not ((s1.bin1 == s2.bin1).all() and (s1.bin2 == s2.bin2).all()):
+                raise ValueError("Different tomo bin order in parent file")
+            if not (s1.angular_bin == s2.angular_bin).all():
+                raise ValueError("Different angular bin order in parent file")
+        covmat_info = parent_file.covmat_info
     else:
         covmat_info = None
 
