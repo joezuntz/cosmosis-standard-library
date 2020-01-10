@@ -159,9 +159,9 @@ class Power3D(object):
         #Make ln(D)(ln(a)) spline
         lnD_of_lna_spline = interp.InterpolatedUnivariateSpline(np.log(a_vals)[::-1], np.log(growth_vals)[::-1])
         #And take derivative
-        f_vals = (lnD_of_lna_spline.derivative())(np.log(a_vals))
+        f = (lnD_of_lna_spline.derivative())(np.log(a_vals))
         #Now can set f(chi) spline.
-        self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(self.chi_vals, f_vals)
+        self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(self.chi_vals, f)
 
 class MatterPower3D(Power3D):
     section = "matter_power_nl"
@@ -499,7 +499,7 @@ class Spectrum(object):
         # This gets done later for the base class
         return 0
 
-    def prep_spectrum(self, block, **kwargs):
+    def prepare(self, block, **kwargs):
         """This is called prior to calculating the C(l)s
         for a given spectrum and sets the P(k) splines 
         required for the calculation. For the base 
@@ -586,9 +586,9 @@ class LingalLingalSpectrum(Spectrum):
             chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1] * self.lin_bias_values_b[bin2]
 
-    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
-        #Call the parent prep_spectrum
-        super(LingalLingalSpectrum, self).prep_spectrum(
+    def prepare(self, block, lin_bias_prefix="b", **kwargs):
+        #Call the parent prepare
+        super(LingalLingalSpectrum, self).prepare(
             block)
         #Then also load in bias values for each bin
         self.lin_bias_values_a = {}
@@ -613,17 +613,17 @@ class LingalShearSpectrum(Spectrum):
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None, 
         sig_over_dchi=10., chi_pad_lower=2., chi_pad_upper=2.,
         chimin=None, chimax=None, dchi_limber=None, do_rsd=False):
-        try:
-            assert do_rsd==False
-        except AssertionError as e:
-            print("rsd not yet implemented for LingalShearSpectrum")
-            raise(e)
+
+        if do_rsd:
+            raise NotImplementedError("rsd not yet implemented for LingalShearSpectrum")
+
         #Call the exact calculation from the base class
         c_ell = super(LingalShearSpectrum, self).compute_exact(block, 
             ell, bin1, bin2, dlogchi=dlogchi, sig_over_dchi=sig_over_dchi, 
             chi_pad_lower=chi_pad_lower, chi_pad_upper=chi_pad_upper, 
             chimin=chimin, chimax=chimax, dchi_limber=dchi_limber, 
             do_rsd=do_rsd)
+
         #Apply a linear bias and return
         c_ell *= self.lin_bias_values_a[bin1]
         return c_ell
@@ -635,12 +635,13 @@ class LingalShearSpectrum(Spectrum):
             chimin=chimin, chimax=chimax)
         return c_ell * self.lin_bias_values_a[bin1]
 
-    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
-        #Call the parent prep_spectrum
-        super(LingalShearSpectrum, self).prep_spectrum(
-            block)
+    def prepare(self, block, lin_bias_prefix="b", **kwargs):
+        #Call the parent prepare
+        super(LingalShearSpectrum, self).prepare(block)
+
         #Then also load in bias values for first sample
         assert self.kernel_types[0] == "N"
+
         self.lin_bias_values_a = {}
         nbin = self.source.kernels[self.sample_a].nbin
         for i in range(1, nbin+1):
@@ -676,9 +677,9 @@ class LingalMagnificationSpectrum(Spectrum):
         #Apply a linear bias and return
         return c_ell * self.lin_bias_values_a[bin1]
 
-    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
-        #Call the parent prep_spectrum
-        super(LingalMagnificationSpectrum, self).prep_spectrum(
+    def prepare(self, block, lin_bias_prefix="b", **kwargs):
+        #Call the parent prepare
+        super(LingalMagnificationSpectrum, self).prepare(
             block)
         #Then also load in bias values for first sample
         assert self.kernel_types[0] == "N"
@@ -717,9 +718,9 @@ class LingalIntrinsicSpectrum(Spectrum):
         #Apply a linear bias and return
         return c_ell * self.lin_bias_values_a[bin1]
 
-    def prep_spectrum(self, block, lin_bias_prefix="b", **kwargs):
-        #Call the parent prep_spectrum
-        super(LingalIntrinsicSpectrum, self).prep_spectrum(
+    def prepare(self, block, lin_bias_prefix="b", **kwargs):
+        #Call the parent prepare
+        super(LingalIntrinsicSpectrum, self).prepare(
             block)
         #Then also load in bias values for first sample
         assert self.kernel_types[0] == "N"
@@ -746,18 +747,18 @@ class NlgalNlgalSpectrum(LingalLingalSpectrum):
     We might want to revise how that all works at some point
     as it seems a bit clumsy. But oh well.
     """
-    def prep_spectrum(self, block, pt_type="oneloop_eul_bk", **kwargs):
+    def prepare(self, block, pt_type="oneloop_eul_bk", **kwargs):
         
         self.pt_type = pt_type
 
         #Load bias values into a dictionary
-        self.bias_values_a, self.lin_bias_values_a = self.load_bias_values(
+        self.bias_values_a, self.lin_bias_values_a = self.load_bias(
             block, self.sample_a, pt_type)
         if self.sample_a == self.sample_b:
             self.bias_values_b = self.bias_values_a
             self.lin_bias_values_b = self.lin_bias_values_a
         else:
-            self.bias_values_b, self.lin_bias_values_b = self.load_bias_values(
+            self.bias_values_b, self.lin_bias_values_b = self.load_bias(
                 block, self.sample_b, pt_type)
 
         #Get power spectrum terms from fastpt. These
@@ -776,7 +777,7 @@ class NlgalNlgalSpectrum(LingalLingalSpectrum):
         #attributes to see whether they need to call set_power
         self.current_bin1, self.current_bin2 = None, None
 
-    def load_bias_values(self, block, sample, pt_type):
+    def load_bias(self, block, sample, pt_type):
         #Load bias values from the block
         nbin = self.source.kernels[sample].nbin
         bias_values = {}
@@ -844,12 +845,12 @@ class NlgalShearSpectrum(LingalShearSpectrum):
     just the linear matter power spectrum (and the b_1 values are passed 
     along with this). We also need to construct the non-Linear P(k) using fast-pt.
     """
-    def prep_spectrum(self, block, pt_type="oneloop_eul_bk", **kwargs):
+    def prepare(self, block, pt_type="oneloop_eul_bk", **kwargs):
         #assign pt_type
         self.pt_type = pt_type
 
         #Load bias values into a dictionary
-        self.bias_values_a, self.lin_bias_values_a = self.load_bias_values(
+        self.bias_values_a, self.lin_bias_values_a = self.load_bias(
             block, self.sample_a, pt_type)
 
         #Get power spectrum terms from fastpt. These
@@ -868,7 +869,7 @@ class NlgalShearSpectrum(LingalShearSpectrum):
         #attributes to see whether they need to call set_power
         self.current_bin1 = None
 
-    def load_bias_values(self, block, sample, pt_type):
+    def load_bias(self, block, sample, pt_type):
         #Load bias values from the block
         nbin = self.source.kernels[sample].nbin
         bias_values = {}
@@ -1433,10 +1434,12 @@ class SpectrumCalculator(object):
         # convert Mpc to Mpc/h
         chi_distance *= h0
 
+        # This is only needed by CMB spectra
         if block.has_value(names.distances, 'CHISTAR'):
             self.chi_star = block[names.distances, 'CHISTAR'] * h0
         else:
             self.chi_star = None
+
         self.chi_max = chi_distance.max()
         self.a_of_chi = interp.InterpolatedUnivariateSpline(chi_distance, a_distance)
         self.chi_of_z = interp.InterpolatedUnivariateSpline(z_distance, chi_distance)
@@ -1449,13 +1452,18 @@ class SpectrumCalculator(object):
         # self.kernels dictionary.
         for key in self.req_kernel_keys:
             kernel_type, sample_name = key
+
+            # For all the sources we need the n(z)
             if sample_name not in self.kernels:
                 section_name = "nz_"+sample_name
                 self.kernels[sample_name] = TomoNzKernel.from_block(block, section_name, norm=True)
+
+
             if kernel_type == "N":
                 print("setting up N(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, self.dchidz, 
                     clip=self.clip_chi_kernels)
+
             elif kernel_type == "W":
                 print("setting up W(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, 
@@ -1522,8 +1530,8 @@ class SpectrumCalculator(object):
         #Save auto_only - whether we've only computed autocorrelations 
         block[spectrum.section_name, 'auto_only'] = (
             spectrum.section_name in self.auto_only_section_names)
-        #Call prep_spectrum
-        spectrum.prep_spectrum( block, lin_bias_prefix=self.lin_bias_prefix )
+        #Call prepare
+        spectrum.prepare(block, lin_bias_prefix=self.lin_bias_prefix)
 
         print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
 
@@ -1567,14 +1575,13 @@ class SpectrumCalculator(object):
         (distance splines, kernels, P(k)s) and compute the C(l)s.
         """
         try:
-            #Load distance splines
+            # Load input information from the block
             self.load_distance_splines(block)
-
-            #Load the lensing prefactor
             self.load_lensing_prefactor(block)
-
-            #Load the kernels.
             self.load_kernels(block)
+
+            # Loading the kernels can often fail, so we catch that specifically
+            # and explain the causes
             try:
                 t0 = timer()
                 self.load_kernels(block)
@@ -1584,10 +1591,15 @@ class SpectrumCalculator(object):
                 sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
                 sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
                 sys.stderr.write(
-                    "consistent then you may wish to look into it in more detail. Set fata_errors=T to do so.\n")
+                    "consistent then you may wish to look into it in more detail. Set fatal_errors=T to do so.\n")
+                # This parameter makes it easier to debug problems with this module
                 if self.fatal_errors:
                     raise
                 return 1
+
+            # We can optionally save the kernels that go into the
+            # integration as well.  This is useful for e.g. plotting
+            # things.  Thi
             if self.save_kernel_zmax > 0:
                 self.save_kernels(block, self.save_kernel_zmax)
 
