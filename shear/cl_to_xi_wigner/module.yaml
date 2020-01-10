@@ -1,0 +1,62 @@
+name: cl_to_xi_wigner_d
+version: "1.0"
+purpose: "Compute correlation functions from power spectra"
+url: ""
+interface: wigner_cl_xi_interface.py
+attribution: [Joe Zuntz, Nicolas Tessore]
+rules: ""
+cite: ["https://arxiv.org/abs/1904.09973"]
+
+assumptions:
+    - "Input C_ell up to large ell_max 10_000 ~ 100_000."
+
+explanation: |
+    "
+    This module creates and stores transformation matrices to convert power
+    spectra to correlation functions.
+
+    There is a general relation [arXiv:1904.09973]
+
+        xi(theta) = sum_l (2*l + 1)/(4pi) C_l d^l_ss'(theta)
+
+    to convert between cl and xi of spin s and s' fields, using the reduced
+    Wigner d-functions. This is a linear relation that can be written in matrix
+    form. Once the values of theta are fixed, the matrix never changes.
+
+    A complication is that the theory Cls are not computed for all integer l up
+    to some ell_max, so that the available values must be interpolated at the
+    integers. Since linear interpolation is also a linear operation, it can be
+    absorbed directly into the transformation matrix, which as a result has
+    size n_theta x n_ell even if the above sum stretches to ell_max >> n_ell.
+    The interpolation is currently done linearly in ell, but could perhaps be
+    changed to be log-linear for better results.
+
+    The transformation matrices are computed on the first evaluation, which
+    takes a long time if ell_max is high, since (ell_max+1) x n_theta Wigner
+    d-function values are calculated. However, after the first time, each
+    cl-to-xi conversion is a cheap n_theta x n_ell matrix multiplication, so
+    one might come out ahead over a long run. These matrices could in principle
+    even be stored to disk for given settings of ell and theta.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+    corr_type: "Integer/String, type of the correlation function: 0/xi, 1/wtheta, 2/gammat"
+    input_section_name: "String, name of the angular power spectrum input section. See shear/spectra module. (Default: 'shear_cl', 'galaxy_cl', or 'galaxy_shear_cl' depending on corr_type)"
+    output_section_name: "String, name of the angular correlation function output section (Default: 'shear_xi', 'galaxy_shear_xi', or 'galaxy_xi' depending on corr_type)"
+
+inputs:
+    input_section_name:
+        ell: "Real 1d array, sample ell values for input C_ell"
+        nbin_a: "Integer, mainly for mode=2 (GGL) - the number of redshift bins in the first quantity (position bins for GGL)"
+        nbin_b: "Integer, mainly for mode=2 (GGL) - the number of redshift bins in the first quantity (shear bins for GGL)"
+        nbin: "Integer, Number of redshift bins used if nbin_a or b not found."
+        bin_i_j: "Real 1d arrays C_ell (no l(l+1) factor) for bin i and j. Only need j<=i for modes 0 and 1."
+
+outputs:
+    output_section_name:
+        theta: "Real 1D array, Sample theta values for output xi(theta)"
+        bin_i_j: "Real 1D array, w(theta) or gamma_t(theta) for bin i and j, only if mode=1 or 2 respectively. Only stores j<=i."
+        nbin_a: "Integer, number of i tomographic bins"
+        nbin_b: "Integer, number of j tomographic bins"
+
