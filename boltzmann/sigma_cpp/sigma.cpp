@@ -15,6 +15,7 @@ namespace PARAMS
     const long double pi2 = pi*pi;
     const long double four_pi_o3 = 4.*pi/3;
     const long double rho_c = 2.775e11; // rho_c/h^2
+    const long double one_over_3pi2 = 1./(3.*pi*pi);
     double kmin;
     double kmax;
     double r;
@@ -30,18 +31,23 @@ double radius(const double M, const double Omega_M)
             0.333333333333333333333333333333333333333333333333333333333333);	
 }
 //window function     
-double w(const double k)
+double w(const double kR)
 {
-    return 3*((std::sin(k)/k)-std::cos(k))/(k*k);
+    return 3*((std::sin(kR)/kR)-std::cos(kR))/(kR*kR);
 }
-
-double sig_arg(const double lnk,  void * params) {
-
+//derivate of window function     
+double dwdlnkR(double kR){
+    return 3*(((kR*kR-3)*std::sin(kR)/kR)+3*std::cos(kR))/(kR*kR);
+}
+double sig2_arg(const double lnk,  void * params) {
     const double k = exp(lnk);
     const double wkR = w(k*PARAMS::r);
     return gsl_spline_eval(PARAMS::powerspec, k, NULL)*wkR*wkR*k*k*k;
 }
-
+double dsig2dlnM_arg(const double lnk,  void * params) {
+    const double k = exp(lnk);
+    return gsl_spline_eval(PARAMS::powerspec, k, NULL)*w(k*PARAMS::r)*dwdlnkR(k*PARAMS::r)*k*k*k;
+}
 gsl_spline* spline_from_vectors(std::vector<double> &x, std::vector<double> &y) {
     int n = x.size();
     gsl_spline *s = gsl_spline_alloc(gsl_interp_cspline, x.size());
@@ -50,16 +56,15 @@ gsl_spline* spline_from_vectors(std::vector<double> &x, std::vector<double> &y) 
     gsl_spline_init(s, px, py, n);
     return s;
   }
-
 template <class T>
 double gsl_integral(T &func, const double a, const double b, const double eps=1.0e-10)
 {
-
   double result, error;
   size_t limit = 100;
   int key = 1;
 
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc(limit);
+  gsl_integration_workspace * w
+    = gsl_integration_workspace_alloc(limit);
 
   gsl_function F;
   F.function = &func;
@@ -81,7 +86,8 @@ int executemain (
         double* z_vec,
         double* m_vec,
         double* r_vec,
-        double* sigma_m
+        double* sigma2_m, 
+        double* dsigma2dlnM_m
         ) {
 
     int proc_num = int_config[0];
@@ -90,6 +96,7 @@ int executemain (
     int nz_bin = int_config[3];
     int nzk_bin = int_config[4];
     int prt_detail = int_config[5];
+    int calc_dsig = int_config[6];
 
 #ifdef _OPENMP
     omp_set_num_threads(proc_num);
@@ -141,7 +148,7 @@ int executemain (
 
     }
 
-    // Compute sigma
+    // Compute sigma2
     double romb = 0;
     const double eps = PARAMS::eps_sigma;
     const double lnkmin = std::log(PARAMS::kmin * 1.001);
@@ -158,11 +165,20 @@ int executemain (
 
         PARAMS::powerspec = spline_from_vectors(ps_k, ps);
     
-        // Run the integration to calculate these sigma_m values
+        // Run the integration to calculate these sigma2_m values
         for (int i=0;i<nm_bin;i++){
             PARAMS::r = r_vec[i];
-            romb = gsl_integral(sig_arg, lnkmin, lnkmax, eps);
-            sigma_m[i+iz*nm_bin] =  0.5*romb/PARAMS::pi2;
+            romb = gsl_integral(sig2_arg, lnkmin, lnkmax, eps);
+            sigma2_m[i+iz*nm_bin] =  0.5*romb/PARAMS::pi2;
+        }
+
+        if (calc_dsig==1){
+            // Run the integration to calculate these dsigma2/dlnm values
+            for (int i=0;i<nm_bin;i++){
+                PARAMS::r = r_vec[i];
+                romb = gsl_integral(dsig2dlnM_arg, lnkmin, lnkmax, eps);
+                dsigma2dlnM_m[i+iz*nm_bin] =  romb*PARAMS::one_over_3pi2;
+            }
         }
 
         gsl_spline_free(PARAMS::powerspec);

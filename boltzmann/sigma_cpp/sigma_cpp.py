@@ -4,7 +4,7 @@ import os
 import ctypes
 
 # Names used
-sigma = "sigma_r"
+sigma_block_name = "sigma_r"
 
 def set_vector(options, vmin, vmax, dv, vec):
     """Read a vector-valued parameter from the parameter file either directly or via min,max,n"""
@@ -33,13 +33,15 @@ def setup(options):
         m_vec = None
 
         use_m = options.get_bool(option_section, "use_m", False)
-
         if use_m:
             m_vec = set_vector(options, "logmmin", "logmmax", "dlogm", "logm")
             print('using mass')
         else:
             r_vec = set_vector(options, "rmin", "rmax", "dr", "r")
             print('using radius')
+
+        # compute dsigma2dlnm
+        calc_dsig = options.get_bool(option_section, "calc_dsig", False)
 
         # Constants needed later
         rho_c = 2.775e11 #  rho_c/h^2
@@ -87,7 +89,8 @@ def setup(options):
             C_VEC_DOUB    ,   # double* z_vec
             C_VEC_DOUB    ,   # double* m_vec
             C_VEC_DOUB    ,   # double* r_vec
-            C_VEC_DOUB    ,   # double* sigma_m
+            C_VEC_DOUB    ,   # double* sigma2_m
+            C_VEC_DOUB    ,   # double* dsigma2dlnM_m         
             ]
 
 
@@ -124,27 +127,31 @@ def execute(block, config):
     proc_num = 1
 
     # integer configuration parameters for the C++ code
-    int_config = np.array([proc_num, len(k), nm, nz, len(zk), config.verbose], dtype=np.int32)
+    int_config = np.array([proc_num, len(k), nm, nz, len(zk), config.verbose, config.calc_dsig], dtype=np.int32)
 
     # Space where the output results will be stored
-    sigma_m = np.zeros(nm*nz)
+    sigma2_m = np.zeros(nm*nz)
+    dsigma2dlnM_m = np.zeros(nm*nz)
 
     if config.verbose:
         print("************************** cluster code begin **********************************")
         print('len(Pk):',len(Pk))
 
     # Run the main function
-    config.Sigma_Func (OmM, int_config, k, zk, Pk, z_vec, m_vec, r_vec, sigma_m)
+    config.Sigma_Func (OmM, int_config, k, zk, Pk, z_vec, m_vec, r_vec, sigma2_m, dsigma2dlnM_m)
 
     if config.verbose:
         print("************************** cluster code ok **********************************")
 
-    sigma_m = sigma_m.reshape((nz, nm))
+    sigma2_m = sigma2_m.reshape((nz, nm))
 
-    # We save the grid sigma2(R,z) and the m vector separately.
+    # We save the grid sigma2(R,z) and the logm vector separately.
     # This ordering is consistent with the old sigmar module
-    block.put_grid(sigma, "R", r_vec, "z", z_vec, "sigma2", sigma_m.T)
-    block[sigma, "logm" ] = m_vec
+    block.put_grid(sigma_block_name, "R", r_vec, "z", z_vec, "sigma2", sigma2_m.T)
+    block[sigma_block_name, "logm" ] = m_vec
+
+    if config.calc_dsig:
+        block[sigma_block_name, "dsigma2dlnM" ] = dsigma2dlnM_m.reshape(nz, nm).T
 
     #We tell CosmoSIS that everything went fine by returning zero
     return 0
