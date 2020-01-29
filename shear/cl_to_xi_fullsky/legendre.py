@@ -169,9 +169,36 @@ def P2l_rec_binav(ells, cost_min, cost_max):
         # computation of bin-averaged P2l(ell)
         P2l_binav[ell] = (term_lm1 + term_l - term_lp1)/dcost
     return P2l_binav
+
+def theta_bin_means_to_edges(thetas, binning='log'):
+    # array of theta edges from mean values
+    tedges = np.zeros(len(thetas)+1)
+    for i in range(len(thetas)):
+        # bin width selection
+        if binning=='log':
+            # logarithmic spacing
+            if i==0:
+                dtheta = np.log10(thetas[i+1]) - np.log10(thetas[i])
+            else:
+                dtheta = np.log10(thetas[i]) - np.log10(thetas[i-1])
+            tedges[i]   = 10.**(np.log10(thetas[i])-dtheta/2.)
+            tedges[i+1] = 10.**(np.log10(thetas[i])+dtheta/2.)
+        else:
+            # linear spacing
+            if i==0:
+                dtheta = thetas[i+1] - thetas[i]
+            else:
+                dtheta = thetas[i] - thetas[i-1]
+            tedges[i]   = thetas[i]-dtheta/2.
+            tedges[i+1] = thetas[i]+dtheta/2.
+        # if the spacing is large, first value might be negative
+        if tedges[0]<0.:
+            tedges[0] = 0.
+    return tedges
     
-def get_legfactors_02_binav(ells, theta_edges):
-    n_ell, n_theta = len(ells), len(theta_edges)-1
+def get_legfactors_02_binav(ells, thetas):
+    n_ell, n_theta = len(ells), len(thetas)
+    theta_edges = theta_bin_means_to_edges(thetas)
     legfacs = np.zeros((n_theta, n_ell))
     ell_factor = np.zeros(len(ells))
     ell_factor[1:] = (2 * ells[1:] + 1) / 4. / PI / ells[1:] / (ells[1:] + 1)
