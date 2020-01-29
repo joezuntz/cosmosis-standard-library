@@ -5,7 +5,7 @@ from builtins import range
 import numpy as np
 from cosmosis.datablock import option_section, names as section_names
 from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block
-from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter
+from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav
 from past.builtins import basestring
 
 def setup(options):
@@ -25,6 +25,7 @@ def setup(options):
 
     xi_type = options.get_string(option_section, 'xi_type')
     ell_max = options.get_int(option_section, "ell_max")
+    bin_avg = options.get_bool(option_section, "bin_avg", True)
     #Filter the Cls at high ell to reduce ringing:
     high_l_filter = options.get_double(option_section, "high_l_filter", 0.75)
 
