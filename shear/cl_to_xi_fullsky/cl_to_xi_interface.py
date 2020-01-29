@@ -53,6 +53,7 @@ def setup(options):
     elif xi_type in ["02", "02+"]:
         if bin_avg:
             precomp_func = get_legfactors_02_binav
+            print("*** Using bin averaged Legendre coefficients ***")
         else:    
             precomp_func = get_legfactors_02
         if not cl_section:
