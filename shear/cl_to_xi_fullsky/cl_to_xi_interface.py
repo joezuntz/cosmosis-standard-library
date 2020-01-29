@@ -77,6 +77,32 @@ def setup(options):
         else:
             legfacs = apply_filter( ell_max, high_l_filter, legfacs )
     return theta, ell_max, legfacs, cl_section, output_section, save_name
+    
+def theta_bin_means_to_edges(thetas, binning='log'):
+    # array of theta edges from mean values
+    tedges = np.zeros(len(thetas)+1)
+    for i in range(len(thetas)):
+        # bin width selection
+        if binning=='log':
+            # logarithmic spacing
+            if i==0:
+                dtheta = np.log10(thetas[i+1]) - np.log10(thetas[i])
+            else:
+                dtheta = np.log10(thetas[i]) - np.log10(thetas[i-1])
+            tedges[i]   = 10.**(np.log10(thetas[i])-dtheta/2.)
+            tedges[i+1] = 10.**(np.log10(thetas[i])+dtheta/2.)
+        else:
+            # linear spacing
+            if i==0:
+                dtheta = thetas[i+1] - thetas[i]
+            else:
+                dtheta = thetas[i] - thetas[i-1]
+            tedges[i]   = thetas[i]-dtheta/2.
+            tedges[i+1] = thetas[i]+dtheta/2.
+        # if the spacing is large, first value might be negative
+        if tedges[0]<0.:
+            tedges[0] = 0.
+    return tedges
 
 def execute(block, config):
 
