@@ -150,3 +150,36 @@ def G_plus_minus_l2(ells, theta, s_switch=100.):
     G_plus[0] = 0.
     G_minus[0] = 0.
     return G_plus, G_minus
+
+def P2l_rec_binav(ells, cost_min, cost_max):
+    """Calculate P2l using recurrence relation for normalised P2l"""
+    P2l_binav = np.zeros(len(ells))
+    P2l_binav[0] = 0.
+    P2l_binav[1] = 0.
+    for ell in ells[2:]:
+        coeff_lm1 = (ell+2./(2.*ell+1.))
+        coeff_lp1 = 2./(2.*ell+1.)
+        coeff_l   = 2.-ell
+        # coefficients and the terms in the numerator of average P2l
+        term_lm1 = coeff_lm1 * (eval_legendre(ell-1,cost_max)-eval_legendre(ell-1,cost_min))
+        term_lp1 = coeff_lp1 * (eval_legendre(ell+1,cost_max)-eval_legendre(ell+1,cost_min))
+        term_l   = coeff_l   * (cost_max*eval_legendre(ell,cost_max)-cost_min*eval_legendre(ell,cost_min))
+        # denominator in average P2l
+        dcost = cost_max-cost_min
+        # computation of bin-averaged P2l(ell)
+        P2l_binav[ell] = (term_lm1 + term_l - term_lp1)/dcost
+    return P2l_binav
+    
+def get_legfactors_02_binav(ells, theta_edges):
+    n_ell, n_theta = len(ells), len(theta_edges)-1
+    legfacs = np.zeros((n_theta, n_ell))
+    ell_factor = np.zeros(len(ells))
+    ell_factor[1:] = (2 * ells[1:] + 1) / 4. / PI / ells[1:] / (ells[1:] + 1)
+    for it, t in enumerate(theta_edges[1:]):
+        t_min = theta_edges[it-1]
+        t_max = t
+        cost_min = np.cos(t_min/60. * np.pi/180.)
+        cost_max = np.cos(t_max/60. * np.pi/180.)
+        P2l = P2l_rec_binav(ells, cost_min, cost_max)
+        legfacs[it] = P2l * ell_factor
+    return legfacs
