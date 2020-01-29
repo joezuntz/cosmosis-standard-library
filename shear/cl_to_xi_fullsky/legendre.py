@@ -2,6 +2,7 @@ from __future__ import print_function
 from builtins import range
 import numpy as np
 from scipy.special import lpn
+from scipy.special import eval_legendre
 
 PI=np.pi
 
