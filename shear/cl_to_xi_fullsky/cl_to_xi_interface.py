@@ -85,6 +85,7 @@ def setup(options):
 def execute(block, config):
 
     thetas, ell_max, legfacs, cl_section, output_section, save_name = config
+    print('thetas in execute are ',thetas*180*60/np.pi)
 
     ell = block[cl_section, "ell"]
 
