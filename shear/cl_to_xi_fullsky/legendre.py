@@ -177,6 +177,7 @@ def P2l_rec_binav(ells, cost_min, cost_max):
 
 def theta_bin_means_to_edges(thetas, binning='log'):
     print('Calculating theta bin edges')
+    print('n_theta_bins=',len(thetas))
     # array of theta edges from mean values
     tedges = np.zeros(len(thetas)+1)
     for i in range(len(thetas)):
