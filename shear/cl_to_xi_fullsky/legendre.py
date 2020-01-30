@@ -2,7 +2,6 @@ from __future__ import print_function
 from builtins import range
 import numpy as np
 from scipy.special import lpn
-from scipy.special import eval_legendre
 
 PI=np.pi
 
@@ -151,27 +150,33 @@ def G_plus_minus_l2(ells, theta, s_switch=100.):
     G_plus[0] = 0.
     G_minus[0] = 0.
     return G_plus, G_minus
-
+    
 def P2l_rec_binav(ells, cost_min, cost_max):
     """Calculate P2l using recurrence relation for normalised P2l"""
     P2l_binav = np.zeros(len(ells))
     P2l_binav[0] = 0.
     P2l_binav[1] = 0.
-    for ell in ells[2:]:
-        coeff_lm1 = (ell+2./(2.*ell+1.))
-        coeff_lp1 = 2./(2.*ell+1.)
-        coeff_l   = 2.-ell
-        # coefficients and the terms in the numerator of average P2l
-        term_lm1 = coeff_lm1 * (eval_legendre(ell-1,cost_max)-eval_legendre(ell-1,cost_min))
-        term_lp1 = coeff_lp1 * (eval_legendre(ell+1,cost_max)-eval_legendre(ell+1,cost_min))
-        term_l   = coeff_l   * (cost_max*eval_legendre(ell,cost_max)-cost_min*eval_legendre(ell,cost_min))
-        # denominator in average P2l
-        dcost = cost_max-cost_min
-        # computation of bin-averaged P2l(ell)
-        P2l_binav[ell] = (term_lm1 + term_l - term_lp1)/dcost
+    # coefficients that are a function of ell only
+    ell = ells[2:]
+    coeff_lm1 = ell+2./(2.*ell+1.)
+    coeff_lp1 = 2./(2.*ell+1.)
+    coeff_l   = 2.-ell
+    # computation of legendre polynomials
+    # --- this computes all polynomials of order 0 to ell_max+1 and for all ell's
+    lpns_min = lpn(ell[-1]+1, cost_min)[0][1:]
+    lpns_max = lpn(ell[-1]+1, cost_max)[0][1:]
+    # terms in the numerator of average P2l
+    term_lm1 = coeff_lm1 * (lpns_max[:-2]-lpns_min[:-2])
+    term_lp1 = coeff_lp1 * (lpns_max[2:]-lpns_min[2:])
+    term_l   = coeff_l   * (cost_max*lpns_max[1:-1]-cost_min*lpns_min[1:-1])
+    # denominator in average P2l
+    dcost = cost_max-cost_min
+    # computation of bin-averaged P2l(ell)
+    P2l_binav[ell] = (term_lm1 + term_l - term_lp1) / dcost
     return P2l_binav
 
 def theta_bin_means_to_edges(thetas, binning='log'):
+    print('Calculating theta bin edges')
     # array of theta edges from mean values
     tedges = np.zeros(len(thetas)+1)
     for i in range(len(thetas)):
@@ -198,6 +203,7 @@ def theta_bin_means_to_edges(thetas, binning='log'):
     return tedges
     
 def get_legfactors_02_binav(ells, thetas):
+    print('getting bin averaged leg factors')
     n_ell, n_theta = len(ells), len(thetas)
     theta_edges = theta_bin_means_to_edges(thetas)
     legfacs = np.zeros((n_theta, n_ell))
