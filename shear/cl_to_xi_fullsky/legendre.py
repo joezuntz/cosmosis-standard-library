@@ -178,6 +178,7 @@ def P2l_rec_binav(ells, cost_min, cost_max):
 def theta_bin_means_to_edges(thetas, binning='log'):
     print('Calculating theta bin edges')
     print('n_theta_bins=',len(thetas))
+    print('thetas = ',thetas)
     # array of theta edges from mean values
     tedges = np.zeros(len(thetas)+1)
     for i in range(len(thetas)):
@@ -201,6 +202,7 @@ def theta_bin_means_to_edges(thetas, binning='log'):
         # if the spacing is large, first value might be negative
         if tedges[0]<0.:
             tedges[0] = 0.
+    print('theta_edges = ',tedges)
     return tedges
     
 def get_legfactors_02_binav(ells, thetas):
@@ -213,8 +215,8 @@ def get_legfactors_02_binav(ells, thetas):
     for it, t in enumerate(theta_edges[1:]):
         t_min = theta_edges[it-1]
         t_max = t
-        cost_min = np.cos(t_min/60. * np.pi/180.)
-        cost_max = np.cos(t_max/60. * np.pi/180.)
+        cost_min = np.cos(t_min) # thetas are already converted to radians
+        cost_max = np.cos(t_max)
         P2l = P2l_rec_binav(ells, cost_min, cost_max)
         legfacs[it] = P2l * ell_factor
     return legfacs
