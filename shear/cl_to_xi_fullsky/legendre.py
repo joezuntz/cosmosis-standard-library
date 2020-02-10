@@ -225,5 +225,8 @@ def get_legfactors_02_binav(ells, thetas):
         cost_max = np.cos(t_max)
         P2l = P2l_rec_binav(ells, cost_min, cost_max)
         legfacs[it] = P2l * ell_factor
-    print('legfacs = ',legfacs)    
+    legfacs_out = legfacs[:,0:100]
+    print(legfacs_out.shape)
+    print('legfacs_out = ',legfacs_out)    
+    np.savetxt('leg_factors.txt',legfacs_out)
     return legfacs
