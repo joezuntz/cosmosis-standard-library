@@ -279,11 +279,22 @@ def execute(block, config):
             angle_units = config['angle_units'].name
         else:
             angle_units = None
-        spec_meas_list.append( 
-            theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
-            (kernel_name_a, kernel_name_b), output_extension, 
-            angle_lims = config['angle_lims_userunits'], 
-            angle_units=angle_units ) )
+
+        print('output_extension', output_extension)
+
+        if output_extension == 'gammat':
+            spec_meas_list.append( 
+                theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+                (kernel_name_a, kernel_name_b), output_extension, 
+                angle_lims = config['angle_lims_userunits'], 
+                angle_units=angle_units, interpolate=False, bin_average = True))
+
+        else:
+            spec_meas_list.append( 
+                theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+                (kernel_name_a, kernel_name_b), output_extension, 
+                angle_lims = config['angle_lims_userunits'], 
+                angle_units=angle_units, interpolate=True, bin_average = False))
         
         if make_covariance:
             if real_space:
@@ -379,6 +390,8 @@ def execute(block, config):
             if s1.name != s2.name:
                 raise ValueError("Different spectrum order in parent file")
             if len(s1) != len(s2):
+                print ("s1, s2",s1, s2)
+                print ("len s1, s2",len(s1), len(s2))
                 raise ValueError("Different spectrum lengths in parent file")
             if not ((s1.bin1 == s2.bin1).all() and (s1.bin2 == s2.bin2).all()):
                 raise ValueError("Different tomo bin order in parent file")

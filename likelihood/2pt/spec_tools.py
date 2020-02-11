@@ -25,6 +25,7 @@ class SpectrumInterp(object):
         #this will affect how we interpolate
         starts_with_zero=False
         self.spec0 = 0.
+
         if angle[0]<1.e-9:
             #if the first angle value is 0,
             #record the first spec value as self.spec0
@@ -60,6 +61,7 @@ class SpectrumInterp(object):
         try:
             spec = self.y_func( self.interp_func(interp_vals) )
         except ValueError:
+            print ('Entering value error')
             interp_vals[0] *= 1+1.e-9
             interp_vals[-1] *= 1-1.e-9
             spec = self.y_func( self.interp_func(interp_vals) )
@@ -70,14 +72,13 @@ class TheorySpectrum(object):
     noise_var is a the noise variance per mode for each redshift bin
     """
     def __init__( self, name, types, nbin_a, nbin_b, angle_vals, 
-        spec_interps, is_auto, noise_var_per_mode=None,
-        auto_only = False):
+                  is_auto, noise_var_per_mode=None, auto_only = False, 
+                  spec_values=None, spec_interps=None):
         self.name = name
         self.types = types
         self.angle_vals = angle_vals
         #print("initializing TheorySpectrum with angle lims:")
         #print(self.angle_vals.min(), self.angle_vals.max())
-        self.spec_interps = spec_interps
         self.is_auto = is_auto
         #self.set_spec_interps()
         self.nbin_a = nbin_a
@@ -86,10 +87,25 @@ class TheorySpectrum(object):
         if self.auto_only:
             assert self.is_auto
         self._set_bin_pairs()
-        #Check bin pairs correspond to keys in spec_arrays
-        for bin_pair in self.bin_pairs:
-            assert bin_pair in self.spec_interps
         self.noise_var_per_mode = noise_var_per_mode
+
+        # optional arguments to have either the raw spectra or the interpolated one. 
+        if (spec_values is not None) & (spec_interps is not None):
+            raise ValueError("Both spec_values and spec_interps have been provided, but this class can only be initialized with one of them. spec_values are the raw values and spec_interps the interpolated ones.")
+
+        if spec_values is not None:
+            self.spec_values = spec_values
+            #Check bin pairs correspond to keys in spec_arrays
+            for bin_pair in self.bin_pairs:
+                assert bin_pair in self.spec_values
+
+
+        if spec_interps is not None:
+            self.spec_interps = spec_interps
+            #Check bin pairs correspond to keys in spec_arrays
+            for bin_pair in self.bin_pairs:
+                assert bin_pair in self.spec_interps
+
 
     def set_noise(self, noise):
         self.noise_var_per_mode = noise
@@ -142,7 +158,7 @@ class TheorySpectrum(object):
 
         sep_name = block[section_name, "sep_name"]
         sep_values = block[section_name, sep_name]
-        spec_interps = OrderedDict()
+        spec_values = OrderedDict()
         bin_pairs = []
         # Bin pairs. Varies depending on auto-correlation
         for i in range(1, nbin_a+1):
@@ -163,18 +179,23 @@ class TheorySpectrum(object):
                         spec = block[section_name, bin_format.format(j, i)]
                 else:
                     spec = block[section_name, bin_format.format(i, j)]
+
                 # Convert arcmin to radians for the interpolation
-                spec_interps[ (i, j) ] = SpectrumInterp( sep_values, spec )
+                spec_values[ (i, j) ] = spec
 
         return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
-            spec_interps, is_auto, auto_only=auto_only )
+             is_auto, auto_only=auto_only, spec_values=spec_values)
 
-    def get_spectrum_measurement( self, angle_vals, kernels, output_name,
-        angle_units='arcmin', windows="SAMPLE", angle_lims=None):
+    def get_spectrum_measurement( self, angle_vals_out, kernels, output_name,
+                                  angle_units='arcmin', windows="SAMPLE", angle_lims=None, 
+                                  interpolate=True, bin_average = False):
 
         # The fits format stores all the measurements
         # as one long vector.  So we build that up here from the various
         # bins that we will load in.  These are the different columns
+        # angle_vals_out: angular values the user wants the spectra to be evaluated at. 
+        # angle_vals_out can be different or the same as the ones from block, stored in self.angle_vals.
+
         bin1 = []
         bin2 = []
         value = []
@@ -185,28 +206,49 @@ class TheorySpectrum(object):
             angle_max = []
         else:
             angle_min, angle_max = None, None
-        n_angle_sample = len(angle_vals)
- 
-        #If real-space, get angle_vals in radians for interpolation
+        n_angle_sample = len(angle_vals_out)
+
+        #If real-space, get angle_vals_out in radians for interpolation
         if angle_units is not None:
-            angle_vals_with_units = angle_vals * twopoint.ANGULAR_UNITS[angle_units]
-            angle_vals_interp = (angle_vals_with_units.to(twopoint.ANGULAR_UNITS["rad"])).value
+            angle_vals_out_with_units = angle_vals_out * twopoint.ANGULAR_UNITS[angle_units]
+            angle_vals_out_interp = (angle_vals_out_with_units.to(twopoint.ANGULAR_UNITS["rad"])).value
         else:
-            angle_vals_interp = angle_vals
+            angle_vals_out_interp = angle_vals_out
 
         # Bin pairs. Varies depending on auto-correlation
         for (i,j) in self.bin_pairs:
-            spec_interp = self.spec_interps[(i,j)]
-            # Convert arcmin to radians for the interpolation
-            spec_sample = spec_interp( angle_vals_interp )
+            if interpolate:
+                print ("Interpolating...")
+                assert not bin_average, "Interpolation should be turned off if the model has already been bin-averaged in a previous module, where the fullsky projection is."
+                # Convert arcmin to radians for the interpolation
+                spec_interp = SpectrumInterp(self.angle_vals, self.spec_values[(i,j)])
+                # Convert arcmin to radians for the interpolation
+                spec_sample = spec_interp( angle_vals_out_interp )
+                
+            if not interpolate:
+                assert (len(self.angle_vals)==len(angle_vals_out_interp)), \
+                "Interpolation is set to False, but the number of angular bins in the block does not match the output ones. "
+
+                if not bin_average:
+                    # Not that if bin-averaging is applied, it does not actually matter which angular value is saved,
+                    # since it is not defined properly.
+                    # make comparison in radians
+                    print("Angular values in block %s (full-sky module) [radians]"%output_name, self.angle_vals)
+                    print("Angular values in save2pt module %s [radians]"%output_name, angle_vals_out_interp) 
+
+                    assert (np.isclose(self.angle_vals,angle_vals_out_interp).all()), \
+                    "Interpolation is set to False, but the output angular values do not match the original ones from block."
+
+                spec_sample = self.spec_values[(i,j)]
+
             #cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
             # Build up on the various vectors that we need
             bin1.append(np.repeat(i, n_angle_sample))
             bin2.append(np.repeat(j, n_angle_sample))
             value.append(spec_sample)
             angular_bin.append(np.arange(n_angle_sample))
-            angle.append(angle_vals)
-            if angle_lims is not None:
+            angle.append(angle_vals_out)
+            if angle_lims is not None: 
                 angle_min.append( angle_lims[:-1] )
                 angle_max.append( angle_lims[1:] )
 
