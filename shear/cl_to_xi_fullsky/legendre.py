@@ -175,6 +175,26 @@ def P2l_rec_binav(ells, cost_min, cost_max):
     P2l_binav[ell] = (term_lm1 + term_l - term_lp1) / dcost
     return P2l_binav
 
+def Pl_rec_binav(ells, cost_min, cost_max):
+    """Calculate average Pl"""
+    Pl_binav = np.zeros(len(ells))
+    Pl_binav[0] = 1.
+    # coefficients that are a function of ell only
+    ell = ells[1:]
+    coeff = 1./(2.*ell+1.)
+    # computation of legendre polynomials
+    # --- this computes all polynomials of order 0 to ell_max+1 and for all ell's
+    lpns_min = lpn(ell[-1]+1, cost_min)[0]
+    lpns_max = lpn(ell[-1]+1, cost_max)[0]
+    # terms in the numerator of average Pl
+    term_lm1 = lpns_max[:-2] - lpns_min[:-2]
+    term_lp1 = lpns_max[2:] - lpns_min[2:]
+    # denominator in average Pl
+    dcost = cost_max-cost_min
+    # computation of bin-averaged Pl(ell)
+    Pl_binav[ell] = coeff * (term_lp1 - term_lm1) / dcost
+    return Pl_binav
+
 def theta_bin_means_to_edges(thetas, binning='log'):
     print('Calculating theta bin edges')
     print('n_theta_bins=',len(thetas))
@@ -229,4 +249,26 @@ def get_legfactors_02_binav(ells, thetas):
     print(legfacs_out.shape)
     print('legfacs_out = ',legfacs_out)    
     np.savetxt('leg_factors.txt',legfacs_out)
+    return legfacs
+
+def get_legfactors_00_binav(ells, thetas):
+    print('getting bin averaged leg factors')
+    n_ell, n_theta = len(ells), len(thetas)
+    theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
+    #theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
+    #       0.00229967, 0.00289512, 0.00364474, 0.00458845, 0.00577652,
+    #       0.00727221, 0.00915516, 0.01152567, 0.01450996, 0.01826695,
+    #       0.02299673, 0.02895117, 0.03644736, 0.04588451, 0.05776518,
+    #       0.07272205] #these are hard-coded values for the standard cosmolike comparison
+    legfacs = np.zeros((n_theta, n_ell))
+    ell_factor = np.zeros(len(ells))
+    ell_factor[1:] = (2 * ells[1:] + 1) / 4. / PI
+    for it, t in enumerate(theta_edges[1:]):
+        t_min = theta_edges[it-1]
+        t_max = t
+        cost_min = np.cos(t_min) # thetas are already converted to radians
+        cost_max = np.cos(t_max)
+        Pl = Pl_rec_binav(ells, cost_min, cost_max)
+        legfacs[it] = Pl * ell_factor
+    print('legfacs = ',legfacs)
     return legfacs
