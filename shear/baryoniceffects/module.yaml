@@ -1,5 +1,12 @@
+#This is a template for module description files
+name: baryonic
+version: "1.0"
 purpose: "implement baryonic effect in nonlinear pk based on hydrodynamic simulation measurements"
+url: ""
 interface: baryonic_interface.py
+attribution: [CosmoSIS Team]
+rules: ""
+cite: []
 
 example:
 [eagle]
@@ -40,3 +47,4 @@ outputs:
         z: "1D real array, redshifts of samples"
         k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h, extended to kmax"
         p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, extended to kmax"
+
