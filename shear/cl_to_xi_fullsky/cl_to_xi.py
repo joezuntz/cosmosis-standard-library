@@ -62,7 +62,6 @@ def cl_to_xi_to_block(block, output_section, name,
             cl_interp = cl_interp(ells)
         for it, t in enumerate(thetas):
             xis[it] = np.sum(cl_interp * leg[it])
-        print('calculated corr function is: ',xis)
         block[o, name] = xis
 
 def cl_to_xi_precomp_00_02(cl_input, thetas, legfacs):

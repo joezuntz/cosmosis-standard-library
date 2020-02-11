@@ -209,17 +209,17 @@ def theta_bin_means_to_edges(thetas, binning='log'):
 def get_legfactors_02_binav(ells, thetas):
     print('getting bin averaged leg factors')
     n_ell, n_theta = len(ells), len(thetas)
-    theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
-    #theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
-    #       0.00229967, 0.00289512, 0.00364474, 0.00458845, 0.00577652,
-    #       0.00727221, 0.00915516, 0.01152567, 0.01450996, 0.01826695,
-    #       0.02299673, 0.02895117, 0.03644736, 0.04588451, 0.05776518,
-    #       0.07272205] #these are hard-coded values for the standard cosmolike comparison
+    #theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
+    theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
+           0.00229967, 0.00289512, 0.00364474, 0.00458845, 0.00577652,
+           0.00727221, 0.00915516, 0.01152567, 0.01450996, 0.01826695,
+           0.02299673, 0.02895117, 0.03644736, 0.04588451, 0.05776518,
+           0.07272205] #these are hard-coded values for the standard cosmolike comparison
     legfacs = np.zeros((n_theta, n_ell))
     ell_factor = np.zeros(len(ells))
     ell_factor[1:] = (2 * ells[1:] + 1) / 4. / PI / ells[1:] / (ells[1:] + 1)
     for it, t in enumerate(theta_edges[1:]):
-        t_min = theta_edges[it-1]
+        t_min = theta_edges[it]
         t_max = t
         cost_min = np.cos(t_min) # thetas are already converted to radians
         cost_max = np.cos(t_max)
