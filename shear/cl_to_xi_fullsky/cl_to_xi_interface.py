@@ -23,11 +23,11 @@ def setup(options):
     if bin_avg:
         print("*** Using bin averaged Legendre coefficients ***")
         if options.has_value(option_section, "theta"):
-            print('Specify `theta_edges` instead of `theta` when using bin averaging')
-            raise ValueError()
+            print('WARNING: Specify `theta_edges` instead of `theta` when using bin averaging. `theta` is ignored')
+            #raise ValueError()#maybe we don't want to actually raise an error, since we may be inheriting a default params.ini file.
         if options.has_value(option_section, "n_theta"):
-            print('Specify `n_theta_bins` instead of `n_theta` when using bin averaging')
-            raise ValueError()
+            print('WARNING: Specify `n_theta_bins` instead of `n_theta` when using bin averaging. `n_theta` is ignored')
+           # raise ValueError()
         if options.has_value(option_section, "theta_edges"):
             print('Note: Using specified `theta_edges` values')
             theta_edges = options[option_section, 'theta_edges']
@@ -63,7 +63,10 @@ def setup(options):
     # setup precompute functions and I/O sections
 
     if xi_type in ["22", "22+", "22-"]:
-        precomp_func = get_legfactors_22
+        if bin_avg:
+            precomp_func = get_legfactors_22_binav
+        else:    
+            precomp_func = get_legfactors_022
         if not cl_section:
             cl_section = "shear_cl"
         if output_section == "":
