@@ -352,12 +352,14 @@ def Gp_plus_minus_Gm_binav(ells, cost_min, cost_max):
     coeff_xdlm1       = ell+2.
     coeff_dl          = 4.-ell
 
-    # computation of legendre polynomials
+    # computation of legendre polynomials and derivatives
     #---this computes all polynomials of order 0 to ell_max+1 and for all ell's
-    lpns_min  = lpn(ell[-1]+1, cost_min)[0][1:]
-    lpns_max  = lpn(ell[-1]+1, cost_max)[0][1:]
-    dlpns_min = lpn(ell[-1]+1, cost_min)[1][1:]
-    dlpns_max = lpn(ell[-1]+1, cost_max)[1][1:]
+    Pl_calc_min = np.asarray(lpn(ell[-1]+1, cost_min))[:,1:]
+    Pl_calc_max = np.asarray(lpn(ell[-1]+1, cost_max))[:,1:]
+    lpns_min  = Pl_calc_min[0,:]
+    dlpns_min = Pl_calc_min[1,:]
+    lpns_max  = Pl_calc_max[0,:]
+    dlpns_max = Pl_calc_max[1,:]
 
     # denominator in average
     dcost = cost_max-cost_min
