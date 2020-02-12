@@ -352,4 +352,56 @@ def get_legfactors_22_binav(ells, theta_edges):
         leg_factors_p[it] = ell_factor * gp
         leg_factors_m[it] = ell_factor * gm
 
-    return ( leg_factors_p, leg_factors_m )
+def Gp_plus_minus_Gm_binav(ells, cost_min, cost_max):
+    """Calculate bin-averaged G_{l,2}^{+/-}"""
+    Gp_plus_Gm  = np.zeros(len(ells))
+    Gp_minus_Gm = np.zeros(len(ells))
+    # for ell=0,1 it is 0
+    Gp_plus_Gm[0:1]  = 0.
+    Gp_minus_Gm[0:1] = 0.
+
+    # for the rest of ell's compute equation (5.8) in https://arxiv.org/abs/1911.11947
+    ell = ells[2:]
+    #---coefficients including only P_l
+    coeff_lm1     = -ell*(ell-1.)/2. * (ell+2./(2.*ell+1)) - (ell+2.)
+    coeff_lp1     = ell*(ell-1.)/(2.*ell+1.)
+    coeff_l       = -ell*(ell-1.)*(2.-ell)/2.
+    coeff_l_plus  = coeff_l - 2.*(ell-1.)
+    coeff_l_minus = coeff_l + 2.*(ell-1.)
+    #---coefficients including dP_l/dx
+    coeff_dlm1_plus   = -2.*(ell+2.)
+    coeff_xdl_plus    = 2.*(ell-1.)
+    coeff_xdlm1       = ell+2.
+    coeff_dl          = 4.-ell
+
+    # computation of legendre polynomials and derivatives
+    #---this computes all polynomials of order 0 to ell_max+1 and for all ell's
+    Pl_calc_min = np.asarray(lpn(ell[-1]+1, cost_min))[:,1:]
+    Pl_calc_max = np.asarray(lpn(ell[-1]+1, cost_max))[:,1:]
+    lpns_min  = Pl_calc_min[0,:]
+    dlpns_min = Pl_calc_min[1,:]
+    lpns_max  = Pl_calc_max[0,:]
+    dlpns_max = Pl_calc_max[1,:]
+
+    # denominator in average
+    dcost = cost_max-cost_min
+
+    # numerator in average
+    #---common part in both plus and minus
+    common_part  = coeff_lm1*(lpns_max[:-2]-lpns_min[:-2])
+    common_part += coeff_l*(cost_max*lpns_max[1:-1] - cost_min*lpns_min[1:-1])
+    common_part += coeff_lp1*(lpns_max[2:]-lpns_min[2:])
+    common_part += coeff_dl*(dlpns_max[1:-1]-dlpns_min[1:-1])
+    common_part += coeff_xdlm1*(cost_max*dlpns_max[:-2]-cost_min*dlpns_min[:-2])
+    #---plus
+    Gp_plus_Gm_extra  = coeff_xdl_plus*(cost_max*dlpns_max[1:-1]-cost_min*dlpns_min[1:-1])
+    Gp_plus_Gm_extra += -coeff_xdl_plus*(lpns_max[1:-1] - lpns_min[1:-1])
+    Gp_plus_Gm_extra += coeff_dlm1_plus*(dlpns_max[:-2]-dlpns_min[:-2])
+    Gp_plus_Gm[2:] = common_part + Gp_plus_Gm_extra
+    Gp_plus_Gm /= dcost
+    #---minus
+    Gp_minus_Gm_extra = -Gp_plus_Gm_extra
+    Gp_minus_Gm[2:] = common_part + Gp_minus_Gm_extra
+    Gp_minus_Gm /= dcost
+
+    return Gp_plus_Gm, Gp_minus_Gm
