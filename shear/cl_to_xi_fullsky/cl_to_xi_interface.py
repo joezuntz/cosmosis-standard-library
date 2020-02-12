@@ -5,7 +5,7 @@ from builtins import range
 import numpy as np
 from cosmosis.datablock import option_section, names as section_names
 from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block
-from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav, get_legfactors_00_binav
+from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav, get_legfactors_00_binav, get_legfactors_22_binav
 from past.builtins import basestring
 
 def setup(options):
@@ -66,7 +66,7 @@ def setup(options):
         if bin_avg:
             precomp_func = get_legfactors_22_binav
         else:    
-            precomp_func = get_legfactors_022
+            precomp_func = get_legfactors_22
         if not cl_section:
             cl_section = "shear_cl"
         if output_section == "":

@@ -283,7 +283,7 @@ def theta_bin_means_to_edges(thetas, binning='log'):
     return tedges
     
 def get_legfactors_02_binav(ells, theta_edges):
-    print('getting bin averaged leg factors')
+    print('getting bin averaged leg factors for 02')
     n_ell, n_theta = len(ells), len(theta_edges)-1
     #theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
     #theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
@@ -301,14 +301,14 @@ def get_legfactors_02_binav(ells, theta_edges):
         cost_max = np.cos(t_max)
         P2l = P2l_rec_binav(ells, cost_min, cost_max)
         legfacs[it] = P2l * ell_factor
-    legfacs_out = legfacs[:,0:100]
+    #legfacs_out = legfacs[:,0:100]
     #print(legfacs_out.shape)
     #print('legfacs_out = ',legfacs_out)    
     #np.savetxt('leg_factors.txt',legfacs_out)
     return legfacs
 
 def get_legfactors_00_binav(ells, theta_edges):
-    print('getting bin averaged leg factors')
+    print('getting bin averaged leg factors for 00')
     n_ell, n_theta = len(ells), len(theta_edges)-1
     #theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
     #theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
@@ -329,10 +329,11 @@ def get_legfactors_00_binav(ells, theta_edges):
     #print('legfacs = ',legfacs)
     return legfacs
 
-def get_legfactors_22_binav(ells, thetas):
-    print('getting bin averaged leg factors')
-    n_ell, n_theta = len(ells), len(thetas)
-    theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
+def get_legfactors_22_binav(ells, theta_edges):
+    print('getting bin averaged leg factors for 22')
+    n_ell, n_theta = len(ells), len(theta_edges)-1
+    #theta_edges = theta_bin_means_to_edges(thetas)
+    # this does geometric mean
     #theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
     #       0.00229967, 0.00289512, 0.00364474, 0.00458845, 0.00577652,
     #       0.00727221, 0.00915516, 0.01152567, 0.01450996, 0.01826695,
