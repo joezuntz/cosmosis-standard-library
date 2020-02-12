@@ -383,3 +383,27 @@ def Gp_plus_minus_Gm_binav(ells, cost_min, cost_max):
     Gp_minus_Gm /= dcost
 
     return Gp_plus_Gm, Gp_minus_Gm
+
+def get_legfactors_22_binav(ells, theta_edges):
+    print('getting bin averaged leg factors')
+    n_ell, n_theta = len(ells), len(theta_edges)-1
+    #theta_edges = theta_bin_means_to_edges(thetas) # this does geometric mean
+    #theta_edges = [0.00072722, 0.00091552, 0.00115257, 0.001451  , 0.0018267 ,
+    #       0.00229967, 0.00289512, 0.00364474, 0.00458845, 0.00577652,
+    #       0.00727221, 0.00915516, 0.01152567, 0.01450996, 0.01826695,
+    #       0.02299673, 0.02895117, 0.03644736, 0.04588451, 0.05776518,
+    #       0.07272205] #these are hard-coded values for the standard cosmolike comparison
+    leg_factors_p  = np.zeros((n_theta, n_ell))
+    leg_factors_m = np.zeros((n_theta, n_ell))
+    ell_factor = np.zeros(len(ells))
+    ell_factor[2:] = (2 * ells[2:] + 1) / 2. / PI / ells[2:] / ells[2:] / (ells[2:]+1.) / (ells[2:]+1.)
+    for it, t in enumerate(theta_edges[1:]):
+        t_min = theta_edges[it]
+        t_max = t
+        cost_min = np.cos(t_min) # thetas are already converted to radians
+        cost_max = np.cos(t_max)
+        gp, gm = Gp_plus_minus_Gm_binav(ells, cost_min, cost_max)
+        leg_factors_p[it] = gp * ell_factor
+        leg_factors_m[it] = gm * ell_factor
+    #print('legfacs = ',legfacs)
+    return ( leg_factors_p, leg_factors_m )
