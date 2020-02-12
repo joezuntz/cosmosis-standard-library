@@ -33,7 +33,13 @@ def setup(options):
             raise ValueError(
                 "Please set the parameter powtable in the owls section of the ini file, pointing to a ratio file to use")
         print("Selected ratio-mode baryons.  Loading table from ", ratiotable)
-        baryonPowerModulator = baryonic.RatioTablePowerModulator(ratiotable)
+        ftype = ratiotable.split('.')[-1]
+        if ftype == 'fits':
+            baryonPowerModulator = baryonic.RatioTablePowerModulator(ratiotable)
+        elif ftype == 'dat':
+            baryonPowerModulator = baryonic.RatioDatPowerModulator(ratiotable)
+        else:
+            print(ratiotable, "should have extension fits or dat.")
 
     else:
         raise ValueError(
@@ -71,6 +77,8 @@ def load_parameters(block, modulator):
     elif isinstance(modulator, baryonic.FixedBaryonPowerModulator):
         r = None
     elif isinstance(modulator, baryonic.RatioTablePowerModulator):
+        r = None
+    elif isinstance(modulator, baryonic.RatioDatPowerModulator):
         r = None
     elif isinstance(modulator, baryonic.BaryonPowerModulator):
         r = block[section, "R"]
