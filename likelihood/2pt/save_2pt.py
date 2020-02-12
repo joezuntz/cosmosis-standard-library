@@ -73,6 +73,9 @@ def setup(options):
     copy_covariance = options.get_string(option_section, "copy_covariance", "")
     angle_units = options.get_string(option_section, "angle_units", "")
     two_thirds_midpoint = options.get_bool(option_section, "two_thirds_midpoint", False)
+    bin_avg_wtheta = options.get_bool(option_section, "bin_avg_wtheta", False)
+    bin_avg_gammat = options.get_bool(option_section, "bin_avg_gammat", False)
+    bin_avg_xipm = options.get_bool(option_section, "bin_avg_xipm", False)
 
     if copy_covariance and make_covariance:
         raise ValueError("You can only set one of make_covariance and copy_covariance")
@@ -81,7 +84,10 @@ def setup(options):
         "make_covariance": make_covariance,
         "copy_covariance": copy_covariance,
         "logspaced": logspaced, 
-        "angle_units": angle_units
+        "angle_units": angle_units,
+        "bin_avg_wtheta": bin_avg_wtheta,
+        "bin_avg_gammat": bin_avg_gammat,
+        "bin_avg_xipm": bin_avg_xipm
     }
 
     def read_list(key, default=""):
@@ -243,6 +249,17 @@ def execute(block, config):
         auto_only = config["auto_only"][i_spec]
         spectrum_section = config["spectrum_sections"][i_spec]
         output_extension = config["output_extensions"][i_spec]
+        if output_extension == 'gammat':
+            bin_avg_setting = config["bin_avg_gammat"]
+        elif output_extension == 'wtheta':
+            bin_avg_setting = config["bin_avg_wtheta"]
+        elif output_extension in ['xip','xim']:
+            bin_avg_setting = config["bin_avg_xipm"]
+        else:
+            raise ValueError()
+        print("bin_avg_setting=",bin_avg_setting)
+        interp_setting = not bin_avg_setting
+        
 
         #Read in sample information from block
         sample_a, sample_b = ( block[spectrum_section, "sample_a"], 
@@ -282,19 +299,11 @@ def execute(block, config):
 
         print('output_extension', output_extension)
 
-        if output_extension == 'gammat':
-            spec_meas_list.append( 
-                theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
-                (kernel_name_a, kernel_name_b), output_extension, 
-                angle_lims = config['angle_lims_userunits'], 
-                angle_units=angle_units, interpolate=False, bin_average = True))
-
-        else:
-            spec_meas_list.append( 
-                theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
-                (kernel_name_a, kernel_name_b), output_extension, 
-                angle_lims = config['angle_lims_userunits'], 
-                angle_units=angle_units, interpolate=True, bin_average = False))
+        spec_meas_list.append( 
+            theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+            (kernel_name_a, kernel_name_b), output_extension, 
+            angle_lims = config['angle_lims_userunits'], 
+            angle_units=angle_units, interpolate=interp_setting, bin_average = bin_avg_setting))
         
         if make_covariance:
             if real_space:
