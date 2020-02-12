@@ -5,27 +5,14 @@ from builtins import range
 import numpy as np
 from cosmosis.datablock import option_section, names as section_names
 from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block
-from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav
+from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav, get_legfactors_00_binav
 from past.builtins import basestring
 
 def setup(options):
     
-    if options.has_value(option_section, "theta"):
-        theta = options[option_section, 'theta']
-        if np.isscalar(theta):
-            theta = np.array([theta])
-        theta = arcmin_to_radians(theta)
-    else:
-        n_theta = options.get_int(option_section, "n_theta", 20)
-        theta_min = options.get_double(option_section, "theta_min", 1.) 
-        theta_max = options.get_double(option_section, "theta_max", 300.)
-        theta_min = arcmin_to_radians(theta_min)
-        theta_max = arcmin_to_radians(theta_max)
-        theta = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta)
-
     xi_type = options.get_string(option_section, 'xi_type')
     ell_max = options.get_int(option_section, "ell_max")
-    bin_avg = options.get_bool(option_section, "bin_avg", True)
+    bin_avg = options.get_bool(option_section, "bin_avg", False)
     #Filter the Cls at high ell to reduce ringing:
     high_l_filter = options.get_double(option_section, "high_l_filter", 0.75)
 
@@ -33,6 +20,45 @@ def setup(options):
     output_section = options.get_string(option_section, "output_section_name", "")
     save_name = options.get_string(
         option_section, "save_name", "")
+    if bin_avg:
+        print("*** Using bin averaged Legendre coefficients ***")
+        if options.has_value(option_section, "theta"):
+            print('Specify `theta_edges` instead of `theta` when using bin averaging')
+            raise ValueError()
+        if options.has_value(option_section, "n_theta"):
+            print('Specify `n_theta_bins` instead of `n_theta` when using bin averaging')
+            raise ValueError()
+        if options.has_value(option_section, "theta_edges"):
+            print('Note: Using specified `theta_edges` values')
+            theta_edges = options[option_section, 'theta_edges']
+            if np.isscalar(theta_edges):
+                theta_edges = np.array([theta_edges])
+            theta_edges = arcmin_to_radians(theta_edges)
+        else:
+            print('** NOTE that theta_min and theta_max refer to the min and max of the first and last angular bin, respectively **')
+            n_theta_bins = options.get_int(option_section, "n_theta_bins", 20)
+            theta_min = options.get_double(option_section, "theta_min", 1.) 
+            theta_max = options.get_double(option_section, "theta_max", 300.)
+            theta_min = arcmin_to_radians(theta_min)
+            theta_max = arcmin_to_radians(theta_max)
+            theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
+        print('theta_edges=',theta_edges)
+        theta = (theta_edges[:-1]*theta_edges[1:])**0.5
+        #what should we do about this? Right now, I am passing the geometric values to write to the block. Hopefully these should just be dummy values.
+    else:
+        print("*** Using Legendre coefficients at individual theta values ***")
+        if options.has_value(option_section, "theta"):
+            theta = options[option_section, 'theta']
+            if np.isscalar(theta):
+                theta = np.array([theta])
+            theta = arcmin_to_radians(theta)
+        else:
+            n_theta = options.get_int(option_section, "n_theta", 20)
+            theta_min = options.get_double(option_section, "theta_min", 1.) 
+            theta_max = options.get_double(option_section, "theta_max", 300.)
+            theta_min = arcmin_to_radians(theta_min)
+            theta_max = arcmin_to_radians(theta_max)
+            theta = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta)
 
     # setup precompute functions and I/O sections
 
@@ -45,7 +71,10 @@ def setup(options):
         else:
             output_section = (output_section + "_plus", output_section + "_minus")
     elif xi_type == "00":
-        precomp_func = get_legfactors_00
+        if bin_avg:
+            precomp_func = get_legfactors_00_binav
+        else:    
+            precomp_func = get_legfactors_00
         if not cl_section:
             cl_section = "galaxy_cl"
         if output_section == "":
@@ -53,7 +82,6 @@ def setup(options):
     elif xi_type in ["02", "02+"]:
         if bin_avg:
             precomp_func = get_legfactors_02_binav
-            print("*** Using bin averaged Legendre coefficients ***")
         else:    
             precomp_func = get_legfactors_02
         if not cl_section:
@@ -72,8 +100,10 @@ def setup(options):
             output_section += add
         except TypeError:
             output_section = ( output_section[0]+add, output_section[1]+add )
-
-    legfacs = precomp_func(np.arange(ell_max + 1), theta)
+    if bin_avg:
+        legfacs = precomp_func(np.arange(ell_max + 1), theta_edges)
+    else:
+        legfacs = precomp_func(np.arange(ell_max + 1), theta)
     if high_l_filter>0:
         if isinstance(legfacs, tuple):
             legfacs = ( apply_filter( ell_max, high_l_filter, legfacs[0] ), 
