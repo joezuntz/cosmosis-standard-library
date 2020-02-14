@@ -127,8 +127,26 @@ class TheorySpectrum(object):
         self.spec_interps.pop(bin_pair)
 
     @classmethod
-    def from_block( cls, block, section_name, auto_only=False ):
-        #section_name is either e.g. shear_cl or shear_cl_<save_name>
+    def from_block( cls, block, section_name, auto_only=False, bin_pairs=None):
+
+        """
+        Reads the predictions from the corresponding block and 
+        initializes the Spectrum Measurement Class with some spectra.
+        section_name: is either e.g. shear_cl or shear_cl_<save_name>
+        auto_only: earlier in the pipeline, e.g. in project_2d.py, 
+                  we may only have calculated auto-correlations 
+                  for one of the spectra, to speed things up.  
+                  TheorySpectrum.from_block however will currently attempt to read in all 
+                  the correlations one would expect based on the number of redshift bins, 
+                  unless you tell it not to, by having auto_only=True.
+                  This option is used when called from save_2pt.py
+        bin_pairs: Alternative option to auto_only, used when the method is called
+                  from 2pt_like.py instead of from save_2pt. For auto-correlations will be
+                  a list of tuples e.g. [(1,1), (2,2), ..., (n, n)]. If bin_pairs is provided, 
+                  will only attempt to read those bin_pairs from the block.
+        """
+
+        print("bin_pairs in from block", bin_pairs)
 
         spectrum_name = section_name
         save_name = block.get_string(section_name, "save_name")
@@ -159,8 +177,27 @@ class TheorySpectrum(object):
         sep_name = block[section_name, "sep_name"]
         sep_values = block[section_name, sep_name]
         spec_values = OrderedDict()
-        bin_pairs = []
+
+
+        # Keep track of whether there are cross-correlations to decide if
+        # auto_only is True or False
+        # We need define auto_only correctly since it is used in _set_bin_pairs,
+        # when initizalizing the class. If auto_only is not set correctly 
+        # this will raise an assertion error.
+        if bin_pairs is not None:
+            track_cross = False
+            for pair in bin_pairs:
+                print("pair in from block", pair)
+                i, j = pair
+                if i!= j: track_cross = True
+
+            if track_cross: auto_only = False
+            else: auto_only = True
+            print("Setting auto_only to %s."%auto_only)
+
         # Bin pairs. Varies depending on auto-correlation
+        bin_pairs = []
+            # in that case auto_only option will be used:
         for i in range(1, nbin_a+1):
             if is_auto:
                 jstart = i
@@ -171,7 +208,8 @@ class TheorySpectrum(object):
                     if j!=i:
                         continue
                 if is_auto:
-                    # Load and interpolate from the block
+                    #
+                    # Load from the block
                     bin_name = bin_format.format(i, j)
                     if block.has_value(section_name, bin_name):
                         spec = block[section_name, bin_format.format(i, j)]
@@ -180,7 +218,6 @@ class TheorySpectrum(object):
                 else:
                     spec = block[section_name, bin_format.format(i, j)]
 
-                # Convert arcmin to radians for the interpolation
                 spec_values[ (i, j) ] = spec
 
         return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
@@ -230,7 +267,7 @@ class TheorySpectrum(object):
                 "Interpolation is set to False, but the number of angular bins in the block does not match the output ones. "
 
                 if not bin_average:
-                    # Not that if bin-averaging is applied, it does not actually matter which angular value is saved,
+                    # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
                     # since it is not defined properly.
                     # make comparison in radians
                     print("Angular values in block %s (full-sky module) [radians]"%output_name, self.angle_vals)
@@ -277,8 +314,44 @@ class TheorySpectrum(object):
             bin_pair = (bin2, bin1)
         return bin_pair
 
-    def get_spec_values( self, bin1, bin2, angle ):
-        bin_pair = self.bin_pair_from_bin1_bin2(bin1, bin2)
+    def get_spec_values( self, bin1, bin2, angle, interpolate):
+        """
+        Function that returns the value for the model at some bins and 
+        particular angular scale. 
+        angle: angular value in radians we want our corresponding model.
+        interpolate: If true, it will 
+        """
+
+        i,j = self.bin_pair_from_bin1_bin2(bin1, bin2)
+
+        if interpolate:
+            #assert not bin_average, "Interpolation should be turned off if bin_average is True."
+            # Creating spline with values from block
+            spec_interp = SpectrumInterp(self.angle_vals, self.spec_values[(i,j)])
+            # Evaluating at the output angle
+            try:
+                spec_sample = spec_interp(angle)
+            except ValueError:
+                raise ValueError("""Tried to get theory prediction for {} {}, but ell or theta value ({}) was out of range.
+					"Maybe increase the range when computing/projecting or check units?""".format(self.name, (b1, b2), angle))
+
+            return spec_sample, spec_interp
+            
+        if not interpolate:
+            #if not bin_average:
+            # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
+            # since it is not defined properly.
+            # make comparison in radians
+            # Since Interpolation is set to False, the output angular value should match 
+            # some of the original values from the block (not all because this function only outputs 
+            # one angular bin
+
+            mask = np.isclose(self.angle_vals,angle)
+
+            spec_sample = self.spec_values[(i,j)][mask]
+            return spec_sample
+
+        '''
         try:
             spec_vals = self.spec_interps[ bin_pair ](angle)
         except ValueError:
@@ -286,6 +359,7 @@ class TheorySpectrum(object):
             angle_is_zero = angle==0
             spec_vals[~angle_is_zero] = self.spec_interps[ bin_pair ](angle[~angle_is_zero])
         return spec_vals
+        '''
 
     def get_noise_spec_values( self, bin1, bin2, angle ):
         noise = np.zeros_like(angle)

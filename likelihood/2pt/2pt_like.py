@@ -11,7 +11,7 @@ import numpy as np
 import twopoint
 import gaussian_covariance
 import os
-from spec_tools import SpectrumInterp
+from spec_tools import SpectrumInterp, TheorySpectrum
 default_array = np.repeat(-1.0, 99)
 
 
@@ -268,10 +268,17 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2 = []
         dataset_name = []
 
+
+        # Load bin_average and interpolate from config options but for now:
+        #bin_average = True
+        interpolate = True
+
         # Now we actually loop through our data sets
         for spectrum in self.two_point_data.spectra:
+            print("self.two_point_data.spectra", self.two_point_data.spectra)
+
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum)
+                block, spectrum, interpolate)
             theory.append(theory_vector)
             angle.append(angle_vector)
             bin1.append(bin1_vector)
@@ -336,7 +343,135 @@ class TwoPointLikelihood(GaussianLikelihood):
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 
-    def extract_spectrum_prediction(self, block, spectrum):
+    def extract_spectrum_prediction(self, block, spectrum, interpolate=True):
+
+        # We may need theory predictions for multiple different
+        # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
+        # So first we find out from the spectrum where in the data
+        # block we expect to find these - mapping spectrum types
+        # to block names
+        section, x_name, y_name = theory_names(spectrum)
+        print("section, x_name, y_name", section, x_name, y_name)
+
+        # To handle multiple different data sets we allow a suffix
+        # to be applied to the section names, so that we can look up
+        # e.g. "shear_cl_des" instead of just "shear_cl".
+        section += self.suffix
+
+        # Initialize TheorySpectrum class from block
+        bin_pairs = spectrum.get_bin_pairs()
+        theory_spec = TheorySpectrum.from_block( block, 
+            section, bin_pairs=bin_pairs)
+
+
+        print("spectrum.angle", spectrum.angle)
+
+        #theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+        #    kernels=('', ''), output_name=section, 
+        #    angle_units=angle_units, interpolate=interpolate, bin_average = bin_average)
+
+
+
+        # We need the angle (ell or theta depending on the spectrum)
+        # for the theory spline points - we will be interpolating
+        # between these to get the data points
+        angle_theory = block[section, x_name]
+
+        # Now loop through the data points that we have.
+        # For each one we have a pairs of bins and an angular value.
+        # This assumes that we can take a single sample point from
+        # each theory vector rather than integrating with a window function
+        # over the theory to get the data prediction - this will need updating soon.
+        bin_data = {}
+        theory_vector = []
+
+        # For convenience we will also return the bin and angle (ell or theta)
+        # vectors for this bin too.
+        angle_vector = []
+        bin1_vector = []
+        bin2_vector = []
+
+        for (b1, b2, angle) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle):
+            print ("b1, b2, angle", b1, b2, angle)
+            # We are going to be making splines for each pair of values that we need.
+            # We make splines of these and cache them so we don't re-make them for every
+            # different theta/ell data point
+            if interpolate:
+                if (b1, b2) in bin_data:
+                    # use the cached spline
+                    theory_spline = bin_data[(b1, b2)]
+                    theory = theory_spline(angle) 
+                else:
+                    theory, theory_spline = theory_spec.get_spec_values(b1, b2, angle, interpolate)
+                    # and add to our list
+                    bin_data[(b1, b2)] = theory_spline
+                    # This is a bit silly, and is a hack because the
+                    # book-keeping is very hard.
+                    bin_data[y_name.format(b1, b2)] = theory_spline
+
+            if not interpolate: 
+                theory = theory_spec.get_spec_values(b1, b2, angle, interpolate)
+
+            theory_vector.append(theory)
+            angle_vector.append(angle)
+            bin1_vector.append(b1)
+            bin2_vector.append(b2)
+
+        # We are saving the theory splines as we may need them
+        # to calculate covariances later
+        if interpolate:
+            self.theory_splines[section] = bin_data
+
+        if self.save_plot_to:
+            if not os.path.isdir(self.save_plot_to):
+                os.makedirs(self.save_plot_to)
+            import pylab
+            nbin = max(spectrum.nbin(), spectrum.nbin())
+            for b1 in range(1, nbin + 1):
+                for b2 in range(1, nbin + 1):
+                    if (b1, b2) not in bin_data:
+                        continue
+                    # pylab.subplot(nbin, nbin, (b1-1)*nbin+b2)
+                    y_theory = bin_data[(b1, b2)](angle_theory)
+                    x_theory = np.degrees(angle_theory) * 60
+                    pylab.plot(x_theory, y_theory)
+                    xdata, ydata = spectrum.get_pair(b1, b2)
+                    print("FIXME: Assuming units in pipeline are radians.  Prob true but check!")
+                    ymin = 0.1 * bin_data[(b1, b2)](xdata).min()
+                    ymax = 10 * bin_data[(b1, b2)](xdata).max()
+                    xplot = np.degrees(xdata) * 60
+                    yerr = spectrum.get_error(b1, b2)
+                    pylab.errorbar(xplot, ydata, yerr, fmt='o')
+                    pylab.yscale('log', nonposy='clip')
+                    pylab.xscale('log', nonposy='clip')
+                    pylab.xlim(xmin=xplot.min(), xmax=xplot.max())
+                    pylab.ylim(ymin=ymin, ymax=ymax)
+                    pylab.xlabel("theta")
+                    pylab.ylabel("{} {},{}".format(spectrum.name, b1, b2))
+                    pylab.savefig(os.path.join(self.save_plot_to,
+                                               "{}_{}_{}.png".format(spectrum.name, b1, b2)))
+                    pylab.close()
+
+        # Return the whole collection as an array
+        theory_vector = np.array(theory_vector)
+
+        # For convenience we also save the angle vector (ell or theta)
+        # and bin indices
+        angle_vector = np.array(angle_vector)
+        bin1_vector = np.array(bin1_vector, dtype=int)
+        bin2_vector = np.array(bin2_vector, dtype=int)
+
+        return theory_vector, angle_vector, bin1_vector, bin2_vector
+
+
+
+    def interpolate_spectrum_prediction(self, block, spectrum):
+    #def extract_spectrum_prediction(self, block, spectrum, interpolate):
+
+        #####
+        # DEPRECATED FUNCTION: NOT USED, NOW USING EXTRACT_SPECTRUM_PREDICTION
+        ###
+
         # We may need theory predictions for multiple different
         # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
         # So first we find out from the spectrum where in the data
@@ -449,6 +584,8 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2_vector = np.array(bin2_vector, dtype=int)
 
         return theory_vector, angle_vector, bin1_vector, bin2_vector
+
+
 
     def extract_covariance(self, block):
         assert self.gaussian_covariance, "Set constant_covariance=F but somehow not with Gaussian covariance.  Internal error - please open an issue on the cosmosis site."
