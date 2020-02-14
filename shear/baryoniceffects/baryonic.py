@@ -227,38 +227,6 @@ class ScaledBaryonPowerModulator(OwlsFileUser):
         s[k < self.sim_k[0]] = 0.
         modulation = 1 + r * s.squeeze()
         return P * modulation
-
-class RatioTablePowerModulator():
-    """ using hunjing's logpk ratio fits file. redshift list is specific to her file"""
-
-    def __init__(self, ratiofile):
-        #print(ratiofile)
-        tblogpkratio = Table.read(ratiofile)
-        # assuming read-in redshift list is in decending order
-        colname_list   = tblogpkratio.colnames[1:]
-        colname_list.reverse()
-        print(colname_list)
-        redshift_list = np.zeros(len(colname_list))
-        for i,col in enumerate(colname_list):
-            zintstr = re.findall('\d+',col)[0]
-            redshift_list[i]  = int(zintstr)/10.0**(len(zintstr)-1)
-        print(redshift_list)
-        logk = np.array(tblogpkratio["logk"])
-        #print((len(logk),len(redshift_list)))
-        logpkratio = np.zeros((len(logk),len(redshift_list)))
-        for i,zcol in enumerate(colname_list):
-            logpkratio[:,i] = tblogpkratio[zcol]
-        self.ratio = scipy.interpolate.RectBivariateSpline(logk, redshift_list, logpkratio)
-        self.ratio_k = logk
-
-    def modulate(self, k, z, P, r=None):
-        logk = np.log10(k)
-        s = self.ratio(logk,z)
-        #s[k < self.ratio_k[0]] = 0.0
-        modulation = 10**s
-        print(modulation.shape,P.shape)
-        P_out = P*modulation
-        return P_out
         
 class RatioDatPowerModulator():
     """ using hunjing's logpk ratio fits file. redshift list is specific to her file"""
@@ -271,12 +239,12 @@ class RatioDatPowerModulator():
         colname_list = line.replace('\n','').split(' ')[1:]
         # assuming read-in redshift list is in decending order
         colname_list.reverse()
-        print(colname_list)
+        #print(colname_list)
         redshift_list = np.zeros(len(colname_list))
         for i,col in enumerate(colname_list):
             zintstr = re.findall('\d+',col)[0]
             redshift_list[i]  = int(zintstr)/10.0**(len(zintstr)-1)
-        print(redshift_list)
+        #print("hydro sim redshifts:",redshift_list)
         data = np.loadtxt(ratiofile,skiprows=1)
         logk = data[:,0]
         #print((len(logk),len(redshift_list)))

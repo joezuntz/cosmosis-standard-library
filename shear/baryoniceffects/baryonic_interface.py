@@ -32,14 +32,9 @@ def setup(options):
         except KeyError:
             raise ValueError(
                 "Please set the parameter powtable in the owls section of the ini file, pointing to a ratio file to use")
-        print("Selected ratio-mode baryons.  Loading table from ", ratiotable)
-        ftype = ratiotable.split('.')[-1]
-        if ftype == 'fits':
-            baryonPowerModulator = baryonic.RatioTablePowerModulator(ratiotable)
-        elif ftype == 'dat':
-            baryonPowerModulator = baryonic.RatioDatPowerModulator(ratiotable)
-        else:
-            print(ratiotable, "should have extension fits or dat.")
+        #print("Selected ratio-mode baryons.  Loading table from ", ratiotable)
+
+        baryonPowerModulator = baryonic.RatioDatPowerModulator(ratiotable)
 
     else:
         raise ValueError(
