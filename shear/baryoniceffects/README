@@ -9,6 +9,10 @@ rules: ""
 cite: []
 
 example:
+	[pipeline]
+	modules = consistency camb halofit eagle extrapolate
+
+
 	[eagle]
 	file = /usr/local/cosmosis/modules/baryonic_interface.py
 	mode = ratio 
