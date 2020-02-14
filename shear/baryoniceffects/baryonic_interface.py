@@ -71,8 +71,6 @@ def load_parameters(block, modulator):
         r = np.concatenate([rk, rz])
     elif isinstance(modulator, baryonic.FixedBaryonPowerModulator):
         r = None
-    elif isinstance(modulator, baryonic.RatioTablePowerModulator):
-        r = None
     elif isinstance(modulator, baryonic.RatioDatPowerModulator):
         r = None
     elif isinstance(modulator, baryonic.BaryonPowerModulator):
