@@ -287,6 +287,7 @@ def execute(block, config):
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
 
+        print ("spectrum_section", spectrum_section) 
         theory_spec = TheorySpectrum.from_block( block, 
             spectrum_section, auto_only=auto_only )
         theory_spec_list.append(theory_spec)
@@ -298,6 +299,7 @@ def execute(block, config):
             angle_units = None
 
         print('output_extension', output_extension)
+        print('kernel_name_a', kernel_name_a)
 
         spec_meas_list.append( 
             theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 

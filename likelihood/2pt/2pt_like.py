@@ -269,16 +269,28 @@ class TwoPointLikelihood(GaussianLikelihood):
         dataset_name = []
 
 
-        # Load bin_average and interpolate from config options but for now:
-        #bin_average = True
-        interpolate = True
 
         # Now we actually loop through our data sets
         for spectrum in self.two_point_data.spectra:
-            print("self.two_point_data.spectra", self.two_point_data.spectra)
+            # CHANGE REQUIRED HERE: it has to be read from config
+            # Load bin_average and interpolate from config options but for now:
+            #bin_average = True
+            if spectrum.name == 'xip': 
+                interpolate = True
+                bin_average = False
+            if spectrum.name == 'xim': 
+                interpolate = True
+                bin_average = False
+            if spectrum.name == 'gammat': 
+                interpolate = False
+                bin_average = True
+            if spectrum.name == 'wtheta': 
+                interpolate = False
+                bin_average = True
 
+            print ("spectrum name", spectrum.name)
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum, interpolate)
+                block, spectrum, interpolate, bin_average)
             theory.append(theory_vector)
             angle.append(angle_vector)
             bin1.append(bin1_vector)
@@ -343,7 +355,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 
-    def extract_spectrum_prediction(self, block, spectrum, interpolate=True):
+    def extract_spectrum_prediction(self, block, spectrum, interpolate=True, bin_average=False):
 
         # We may need theory predictions for multiple different
         # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
@@ -351,7 +363,6 @@ class TwoPointLikelihood(GaussianLikelihood):
         # block we expect to find these - mapping spectrum types
         # to block names
         section, x_name, y_name = theory_names(spectrum)
-        print("section, x_name, y_name", section, x_name, y_name)
 
         # To handle multiple different data sets we allow a suffix
         # to be applied to the section names, so that we can look up
@@ -363,13 +374,9 @@ class TwoPointLikelihood(GaussianLikelihood):
         theory_spec = TheorySpectrum.from_block( block, 
             section, bin_pairs=bin_pairs)
 
-
-        print("spectrum.angle", spectrum.angle)
-
         #theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
         #    kernels=('', ''), output_name=section, 
         #    angle_units=angle_units, interpolate=interpolate, bin_average = bin_average)
-
 
 
         # We need the angle (ell or theta depending on the spectrum)
@@ -392,7 +399,6 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2_vector = []
 
         for (b1, b2, angle) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle):
-            print ("b1, b2, angle", b1, b2, angle)
             # We are going to be making splines for each pair of values that we need.
             # We make splines of these and cache them so we don't re-make them for every
             # different theta/ell data point
@@ -402,7 +408,7 @@ class TwoPointLikelihood(GaussianLikelihood):
                     theory_spline = bin_data[(b1, b2)]
                     theory = theory_spline(angle) 
                 else:
-                    theory, theory_spline = theory_spec.get_spec_values(b1, b2, angle, interpolate)
+                    theory, theory_spline = theory_spec.get_spec_values(b1, b2, angle, interpolate, bin_average)
                     # and add to our list
                     bin_data[(b1, b2)] = theory_spline
                     # This is a bit silly, and is a hack because the
@@ -410,7 +416,7 @@ class TwoPointLikelihood(GaussianLikelihood):
                     bin_data[y_name.format(b1, b2)] = theory_spline
 
             if not interpolate: 
-                theory = theory_spec.get_spec_values(b1, b2, angle, interpolate)
+                theory = theory_spec.get_spec_values(b1, b2, angle, interpolate, bin_average)
 
             theory_vector.append(theory)
             angle_vector.append(angle)
@@ -465,7 +471,7 @@ class TwoPointLikelihood(GaussianLikelihood):
 
 
 
-    def interpolate_spectrum_prediction(self, block, spectrum):
+    #def interpolate_spectrum_prediction(self, block, spectrum):
     #def extract_spectrum_prediction(self, block, spectrum, interpolate):
 
         #####

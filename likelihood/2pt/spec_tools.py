@@ -146,8 +146,6 @@ class TheorySpectrum(object):
                   will only attempt to read those bin_pairs from the block.
         """
 
-        print("bin_pairs in from block", bin_pairs)
-
         spectrum_name = section_name
         save_name = block.get_string(section_name, "save_name")
         if save_name:
@@ -187,7 +185,6 @@ class TheorySpectrum(object):
         if bin_pairs is not None:
             track_cross = False
             for pair in bin_pairs:
-                print("pair in from block", pair)
                 i, j = pair
                 if i!= j: track_cross = True
 
@@ -314,13 +311,20 @@ class TheorySpectrum(object):
             bin_pair = (bin2, bin1)
         return bin_pair
 
-    def get_spec_values( self, bin1, bin2, angle, interpolate):
+    def get_spec_values( self, bin1, bin2, angle, interpolate, bin_average):
         """
         Function that returns the value for the model at some bins and 
         particular angular scale. 
         angle: angular value in radians we want our corresponding model.
         interpolate: If true, it will 
         """
+
+        # Needs to be read somewhere
+        n_theta_bins = 20
+        theta_min = 2.5
+        theta_max = 250.
+        theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
+        theta_lims_rad = (theta_lims_arcmin/60.)*np.pi/180.
 
         i,j = self.bin_pair_from_bin1_bin2(bin1, bin2)
 
@@ -338,18 +342,22 @@ class TheorySpectrum(object):
             return spec_sample, spec_interp
             
         if not interpolate:
-            #if not bin_average:
+            if not bin_average:
             # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
-            # since it is not defined properly.
-            # make comparison in radians
-            # Since Interpolation is set to False, the output angular value should match 
-            # some of the original values from the block (not all because this function only outputs 
-            # one angular bin
+                # since it is not defined properly.
+                # make comparison in radians
+                # Since Interpolation is set to False, the output angular value should match 
+                # some of the original values from the block (not all because this function only outputs 
+                # one angular bin
+                mask = np.isclose(self.angle_vals,angle)
 
-            mask = np.isclose(self.angle_vals,angle)
-
-            spec_sample = self.spec_values[(i,j)][mask]
+            if bin_average:
+                mask = [(theta_lims_rad[k]<angle)&(theta_lims_rad[k+1]>angle) for k in range(len(theta_lims_rad)-1)] 
+            
+            spec_sample = self.spec_values[(i,j)][mask][0]
             return spec_sample
+
+
 
         '''
         try:
