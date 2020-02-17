@@ -178,10 +178,8 @@ class TheorySpectrum(object):
 
 
         # Keep track of whether there are cross-correlations to decide if
-        # auto_only is True or False
-        # We need define auto_only correctly since it is used in _set_bin_pairs,
-        # when initizalizing the class. If auto_only is not set correctly 
-        # this will raise an assertion error.
+        # auto_only is True or False. We need define auto_only correctly since
+        # it is used in _set_bin_pairs, when initizalizing the class. 
         if bin_pairs is not None:
             track_cross = False
             for pair in bin_pairs:
@@ -260,6 +258,8 @@ class TheorySpectrum(object):
                 spec_sample = spec_interp( angle_vals_out_interp )
                 
             if not interpolate:
+                # Note that here we only check the lenght of theta values in the block is the same as in required output.
+                # This might need to be improved to require the theta_lims are the same.
                 assert (len(self.angle_vals)==len(angle_vals_out_interp)), \
                 "Interpolation is set to False, but the number of angular bins in the block does not match the output ones. "
 
@@ -314,22 +314,27 @@ class TheorySpectrum(object):
     def get_spec_values( self, bin1, bin2, angle, interpolate, bin_average):
         """
         Function that returns the value for the model at some bins and 
-        particular angular scale. 
+        particular angular scale. You can choose whether to interpolate the 
+        spectra in the block or not. 
+        bin1: redshift bin sample 1
+        bin2: redshift bin sample 2
         angle: angular value in radians we want our corresponding model.
-        interpolate: If true, it will 
+        interpolate: If True, it will interpolate the model from the block, 
+                     and return the model at the corresponding 'angle' value.
+        bin_average: (only possible when interpolate = False) 
+                    - If False: it requires the theta values in the block to 
+                                be the same as the ones in 2pt_like.py to 
+                                return the corresponding spectra value without
+                                interpolation at 'angle' value. 
+                    - If True: it only checks the 'angle' value falls within
+                               some theta_lims but it does not require the mean
+                               value in the block and 2pt_like to be the same.
         """
-
-        # Needs to be read somewhere
-        n_theta_bins = 20
-        theta_min = 2.5
-        theta_max = 250.
-        theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
-        theta_lims_rad = (theta_lims_arcmin/60.)*np.pi/180.
 
         i,j = self.bin_pair_from_bin1_bin2(bin1, bin2)
 
         if interpolate:
-            #assert not bin_average, "Interpolation should be turned off if bin_average is True."
+            assert not bin_average, "Interpolation should be turned off if bin_average is True."
             # Creating spline with values from block
             spec_interp = SpectrumInterp(self.angle_vals, self.spec_values[(i,j)])
             # Evaluating at the output angle
@@ -343,23 +348,30 @@ class TheorySpectrum(object):
             
         if not interpolate:
             if not bin_average:
-            # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
-                # since it is not defined properly.
-                # make comparison in radians
-                # Since Interpolation is set to False, the output angular value should match 
-                # some of the original values from the block (not all because this function only outputs 
-                # one angular bin
+                # Since Interpolation is set to False, and bin_average is False, the output angular value should match.
                 mask = np.isclose(self.angle_vals,angle)
 
             if bin_average:
+                # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
+                # since it is not defined properly. We only need to check the angle value falls within some 
+                # theta lims. 
+
+                # Theta lims need to be read here or somewhere else and passed to this function
+                # CHANGE NEEDED HERE
+                n_theta_bins = 20
+                theta_min = 2.5
+                theta_max = 250.
+                theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
+                theta_lims_rad = (theta_lims_arcmin/60.)*np.pi/180.
+
                 mask = [(theta_lims_rad[k]<angle)&(theta_lims_rad[k+1]>angle) for k in range(len(theta_lims_rad)-1)] 
             
             spec_sample = self.spec_values[(i,j)][mask][0]
             return spec_sample
 
-
-
         '''
+        Code that was here before which seems to not be needed now?:
+        not erasing just in case.
         try:
             spec_vals = self.spec_interps[ bin_pair ](angle)
         except ValueError:

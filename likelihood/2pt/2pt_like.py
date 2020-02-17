@@ -269,10 +269,9 @@ class TwoPointLikelihood(GaussianLikelihood):
         dataset_name = []
 
 
-
         # Now we actually loop through our data sets
         for spectrum in self.two_point_data.spectra:
-            # CHANGE REQUIRED HERE: it has to be read from config
+            # CHANGE NEEDED HERE: it has to be read from config
             # Load bin_average and interpolate from config options but for now:
             #bin_average = True
             if spectrum.name == 'xip': 
@@ -374,14 +373,10 @@ class TwoPointLikelihood(GaussianLikelihood):
         theory_spec = TheorySpectrum.from_block( block, 
             section, bin_pairs=bin_pairs)
 
-        #theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
-        #    kernels=('', ''), output_name=section, 
-        #    angle_units=angle_units, interpolate=interpolate, bin_average = bin_average)
-
-
         # We need the angle (ell or theta depending on the spectrum)
-        # for the theory spline points - we will be interpolating
-        # between these to get the data points
+        # if Interpolate=True, for the theory spline points - we will be interpolating
+        # between these to get the data points. Else we will just concatenate
+        # the corresponding spectra as read from the block
         angle_theory = block[section, x_name]
 
         # Now loop through the data points that we have.
@@ -399,10 +394,13 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2_vector = []
 
         for (b1, b2, angle) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle):
-            # We are going to be making splines for each pair of values that we need.
-            # We make splines of these and cache them so we don't re-make them for every
-            # different theta/ell data point
+            # Note: spectrum.angle already has scale cuts applied
+            # angle is a single theta value, we loop through them.
+
             if interpolate:
+                # We are going to be making splines for each pair of values that we need.
+                # We make splines of these and cache them so we don't re-make them for every
+                # different theta/ell data point
                 if (b1, b2) in bin_data:
                     # use the cached spline
                     theory_spline = bin_data[(b1, b2)]
@@ -427,128 +425,6 @@ class TwoPointLikelihood(GaussianLikelihood):
         # to calculate covariances later
         if interpolate:
             self.theory_splines[section] = bin_data
-
-        if self.save_plot_to:
-            if not os.path.isdir(self.save_plot_to):
-                os.makedirs(self.save_plot_to)
-            import pylab
-            nbin = max(spectrum.nbin(), spectrum.nbin())
-            for b1 in range(1, nbin + 1):
-                for b2 in range(1, nbin + 1):
-                    if (b1, b2) not in bin_data:
-                        continue
-                    # pylab.subplot(nbin, nbin, (b1-1)*nbin+b2)
-                    y_theory = bin_data[(b1, b2)](angle_theory)
-                    x_theory = np.degrees(angle_theory) * 60
-                    pylab.plot(x_theory, y_theory)
-                    xdata, ydata = spectrum.get_pair(b1, b2)
-                    print("FIXME: Assuming units in pipeline are radians.  Prob true but check!")
-                    ymin = 0.1 * bin_data[(b1, b2)](xdata).min()
-                    ymax = 10 * bin_data[(b1, b2)](xdata).max()
-                    xplot = np.degrees(xdata) * 60
-                    yerr = spectrum.get_error(b1, b2)
-                    pylab.errorbar(xplot, ydata, yerr, fmt='o')
-                    pylab.yscale('log', nonposy='clip')
-                    pylab.xscale('log', nonposy='clip')
-                    pylab.xlim(xmin=xplot.min(), xmax=xplot.max())
-                    pylab.ylim(ymin=ymin, ymax=ymax)
-                    pylab.xlabel("theta")
-                    pylab.ylabel("{} {},{}".format(spectrum.name, b1, b2))
-                    pylab.savefig(os.path.join(self.save_plot_to,
-                                               "{}_{}_{}.png".format(spectrum.name, b1, b2)))
-                    pylab.close()
-
-        # Return the whole collection as an array
-        theory_vector = np.array(theory_vector)
-
-        # For convenience we also save the angle vector (ell or theta)
-        # and bin indices
-        angle_vector = np.array(angle_vector)
-        bin1_vector = np.array(bin1_vector, dtype=int)
-        bin2_vector = np.array(bin2_vector, dtype=int)
-
-        return theory_vector, angle_vector, bin1_vector, bin2_vector
-
-
-
-    #def interpolate_spectrum_prediction(self, block, spectrum):
-    #def extract_spectrum_prediction(self, block, spectrum, interpolate):
-
-        #####
-        # DEPRECATED FUNCTION: NOT USED, NOW USING EXTRACT_SPECTRUM_PREDICTION
-        ###
-
-        # We may need theory predictions for multiple different
-        # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
-        # So first we find out from the spectrum where in the data
-        # block we expect to find these - mapping spectrum types
-        # to block names
-        section, x_name, y_name = theory_names(spectrum)
-
-        # To handle multiple different data sets we allow a suffix
-        # to be applied to the section names, so that we can look up
-        # e.g. "shear_cl_des" instead of just "shear_cl".
-        section += self.suffix
-
-        # We need the angle (ell or theta depending on the spectrum)
-        # for the theory spline points - we will be interpolating
-        # between these to get the data points
-        angle_theory = block[section, x_name]
-
-        # Now loop through the data points that we have.
-        # For each one we have a pairs of bins and an angular value.
-        # This assumes that we can take a single sample point from
-        # each theory vector rather than integrating with a window function
-        # over the theory to get the data prediction - this will need updating soon.
-        bin_data = {}
-        theory_vector = []
-
-        # For convenience we will also return the bin and angle (ell or theta)
-        # vectors for this bin too.
-        angle_vector = []
-        bin1_vector = []
-        bin2_vector = []
-        for (b1, b2, angle) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle):
-            # We are going to be making splines for each pair of values that we need.
-            # We make splines of these and cache them so we don't re-make them for every
-            # different theta/ell data point
-            if (b1, b2) in bin_data:
-                # either use the cached spline
-                theory_spline = bin_data[(b1, b2)]
-            else:
-                # or make a new cache value
-                # load from the data block and make a spline
-                # and save it
-                if block.has_value(section, y_name.format(b1, b2)):
-                    theory = block[section, y_name.format(b1, b2)]
-                # It is okay to swap if the spectrum types are the same - symmetrical
-                elif block.has_value(section, y_name.format(b2, b1)) and spectrum.type1 == spectrum.type2:
-                    theory = block[section, y_name.format(b2, b1)]
-                else:
-                    raise ValueError("Could not find theory prediction {} in section {}".format(
-                        y_name.format(b1, b2), section))
-                #theory_spline = interp1d(angle_theory, theory)
-                theory_spline = SpectrumInterp(angle_theory, theory)
-                bin_data[(b1, b2)] = theory_spline
-                # This is a bit silly, and is a hack because the
-                # book-keeping is very hard.
-                bin_data[y_name.format(b1, b2)] = theory_spline
-
-            # use our spline - interpolate to this ell or theta value
-            # and add to our list
-            try:
-                theory = theory_spline(angle)
-            except ValueError:
-                raise ValueError("""Tried to get theory prediction for {} {}, but ell or theta value ({}) was out of range.
-					"Maybe increase the range when computing/projecting or check units?""".format(section, y_name.format(b1, b2), angle))
-            theory_vector.append(theory)
-            angle_vector.append(angle)
-            bin1_vector.append(b1)
-            bin2_vector.append(b2)
-
-        # We are saving the theory splines as we may need them
-        # to calculate covariances later
-        self.theory_splines[section] = bin_data
 
         if self.save_plot_to:
             if not os.path.isdir(self.save_plot_to):
