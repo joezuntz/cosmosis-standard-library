@@ -289,7 +289,7 @@ class TwoPointLikelihood(GaussianLikelihood):
 
             print ("spectrum name", spectrum.name)
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum, interpolate, bin_average)
+                block, spectrum, interpolate=interpolate, bin_average=bin_average)
             theory.append(theory_vector)
             angle.append(angle_vector)
             bin1.append(bin1_vector)
