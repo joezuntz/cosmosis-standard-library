@@ -73,7 +73,7 @@ class TheorySpectrum(object):
     """
     def __init__( self, name, types, nbin_a, nbin_b, angle_vals, 
                   is_auto, noise_var_per_mode=None, auto_only = False, 
-                  spec_values=None, spec_interps=None):
+                  spec_values=None, spec_interps=None, bin_pairs=None):
         self.name = name
         self.types = types
         self.angle_vals = angle_vals
@@ -86,7 +86,10 @@ class TheorySpectrum(object):
         self.auto_only = auto_only
         if self.auto_only:
             assert self.is_auto
-        self._set_bin_pairs()
+        if bin_pairs is None:
+            self._set_bin_pairs()
+        else:
+            self.bin_pairs = bin_pairs
         self.noise_var_per_mode = noise_var_per_mode
 
         # optional arguments to have either the raw spectra or the interpolated one. 
@@ -110,7 +113,7 @@ class TheorySpectrum(object):
     def set_noise(self, noise):
         self.noise_var_per_mode = noise
 
-    def _set_bin_pairs( self ):
+    def _set_bin_pairs(self):
         self.bin_pairs=[]
         for i in range(1, self.nbin_a+1):
             if self.is_auto:
@@ -176,35 +179,34 @@ class TheorySpectrum(object):
         sep_values = block[section_name, sep_name]
         spec_values = OrderedDict()
 
-
-        # Keep track of whether there are cross-correlations to decide if
-        # auto_only is True or False. We need define auto_only correctly since
-        # it is used in _set_bin_pairs, when initizalizing the class. 
-        if bin_pairs is not None:
-            track_cross = False
-            for pair in bin_pairs:
-                i, j = pair
-                if i!= j: track_cross = True
-
-            if track_cross: auto_only = False
-            else: auto_only = True
-            print("Setting auto_only to %s."%auto_only)
-
-        # Bin pairs. Varies depending on auto-correlation
-        bin_pairs = []
-            # in that case auto_only option will be used:
-        for i in range(1, nbin_a+1):
-            if is_auto:
-                jstart = i
-            else:
-                jstart = 1
-            for j in range(jstart, nbin_b+1):
-                if auto_only:
-                    if j!=i:
-                        continue
+        if bin_pairs is None:
+            for i in range(1, nbin_a+1):
                 if is_auto:
-                    #
-                    # Load from the block
+                    jstart = i
+                else:
+                    jstart = 1
+                for j in range(jstart, nbin_b+1):
+                    if auto_only:
+                        if j!=i:
+                            continue
+                    if is_auto:
+                        #
+                        # Load from the block
+                        bin_name = bin_format.format(i, j)
+                        if block.has_value(section_name, bin_name):
+                            spec = block[section_name, bin_format.format(i, j)]
+                        else:
+                            spec = block[section_name, bin_format.format(j, i)]
+                    else:
+                        spec = block[section_name, bin_format.format(i, j)]
+
+                    spec_values[ (i, j) ] = spec
+
+
+        else: 
+            for (i,j) in bin_pairs:
+                # Load from the block
+                if is_auto:
                     bin_name = bin_format.format(i, j)
                     if block.has_value(section_name, bin_name):
                         spec = block[section_name, bin_format.format(i, j)]
@@ -216,11 +218,11 @@ class TheorySpectrum(object):
                 spec_values[ (i, j) ] = spec
 
         return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
-             is_auto, auto_only=auto_only, spec_values=spec_values)
+                    is_auto, auto_only=auto_only, spec_values=spec_values, bin_pairs=bin_pairs)
 
     def get_spectrum_measurement( self, angle_vals_out, kernels, output_name,
                                   angle_units='arcmin', windows="SAMPLE", angle_lims=None, 
-                                  interpolate=True, bin_average = False):
+                                  interpolate=True):
 
         # The fits format stores all the measurements
         # as one long vector.  So we build that up here from the various
@@ -250,30 +252,28 @@ class TheorySpectrum(object):
         # Bin pairs. Varies depending on auto-correlation
         for (i,j) in self.bin_pairs:
             if interpolate:
-                print ("Interpolating...")
-                assert not bin_average, "Interpolation should be turned off if the model has already been bin-averaged in a previous module, where the fullsky projection is."
-                # Convert arcmin to radians for the interpolation
+                if (i,j) == (1,1): print ("Interpolating...")
+                #assert not bin_average, "Interpolation should be turned off if the model has already been bin-averaged in a previous module, where the fullsky projection is."
                 spec_interp = SpectrumInterp(self.angle_vals, self.spec_values[(i,j)])
-                # Convert arcmin to radians for the interpolation
-                spec_sample = spec_interp( angle_vals_out_interp )
+                spec_sample = spec_interp(angle_vals_out_interp)
                 
             if not interpolate:
-                # Note that here we only check the lenght of theta values in the block is the same as in required output.
+                # Here we only check the lenght of theta values in the block is the same as in required output.
                 # This might need to be improved to require the theta_lims are the same.
                 assert (len(self.angle_vals)==len(angle_vals_out_interp)), \
                 "Interpolation is set to False, but the number of angular bins in the block does not match the output ones. "
-
-                if not bin_average:
-                    # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
-                    # since it is not defined properly.
-                    # make comparison in radians
-                    print("Angular values in block %s (full-sky module) [radians]"%output_name, self.angle_vals)
-                    print("Angular values in save2pt module %s [radians]"%output_name, angle_vals_out_interp) 
-
-                    assert (np.isclose(self.angle_vals,angle_vals_out_interp).all()), \
-                    "Interpolation is set to False, but the output angular values do not match the original ones from block."
-
                 spec_sample = self.spec_values[(i,j)]
+
+                # Conver self.angle_vals (which is in radians) to the output desired units
+                angle_block_rad = self.angle_vals*twopoint.ANGULAR_UNITS["rad"]   
+                angle_block_outunits = (angle_block_rad.to(twopoint.ANGULAR_UNITS[angle_units])).value
+                if (i,j) == (1,1):
+                    if not (np.isclose(self.angle_vals,angle_vals_out_interp).all()): 
+                        print ("Angular values from block and save_2pt output are not the same.")
+                        print ("Saving values from block in the two-point file since we are not interpolating:\n", angle_block_outunits)
+                        # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
+                        # since it is not defined properly.
+
 
             #cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
             # Build up on the various vectors that we need
@@ -281,7 +281,10 @@ class TheorySpectrum(object):
             bin2.append(np.repeat(j, n_angle_sample))
             value.append(spec_sample)
             angular_bin.append(np.arange(n_angle_sample))
-            angle.append(angle_vals_out)
+            if interpolate:
+                angle.append(angle_vals_out)
+            else: 
+                angle.append(angle_block_outunits)
             if angle_lims is not None: 
                 angle_min.append( angle_lims[:-1] )
                 angle_max.append( angle_lims[1:] )
@@ -311,7 +314,7 @@ class TheorySpectrum(object):
             bin_pair = (bin2, bin1)
         return bin_pair
 
-    def get_spec_values( self, bin1, bin2, angle, interpolate, bin_average):
+    def get_spec_values( self, bin1, bin2, angle, interpolate):
         """
         Function that returns the value for the model at some bins and 
         particular angular scale. You can choose whether to interpolate the 
@@ -319,22 +322,18 @@ class TheorySpectrum(object):
         bin1: redshift bin sample 1
         bin2: redshift bin sample 2
         angle: angular value in radians we want our corresponding model.
-        interpolate: If True, it will interpolate the model from the block, 
+        interpolate: - If True, it will interpolate the model from the block, 
                      and return the model at the corresponding 'angle' value.
-        bin_average: (only possible when interpolate = False) 
-                    - If False: it requires the theta values in the block to 
-                                be the same as the ones in 2pt_like.py to 
-                                return the corresponding spectra value without
-                                interpolation at 'angle' value. 
-                    - If True: it only checks the 'angle' value falls within
-                               some theta_lims but it does not require the mean
-                               value in the block and 2pt_like to be the same.
+                     - If False it will read what is in the block and return it 
+                     as is. It only checks the 'angle' value falls within
+                     some theta_lims but it does not require the mean
+                     value in the block and 2pt_like to be the same. It returns 
+                     the angular value from the block.
         """
 
         i,j = self.bin_pair_from_bin1_bin2(bin1, bin2)
 
         if interpolate:
-            assert not bin_average, "Interpolation should be turned off if bin_average is True."
             # Creating spline with values from block
             spec_interp = SpectrumInterp(self.angle_vals, self.spec_values[(i,j)])
             # Evaluating at the output angle
@@ -347,27 +346,28 @@ class TheorySpectrum(object):
             return spec_sample, spec_interp
             
         if not interpolate:
-            if not bin_average:
-                # Since Interpolation is set to False, and bin_average is False, the output angular value should match.
-                mask = np.isclose(self.angle_vals,angle)
+            #    mask = np.isclose(self.angle_vals,angle) # if we wanted to check whether the angles in 
+            #    block and here are the same
 
-            if bin_average:
-                # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
-                # since it is not defined properly. We only need to check the angle value falls within some 
-                # theta lims. 
+            # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
+            # since it is not defined properly. We only need to check the angle value falls within some 
+            # theta lims. 
 
-                # Theta lims need to be read here or somewhere else and passed to this function
-                # CHANGE NEEDED HERE
-                n_theta_bins = 20
-                theta_min = 2.5
-                theta_max = 250.
-                theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
-                theta_lims_rad = (theta_lims_arcmin/60.)*np.pi/180.
+            # Theta lims need to be read here or somewhere else and passed to this function
+            # CHANGE NEEDED HERE
+            n_theta_bins = 20
+            theta_min = 2.5
+            theta_max = 250.
+            theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
+            theta_lims_rad = (theta_lims_arcmin/60.)*np.pi/180.
 
-                mask = [(theta_lims_rad[k]<angle)&(theta_lims_rad[k+1]>angle) for k in range(len(theta_lims_rad)-1)] 
+            mask = [(theta_lims_rad[k]<angle)&(theta_lims_rad[k+1]>angle) for k in range(len(theta_lims_rad)-1)] 
             
             spec_sample = self.spec_values[(i,j)][mask][0]
-            return spec_sample
+            angle_block = self.angle_vals[mask][0]
+            # we also return the angles to make sure they are the same as in block, in case
+            # we are not doing bin_averaging and this value actually matters
+            return spec_sample, angle_block
 
         '''
         Code that was here before which seems to not be needed now?:

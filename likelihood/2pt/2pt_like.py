@@ -276,20 +276,16 @@ class TwoPointLikelihood(GaussianLikelihood):
             #bin_average = True
             if spectrum.name == 'xip': 
                 interpolate = True
-                bin_average = False
             if spectrum.name == 'xim': 
                 interpolate = True
-                bin_average = False
             if spectrum.name == 'gammat': 
                 interpolate = False
-                bin_average = True
             if spectrum.name == 'wtheta': 
                 interpolate = False
-                bin_average = True
 
             print ("spectrum name", spectrum.name)
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum, interpolate=interpolate, bin_average=bin_average)
+                block, spectrum, interpolate=interpolate)
             theory.append(theory_vector)
             angle.append(angle_vector)
             bin1.append(bin1_vector)
@@ -354,7 +350,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 
-    def extract_spectrum_prediction(self, block, spectrum, interpolate=True, bin_average=False):
+    def extract_spectrum_prediction(self, block, spectrum, interpolate=True):
 
         # We may need theory predictions for multiple different
         # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
@@ -406,15 +402,15 @@ class TwoPointLikelihood(GaussianLikelihood):
                     theory_spline = bin_data[(b1, b2)]
                     theory = theory_spline(angle) 
                 else:
-                    theory, theory_spline = theory_spec.get_spec_values(b1, b2, angle, interpolate, bin_average)
+                    theory, theory_spline = theory_spec.get_spec_values(b1, b2, angle, interpolate=interpolate)
                     # and add to our list
                     bin_data[(b1, b2)] = theory_spline
                     # This is a bit silly, and is a hack because the
                     # book-keeping is very hard.
                     bin_data[y_name.format(b1, b2)] = theory_spline
 
-            if not interpolate: 
-                theory = theory_spec.get_spec_values(b1, b2, angle, interpolate, bin_average)
+            else:
+                theory, angle = theory_spec.get_spec_values(b1, b2, angle, interpolate=interpolate)
 
             theory_vector.append(theory)
             angle_vector.append(angle)

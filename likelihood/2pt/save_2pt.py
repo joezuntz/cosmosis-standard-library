@@ -257,9 +257,7 @@ def execute(block, config):
             bin_avg_setting = config["bin_avg_xipm"]
         else:
             raise ValueError()
-        print("bin_avg_setting=",bin_avg_setting)
         interp_setting = not bin_avg_setting
-        
 
         #Read in sample information from block
         sample_a, sample_b = ( block[spectrum_section, "sample_a"], 
@@ -287,7 +285,6 @@ def execute(block, config):
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
 
-        print ("spectrum_section", spectrum_section) 
         theory_spec = TheorySpectrum.from_block( block, 
             spectrum_section, auto_only=auto_only )
         theory_spec_list.append(theory_spec)
@@ -298,14 +295,13 @@ def execute(block, config):
         else:
             angle_units = None
 
-        print('output_extension', output_extension)
-        print('kernel_name_a', kernel_name_a)
+        print(output_extension)
 
         spec_meas_list.append( 
             theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
             (kernel_name_a, kernel_name_b), output_extension, 
             angle_lims = config['angle_lims_userunits'], 
-            angle_units=angle_units, interpolate=interp_setting, bin_average = bin_avg_setting))
+            angle_units=angle_units, interpolate=interp_setting))
         
         if make_covariance:
             if real_space:
