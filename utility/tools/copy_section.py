@@ -3,14 +3,17 @@ from cosmosis.datablock import option_section
 
 
 def setup(options):
-    source = str(options[option_section, "source"])
-    dest = str(options[option_section, "dest"])
-    return (source, dest)
+    sources = str(options[option_section, "source"]).split()
+    dests = str(options[option_section, "dest"]).split()
+    for source, dest in zip(sources, dests):
+        print("Will copy section {} -> {}".format(source, dest))
+    return (sources, dests)
 
 
 def execute(block, config):
-    source, dest = config
-    block._copy_section(source, dest)
+    sources, dests = config
+    for source, dest in zip(sources, dests):
+        block._copy_section(source, dest)
     return 0
 
 
