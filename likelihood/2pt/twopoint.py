@@ -380,6 +380,14 @@ class SpectrumMeasurement(object):
             varxi = data['VARXI']
         else:
             varxi = None
+        if "ANGLEMIN" in data.names:
+            angle_min = data['ANGLEMIN']
+        else:
+            angle_min = None
+        if "ANGLEMAX" in data.names:
+            angle_max = data['ANGLEMAX']
+        else:
+            angle_max = None
 
         # check for extra columns
         found_extra_cols = False
@@ -408,7 +416,8 @@ class SpectrumMeasurement(object):
 
         return SpectrumMeasurement(name, (bin1, bin2), (type1, type2), (kernel1, kernel2), windows,
                                    angular_bin, value, angle, error, angle_unit=angle_unit, npairs=npairs,
-                                   varxi=varxi, extra_cols=extra_cols, metadata=metadata)
+                                   varxi=varxi, angle_min=angle_min, angle_max=angle_max,
+                                   extra_cols=extra_cols, metadata=metadata)
 
     def to_fits(self):
         header = fits.Header()
