@@ -7,12 +7,52 @@ from cosmosis.datablock import option_section, names as section_names
 from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block
 from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav, get_legfactors_00_binav, get_legfactors_22_binav
 from past.builtins import basestring
+import twopoint
+
+def readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin'):
+    '''
+    Short function to read in theta values from a specified fits file
+    desired angle units in 'rad', 'arcmin', 'arcsec', 'deg
+    '''
+    
+    T = twopoint.TwoPointFile.from_fits(filename)
+    xi = T.get_spectrum(xi_type)
+    # make sure the units are in arcmin (or whatever else you want)
+    xi.convert_angular_units(self, desired_units)
+    if theta_type == 'centers':
+        thetas = xi.angle
+        return thetas
+    elif theta_type == 'edges':
+        theta_min = xi.angle_min  # array of min values
+        theta_max = xi.angle_max # array of max values
+        # We currently assume adjacent and non-overlapping bins.
+        np.testing.assert_allclose(theta_min[1:], theta_max[:-1], rtol=1e-03,
+        err_msg='theta bin min and max values do not match.' verbose=True)
+        theta_bins = np.append(theta_min, theta_max[-1])
+        return theta_bins
+    else:
+        #if some other option is passed, eg "all", return both.
+        thetas = xi.angle
+        theta_min = xi.angle_min  # array of min values
+        theta_max = xi.angle_max # array of max values
+        theta_bins = np.append(theta_min, theta_max[-1])
+        return thetas, theta_bins
 
 def setup(options):
     
+    xi_type_conversion = {'xip':['22', '22+'], xim::['22-'], gammat:['02', '02+'], wtheta:['00']}
     xi_type = options.get_string(option_section, 'xi_type')
+        xi_type_fits = None
+    for key, value in xi_type_conversion.items():
+        if xi_type in value:
+            xi_type_fits = key
+            #probably something wrong here
+            break
+    if xi_type_files is None:
+        raise ValueError('xi_type %s not associated with a fits key'%xi_type)
     ell_max = options.get_int(option_section, "ell_max")
     bin_avg = options.get_bool(option_section, "bin_avg", False)
+    theta_from_dat = options.get_bool(option_section, "theta_from_dat", False)
     #Filter the Cls at high ell to reduce ringing:
     high_l_filter = options.get_double(option_section, "high_l_filter", 0.75)
 
@@ -20,16 +60,25 @@ def setup(options):
     output_section = options.get_string(option_section, "output_section_name", "")
     save_name = options.get_string(
         option_section, "save_name", "")
+    if theta_from dat:
+        print("*** Reading in theta values from datafile ***")
+        if options_has_value(option_section, "filename"):
+            print('filename = ',filename)
+            filename = options.get_string(option_section, 'filename')
+        elif:
+            raise ValueError('No filename specified for theta values')
     if bin_avg:
         print("*** Using bin averaged Legendre coefficients ***")
-        if options.has_value(option_section, "theta"):
+        if theta_from_dat:
+            theta_edges = readtheta(filename, xi_type, theta_type = 'edges', desired_units = 'arcmin')
+        elif options.has_value(option_section, "theta"):
             print('WARNING: Specify `theta_edges` instead of `theta` when using bin averaging. `theta` is ignored')
             #raise ValueError()#maybe we don't want to actually raise an error, since we may be inheriting a default params.ini file.
-        if options.has_value(option_section, "n_theta"):
+        elif options.has_value(option_section, "n_theta"):
             print('WARNING: Specify `n_theta_bins` instead of `n_theta` when using bin averaging. `n_theta` is ignored')
            # raise ValueError()
-        if options.has_value(option_section, "theta_edges"):
-            print('Note: Using specified `theta_edges` values')
+        elif options.has_value(option_section, "theta_edges"):
+            print('*** Note: Using `theta_edges` values specified in ini file ***')
             theta_edges = options[option_section, 'theta_edges']
             if np.isscalar(theta_edges):
                 theta_edges = np.array([theta_edges])
@@ -43,11 +92,21 @@ def setup(options):
             theta_max = arcmin_to_radians(theta_max)
             theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
         print('theta_edges=',theta_edges)
-        theta = (theta_edges[:-1]*theta_edges[1:])**0.5
-        #what should we do about this? Right now, I am passing the geometric values to write to the block. Hopefully these should just be dummy values.
+        if theta_from_dat:
+            theta = readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin')
+            theta = arcmin_to_radians(theta)
+        else:
+            theta = (theta_edges[:-1]*theta_edges[1:])**0.5
+            # Right now,this is passing the geometric values to write to the block.
+            # Hopefully these should just be dummy values.
     else:
         print("*** Using Legendre coefficients at individual theta values ***")
-        if options.has_value(option_section, "theta"):
+        if theta_from_dat:
+            print("*** Reading in central theta values from datafile ***")
+            theta = readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin')
+            theta = arcmin_to_radians(theta)
+        elif options.has_value(option_section, "theta"):
+            print('*** Note: Using `theta` values specified in ini file ***')
             theta = options[option_section, 'theta']
             if np.isscalar(theta):
                 theta = np.array([theta])
