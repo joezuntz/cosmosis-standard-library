@@ -130,7 +130,7 @@ def get_Pk_basis_funcs(block, pt_type,
 
         if output_nl_grid:   
             # interpolate to nl k grid.
-            for key, pk in PXXNL_b1b2bsb3nl_z0.iteritems():
+            for key, pk in PXXNL_b1b2bsb3nl_z0.items():
                 if key == "sig4":
                     PXXNL_b1b2bsb3nl_z0[key] = pk*np.ones_like(knl)
                 else:
@@ -138,7 +138,7 @@ def get_Pk_basis_funcs(block, pt_type,
 
         #Apply growth factor to make k,z arrays
         PXXNL_out = {}
-        for key, pk in PXXNL_b1b2bsb3nl_z0.iteritems():
+        for key, pk in PXXNL_b1b2bsb3nl_z0.items():
             PXXNL_out[key] = np.outer(growth**4, pk)
 
     else:
