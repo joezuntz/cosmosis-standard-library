@@ -73,9 +73,6 @@ def setup(options):
     copy_covariance = options.get_string(option_section, "copy_covariance", "")
     angle_units = options.get_string(option_section, "angle_units", "")
     two_thirds_midpoint = options.get_bool(option_section, "two_thirds_midpoint", False)
-    bin_avg_wtheta = options.get_bool(option_section, "bin_avg_wtheta", False)
-    bin_avg_gammat = options.get_bool(option_section, "bin_avg_gammat", False)
-    bin_avg_xipm = options.get_bool(option_section, "bin_avg_xipm", False)
 
     if copy_covariance and make_covariance:
         raise ValueError("You can only set one of make_covariance and copy_covariance")
@@ -85,9 +82,6 @@ def setup(options):
         "copy_covariance": copy_covariance,
         "logspaced": logspaced, 
         "angle_units": angle_units,
-        "bin_avg_wtheta": bin_avg_wtheta,
-        "bin_avg_gammat": bin_avg_gammat,
-        "bin_avg_xipm": bin_avg_xipm
     }
 
     def read_list(key, default=""):
@@ -102,12 +96,25 @@ def setup(options):
     else:
         config["auto_only"] = []
 
+
     #And output names (name of extensions in output fits files)
     if options.has_value(option_section, "output_extensions" ):
         print('found output_extensions')
         config["output_extensions"] = read_list("output_extensions")
     else:
         config["output_extensions"] = config["spectrum_sections"]
+
+    #And options for interpolation
+    if options.has_value(option_section, "interpolate"):
+        print('Found interpolation options')
+        interpolate_sections = read_list("interpolate")
+        config["interpolate"] = [(s in interpolate_sections) for s in config["spectrum_sections"]]
+    else:
+        config["interpolate"] = config["spectrum_sections"]
+
+
+    print("config[interpolate]", config["interpolate"])
+    print("config[spectrum_sections]", config["spectrum_sections"]) 
 
     if options.has_value(option_section, "theta_min"):
         config['real_space'] = True
@@ -249,15 +256,7 @@ def execute(block, config):
         auto_only = config["auto_only"][i_spec]
         spectrum_section = config["spectrum_sections"][i_spec]
         output_extension = config["output_extensions"][i_spec]
-        if output_extension == 'gammat':
-            bin_avg_setting = config["bin_avg_gammat"]
-        elif output_extension == 'wtheta':
-            bin_avg_setting = config["bin_avg_wtheta"]
-        elif output_extension in ['xip','xim']:
-            bin_avg_setting = config["bin_avg_xipm"]
-        else:
-            raise ValueError()
-        interp_setting = not bin_avg_setting
+        interpolate = config["interpolate"][i_spec]
 
         #Read in sample information from block
         sample_a, sample_b = ( block[spectrum_section, "sample_a"], 
@@ -301,7 +300,7 @@ def execute(block, config):
             theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
             (kernel_name_a, kernel_name_b), output_extension, 
             angle_lims = config['angle_lims_userunits'], 
-            angle_units=angle_units, interpolate=interp_setting))
+            angle_units=angle_units, interpolate=interpolate))
         
         if make_covariance:
             if real_space:

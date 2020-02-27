@@ -73,7 +73,7 @@ class TheorySpectrum(object):
     """
     def __init__( self, name, types, nbin_a, nbin_b, angle_vals, 
                   is_auto, noise_var_per_mode=None, auto_only = False, 
-                  spec_values=None, spec_interps=None, bin_pairs=None):
+                  spec_values=None, spec_interps=None, bin_pairs=None, bin_avg=None):
         self.name = name
         self.types = types
         self.angle_vals = angle_vals
@@ -83,6 +83,7 @@ class TheorySpectrum(object):
         #self.set_spec_interps()
         self.nbin_a = nbin_a
         self.nbin_b = nbin_b
+        self.bin_avg = bin_avg
         self.auto_only = auto_only
         if self.auto_only:
             assert self.is_auto
@@ -108,6 +109,8 @@ class TheorySpectrum(object):
             #Check bin pairs correspond to keys in spec_arrays
             for bin_pair in self.bin_pairs:
                 assert bin_pair in self.spec_interps
+
+
 
 
     def set_noise(self, noise):
@@ -179,6 +182,13 @@ class TheorySpectrum(object):
         sep_values = block[section_name, sep_name]
         spec_values = OrderedDict()
 
+        # in the corresponding cl_to_xi module we save this file 
+        # saying whether the spectra has been bin averaged or not
+        if block.has_value(section_name, "angular_bin_average"):
+            bin_avg = block[section_name, "angular_bin_average"]
+        else:
+            bin_avg = None
+
         if bin_pairs is None:
             for i in range(1, nbin_a+1):
                 if is_auto:
@@ -218,11 +228,11 @@ class TheorySpectrum(object):
                 spec_values[ (i, j) ] = spec
 
         return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
-                    is_auto, auto_only=auto_only, spec_values=spec_values, bin_pairs=bin_pairs)
+                    is_auto, auto_only=auto_only, spec_values=spec_values, bin_pairs=bin_pairs, bin_avg=bin_avg)
 
     def get_spectrum_measurement( self, angle_vals_out, kernels, output_name,
                                   angle_units='arcmin', windows="SAMPLE", angle_lims=None, 
-                                  interpolate=True):
+                                  interpolate=None):
 
         # The fits format stores all the measurements
         # as one long vector.  So we build that up here from the various
@@ -249,6 +259,14 @@ class TheorySpectrum(object):
         else:
             angle_vals_out_interp = angle_vals_out
 
+        print ("Before: For %s interpolation is"%output_name, interpolate)
+        # determine interpolation settings
+        if self.bin_avg is not None:
+            if self.bin_avg == True:
+                interpolate = False
+            # in any other case just take the value passed in the function
+        print ("After: For %s interpolation is"%output_name, interpolate)
+        
         # Bin pairs. Varies depending on auto-correlation
         for (i,j) in self.bin_pairs:
             if interpolate:
