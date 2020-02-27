@@ -253,6 +253,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         return C
 
     def extract_theory_points(self, block):
+
         theory = []
         # We may want to save these splines for the covariance matrix later
         self.theory_splines = {}
@@ -271,21 +272,10 @@ class TwoPointLikelihood(GaussianLikelihood):
 
         # Now we actually loop through our data sets
         for spectrum in self.two_point_data.spectra:
-            # CHANGE NEEDED HERE: it has to be read from config
-            # Load bin_average and interpolate from config options but for now:
-            #bin_average = True
-            if spectrum.name == 'xip': 
-                interpolate = True
-            if spectrum.name == 'xim': 
-                interpolate = True
-            if spectrum.name == 'gammat': 
-                interpolate = False
-            if spectrum.name == 'wtheta': 
-                interpolate = False
 
             print ("spectrum name", spectrum.name)
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum, interpolate=interpolate)
+                block, spectrum)
             theory.append(theory_vector)
             angle.append(angle_vector)
             bin1.append(bin1_vector)
@@ -350,7 +340,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 
-    def extract_spectrum_prediction(self, block, spectrum, interpolate=True):
+    def extract_spectrum_prediction(self, block, spectrum):
 
         # We may need theory predictions for multiple different
         # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
@@ -369,6 +359,27 @@ class TwoPointLikelihood(GaussianLikelihood):
         theory_spec = TheorySpectrum.from_block( block, 
             section, bin_pairs=bin_pairs)
 
+        # Determining whether the spectra has been previously bin-averaged
+        # from the block information. If it has been bin-averaged we do
+        # not want to interpolate the spectra here, otherwise we want to
+        # interpolate the spectra
+        bin_avg = theory_spec.bin_avg
+        if bin_avg is None:
+            interpolate = True
+        else:
+            interpolate = not bin_avg
+        
+        # Load here the theta edges that were saved in the block for this spectra
+        ang_bin_edges = theory_spec.theta_edges
+        # Compare these with the ones from the data twopoint file.
+        # We want to make sure they are the same
+        # Worry about units here?
+        # Use maybe Jonathan's function to use the bin_edges from the twopoint file? 
+        #indices = spectrum.get_pair_mask(i, j)
+        #spectrum.angle_min[indices]
+        #spectrum.angle_max[indices]
+
+        
         # We need the angle (ell or theta depending on the spectrum)
         # if Interpolate=True, for the theory spline points - we will be interpolating
         # between these to get the data points. Else we will just concatenate

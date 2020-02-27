@@ -73,7 +73,9 @@ class TheorySpectrum(object):
     """
     def __init__( self, name, types, nbin_a, nbin_b, angle_vals, 
                   is_auto, noise_var_per_mode=None, auto_only = False, 
-                  spec_values=None, spec_interps=None, bin_pairs=None, bin_avg=None):
+                  spec_values=None, spec_interps=None, bin_pairs=None,
+                  angle_edges=None, bin_avg=None):
+
         self.name = name
         self.types = types
         self.angle_vals = angle_vals
@@ -103,14 +105,14 @@ class TheorySpectrum(object):
             for bin_pair in self.bin_pairs:
                 assert bin_pair in self.spec_values
 
-
         if spec_interps is not None:
             self.spec_interps = spec_interps
             #Check bin pairs correspond to keys in spec_arrays
             for bin_pair in self.bin_pairs:
                 assert bin_pair in self.spec_interps
-
-
+    
+        if angle_edges is not None:
+            self.angle_edges = angle_edges
 
 
     def set_noise(self, noise):
@@ -184,10 +186,10 @@ class TheorySpectrum(object):
 
         # in the corresponding cl_to_xi module we save this file 
         # saying whether the spectra has been bin averaged or not
-        if block.has_value(section_name, "angular_bin_average"):
-            bin_avg = block[section_name, "angular_bin_average"]
-        else:
-            bin_avg = None
+        bin_avg = block.get_bool(section_name, 'bin_avg', default=False)
+
+        if block.has_value(section_name, "theta_edges"):
+            angle_edges = block[section_name, "theta_edges"]
 
         if bin_pairs is None:
             for i in range(1, nbin_a+1):
@@ -228,7 +230,7 @@ class TheorySpectrum(object):
                 spec_values[ (i, j) ] = spec
 
         return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
-                    is_auto, auto_only=auto_only, spec_values=spec_values, bin_pairs=bin_pairs, bin_avg=bin_avg)
+                    is_auto, auto_only=auto_only, spec_values=spec_values, bin_pairs=bin_pairs, angle_edges = angle_edges, bin_avg=bin_avg)
 
     def get_spectrum_measurement( self, angle_vals_out, kernels, output_name,
                                   angle_units='arcmin', windows="SAMPLE", angle_lims=None, 
@@ -261,9 +263,8 @@ class TheorySpectrum(object):
 
         print ("Before: For %s interpolation is"%output_name, interpolate)
         # determine interpolation settings
-        if self.bin_avg is not None:
-            if self.bin_avg == True:
-                interpolate = False
+        if self.bin_avg == True:
+            interpolate = False
             # in any other case just take the value passed in the function
         print ("After: For %s interpolation is"%output_name, interpolate)
         
@@ -351,6 +352,7 @@ class TheorySpectrum(object):
 
         i,j = self.bin_pair_from_bin1_bin2(bin1, bin2)
 
+
         if interpolate:
             # Creating spline with values from block
             spec_interp = SpectrumInterp(self.angle_vals, self.spec_values[(i,j)])
@@ -373,18 +375,18 @@ class TheorySpectrum(object):
 
             # Theta lims need to be read here or somewhere else and passed to this function
             # CHANGE NEEDED HERE
-            n_theta_bins = 20
-            theta_min = 2.5
-            theta_max = 250.
-            theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
-            theta_lims_rad = (theta_lims_arcmin/60.)*np.pi/180.
+            #n_theta_bins = 20
+            #theta_min = 2.5
+            #theta_max = 250.
+            #theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
 
-            mask = [(theta_lims_rad[k]<angle)&(theta_lims_rad[k+1]>angle) for k in range(len(theta_lims_rad)-1)] 
-            
+            # this is in principle in radians
+            angle_edges_rad = self.angle_edges
+            mask = [(theta_edges_rad[k]<angle)&(theta_edges_rad[k+1]>angle) for k in range(len(theta_edges_rad)-1)]             
             spec_sample = self.spec_values[(i,j)][mask][0]
             angle_block = self.angle_vals[mask][0]
             # we also return the angles to make sure they are the same as in block, in case
-            # we are not doing bin_averaging and this value actually matters
+            # we are not doing bin_averaging this value actually matters
             return spec_sample, angle_block
 
         '''
