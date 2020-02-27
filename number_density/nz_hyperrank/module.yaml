@@ -50,10 +50,9 @@ params:
     n_realisations: "Integer, number of realisations contained in the FITS file, numbered from 0 to n_realisations-1"
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
-inputs: {
+inputs:
   ranks:
     rank_hyperparm_i: "Real; hyperparameter mapped to a redshift distribution. If mode is separate, then i = 1...n_bins "
-  }
 
 outputs:
     wl_number_density:
