@@ -9,22 +9,27 @@ from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, pr
 from past.builtins import basestring
 import twopoint
 
-def readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin'):
+def readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'arcmin'):
     '''
-    Short function to read in theta values from a specified fits file
-    desired angle units in 'rad', 'arcmin', 'arcsec', 'deg
+    Short function to read in theta values from a specified fits file.
+    Desired angle units in 'rad', 'arcmin', 'arcsec', 'deg
     '''
     
     T = twopoint.TwoPointFile.from_fits(filename)
-    xi = T.get_spectrum(xi_type)
+    xi = T.get_spectrum(xi_type_2pt)
     # make sure the units are in arcmin (or whatever else you want)
     xi.convert_angular_units(self, desired_units)
+    # get the theta values for a single bin pair.
+    # This method currently assumes that the same binning is used for all bin pairs (in a given corr funct).
+    # scale cuts are applied later and can be different for each bin pair. 
+    pairs = xi.get_bin_pairs()
+    indices = xi.get_pair_mask(pairs[0]) #use the first appearing pair, since all should be the same.
     if theta_type == 'centers':
-        thetas = xi.angle
+        thetas = xi.angle[indices]
         return thetas
     elif theta_type == 'edges':
-        theta_min = xi.angle_min  # array of min values
-        theta_max = xi.angle_max # array of max values
+        theta_min = xi.angle_min[indices]  # array of min values
+        theta_max = xi.angle_max[indices] # array of max values
         # We currently assume adjacent and non-overlapping bins.
         np.testing.assert_allclose(theta_min[1:], theta_max[:-1], rtol=1e-03,
         err_msg='theta bin min and max values do not match.' verbose=True)
@@ -32,27 +37,30 @@ def readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin
         return theta_bins
     else:
         #if some other option is passed, eg "all", return both.
-        thetas = xi.angle
-        theta_min = xi.angle_min  # array of min values
-        theta_max = xi.angle_max # array of max values
+        thetas = xi.angle[indices]
+        theta_min = xi.angle_min[indices]  # array of min values
+        theta_max = xi.angle_max[indices] # array of max values
+        np.testing.assert_allclose(theta_min[1:], theta_max[:-1], rtol=1e-03,
+        err_msg='theta bin min and max values do not match.' verbose=True)
         theta_bins = np.append(theta_min, theta_max[-1])
         return thetas, theta_bins
 
 def setup(options):
     
-    xi_type_conversion = {'xip':['22', '22+'], xim::['22-'], gammat:['02', '02+'], wtheta:['00']}
+    xi_type_conversion = {'xip':['22', '22+'], 'xim':['22-'], 'gammat':['02', '02+'], 'wtheta:'['00']}
     xi_type = options.get_string(option_section, 'xi_type')
-        xi_type_fits = None
+    xi_type_2pt = None
     for key, value in xi_type_conversion.items():
         if xi_type in value:
-            xi_type_fits = key
-            #probably something wrong here
+            xi_type_2pt = key
+            # check that this syntax works.
             break
-    if xi_type_files is None:
+    if xi_type_2pt is None:
         raise ValueError('xi_type %s not associated with a fits key'%xi_type)
     ell_max = options.get_int(option_section, "ell_max")
     bin_avg = options.get_bool(option_section, "bin_avg", False)
     theta_from_dat = options.get_bool(option_section, "theta_from_dat", False)
+    two_thirds_midpoint = options.get_bool(option_section, "two_thirds_midpoint", True)
     #Filter the Cls at high ell to reduce ringing:
     high_l_filter = options.get_double(option_section, "high_l_filter", 0.75)
 
@@ -60,6 +68,7 @@ def setup(options):
     output_section = options.get_string(option_section, "output_section_name", "")
     save_name = options.get_string(
         option_section, "save_name", "")
+    theta_edges = None
     if theta_from dat:
         print("*** Reading in theta values from datafile ***")
         if options_has_value(option_section, "filename"):
@@ -70,7 +79,7 @@ def setup(options):
     if bin_avg:
         print("*** Using bin averaged Legendre coefficients ***")
         if theta_from_dat:
-            theta_edges = readtheta(filename, xi_type, theta_type = 'edges', desired_units = 'arcmin')
+            theta_edges = readtheta(filename, xi_type_2pt, theta_type = 'edges', desired_units = 'arcmin')
         elif options.has_value(option_section, "theta"):
             print('WARNING: Specify `theta_edges` instead of `theta` when using bin averaging. `theta` is ignored')
             #raise ValueError()#maybe we don't want to actually raise an error, since we may be inheriting a default params.ini file.
@@ -93,17 +102,22 @@ def setup(options):
             theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
         print('theta_edges=',theta_edges)
         if theta_from_dat:
-            theta = readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin')
+            theta = readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'arcmin')
             theta = arcmin_to_radians(theta)
         else:
-            theta = (theta_edges[:-1]*theta_edges[1:])**0.5
-            # Right now,this is passing the geometric values to write to the block.
-            # Hopefully these should just be dummy values.
+            if two_thirds_midpoint:
+                theta = (2./3.) * (xmax**3 - xmin**3) / (xmax**2 - xmin**2)
+                # this is currently the default
+            else:
+                theta = (theta_edges[:-1]*theta_edges[1:])**0.5
+                # geometric mean
+            # these are the values passed to the block and are needed for plotting or,
+            # in some cases, for determining scale cuts.
     else:
         print("*** Using Legendre coefficients at individual theta values ***")
         if theta_from_dat:
             print("*** Reading in central theta values from datafile ***")
-            theta = readtheta(filename, xi_type, theta_type = 'centers', desired_units = 'arcmin')
+            theta = readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'arcmin')
             theta = arcmin_to_radians(theta)
         elif options.has_value(option_section, "theta"):
             print('*** Note: Using `theta` values specified in ini file ***')
@@ -172,11 +186,11 @@ def setup(options):
             apply_filter( ell_max, high_l_filter, legfacs[1] ) )
         else:
             legfacs = apply_filter( ell_max, high_l_filter, legfacs )
-    return theta, ell_max, legfacs, cl_section, output_section, save_name
+    return theta, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg
 
 def execute(block, config):
 
-    thetas, ell_max, legfacs, cl_section, output_section, save_name = config
+    thetas, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg = config
     print('thetas in execute are ',thetas*180*60/np.pi)
 
     ell = block[cl_section, "ell"]
@@ -210,7 +224,10 @@ def execute(block, config):
         block[o, "theta"] = thetas
         block[o, "sep_name"] = "theta"
         block[o, "save_name"] = save_name
+        block[o, "theta_edges"] = theta_edges
+        block[o, "bin_avg"] = bin_avg
         block.put_metadata(o, "theta", "unit", "radians")
+        if 
     return 0
 
 def cleanup(config):
