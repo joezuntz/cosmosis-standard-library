@@ -380,12 +380,12 @@ class SpectrumMeasurement(object):
             varxi = data['VARXI']
         else:
             varxi = None
-        if "ANGLEMIN" in data.names:
-            angle_min = data['ANGLEMIN']
+        if "ANGLE_MIN" in data.names:
+            angle_min = data['ANGLE_MIN']
         else:
             angle_min = None
-        if "ANGLEMAX" in data.names:
-            angle_max = data['ANGLEMAX']
+        if "ANGLE_MAX" in data.names:
+            angle_max = data['ANGLE_MAX']
         else:
             angle_max = None
 

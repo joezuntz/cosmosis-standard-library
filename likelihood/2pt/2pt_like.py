@@ -12,6 +12,7 @@ import twopoint
 import gaussian_covariance
 import os
 from spec_tools import SpectrumInterp, TheorySpectrum
+
 default_array = np.repeat(-1.0, 99)
 
 
@@ -374,11 +375,9 @@ class TwoPointLikelihood(GaussianLikelihood):
         # Compare these with the ones from the data twopoint file.
         # We want to make sure they are the same
         # Worry about units here?
-        # Use maybe Jonathan's function to use the bin_edges from the twopoint file? 
-        #indices = spectrum.get_pair_mask(i, j)
-        #spectrum.angle_min[indices]
-        #spectrum.angle_max[indices]
-
+        indices = spectrum.get_pair_mask(bin_pairs[0][0], bin_pairs[0][0])
+        theta_min = spectrum.angle_min[indices] 
+        theta_max = spectrum.angle_max[indices] 
         
         # We need the angle (ell or theta depending on the spectrum)
         # if Interpolate=True, for the theory spline points - we will be interpolating
