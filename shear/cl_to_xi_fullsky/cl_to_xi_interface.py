@@ -32,7 +32,7 @@ def readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'ar
         theta_max = xi.angle_max[indices] # array of max values
         # We currently assume adjacent and non-overlapping bins.
         np.testing.assert_allclose(theta_min[1:], theta_max[:-1], rtol=1e-03,
-        err_msg='theta bin min and max values do not match.' verbose=True)
+        err_msg='theta bin min and max values do not match.', verbose=True)
         theta_bins = np.append(theta_min, theta_max[-1])
         return theta_bins
     else:
@@ -41,13 +41,13 @@ def readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'ar
         theta_min = xi.angle_min[indices]  # array of min values
         theta_max = xi.angle_max[indices] # array of max values
         np.testing.assert_allclose(theta_min[1:], theta_max[:-1], rtol=1e-03,
-        err_msg='theta bin min and max values do not match.' verbose=True)
+        err_msg='theta bin min and max values do not match.', verbose=True)
         theta_bins = np.append(theta_min, theta_max[-1])
         return thetas, theta_bins
 
 def setup(options):
     
-    xi_type_conversion = {'xip':['22', '22+'], 'xim':['22-'], 'gammat':['02', '02+'], 'wtheta:'['00']}
+    xi_type_conversion = {'xip':['22', '22+'], 'xim':['22-'], 'gammat':['02', '02+'], 'wtheta':['00']}
     xi_type = options.get_string(option_section, 'xi_type')
     xi_type_2pt = None
     for key, value in xi_type_conversion.items():
@@ -69,12 +69,12 @@ def setup(options):
     save_name = options.get_string(
         option_section, "save_name", "")
     theta_edges = None
-    if theta_from dat:
+    if theta_from_dat:
         print("*** Reading in theta values from datafile ***")
         if options_has_value(option_section, "filename"):
             print('filename = ',filename)
             filename = options.get_string(option_section, 'filename')
-        elif:
+        else:
             raise ValueError('No filename specified for theta values')
     if bin_avg:
         print("*** Using bin averaged Legendre coefficients ***")
@@ -227,7 +227,6 @@ def execute(block, config):
         block[o, "theta_edges"] = theta_edges
         block[o, "bin_avg"] = bin_avg
         block.put_metadata(o, "theta", "unit", "radians")
-        if 
     return 0
 
 def cleanup(config):
