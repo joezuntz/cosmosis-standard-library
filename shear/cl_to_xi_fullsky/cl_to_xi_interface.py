@@ -18,11 +18,13 @@ def readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'ar
     T = twopoint.TwoPointFile.from_fits(filename)
     xi = T.get_spectrum(xi_type_2pt)
     # make sure the units are in arcmin (or whatever else you want)
-    xi.convert_angular_units(self, desired_units)
+    xi.convert_angular_units(desired_units)
     # get the theta values for a single bin pair.
     # This method currently assumes that the same binning is used for all bin pairs (in a given corr funct).
     # scale cuts are applied later and can be different for each bin pair. 
     pairs = xi.get_bin_pairs()
+    print('pairs=', pairs)
+    print('pairs[0]=', pairs[0])
     indices = xi.get_pair_mask(pairs[0]) #use the first appearing pair, since all should be the same.
     if theta_type == 'centers':
         thetas = xi.angle[indices]
