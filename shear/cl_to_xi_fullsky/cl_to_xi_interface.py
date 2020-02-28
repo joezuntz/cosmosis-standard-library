@@ -69,44 +69,47 @@ def setup(options):
     save_name = options.get_string(
         option_section, "save_name", "")
     theta_edges = None
+    print('theta_from_dat',theta_from_dat)
+    print('bin_avg',bin_avg)
     if theta_from_dat:
         print("*** Reading in theta values from datafile ***")
-        if options_has_value(option_section, "filename"):
-            print('filename = ',filename)
+        if options.has_value(option_section, "filename"):
             filename = options.get_string(option_section, 'filename')
+            print('filename = ',filename)
         else:
             raise ValueError('No filename specified for theta values')
     if bin_avg:
         print("*** Using bin averaged Legendre coefficients ***")
         if theta_from_dat:
             theta_edges = readtheta(filename, xi_type_2pt, theta_type = 'edges', desired_units = 'arcmin')
-        elif options.has_value(option_section, "theta"):
-            print('WARNING: Specify `theta_edges` instead of `theta` when using bin averaging. `theta` is ignored')
-            #raise ValueError()#maybe we don't want to actually raise an error, since we may be inheriting a default params.ini file.
-        elif options.has_value(option_section, "n_theta"):
-            print('WARNING: Specify `n_theta_bins` instead of `n_theta` when using bin averaging. `n_theta` is ignored')
-           # raise ValueError()
-        elif options.has_value(option_section, "theta_edges"):
-            print('*** Note: Using `theta_edges` values specified in ini file ***')
-            theta_edges = options[option_section, 'theta_edges']
-            if np.isscalar(theta_edges):
-                theta_edges = np.array([theta_edges])
-            theta_edges = arcmin_to_radians(theta_edges)
         else:
-            print('** NOTE that theta_min and theta_max refer to the min and max of the first and last angular bin, respectively **')
-            n_theta_bins = options.get_int(option_section, "n_theta_bins", 20)
-            theta_min = options.get_double(option_section, "theta_min", 1.) 
-            theta_max = options.get_double(option_section, "theta_max", 300.)
-            theta_min = arcmin_to_radians(theta_min)
-            theta_max = arcmin_to_radians(theta_max)
-            theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
+            if options.has_value(option_section, "theta"):
+                print('WARNING: Specify `theta_edges` instead of `theta` when using bin averaging. `theta` is ignored')
+                #raise ValueError()#maybe we don't want to actually raise an error, since we may be inheriting a default params.ini file.
+            if options.has_value(option_section, "n_theta"):
+                print('WARNING: Specify `n_theta_bins` instead of `n_theta` when using bin averaging. `n_theta` is ignored')
+               # raise ValueError()
+            if options.has_value(option_section, "theta_edges"):
+                print('*** Note: Using `theta_edges` values specified in ini file ***')
+                theta_edges = options[option_section, 'theta_edges']
+                if np.isscalar(theta_edges):
+                    theta_edges = np.array([theta_edges])
+                theta_edges = arcmin_to_radians(theta_edges)
+            else:
+                print('** NOTE that theta_min and theta_max refer to the min and max of the first and last angular bin, respectively **')
+                n_theta_bins = options.get_int(option_section, "n_theta_bins", 20)
+                theta_min = options.get_double(option_section, "theta_min", 1.) 
+                theta_max = options.get_double(option_section, "theta_max", 300.)
+                theta_min = arcmin_to_radians(theta_min)
+                theta_max = arcmin_to_radians(theta_max)
+                theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
         print('theta_edges=',theta_edges)
         if theta_from_dat:
             theta = readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'arcmin')
             theta = arcmin_to_radians(theta)
         else:
             if two_thirds_midpoint:
-                theta = (2./3.) * (xmax**3 - xmin**3) / (xmax**2 - xmin**2)
+                theta = (2./3.) * (theta_edges[1:]**3 - theta_edges[:-1]**3) / (theta_edges[1:]**2 - theta_edges[:-1]**2)
                 # this is currently the default
             else:
                 theta = (theta_edges[:-1]*theta_edges[1:])**0.5
