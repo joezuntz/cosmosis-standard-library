@@ -371,7 +371,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             interpolate = not bin_avg
         
         # Load here the theta edges that were saved in the block for this spectra
-        ang_bin_edges = theory_spec.theta_edges
+        ang_bin_edges = theory_spec.angle_edges
         # Compare these with the ones from the data twopoint file.
         # We want to make sure they are the same
         # Worry about units here?
