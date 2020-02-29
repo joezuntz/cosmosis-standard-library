@@ -81,7 +81,7 @@ def setup(options):
     if bin_avg:
         print("*** Using bin averaged Legendre coefficients ***")
         if theta_from_dat:
-            theta_edges = readtheta(filename, xi_type_2pt, theta_type = 'edges', desired_units = 'arcmin')
+            theta_edges = readtheta(filename, xi_type_2pt, theta_type = 'edges', desired_units = 'rad')
         else:
             if options.has_value(option_section, "theta"):
                 print('WARNING: Specify `theta_edges` instead of `theta` when using bin averaging. `theta` is ignored')
@@ -105,8 +105,7 @@ def setup(options):
                 theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
         print('theta_edges=',theta_edges)
         if theta_from_dat:
-            theta = readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'arcmin')
-            theta = arcmin_to_radians(theta)
+            theta = readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'rad')
         else:
             if two_thirds_midpoint:
                 theta = (2./3.) * (theta_edges[1:]**3 - theta_edges[:-1]**3) / (theta_edges[1:]**2 - theta_edges[:-1]**2)
