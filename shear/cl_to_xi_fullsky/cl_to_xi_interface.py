@@ -74,8 +74,6 @@ def setup(options):
     save_name = options.get_string(
         option_section, "save_name", "")
     theta_edges = None
-    print('theta_from_dat',theta_from_dat)
-    print('bin_avg',bin_avg)
     if theta_from_dat:
         print("*** Reading in theta values from datafile ***")
         if options.has_value(option_section, "filename"):
@@ -108,7 +106,7 @@ def setup(options):
                 theta_min = arcmin_to_radians(theta_min)
                 theta_max = arcmin_to_radians(theta_max)
                 theta_edges = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins + 1)
-        print('theta_edges=',theta_edges)
+        print('theta_edges in rad=',theta_edges)
         if theta_from_dat:
             theta = readtheta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'rad')
         else:
@@ -198,7 +196,7 @@ def setup(options):
 def execute(block, config):
 
     thetas, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg = config
-    print('thetas in execute are ',thetas*180*60/np.pi)
+    #print('thetas in execute are ',thetas*180*60/np.pi)
 
     ell = block[cl_section, "ell"]
 
