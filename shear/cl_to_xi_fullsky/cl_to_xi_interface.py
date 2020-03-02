@@ -198,6 +198,10 @@ def execute(block, config):
     thetas, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg = config
 
     ell = block[cl_section, "ell"]
+    min_ell = ell[0]
+    if min_ell > 0:
+        print('min_ell=',min_ell)
+        raise ValueError('Min ell value must be 1')
 
     nbina, nbinb = block[cl_section, 'nbin_a'], block[cl_section, 'nbin_b']
 
