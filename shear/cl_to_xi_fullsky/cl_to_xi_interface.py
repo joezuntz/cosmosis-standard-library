@@ -199,7 +199,7 @@ def execute(block, config):
 
     ell = block[cl_section, "ell"]
     min_ell = ell[0]
-    if min_ell > 0:
+    if min_ell > 1:
         print('min_ell=',min_ell)
         raise ValueError('Min ell value must be 1')
 
