@@ -447,10 +447,10 @@ class SpectrumMeasurement(object):
 
         if self.angle_min is not None:
             columns.append(fits.Column(
-                    name='ANGLE_MIN', array=self.angle_min, format='D', unit=self.angle_unit))
+                    name='ANGLEMIN', array=self.angle_min, format='D', unit=self.angle_unit))
         if self.angle_max is not None:
             columns.append(fits.Column(
-                    name='ANGLE_MAX', array=self.angle_max, format='D', unit=self.angle_unit))
+                    name='ANGLEMAX', array=self.angle_max, format='D', unit=self.angle_unit))
 
         if self.angle is not None:
             if self.windows == "SAMPLE":
