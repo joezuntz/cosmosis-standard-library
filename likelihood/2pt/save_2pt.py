@@ -10,11 +10,10 @@ from builtins import range
 from builtins import object
 from cosmosis.datablock import option_section, names
 import numpy as np
-from scipy.interpolate import interp1d
 import twopoint
 from twopoint_cosmosis import type_table
 import gaussian_covariance
-from spec_tools import TheorySpectrum, SpectrumInterp, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
+from spec_tools import TheorySpectrum, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
 
 
 def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False, two_thirds_midpoint=False):
@@ -104,17 +103,6 @@ def setup(options):
     else:
         config["output_extensions"] = config["spectrum_sections"]
 
-    #And options for interpolation
-    if options.has_value(option_section, "interpolate"):
-        print('Found interpolation options')
-        interpolate_sections = read_list("interpolate")
-        config["interpolate"] = [(s in interpolate_sections) for s in config["spectrum_sections"]]
-    else:
-        config["interpolate"] = config["spectrum_sections"]
-
-
-    print("config[interpolate]", config["interpolate"])
-    print("config[spectrum_sections]", config["spectrum_sections"]) 
 
     if options.has_value(option_section, "theta_min"):
         config['real_space'] = True
@@ -256,7 +244,6 @@ def execute(block, config):
         auto_only = config["auto_only"][i_spec]
         spectrum_section = config["spectrum_sections"][i_spec]
         output_extension = config["output_extensions"][i_spec]
-        interpolate = config["interpolate"][i_spec]
 
         #Read in sample information from block
         sample_a, sample_b = ( block[spectrum_section, "sample_a"], 
@@ -284,8 +271,8 @@ def execute(block, config):
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
 
-        theory_spec = TheorySpectrum.from_block( block, 
-            spectrum_section, auto_only=auto_only )
+        theory_spec = TheorySpectrum.from_block(block, 
+            spectrum_section, auto_only=auto_only)
         theory_spec_list.append(theory_spec)
 
         #get angle_units
@@ -297,16 +284,18 @@ def execute(block, config):
         print(output_extension)
 
         spec_meas_list.append( 
-            theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+            theory_spec.to_twopoint_object(config['angle_mids_userunits'], 
             (kernel_name_a, kernel_name_b), output_extension, 
-            angle_lims = config['angle_lims_userunits'], 
-            angle_units=angle_units, interpolate=interpolate))
+            angle_lims=config['angle_lims_userunits'], 
+            angle_units=angle_units))
         
         if make_covariance:
             if real_space:
                 #In this case we also need the corresponding Cl spectra to generate the covariance
                 cl_section = config["cl_sections"][i_spec]
-                cl_spec = TheorySpectrum.from_block( block, cl_section, auto_only=False )
+                cl_spec = TheorySpectrum.from_block(block, cl_section, auto_only=False)
+                if cl_spec.is_bin_averaged:
+                    raise ValueError("We need interpolated C_ell values for covariances, but your pipeline supplied bin-averaged")
                 cl_theory_spec_list.append( cl_spec )
                 #Check cls have the same bin pairings as their corresponding real-space spectra
                 try:
