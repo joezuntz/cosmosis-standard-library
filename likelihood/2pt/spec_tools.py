@@ -383,9 +383,6 @@ class TheorySpectrum(object):
             # this is in principle in radians
             angle_edges_rad = self.angle_edges
             mask = [(angle_edges_rad[k]<angle)&(angle_edges_rad[k+1]>angle) for k in range(len(angle_edges_rad)-1)]             
-            print('mask=',mask)
-            print('mask[0]=',mask[0])
-            print('self.spec_values[(i,j)]=',self.spec_values[(i,j)])
             spec_sample = self.spec_values[(i,j)][mask][0]
             angle_block = self.angle_vals[mask][0]
             # we also return the angles to make sure they are the same as in block, in case
