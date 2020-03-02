@@ -365,20 +365,13 @@ class TwoPointLikelihood(GaussianLikelihood):
         # not want to interpolate the spectra here, otherwise we want to
         # interpolate the spectra
         bin_avg = theory_spec.bin_avg
+        print("bin_avg",  bin_avg)
         if bin_avg is None:
             interpolate = True
         else:
             interpolate = not bin_avg
-        
-        # Load here the theta edges that were saved in the block for this spectra
-        ang_bin_edges = theory_spec.angle_edges
-        # Compare these with the ones from the data twopoint file.
-        # We want to make sure they are the same
-        # Worry about units here?
-        indices = spectrum.get_pair_mask(bin_pairs[0][0], bin_pairs[0][0])
-        theta_min = spectrum.angle_min[indices] 
-        theta_max = spectrum.angle_max[indices] 
-        
+        print("interpolate", interpolate) 
+
         # We need the angle (ell or theta depending on the spectrum)
         # if Interpolate=True, for the theory spline points - we will be interpolating
         # between these to get the data points. Else we will just concatenate
@@ -399,9 +392,10 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin1_vector = []
         bin2_vector = []
 
-        for (b1, b2, angle) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle):
+        for (b1, b2, angle, angle_min, angle_max) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle, spectrum.angle_min, spectrum.angle_max):
             # Note: spectrum.angle already has scale cuts applied
-            # angle is a single theta value, we loop through them.
+            # angle (as well as angle_min and angle_max) is a single theta value,
+            # we loop through them.
 
             if interpolate:
                 # We are going to be making splines for each pair of values that we need.
@@ -420,7 +414,11 @@ class TwoPointLikelihood(GaussianLikelihood):
                     bin_data[y_name.format(b1, b2)] = theory_spline
 
             else:
-                theory, angle = theory_spec.get_spec_values(b1, b2, angle, interpolate=interpolate)
+                theory, angle = theory_spec.get_spec_values(b1, b2, angle, angle_min, angle_max, interpolate=interpolate)
+                # note that we are also returning the angle in the above function
+                # this is because we will save in twopoint file the angle values found in the block
+                # since we are not interpolating this ensures the theta values always
+                # corresponds to the spectra (for instance if we are not doing bin-averaging). 
 
             theory_vector.append(theory)
             angle_vector.append(angle)

@@ -333,7 +333,7 @@ class TheorySpectrum(object):
             bin_pair = (bin2, bin1)
         return bin_pair
 
-    def get_spec_values( self, bin1, bin2, angle, interpolate):
+    def get_spec_values( self, bin1, bin2, angle, angle_min, angle_max, interpolate):
         """
         Function that returns the value for the model at some bins and 
         particular angular scale. You can choose whether to interpolate the 
@@ -341,17 +341,20 @@ class TheorySpectrum(object):
         bin1: redshift bin sample 1
         bin2: redshift bin sample 2
         angle: angular value in radians we want our corresponding model.
+        angle_min: theta_edge min in radians for this bin.
+        angle_min: theta_edge max in radians for this bin.
         interpolate: - If True, it will interpolate the model from the block, 
                      and return the model at the corresponding 'angle' value.
                      - If False it will read what is in the block and return it 
-                     as is. It only checks the 'angle' value falls within
+                     as is. It checks the 'angle' value falls within
                      some theta_lims but it does not require the mean
                      value in the block and 2pt_like to be the same. It returns 
-                     the angular value from the block.
+                     the angular value from the block. It also checks the 
+                     theta_lims are the same in the block and in the input
+                     two_point file. 
         """
 
         i,j = self.bin_pair_from_bin1_bin2(bin1, bin2)
-
 
         if interpolate:
             # Creating spline with values from block
@@ -366,27 +369,28 @@ class TheorySpectrum(object):
             return spec_sample, spec_interp
             
         if not interpolate:
-            #    mask = np.isclose(self.angle_vals,angle) # if we wanted to check whether the angles in 
-            #    block and here are the same
+            # Note that if bin-averaging is applied, it does not actually matter 
+            # which angular value is saved, since it is not defined properly. 
 
-            # Note that if bin-averaging is applied, it does not actually matter which angular value is saved,
-            # since it is not defined properly. We only need to check the angle value falls within some 
-            # theta lims. 
-
-            # Theta lims need to be read here or somewhere else and passed to this function
-            # CHANGE NEEDED HERE
-            #n_theta_bins = 20
-            #theta_min = 2.5
-            #theta_max = 250.
-            #theta_lims_arcmin = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta_bins+1)
-
-            # this is in principle in radians
+            # Read theta edges from block -- this is the full vector of theta_lims
             angle_edges_rad = self.angle_edges
+
+            # Make sure theta_edges in twopoint file are the same as in block
+            assert ((angle_min in angle_edges_rad)&(angle_max in angle_edges_rad)), "Theta edges are not the same in the block and in 2pt_like modules."
+
+            # Make sure mean value is in the middle of theta edges
+            assert ((angle_min<angle)&(angle<angle_max)), "Inconsistency in angles. The mean value does not fall between the theta edges."
+
+            # Identify within which bin the mean angle value falls
             mask = [(angle_edges_rad[k]<angle)&(angle_edges_rad[k+1]>angle) for k in range(len(angle_edges_rad)-1)]             
+
+            # Get corresponding spectra and angular mean value from block for this angular scale
             spec_sample = self.spec_values[(i,j)][mask][0]
             angle_block = self.angle_vals[mask][0]
-            # we also return the angles to make sure they are the same as in block, in case
-            # we are not doing bin_averaging this value actually matters
+
+            # We also return the angles to make sure they are the same as in block
+            # If we are not doing bin_averaging this value actually matters
+
             return spec_sample, angle_block
 
         '''
