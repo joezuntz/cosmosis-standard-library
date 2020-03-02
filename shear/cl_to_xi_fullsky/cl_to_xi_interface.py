@@ -232,8 +232,10 @@ def execute(block, config):
         block[o, "theta"] = thetas
         block[o, "sep_name"] = "theta"
         block[o, "save_name"] = save_name
-        block[o, "theta_edges"] = theta_edges
         block[o, "bin_avg"] = bin_avg
+        if theta_edges is not None:
+            block[o, "theta_edges"] = theta_edges
+            block.put_metadata(o, "theta_edges", "unit", "radians")
         block.put_metadata(o, "theta", "unit", "radians")
     return 0
 
