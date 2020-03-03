@@ -10,11 +10,10 @@ from builtins import range
 from builtins import object
 from cosmosis.datablock import option_section, names
 import numpy as np
-from scipy.interpolate import interp1d
 import twopoint
 from twopoint_cosmosis import type_table
 import gaussian_covariance
-from spec_tools import TheorySpectrum, SpectrumInterp, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
+from spec_tools import TheorySpectrum, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
 
 
 def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False, two_thirds_midpoint=False):
@@ -81,7 +80,7 @@ def setup(options):
         "make_covariance": make_covariance,
         "copy_covariance": copy_covariance,
         "logspaced": logspaced, 
-        "angle_units": angle_units
+        "angle_units": angle_units,
     }
 
     def read_list(key, default=""):
@@ -279,17 +278,20 @@ def execute(block, config):
             angle_units = config['angle_units'].name
         else:
             angle_units = None
+
         spec_meas_list.append( 
-            theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
+            theory_spec.to_twopoint_object(config['angle_mids_userunits'], 
             (kernel_name_a, kernel_name_b), output_extension, 
-            angle_lims = config['angle_lims_userunits'], 
-            angle_units=angle_units ) )
+            angle_lims=config['angle_lims_userunits'], 
+            angle_units=angle_units))
         
         if make_covariance:
             if real_space:
                 #In this case we also need the corresponding Cl spectra to generate the covariance
                 cl_section = config["cl_sections"][i_spec]
-                cl_spec = TheorySpectrum.from_block( block, cl_section, auto_only=False )
+                cl_spec = TheorySpectrum.from_block(block, cl_section, auto_only=False)
+                if cl_spec.is_bin_averaged:
+                    raise ValueError("We need interpolated C_ell values for covariances, but your pipeline supplied bin-averaged")
                 cl_theory_spec_list.append( cl_spec )
                 #Check cls have the same bin pairings as their corresponding real-space spectra
                 try:
@@ -379,6 +381,8 @@ def execute(block, config):
             if s1.name != s2.name:
                 raise ValueError("Different spectrum order in parent file")
             if len(s1) != len(s2):
+                print ("s1, s2",s1, s2)
+                print ("len s1, s2",len(s1), len(s2))
                 raise ValueError("Different spectrum lengths in parent file")
             if not ((s1.bin1 == s2.bin1).all() and (s1.bin2 == s2.bin2).all()):
                 raise ValueError("Different tomo bin order in parent file")

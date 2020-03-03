@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 import numpy as np
 import twopoint
+from cosmosis.datablock import BlockError
 from twopoint_cosmosis import type_table
 from scipy.interpolate import interp1d
 #We need to use the legendre module in 
@@ -25,6 +26,7 @@ class SpectrumInterp(object):
         #this will affect how we interpolate
         starts_with_zero=False
         self.spec0 = 0.
+
         if angle[0]<1.e-9:
             #if the first angle value is 0,
             #record the first spec value as self.spec0
@@ -69,32 +71,37 @@ class TheorySpectrum(object):
     """Tomographic theory spectrum
     noise_var is a the noise variance per mode for each redshift bin
     """
-    def __init__( self, name, types, nbin_a, nbin_b, angle_vals, 
-        spec_interps, is_auto, noise_var_per_mode=None,
-        auto_only = False):
+    def __init__(self, name, types, nbin_a, nbin_b, angles, spectra, is_auto,
+        noise_var_per_mode=None, auto_only = False,  bin_pairs=None):
+
         self.name = name
         self.types = types
-        self.angle_vals = angle_vals
-        #print("initializing TheorySpectrum with angle lims:")
-        #print(self.angle_vals.min(), self.angle_vals.max())
-        self.spec_interps = spec_interps
+        self.angles = angles
         self.is_auto = is_auto
-        #self.set_spec_interps()
         self.nbin_a = nbin_a
         self.nbin_b = nbin_b
         self.auto_only = auto_only
-        if self.auto_only:
-            assert self.is_auto
-        self._set_bin_pairs()
-        #Check bin pairs correspond to keys in spec_arrays
-        for bin_pair in self.bin_pairs:
-            assert bin_pair in self.spec_interps
+        self.spectra = spectra
+
+        if self.auto_only and not self.is_auto:
+            raise ValueError("A spectrum cannot be specified as auto_only without is_auto")
+
+        self._set_bin_pairs(bin_pairs)
+
         self.noise_var_per_mode = noise_var_per_mode
+
+        for bin_pair in self.bin_pairs:
+            if bin_pair not in spectra:
+                raise ValueError("Missing spectrum pairs {}".format(bin_pair))
 
     def set_noise(self, noise):
         self.noise_var_per_mode = noise
 
-    def _set_bin_pairs( self ):
+    def _set_bin_pairs(self, bin_pairs):
+        if bin_pairs is not None:
+            self.bin_pairs = bin_pairs
+            return
+
         self.bin_pairs=[]
         for i in range(1, self.nbin_a+1):
             if self.is_auto:
@@ -111,8 +118,23 @@ class TheorySpectrum(object):
         self.spec_interps.pop(bin_pair)
 
     @classmethod
-    def from_block( cls, block, section_name, auto_only=False ):
-        #section_name is either e.g. shear_cl or shear_cl_<save_name>
+    def from_block(cls, block, section_name, auto_only=False, bin_pairs=None):
+        """
+        Reads the predictions from the corresponding block and 
+        initializes the Spectrum Measurement Class with some spectra.
+        section_name: is either e.g. shear_cl or shear_cl_<save_name>
+        auto_only: earlier in the pipeline, e.g. in project_2d.py, 
+                  we may only have calculated auto-correlations 
+                  for one of the spectra, to speed things up.  
+                  TheorySpectrum.from_block however will currently attempt to read in all 
+                  the correlations one would expect based on the number of redshift bins, 
+                  unless you tell it not to, by having auto_only=True.
+                  This option is used when called from save_2pt.py
+        bin_pairs: Alternative option to auto_only, used when the method is called
+                  from 2pt_like.py instead of from save_2pt. For auto-correlations will be
+                  a list of tuples e.g. [(1,1), (2,2), ..., (n, n)]. If bin_pairs is provided, 
+                  will only attempt to read those bin_pairs from the block.
+        """
 
         spectrum_name = section_name
         save_name = block.get_string(section_name, "save_name")
@@ -140,75 +162,97 @@ class TheorySpectrum(object):
             nbin_a = block[section_name, "nbin"]
             nbin_b = block[section_name, "nbin"]
 
-        sep_name = block[section_name, "sep_name"]
-        sep_values = block[section_name, sep_name]
-        spec_interps = OrderedDict()
-        bin_pairs = []
-        # Bin pairs. Varies depending on auto-correlation
-        for i in range(1, nbin_a+1):
-            if is_auto:
-                jstart = i
-            else:
-                jstart = 1
-            for j in range(jstart, nbin_b+1):
-                if auto_only:
-                    if j!=i:
-                        continue
-                if is_auto:
-                    # Load and interpolate from the block
-                    bin_name = bin_format.format(i, j)
-                    if block.has_value(section_name, bin_name):
-                        spec = block[section_name, bin_format.format(i, j)]
-                    else:
-                        spec = block[section_name, bin_format.format(j, i)]
-                else:
-                    spec = block[section_name, bin_format.format(i, j)]
-                # Convert arcmin to radians for the interpolation
-                spec_interps[ (i, j) ] = SpectrumInterp( sep_values, spec )
+        angle_name = block[section_name, "sep_name"]
+        angles = block[section_name, angle_name]
 
-        return cls( spectrum_name, types, nbin_a, nbin_b, sep_values, 
-            spec_interps, is_auto, auto_only=auto_only )
+        # If we have not been told in advance, decide which bin pairs
+        # to use.
+        if bin_pairs is None:
+            bin_pairs = []
+            for i in range(1, nbin_a + 1):
+                j_start = i if is_auto else 1
+                for j in range(j_start, nbin_b+1):
+                    if (not auto_only) or (j == i):
+                        bin_pairs.append((i,j))
 
-    def get_spectrum_measurement( self, angle_vals, kernels, output_name,
-        angle_units='arcmin', windows="SAMPLE", angle_lims=None):
+
+        # now load from the block.
+        spectra = OrderedDict()
+        for (i,j) in bin_pairs:
+            bin_name = bin_format.format(i, j)
+            if is_auto and not block.has_value(section_name, bin_name):
+                bin_name = bin_format.format(j, i)
+
+            spectra[(i, j)] = block[section_name, bin_name]
+
+        is_bin_averaged = block.get_bool(section_name, 'bin_avg', default=False)
+
+        if is_bin_averaged:
+            angle_edges = block[section_name, angle_name + "_edges"]
+
+            return BinAveragedTheorySpectrum(
+                spectrum_name, types, nbin_a, nbin_b, angles, spectra, is_auto, angle_edges,
+                auto_only=auto_only, bin_pairs=bin_pairs)
+        else:
+            return InterpolatedTheorySpectrum(
+                spectrum_name, types, nbin_a, nbin_b, angles, spectra, is_auto,
+                auto_only=auto_only, bin_pairs=bin_pairs)
+
+    def to_twopoint_object(self, angle_vals_out, kernels, output_name,
+                                  angle_units='arcmin', windows="SAMPLE", angle_lims=None):
 
         # The fits format stores all the measurements
         # as one long vector.  So we build that up here from the various
         # bins that we will load in.  These are the different columns
+        # angle_vals_out: angular values the user wants the spectra to be evaluated at. 
+        # angle_vals_out can be different or the same as the ones from block, stored in self.angle_vals.
+
         bin1 = []
         bin2 = []
         value = []
         angular_bin = []
         angle = []
-        if angle_lims is not None:
-            angle_min = []
-            angle_max = []
+        angle_min = []
+        angle_max = []
+        n_angle_sample = len(angle_vals_out)
+
+        def to_rad(x):
+            if x is None:
+                return x
+            if angle_units is None:
+                return x
+            y = x * twopoint.ANGULAR_UNITS[angle_units]
+            z = y.to(twopoint.ANGULAR_UNITS["rad"]).value
+            return z
+
+        angle_vals_out_rad = to_rad(angle_vals_out)
+        angle_lims_rad = to_rad(angle_lims)
+
+
+        # Find the angles we will interpolate at                    
+        if self.is_bin_averaged:
+            if angle_lims is None:
+                raise ValueError("For now you must specify angle limits when saving bin-averaged spectra")
+            angles = list(zip(angle_lims_rad[:-1], angle_lims_rad[1:]))
         else:
-            angle_min, angle_max = None, None
-        n_angle_sample = len(angle_vals)
- 
-        #If real-space, get angle_vals in radians for interpolation
-        if angle_units is not None:
-            angle_vals_with_units = angle_vals * twopoint.ANGULAR_UNITS[angle_units]
-            angle_vals_interp = (angle_vals_with_units.to(twopoint.ANGULAR_UNITS["rad"])).value
-        else:
-            angle_vals_interp = angle_vals
+            angles = angle_vals_out_rad
+
+
 
         # Bin pairs. Varies depending on auto-correlation
         for (i,j) in self.bin_pairs:
-            spec_interp = self.spec_interps[(i,j)]
-            # Convert arcmin to radians for the interpolation
-            spec_sample = spec_interp( angle_vals_interp )
-            #cl_sample = interp1d(theory_angle, cl)(angle_sample_radians)
+            spec_sample = [self.get_spectrum_value(i, j, angle)[0] for angle in angles]
+
             # Build up on the various vectors that we need
             bin1.append(np.repeat(i, n_angle_sample))
             bin2.append(np.repeat(j, n_angle_sample))
             value.append(spec_sample)
             angular_bin.append(np.arange(n_angle_sample))
-            angle.append(angle_vals)
+            angle.append(angle_vals_out)
+
             if angle_lims is not None:
-                angle_min.append( angle_lims[:-1] )
-                angle_max.append( angle_lims[1:] )
+                angle_min.append(angle_lims[:-1])
+                angle_max.append(angle_lims[1:])
 
 
         # Convert all the lists of vectors into long single vectors
@@ -225,8 +269,8 @@ class TheorySpectrum(object):
         # Build the output object type reqired.
         s = twopoint.SpectrumMeasurement(output_name, bins, self.types, kernels, windows,
                                          angular_bin, value, angle=angle, 
-                                         angle_unit=angle_units, angle_min=angle_min,
-                                         angle_max=angle_max )
+                                         angle_unit=angle_units,
+                                         angle_min=angle_min, angle_max=angle_max)
         return s
 
     def bin_pair_from_bin1_bin2( self, bin1, bin2):
@@ -235,15 +279,101 @@ class TheorySpectrum(object):
             bin_pair = (bin2, bin1)
         return bin_pair
 
-    def get_spec_values( self, bin1, bin2, angle ):
-        bin_pair = self.bin_pair_from_bin1_bin2(bin1, bin2)
+
+class BinAveragedTheorySpectrum(TheorySpectrum):
+    is_bin_averaged = True
+    def __init__(self, name, types, nbin_a, nbin_b, angles, spectra, is_auto, angle_edges,
+        noise_var_per_mode=None, auto_only = False,  bin_pairs=None, ):
+
+        super(BinAveragedTheorySpectrum, self).__init__(
+            name, types, nbin_a, nbin_b, angles, spectra, is_auto,
+            noise_var_per_mode=noise_var_per_mode, auto_only = auto_only,  bin_pairs=bin_pairs)
+
+        self.angle_edges = angle_edges
+
+    def get_noise_spec_values( self, bin1, bin2, angle ):
+        raise NotImplementedError("get_noise_spec_values is not implemented for bin-averaged theory")
+
+    def get_spectrum_value(self, bin1, bin2, angle):
+        """
+        Function that returns the value for the model at some bins and 
+        particular angular scale. You can choose whether to interpolate the 
+        spectra in the block or not. 
+        bin1: redshift bin sample 1
+        bin2: redshift bin sample 2
+        angle: angular value in radians we want our corresponding model.
+        angle_min: theta_edge min in radians for this bin.
+        angle_min: theta_edge max in radians for this bin.
+        """
+
+        assert len(angle) == 2, "Code is mis-using BinAveragedTheorySpectrum - please complain to Joe"
+        angle_min, angle_max = angle
+
+        i, j = self.bin_pair_from_bin1_bin2(bin1, bin2)
+
+        # Find correct index
+        n = len(self.angle_edges) - 1
+        for bin_index in range(n):
+            if np.allclose([angle_min, angle_max], self.angle_edges[bin_index:bin_index+2]):
+                break
+        else:
+            # this only happens if we never break above
+            raise ValueError("Desired angle bin {} - {} not computed".format(angle_min,angle_max))
+
+        # Get corresponding spectra and angular mean value from block for this angular scale
+        spectrum_value = self.spectra[(i,j)][bin_index]
+        mid_angle = self.angles[bin_index]
+
+
+        # Also return the angle valuues
+        return spectrum_value, mid_angle
+
+
+class InterpolatedTheorySpectrum(TheorySpectrum):
+    is_bin_averaged = False
+
+
+    def __init__(self, name, types, nbin_a, nbin_b, angles, spectra, is_auto,
+        noise_var_per_mode=None, auto_only=False,  bin_pairs=None):
+
+        super(InterpolatedTheorySpectrum, self).__init__(
+            name, types, nbin_a, nbin_b, angles, spectra, is_auto,
+            noise_var_per_mode=noise_var_per_mode, auto_only=auto_only,  bin_pairs=bin_pairs)
+
+        self.splines = {}
+
+    def get_spline(self, i, j):
+        # Creating spline if it doesn't exist already
+        if (i, j) not in self.splines:
+            self.splines[(i,j)] = SpectrumInterp(self.angles, self.spectra[(i,j)])
+
+        return self.splines[(i,j)]
+
+
+    def _get_2point_vector_chunk(self, i, j, angles, angle_lims):
+        return [self.get_spectrum_at_angle(angle) for angle in angles]
+
+
+
+    def get_spectrum_value(self, bin1, bin2, angle):
+
+        assert np.isscalar(angle), "Code is mis-using InterpolatedTheorySpectrum - please complain to Joe"
+
+        i, j = self.bin_pair_from_bin1_bin2(bin1, bin2)
+        spline = self.get_spline(i, j)
+
         try:
-            spec_vals = self.spec_interps[ bin_pair ](angle)
+            spec_sample = spline(angle)
         except ValueError:
-            spec_vals = np.zeros(len(angle))
-            angle_is_zero = angle==0
-            spec_vals[~angle_is_zero] = self.spec_interps[ bin_pair ](angle[~angle_is_zero])
-        return spec_vals
+            raise ValueError("""
+                Tried to get theory prediction for {} {}, but ell or theta value ({}) was out of range.
+                "Maybe increase the range when computing/projecting or check units?""".format(
+                    self.name, (bin1, bin2), angle))
+
+        return spec_sample, spline
+
+
+
 
     def get_noise_spec_values( self, bin1, bin2, angle ):
         noise = np.zeros_like(angle)
@@ -257,6 +387,7 @@ class TheorySpectrum(object):
         spec_vals = self.get_spec_values( bin1, bin2, angle )
         noise = self.get_noise_spec_values( bin1, bin2, angle )
         return spec_vals + noise
+
 
 def cov2corr(cov):
     corr = np.zeros_like(cov)
