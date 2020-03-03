@@ -142,7 +142,7 @@ def setup(options):
         if theta_file:
             # We can read the mid-point theta values from the file if we want
             print("*** Reading in central theta values from datafile ***")
-            theta = read_theta(filename, theta_section, theta_type = 'centers', desired_units = 'arcmin')
+            theta = read_theta(theta_file, theta_section, theta_type = 'centers', desired_units = 'arcmin')
             theta = arcmin_to_radians(theta)
 
         elif options.has_value(option_section, "theta"):
