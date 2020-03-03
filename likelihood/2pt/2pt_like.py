@@ -12,7 +12,6 @@ import twopoint
 import gaussian_covariance
 import os
 from spec_tools import TheorySpectrum
-
 default_array = np.repeat(-1.0, 99)
 
 
@@ -254,7 +253,6 @@ class TwoPointLikelihood(GaussianLikelihood):
         return C
 
     def extract_theory_points(self, block):
-
         theory = []
         # We may want to save these splines for the covariance matrix later
         self.theory_splines = {}
@@ -270,10 +268,8 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2 = []
         dataset_name = []
 
-
         # Now we actually loop through our data sets
         for spectrum in self.two_point_data.spectra:
-
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
                 block, spectrum)
             theory.append(theory_vector)
@@ -359,15 +355,11 @@ class TwoPointLikelihood(GaussianLikelihood):
         theory_spec = TheorySpectrum.from_block(block, 
             section, bin_pairs=bin_pairs)
 
-
-        # We need the angle (ell or theta depending on the spectrum)
-        # if Interpolate=True, for the theory spline points - we will be interpolating
-        # between these to get the data points. Else we will just concatenate
-        # the corresponding spectra as read from the block
-        angle_theory = block[section, x_name]
-
         # If the theory spectrum has been bin-averaged then we expect the
-        # data to be so also.
+        # data to be so also.  We check this by ensuring that angle_min is specified
+        # Based on this, we also generate the angle argument passed to the spectrum
+        # differently.  The bin-averaged version expects a tuple angle_min and angle_max,
+        # whereas the interpolated version just wants a single angle.
         if theory_spec.is_bin_averaged:
             if spectrum.angle_min is None:
                 raise ValueError("Your theory pipeline produced angle-binnned values, but your data it not binned.")
@@ -375,35 +367,31 @@ class TwoPointLikelihood(GaussianLikelihood):
         else:
             angles = spectrum.angle
         
-        # this is just for plotting etc
+        # We store the nominal mid-points for plotting later on, etc.
         angle_mids = spectrum.angle
 
-        # Now loop through the data points that we have.
-        # For each one we have a pairs of bins and an angular value.
-        # This assumes that we can take a single sample point from
-        # each theory vector rather than integrating with a window function
-        # over the theory to get the data prediction - this will need updating soon.
+        # This is a bit of a hack, but later on if we are making a covariance
+        # we need all the splines, so pull them out here.
         bin_splines = {}
-        theory_vector = []
 
-        # For convenience we will also return the bin and angle (ell or theta)
-        # vectors for this bin too.
+        # We build up these vectors from all the data points.
+        # Only the theory vector is needed for the likelihood - the others
+        # are for convenience, debugging, etc.
+        theory_vector = []
         angle_vector = []
         bin1_vector = []
         bin2_vector = []
 
         for (b1, b2, angle, angle_mid) in zip(spectrum.bin1, spectrum.bin2, angles, angle_mids):
-            # Note: spectrum.angle already has scale cuts applied
-            # angle (as well as angle_min and angle_max) is a single theta value,
-            # we loop through them.
             # The extra object will either be a spline (for interpolated spectra)
             # or theta mid-point values (for bin-averaged ones, e.g. for plotting)
-
             theory, extra = theory_spec.get_spectrum_value(b1, b2, angle)
 
+            # We can only record the splines for non-bin-averaged values
             if not theory_spec.is_bin_averaged:
                 bin_splines[y_name.format(b1, b2)] = extra
 
+            # Build up the vector - we make this into an array later
             theory_vector.append(theory)
             angle_vector.append(angle_mid)
             bin1_vector.append(b1)
@@ -421,7 +409,6 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2_vector = np.array(bin2_vector, dtype=int)
 
         return theory_vector, angle_vector, bin1_vector, bin2_vector
-
 
 
     def extract_covariance(self, block):

@@ -95,14 +95,12 @@ def setup(options):
     else:
         config["auto_only"] = []
 
-
     #And output names (name of extensions in output fits files)
     if options.has_value(option_section, "output_extensions" ):
         print('found output_extensions')
         config["output_extensions"] = read_list("output_extensions")
     else:
         config["output_extensions"] = config["spectrum_sections"]
-
 
     if options.has_value(option_section, "theta_min"):
         config['real_space'] = True
@@ -271,8 +269,8 @@ def execute(block, config):
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
 
-        theory_spec = TheorySpectrum.from_block(block, 
-            spectrum_section, auto_only=auto_only)
+        theory_spec = TheorySpectrum.from_block( block, 
+            spectrum_section, auto_only=auto_only )
         theory_spec_list.append(theory_spec)
 
         #get angle_units
@@ -280,8 +278,6 @@ def execute(block, config):
             angle_units = config['angle_units'].name
         else:
             angle_units = None
-
-        print(output_extension)
 
         spec_meas_list.append( 
             theory_spec.to_twopoint_object(config['angle_mids_userunits'], 

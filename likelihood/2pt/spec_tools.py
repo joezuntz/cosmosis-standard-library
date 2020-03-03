@@ -62,7 +62,6 @@ class SpectrumInterp(object):
         try:
             spec = self.y_func( self.interp_func(interp_vals) )
         except ValueError:
-            print ('Entering value error')
             interp_vals[0] *= 1+1.e-9
             interp_vals[-1] *= 1-1.e-9
             spec = self.y_func( self.interp_func(interp_vals) )
@@ -120,7 +119,6 @@ class TheorySpectrum(object):
 
     @classmethod
     def from_block(cls, block, section_name, auto_only=False, bin_pairs=None):
-
         """
         Reads the predictions from the corresponding block and 
         initializes the Spectrum Measurement Class with some spectra.
