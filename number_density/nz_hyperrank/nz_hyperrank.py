@@ -1,3 +1,50 @@
+"""
+The Hyperrank module replaces 'load_nz_fits' and 'photoz_bias' to allow
+marginalization of redshift systematics using a pool of distributions rather
+than nuisance parameters.
+
+On setup, realisations are read from an input file, ranked based on a
+chatacteristic value of the whole distribution or their individual tomographic
+bins and returned as an array.
+
+Modes are:
+'no-rank':
+    No ranking. NZ array is filled on the same order the realisations are
+    provided in the input fits file
+
+'unified':
+    Realisations are ranked according to the combined mean redshift across
+    all tomographic bins and stored in the NZ array
+
+'separate':
+    Individual tomographic bins are ranked according to their mean
+    redshift and stored on the NZ.
+
+'external':
+    Realisations are ranked according to the values on an external file.
+    Values on the external file can be either the desired rank, or any
+    other characteristic value describing the realisations.
+
+'random':
+    A random sequence of numbers is used to rank the distributions.
+    This sequence then must remain constant during the pipeline.
+    How do we keep the same ordering for all spawned processes?
+    For now, just use the same random seed for all.
+
+'inv-chi-unified':
+    Similar to unified, but this time realisations are ranked according
+    to the combined mean inverse comoving distance across all tomographic
+    bins.
+
+'inv-chi-separate':
+    Similar to separete, but this time individual tomographic bins are
+    ranked according to their mean inverse comoving distance.
+
+On execute, the sampled n(z) is chosen based on the value of rank_hyperparm_i
+defined by the sampler, which in turn is mapped to the rankings defined in
+setup.
+"""
+
 try:
     from cosmosis.datablock import option_section
 except:
@@ -13,7 +60,6 @@ except ImportError:
     except ImportError:
         raise RuntimeError("You need astropy installed to use the module \
         nz-hyperrank; try running: pip install astropy.")
-
 
 modes = ['unified',
          'separate',
@@ -63,12 +109,18 @@ def ensure_starts_at_zero(z, nz):
 
 
 def setup(options):
+    # Returns a dictionary with an array of the realisations ranked according
+    # the ranking mode.
+    # The dictionary also includes additional information of the array and
+    # selected modes.
+
     mode = options[option_section, 'mode']
 
     if mode not in modes:
         raise RuntimeError('Invalid mode set in config file. Please set one of\
         (inv-chi-)unified, (inv-chi-)separate, random or external')
 
+    # Read configuration from inifile
     n_realisations = options[option_section, 'n_realisations']
     nz_filename = options[option_section, 'nz_file']
     data_set = options.get_string(option_section, "data_set")
@@ -78,12 +130,15 @@ def setup(options):
 
     nz_file = pyfits.open(nz_filename)
 
+    # Initialize arrays for characteristic values from realisations
     nz = np.zeros([n_realisations, n_bins, n_hist*upsampling])
     gchi = np.zeros([n_realisations, n_bins, n_hist*upsampling])
     chi = np.zeros([n_realisations, n_bins, n_hist*upsampling])
     nz_mean = np.zeros([n_realisations, n_bins])
     inv_chi_mean = np.zeros([n_realisations, n_bins])
 
+    # Read all extensions from the input nz file and obtain their mean redshifts
+    # and mean inverse comoving distances for all tomographic bins.
     for iext in np.arange(n_realisations):
 
         extname = 'nz_'+data_set+'_realisation_{0}'.format(iext)
@@ -97,10 +152,13 @@ def setup(options):
                 inv_chi_mean[iext, ibin-1] = np.trapz(nz[iext, ibin-1]/chi, chi)
 
 
+    # Depending on the mode selected, ranking begins here based on the nz_mean
+    # or inv_chi_mean arrays.
     if mode == 'no-rank':
 
         ranked_nz = nz
         ranked_nz_mean = nz_mean
+
 
     if mode == 'unified':
         nz_mean = nz_mean.mean(axis=1)
@@ -139,7 +197,6 @@ def setup(options):
 
 
     if mode == 'random':
-        # How do we keep the same ordering for all three processes? For now, just use the same random seed for all processes
         np.random.seed(n_realisations)
 
         order = np.arange(n_realisations)
@@ -171,6 +228,7 @@ def setup(options):
             ranked_nz[:, ibin-1] = nz[order, ibin-1]
             ranked_nz_inv_chi_mean = inv_chi_mean[order, ibin-1]
 
+    # create config dictionary with ranked rel and return it
     config = {}
     config['sample'] = data_set.upper()
     config['ranked_nz'] = ranked_nz
@@ -184,6 +242,11 @@ def setup(options):
 
 
 def execute(block, config):
+    # Stores the sampled redshift distribution in the datablock by reading the
+    # sampled rank_hyperparm_i values and mapping the ranked distributions to the
+    # range of values rank_hyperparm_i can take, [0, 1)
+    # There are two families of rank modes: Unified modes and separate modes.
+
 
     ranked_nz = config['ranked_nz']
     mode = config['mode']
@@ -195,7 +258,8 @@ def execute(block, config):
     block[pz, 'nbin'] = config['n_bins']
 
     if mode in ['no-rank', 'unified', 'random', 'external', 'inv-chi-unified']:
-
+        # A single rank_hyperparm_1 values is required, since all realisations
+        # are considered a fixed collection of tomographic bins.
         sample = block['ranks', 'rank_hyperparm_1']
         sample = sample*n_realisations
         sample = int(sample)
@@ -204,12 +268,14 @@ def execute(block, config):
         block[pz, 'z'] = z
         block[pz, 'nz'] = len(z)
 
+        # write the nz to the data block. pz is the name of the data_set
         for i in range(1, nbin+1):
-            # write the nz to the data block. Is pz the name of the data_set
             block[pz, 'bin_{0}'.format(i)] = nz_sampled[i-1]
 
     if mode in ['separate', 'inv-chi-separate']:
-        # choose which ranked nz to use
+        # A rank_hyperparm_i values for each tomographic bin is required
+        # Realisations are not considered fixed groups of tomographic bins.
+        # i.e., tomographic bin mixing is allowed.
         rank_indices = []
         nz_sampled = np.empty([nbin, nhist])
         for i in range(1, nbin+1):
@@ -221,6 +287,7 @@ def execute(block, config):
         block[pz, 'z'] = z
         block[pz, 'nz'] = len(z)
 
+        # write the nz to the data block. pz is the name of the data_set
         for i in range(1, nbin+1):
             block[pz, 'bin_{0}'.format(i)] = nz_sampled[i-1]
 
