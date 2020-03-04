@@ -241,7 +241,7 @@ class TheorySpectrum(object):
 
         # Bin pairs. Varies depending on auto-correlation
         for (i,j) in self.bin_pairs:
-            spec_sample = [self.get_spectrum_value(i, j, angle)[0] for angle in angles]
+            spec_sample = [self.get_spectrum_value(i, j, a)[0] for a in angles]
 
             # Build up on the various vectors that we need
             bin1.append(np.repeat(i, n_angle_sample))
