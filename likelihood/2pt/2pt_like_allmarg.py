@@ -401,9 +401,5 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
 
         """
         return self.inv_cov
-    
-    def do_likelihood(self, block):
-        super(TwoPointGammatMargLikelihood, self).do_likelihood(block)
-        print("chi^2:", block[names.data_vector, self.like_name+"_CHI2"])
 
 setup, execute, cleanup = TwoPointGammatMargLikelihood.build_module()
