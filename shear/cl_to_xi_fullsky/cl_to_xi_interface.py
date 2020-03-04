@@ -13,14 +13,15 @@ dirname = os.path.split(__file__)[0]
 twopoint_path = os.path.join(dirname,"..","..","likelihood","2pt")
 sys.path.append(twopoint_path)
 import twopoint
+import warnings
 
 def read_theta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'arcmin'):
     """
     Short function to read in theta values from a specified fits file.
     Desired angle units in 'rad', 'arcmin', 'arcsec', 'deg
     """
-    print("Note: we are assuming that the theta values for all bin pairs are the same")
-    print("If this is not true, you need to modify cl_to_xi_interface")
+    warnings.warn("Note: we are assuming that the theta values for all bin pairs are the same. "
+                  "If this is not true, you need to modify cl_to_xi_interface")
     T = twopoint.TwoPointFile.from_fits(filename)
     xi = T.get_spectrum(xi_type_2pt)
     # make sure the units are in arcmin (or whatever else you want)
