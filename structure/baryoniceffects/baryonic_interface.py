@@ -16,29 +16,16 @@ ALREADY_DONE_KEY = "BARYONICEFFECTSDONE"
 def setup(options):
     section = option_section
     mode = options.get_string(option_section, "mode", "ratio")
-    if mode == "fixed":
-        try:
-            powtable = options[option_section, 'powtable']
-            dmtable = options[option_section, 'dmtable']
-        except KeyError:
-            raise ValueError(
-                "Please set the parameter powtable in the baryonic section of the ini file, pointing to an powtable file to use")
-        print("Selected fixed-mode baryons.  Loading table from ", powtable,dmtable)
-        baryonPowerModulator = baryonic.FixedBaryonPowerModulator(powtable,dmtable)
-        
-    elif mode == "ratio":
-        try:
-            ratiotable = options[option_section, 'ratiotable']
-        except KeyError:
-            raise ValueError(
-                "Please set the parameter powtable in the owls section of the ini file, pointing to a ratio file to use")
+
+    try:
+        ratiotable = options[option_section, 'ratiotable']
+    except KeyError:
+        raise ValueError(
+            "Please set the parameter powtable in the owls section of the ini file, pointing to a ratio file to use")
         #print("Selected ratio-mode baryons.  Loading table from ", ratiotable)
 
-        baryonPowerModulator = baryonic.RatioDatPowerModulator(ratiotable)
+    baryonPowerModulator = baryonic.RatioDatPowerModulator(ratiotable)
 
-    else:
-        raise ValueError(
-            "'mode' must be either 'fixed' (no params; fixed OWLS sim), or 'ratio'.")
     return baryonPowerModulator
 
 
@@ -62,24 +49,7 @@ def load_parameters(package, modulator):
 
 
 def load_parameters(block, modulator):
-    section = "baryonic"
-    if isinstance(modulator, baryonic.ChebyshevBaryonPowerModulator):
-        rk = [block[section, "K%d" % i]
-              for i in range(1, modulator.nterm + 1)]
-        rz = [block[section, "Z%d" % i]
-              for i in range(1, modulator.nterm + 1)]
-        r = np.concatenate([rk, rz])
-    elif isinstance(modulator, baryonic.FixedBaryonPowerModulator):
-        r = None
-    elif isinstance(modulator, baryonic.RatioDatPowerModulator):
-        r = None
-    elif isinstance(modulator, baryonic.BaryonPowerModulator):
-        r = block[section, "R"]
-    elif isinstance(modulator, baryonic.ScaledBaryonPowerModulator):
-        r = block[section, "R"]
-    else:
-        raise ValueError(
-            "Internal error - modulator type not understood in OWLS")
+    r=None
     return r
 
 
