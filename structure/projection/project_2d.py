@@ -1135,7 +1135,7 @@ class SpectrumType(Enum):
         prefactor_type = (None, "lensing")
         has_rsd = False
 
-    class NlgalMagnificationSpectrum(NlgalShearSpectrum):
+    class NlgalMagnification(NlgalShearSpectrum):
         autocorrelation = False
         power_3d_type = MatterPower3D
         kernel_types = ("N", "W")
@@ -1460,19 +1460,15 @@ class SpectrumCalculator(object):
 
 
             if kernel_type == "N":
-                print("setting up N(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, self.dchidz, 
                     clip=self.clip_chi_kernels)
 
             elif kernel_type == "W":
-                print("setting up W(chi) kernel for sample %s"%sample_name)
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, 
                     self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels, 
                     dchi=self.shear_kernel_dchi)
 
             elif kernel_type == "F":
-                print("""setting up combined shear and IA kernel
-                    for sample %s"""%sample_name)
                 #This is the combined shear and IA kernel. We need to calculate 
                 #F(z) = - A *(z/z0)**alpha * C1_RHOCRIT * Omega_m / growth(z)
                 ia_params = "intrinsic_alignment_parameters"
@@ -1504,7 +1500,6 @@ class SpectrumCalculator(object):
             power = powertype(suffix)
             power.load_from_block(block, self.chi_of_z)
             if do_exact:
-                print("setting nonlimber splines for power", powertype, suffix)
                 power.set_nonlimber_splines(block, self.chi_of_z)
             power_key = (powertype, suffix)
             self.power[power_key] = power
@@ -1533,7 +1528,8 @@ class SpectrumCalculator(object):
         #Call prepare
         spectrum.prepare(block, lin_bias_prefix=self.lin_bias_prefix)
 
-        print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
+        if self.verbose:
+            print("computing spectrum %s for samples %s, %s"%(spectrum.__class__, spectrum.sample_a, spectrum.sample_b))
 
         for i in range(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
@@ -1586,7 +1582,8 @@ class SpectrumCalculator(object):
                 t0 = timer()
                 self.load_kernels(block)
                 t1 = timer()
-                print("time to set up kernels: %s"%(str(timedelta(seconds=(t1-t0)))))
+                if self.verbose:
+                    print("time to set up kernels: %s"%(str(timedelta(seconds=(t1-t0)))))
             except NullSplineError:
                 sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) needed to compute 2D spectra\n")
                 sys.stderr.write("Often this is because you are in a weird part of parameter space, but if it is \n")
@@ -1608,7 +1605,8 @@ class SpectrumCalculator(object):
             self.load_power(block)
 
             t1 = timer()
-            print("time to load power: %s"%(str(timedelta(seconds=(t1-t0)))))
+            if self.verbose:
+                print("time to load power: %s"%(str(timedelta(seconds=(t1-t0)))))
 
             #Now loop through the required spectra calling the compute function
             for spectrum in self.req_spectra:
@@ -1617,7 +1615,8 @@ class SpectrumCalculator(object):
                     print("Computing spectrum: {} -> {}".format(spectrum.__class__.__name__, spectrum.section_name))
                 self.compute_spectrum(block, spectrum)
                 t1 = timer()
-                print("time to compute spectrum %s: %s"%(spectrum.section_name, str(timedelta(seconds=(t1-t0)))) )
+                if self.verbose:
+                    print("time to compute spectrum %s: %s"%(spectrum.section_name, str(timedelta(seconds=(t1-t0)))) )
         finally:
             self.clean()
         return 0
