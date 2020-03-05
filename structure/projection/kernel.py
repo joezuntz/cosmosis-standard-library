@@ -60,8 +60,13 @@ class KernelSpline(object):
         pos_diff = np.zeros(len(cumsum_y), dtype=bool)
         pos_diff[0] = True
         pos_diff[1:] = np.diff(cumsum_y)>0.
+        # We have to use a linear spline here, 
+        # because otherwise the points can go a bit crazy
+        # near y=0 and y=1, which is exactly the place we care about.
+        # I'm not quite clear of the exact cause of this in terms of cosmo
+        # parameters triggering it.
         cumsum_of_x_spline = interp.InterpolatedUnivariateSpline(
-            cumsum_y[pos_diff], self.x[pos_diff])
+            cumsum_y[pos_diff], self.x[pos_diff], k=1)
         self.xmin_clipped = cumsum_of_x_spline(clip)
         self.xmax_clipped = cumsum_of_x_spline(1-clip)
 
