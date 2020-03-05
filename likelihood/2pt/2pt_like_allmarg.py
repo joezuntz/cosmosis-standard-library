@@ -301,6 +301,7 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
                     self.template_matrix_smallscale_info = None
             else:
                 print("No %s in datavector so not doing any analytic marginalization"%self.gammat_name)
+                self.inv_cov = np.linalg.inv(self.cov_orig)
         else:
             print("Not doing any analytic marginalization")
             self.inv_cov = np.linalg.inv(self.cov_orig)
