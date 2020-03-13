@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.interpolate as interp
+import warnings
 
 class KernelSpline(object):
     def __init__(self, x, y, clip=1.e-6, ymin=1.e-12, 
@@ -25,8 +26,8 @@ class KernelSpline(object):
         """
 
         self.x = x
-        if is_pos:
-            assert np.all(y>=0.)
+        if is_pos and not np.all(y>=0.):
+            warnings.warn("Some of your n(z) or other kernels are negative.")
         self.y = y
 
         #Find out if we've got zeros or very small values padding
