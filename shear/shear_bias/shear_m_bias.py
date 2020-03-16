@@ -21,17 +21,18 @@ def setup(options):
     # one global value
     m_per_bin = options.get_bool(option_section, "m_per_bin", True)
     cl_section = options.get_string(
-        option_section, "cl_section", default=names.shear_cl)
+        option_section, "cl_section", default=names.shear_cl).split()
     cross_section = options.get_string(
-        option_section, "cross_section", default="galaxy_shear_cl")
+        option_section, "cross_section", default="galaxy_shear_cl").split()
     cmbcross_section=options.get_string(
-        option_section, "cmbcross_section", default="shear_cmbkappa_cl")
+        option_section, "cmbcross_section", default="shear_cmbkappa_cl").split()
     cal_section = options.get_string(
         option_section, "cal_section", default=names.shear_calibration_parameters)
     verbose = options.get_bool(option_section, "verbose", False)
     print()
     print("The shear_m_bias module will use calibration values from {} and look for ".format(cal_section))
     print("shear-shear spectra in {} and position-shear in {}".format(cl_section, cross_section))
+    print("Currently this module will always use the same set of m values for each section")
     return m_per_bin, cl_section, cal_section, cross_section, cmbcross_section, verbose
 
 
@@ -96,19 +97,22 @@ def calibrate_shear_cmbkappa(block, section, cal_section, m_per_bin, verbose):
 
 def execute(block, config):
     m_per_bin, cl_section, cal_section, cross_section, cmbcross_section, verbose=config
-    do_auto = block.has_section(cl_section)
-    do_cross = block.has_section(cross_section)
-    do_cmbcross = block.has_section(cmbcross_section)
+    do_auto = any(block.has_section(s) for s in cl_section)
+    do_cross = any(block.has_section(s) for s in cross_section)
+    do_cmbcross = any(block.has_section(s) for s in cmbcross_section)
 
     if do_auto:
-        calibrate_shear_shear(
-            block, cl_section, cal_section, m_per_bin, verbose)
+        for section in cl_section:
+            calibrate_shear_shear(
+                block, section, cal_section, m_per_bin, verbose)
     if do_cross:
-        calibrate_position_shear(block, cross_section,
+        for section in cross_section:
+            calibrate_position_shear(block, section,
                                  cal_section, m_per_bin, verbose)
     if do_cmbcross:
-        calibrate_shear_cmbkappa(block, cmbcross_section, cal_section, 
-                                m_per_bin, verbose)
+        for section in cmbcross_section:
+            calibrate_shear_cmbkappa(block, section, cal_section, 
+                                    m_per_bin, verbose)
 
     if (not do_auto) and (not do_cross) and (not do_cmbcross):
         sys.stderr.write("ERROR: The shear bias calibration module could not find either a section {} or a {} to calibrate.\n".format(
