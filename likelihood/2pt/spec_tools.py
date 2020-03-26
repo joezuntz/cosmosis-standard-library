@@ -384,7 +384,7 @@ class InterpolatedTheorySpectrum(TheorySpectrum):
         return noise
 
     def get_obs_spec_values( self, bin1, bin2, angle ):
-        spec_vals = self.get_spec_values( bin1, bin2, angle )
+        spec_vals = np.array([self.get_spectrum_value(bin1, bin2, a)[0] for a in angle])
         noise = self.get_noise_spec_values( bin1, bin2, angle )
         return spec_vals + noise
 
