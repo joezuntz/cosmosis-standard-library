@@ -14,7 +14,10 @@ function setup(options) result(result)
 	status = 0
 	status = status + datablock_get_int_default(options, option_section, "feedback", 0, settings%feedback)
 	status = status + datablock_get_int_default(options, option_section, "redshift_zero", 0, settings%redshift_zero)
-	if (status .ne. 0) then 
+	status = status + datablock_get_int_default(options, option_section, "matter_power_lin_version", 1, &
+        settings%matter_power_lin_version)
+
+	if (status .ne. 0) then
 		write(*,*) "Failed setup of Tinker mf!", status
 		stop
 	endif
@@ -29,7 +32,7 @@ function execute(block, config) result(status)
 	integer(cosmosis_block), value :: block
 	integer(cosmosis_status) :: status
 	type(c_ptr), value :: config
-	type(ini_settings), pointer :: settings	
+	type(ini_settings), pointer :: settings
 	type(pk_settings) :: PK
 	type(massfunction) :: MassF
 	real(dl), dimension(:,:), allocatable ::  dm, dr
@@ -40,18 +43,14 @@ function execute(block, config) result(status)
 	status = 0
 	call c_f_pointer(config, settings)
 
-	
-
-!	! mass bin sizes  in compute_mf_pressschechter.f90
+	! mass bin sizes  in compute_mf_pressschechter.f90
 	deltam = 0.01
         !In sigma.f90 lnR1=-5.684 ! 0.0034Mpc/h, 1.8e4  solar mass lnR2=4.     ! 54.9Mpc/h, 7.5e16 solar mass
         if(settings%feedback ==1) print*,"mass function (lnR1, lnR2)", lnR1, lnR2
         n =int((lnR2-lnR1)/deltam)
 
-
-	
 	!load in the matter power spectrum
-	status = load_matter_power(block,PK)
+	status = load_matter_power(block,PK,settings)
 	if (status .ne. 0) then
 		write(*,*) "Could not load matter power"
 		status=3
@@ -104,7 +103,7 @@ function cleanup(config) result(status)
 	use interface_tools
 	use cosmosis_modules
 	type(c_ptr), value :: config
-	type(ini_settings), pointer :: settings	
+	type(ini_settings), pointer :: settings
 	integer(cosmosis_status) :: status
 
 	!Free memory allocated in the setup function
