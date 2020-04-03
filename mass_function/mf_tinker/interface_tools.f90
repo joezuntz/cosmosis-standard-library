@@ -5,16 +5,17 @@ MODULE interface_tools
         type ini_settings
                 integer :: feedback
                 integer :: redshift_zero
+                integer :: matter_power_lin_version
         end type
-        
-        type massfunction 
+
+        type massfunction
                 real(dl), dimension(:), allocatable :: M_h
                 real(dl), dimension(:), allocatable :: R_h
                 real(dl), dimension(:), allocatable :: dn_dlnRh
                 real(dl), dimension(:), allocatable :: dn_dlnMh
                 integer num_r, num_z
         end type
-                
+
 
         type pk_settings
                 real(dl), dimension(:), allocatable :: redshifts
@@ -26,11 +27,12 @@ MODULE interface_tools
 
         contains
 
-        function load_matter_power(block, PK) result(status)
+        function load_matter_power(block, PK, settings) result(status)
                 use cosmosis_modules
                 integer(cosmosis_block) :: block
                 integer(cosmosis_status) :: status
                 type(pk_settings) :: PK
+                type(ini_settings) :: settings
                 real(dl), allocatable, dimension(:) :: k, z
                 real(dl), allocatable, dimension(:,:) :: P
 
@@ -38,14 +40,26 @@ MODULE interface_tools
                 status = 0
 
                 !Load k, z, P
-                status = datablock_get_double_grid(block, matter_power_lin_section, &
-                "K_H", k, "Z", z, "P_K", P)
+                !Version numbers are specified to match CAMB update
+                !(but *must* specify which - version=3 not allowed)
+                if (settings%matter_power_lin_version .eq. 1) then
+                    status = status + datablock_get_double_grid(block, matter_power_lin_section, &
+                    "K_H", k, "Z", z, "P_K", P)
+                else if (settings%matter_power_lin_version .eq. 2) then
+                    status = status + datablock_get_double_grid(block, matter_power_lin_cdm_baryon_section, &
+                    "K_H", k, "Z", z, "P_K", P)
+                else
+                    print*,"Invalid matter_power_lin_version passed - only 1 or 2 are valid. (Passed value of ", &
+                        settings%matter_power_lin_version, ")"
+                    status = status + 1
+                    return
+                endif
 
                 if (status .ne. 0) then
                         write(*,*) "Could not find K_H, Z, or P_K in block"
                         return
                 endif
-
+                
         !Fill in data structure
         PK%num_k = size(k)
         PK%num_z = size(z)
@@ -61,7 +75,7 @@ MODULE interface_tools
         deallocate(k, z, P)
 
         end function
-        
+
 
                 subroutine allocate_matterpower(PK)
                         type(pk_settings) :: PK
