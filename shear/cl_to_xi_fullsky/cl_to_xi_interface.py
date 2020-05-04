@@ -11,7 +11,7 @@ import sys
 import os
 dirname = os.path.split(__file__)[0]
 twopoint_path = os.path.join(dirname,"..","..","likelihood","2pt")
-sys.path.append(twopoint_path)
+sys.path.insert(0, twopoint_path)
 import twopoint
 import warnings
 
