@@ -60,7 +60,7 @@ def execute(block, config):
     # Interpolate to get the actual likelihood
     chi2 = chi2_interp(dm_z_rd_predicted, dh_z_rd_predicted)[0]
 
-    block[likes,'eboss_dr14_lya_like'] = -chi2 / 2
+    block[likes,'eboss14_lya_like'] = -chi2 / 2
     
     return 0
 

@@ -11,7 +11,7 @@ class Eboss14QSOLikelihood(Eboss14LRGLikelihood):
     data_type = 'QSO'
     like_name = "eboss14_qso"
     mean = 3843. 
-    sigma = 17.0
+    sigma = 147.0
     fiducial_z = 1.52
 
 
