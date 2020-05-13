@@ -21,11 +21,11 @@ def setup(options):
     lya_filename = os.path.join(dirname, 'lya_combined_2019_chi2.txt')
     fid_filename = os.path.join(dirname, 'desteagathe_2019_fiducial.txt')
 
-    alpha_perp, alpha_tan, chi2_data = loadtxt(lya_filename).T
+    alpha_parralel, alpha_transverse, chi2_data = loadtxt(lya_filename).T
     z_eff_fid, dh_rd_fid, dm_rd_fid = loadtxt(fid_filename)
 
-    dm_rd_data = alpha_perp * dm_rd_fid
-    dh_rd_data = alpha_tan * dh_rd_fid
+    dm_rd_data = alpha_transverse * dm_rd_fid
+    dh_rd_data = alpha_parralel * dh_rd_fid
 
     # The likelihood is not a Gaussian here.  For some reason this is presented
     # in a table of chi^2 values, which are presumably -2log(L) values.
@@ -60,7 +60,7 @@ def execute(block, config):
     # Interpolate to get the actual likelihood
     chi2 = chi2_interp(dm_z_rd_predicted, dh_z_rd_predicted)[0]
 
-    block[likes,'eboss_dr14_lya_like'] = -chi2 / 2
+    block[likes,'eboss14_lya_like'] = -chi2 / 2
     
     return 0
 
