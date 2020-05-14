@@ -1,0 +1,39 @@
+#This is a template for module description files
+name: lya
+version: ""
+purpose: Compute the likelihood of eBOSS DR14 D_m and D_h from Lyman alpha 
+url: ""
+interface: eboss_dr14_lya.py
+attribution: ""
+rules: ""
+cite: 
+    - "de Sainte Agathe et al A&A 629 (2019)"
+    - "Blomqvist et al A&A 629 (2019)"
+assumptions:
+    - ""
+
+explanation: >
+        "This module computes the likelihood of D_m and D_h using eBOSS DR14
+        measurement from Lyman alpha.
+        At the moment, we are only using the combined measurements from auto and cross correlations.
+        We use the chi2 table given at https://github.com/igmhub/picca/tree/master/data/deSainteAgatheetal2019/combined_stdFit. 
+        The first column is alpha_parallel and the second alpha_perpendicular (sometimes called alpha_transverse)
+        The relation between alphas and D_m and D_h is:
+        alpha_perp = (Dm/rd)/(Dm_fid/rd_fid)
+        alpha_par  = (Dh/rd)/(Dh_fid/rd_fid)
+
+        We use the fiducial values from de Sainte Agathe et al as done in this paper. 
+        We then relate the chi2 to the likelihood:
+                log(like) = -chi2/2
+        "
+params:
+        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+inputs: 
+        distances:
+                z: "1D real array, redshifts of samples"
+                rs_zdrag: "real, value of predicted drag redshift "
+                d_m: "1D real array, physical angular diameter distance in Mpc"
+                h:  "1D real array, hubble parameter with in units of Mpc"
+outputs:
+        likelihoods:
+                eboss14_lya_like: "real, likelihood of Dh and Dm at z=2.34"

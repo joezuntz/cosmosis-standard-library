@@ -1,0 +1,27 @@
+name: lrg
+version: ""
+purpose: Compute the likelihood of eBOSS DR14 D_v from LRG
+url: ""
+interface: eboss_dr14_lrg.py
+attribution: ""
+rules: ""
+cite: 
+    - " Bautista et al ApJ 863 110 (2018)"
+assumptions:
+    - "Gaussian likelihood"
+
+explanation: >
+        "This module computed the likelihood of D_v using eBOSS DR14
+        measurement from LRG. 
+        We assume the likelihood on D_v is Gaussian."
+params:
+        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+inputs: 
+        distances:
+                z: "1D real array, redshifts of samples"
+                rs_zdrag: "real, value of predicted drag redshift "
+                d_m: "1D real array, physical angular diameter distance in Mpc"
+                h:  "1D real array, hubble parameter with in units of Mpc"
+outputs:
+        likelihoods:
+                eboss14_lrg_like: "real, likelihood of Dv(z=0.72)"

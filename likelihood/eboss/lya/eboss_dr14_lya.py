@@ -21,11 +21,11 @@ def setup(options):
     lya_filename = os.path.join(dirname, 'lya_combined_2019_chi2.txt')
     fid_filename = os.path.join(dirname, 'desteagathe_2019_fiducial.txt')
 
-    alpha_perp, alpha_tan, chi2_data = loadtxt(lya_filename).T
+    alpha_parallel, alpha_transverse, chi2_data = loadtxt(lya_filename).T
     z_eff_fid, dh_rd_fid, dm_rd_fid = loadtxt(fid_filename)
 
-    dm_rd_data = alpha_perp * dm_rd_fid
-    dh_rd_data = alpha_tan * dh_rd_fid
+    dm_rd_data = alpha_transverse * dm_rd_fid
+    dh_rd_data = alpha_parallel * dh_rd_fid
 
     # The likelihood is not a Gaussian here.  For some reason this is presented
     # in a table of chi^2 values, which are presumably -2log(L) values.
