@@ -314,7 +314,6 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
         return self.cov_orig
 
     def extract_inverse_covariance(self, block):
-        print("calling extract_inverse_covariance")
         if (self.do_smallscale_marg) or (self.do_pm_sigcritinv and self.do_pm_marg):
             #We've constructed the template matrix in build_data as part of the module setup
             #Now we need to loop through source bins applying sigma crit inv factors - have to
@@ -332,7 +331,6 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
             if self.do_pm_marg:
                 template_matrix_pm = np.copy(self.template_matrix_pm)
                 if self.do_pm_sigcritinv:
-                    print("apply sigma crit inverse factors to pm-marg template matrix")
                     for i, lens_bin in enumerate(self.lens_bin_ids):
                         for j, source_bin in enumerate(self.source_bin_ids):
                             sig_crit_inv = sigma_crit_inv_dict[lens_bin,source_bin]
@@ -348,9 +346,7 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
                     for dv_ind, source_bin in zip(dv_inds, source_bins):
                         template_matrix_smallscale[i][dv_ind] = sigma_crit_inv_dict[lens_bin, source_bin]
                 if template_matrix_pm is not None:
-                    print("stackin pm (shape %d,%d) and small-scale (%d,%d) marg template matrices"%(template_matrix_pm.shape+template_matrix_smallscale.shape))
                     template_matrix_with_sig = np.vstack((template_matrix_pm, template_matrix_smallscale))
-                    print("full template matrix has shape %d,%d"%(template_matrix_with_sig.shape))
                 else:
                     template_matrix_with_sig = template_matrix_smallscale
             else:
@@ -380,7 +376,6 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
             self.logdet_fac += logdet_fac
             if self.sigma_a > 0:
                 self.logdet_fac += np.log(self.sigma_a ** 2)
-            print("logdet_fac: %f"%self.logdet_fac)
 
         if self.no_det_fac:
             self.logdet_fac = 0.
