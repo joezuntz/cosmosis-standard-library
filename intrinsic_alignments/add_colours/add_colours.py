@@ -51,7 +51,7 @@ def execute(block, config):
         (1 + z_grid)**(alpha_blue) * (1 + z_grid)**(alpha_red)
 
     P_GI = f_red * A_red * P_GI_red * (1 + z_grid)**(alpha_red)
-    P_GI = f_blue * A_blue * P_GI_blue * (1 + z_grid)**(alpha_blue)
+    P_GI += f_blue * A_blue * P_GI_blue * (1 + z_grid)**(alpha_blue)
 
     block.put_grid(section_ia, "z", z, "k_h", k, "P_II", P_II)
     print("Saved II spectrum for %s" % catalogue)
