@@ -121,14 +121,30 @@ def setup(options):
         (inv-chi-)unified, (inv-chi-)separate, random or external')
 
     # Read configuration from inifile
-    n_realisations = options[option_section, 'n_realisations']
     nz_filename = options[option_section, 'nz_file']
     data_set = options.get_string(option_section, "data_set")
-    n_bins = options[option_section, 'n_bins']
-    n_hist = options[option_section, 'n_hist']
     upsampling = options.get_int(option_section, 'upsampling', 1)
+    verbose = options.get_bool(option_section, 'verbose', False)
+    rank_output = options.get_string(option_section, 'rank_output', 'rank.txt')
+
+    # n_bins = options[option_section, 'n_bins']
+    # n_hist = options[option_section, 'n_hist']
+    # n_realisations = options[option_section, 'n_realisations']
 
     nz_file = pyfits.open(nz_filename)
+
+    n_realisations = 0
+    n_bins = 0
+    for iext in np.arange(1, len(nz_file)):
+        if nz_file[iext].header['EXTNAME'].startswith('nz_{0}_realisation'.format(data_set)):
+            n_realisations += 1
+        if nz_file[iext].header['EXTNAME'].startswith('nz_{0}_realisation_0'.format(data_set)):
+            n_hist = len(nz_file[iext].data['Z_MID'])
+            for col in nz_file[iext].data.columns:
+                if col.name.startswith('BIN'):
+                    n_bins += 1
+
+    print('Hyperrank detected {0} realisations, {1} tomographic bins, {2} histogram bins. Ranking them using {3} mode.'.format(n_realisations, n_bins, n_hist, mode.upper()))
 
     # Initialize arrays for characteristic values from realisations
     nz = np.zeros([n_realisations, n_bins, n_hist*upsampling])
@@ -136,6 +152,8 @@ def setup(options):
     chi = np.zeros([n_realisations, n_bins, n_hist*upsampling])
     nz_mean = np.zeros([n_realisations, n_bins])
     inv_chi_mean = np.zeros([n_realisations, n_bins])
+
+    # Do the same for the fiducial distribution to compare its location in the rank
 
     # Read all extensions from the input nz file and obtain their mean redshifts
     # and mean inverse comoving distances for all tomographic bins.
@@ -151,10 +169,29 @@ def setup(options):
                 chi, gchi[iext, ibin-1] = nz_to_gchi(zmid, nz[iext, ibin-1])
                 inv_chi_mean[iext, ibin-1] = np.trapz(nz[iext, ibin-1]/chi, chi)
 
+    # For comparison with fiducial realisation
+    if mode in ['unified', 'inv-chi-unified']:
+
+        nz_mean_fid = np.zeros(n_bins)
+        gchi_mean_fid = np.zeros(n_bins)
+
+        for ibin in np.arange(1, n_bins+1):
+            zmid_fid = nz_file['nz_{0}'.format(data_set)].data['Z_MID']
+            nz_fid = nz_file['nz_{0}'.format(data_set)].data['BIN{0}'.format(ibin)]
+            nz_mean_fid[ibin-1] = np.trapz(zmid_fid*nz_fid, zmid_fid)
+            if mode.startswith('inv-chi'):
+                chi_fid, gchi_fid = nz_to_gchi(zmid_fid, nz_fid)
+                inv_chi_mean_fid[ibin-1] = np.trapz(nz_fid/chi_fid, chi_fid)
+
+        nz_mean_fid = np.mean(nz_mean_fid)
+        gchi_mean_fid = np.mean(gchi_mean_fid)
 
     # Depending on the mode selected, ranking begins here based on the nz_mean
     # or inv_chi_mean arrays.
     if mode == 'no-rank':
+
+        order = np.arange(n_realisations)
+        rank = np.argsort(order)
 
         ranked_nz = nz
         ranked_nz_mean = nz_mean
@@ -168,6 +205,10 @@ def setup(options):
 
         ranked_nz = nz[order]
         ranked_nz_mean = nz_mean[order]
+
+        if verbose:
+            fid_rank = np.searchsorted(ranked_nz_mean, nz_mean_fid)
+            print('Fiducial {0} realisation would have been ranked in {1} position with an approximate value for rank_hyperparm_1 = {2}'.format(data_set, fid_rank, float(fid_rank)/float(n_realisations)))
 
 
     if mode == 'separate':
@@ -214,6 +255,10 @@ def setup(options):
         ranked_nz = nz[order]
         ranked_nz_inv_chi_mean = inv_chi_mean[order]
 
+        if verbose:
+            fid_rank = np.searchsorted(ranked_nz_inv_chi_mean, gchi_mean_fid)
+            print('Fiducial {0} realisation would have been ranked in {1} position with an approximate value for rank_hyperparm_1 = {2}'.format(data_set, fid_rank, fid_rank/n_realisations))
+
 
     if mode == 'inv-chi-separate':
         ranked_nz = np.empty([n_realisations, n_bins, n_hist*upsampling])
@@ -237,6 +282,10 @@ def setup(options):
     config['zmid'] = zmid
     config['n_bins'] = n_bins
     config['n_hist'] = n_hist*upsampling
+
+    if verbose:
+        np.savetxt(rank_output, rank, fmt='%d')
+
 
     return config
 
@@ -269,7 +318,7 @@ def execute(block, config):
         block[pz, 'nz'] = len(z)
 
         # write the nz to the data block. pz is the name of the data_set
-        for i in range(1, nbin+1):
+        for i in np.arange(1, nbin+1):
             block[pz, 'bin_{0}'.format(i)] = nz_sampled[i-1]
 
     if mode in ['separate', 'inv-chi-separate']:
@@ -278,7 +327,7 @@ def execute(block, config):
         # i.e., tomographic bin mixing is allowed.
         rank_indices = []
         nz_sampled = np.empty([nbin, nhist])
-        for i in range(1, nbin+1):
+        for i in np.arange(1, nbin+1):
             rank = block['ranks', 'rank_hyperparm_{0}'.format(i)]
             nz_sampled[i-1] = ranked_nz[int(rank*n_realisations), i-1]
             rank_indices.append(int(rank*n_realisations))
@@ -288,7 +337,7 @@ def execute(block, config):
         block[pz, 'nz'] = len(z)
 
         # write the nz to the data block. pz is the name of the data_set
-        for i in range(1, nbin+1):
+        for i in np.arange(1, nbin+1):
             block[pz, 'bin_{0}'.format(i)] = nz_sampled[i-1]
 
     return 0
