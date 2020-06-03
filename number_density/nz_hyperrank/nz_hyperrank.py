@@ -170,15 +170,23 @@ def setup(options):
                 inv_chi_mean[iext, ibin-1] = np.trapz(nz[iext, ibin-1]/chi, chi)
 
     # For comparison with fiducial realisation
-    if mode in ['unified', 'inv-chi-unified']:
+    fiducial = True
+    try:
+        nz_file.index_of('nz_{0}'.format(data_set))
+    except KeyError:
+        fiducial = False
+
+    if mode in ['unified', 'inv-chi-unified'] and fiducial:
 
         nz_mean_fid = np.zeros(n_bins)
         gchi_mean_fid = np.zeros(n_bins)
 
         for ibin in np.arange(1, n_bins+1):
+
             zmid_fid = nz_file['nz_{0}'.format(data_set)].data['Z_MID']
             nz_fid = nz_file['nz_{0}'.format(data_set)].data['BIN{0}'.format(ibin)]
             nz_mean_fid[ibin-1] = np.trapz(zmid_fid*nz_fid, zmid_fid)
+
             if mode.startswith('inv-chi'):
                 chi_fid, gchi_fid = nz_to_gchi(zmid_fid, nz_fid)
                 inv_chi_mean_fid[ibin-1] = np.trapz(nz_fid/chi_fid, chi_fid)
@@ -206,7 +214,7 @@ def setup(options):
         ranked_nz = nz[order]
         ranked_nz_mean = nz_mean[order]
 
-        if verbose:
+        if verbose and fiducial:
             fid_rank = np.searchsorted(ranked_nz_mean, nz_mean_fid)
             print('Fiducial {0} realisation would have been ranked in {1} position with an approximate value for rank_hyperparm_1 = {2}'.format(data_set, fid_rank, float(fid_rank)/float(n_realisations)))
 
@@ -255,7 +263,7 @@ def setup(options):
         ranked_nz = nz[order]
         ranked_nz_inv_chi_mean = inv_chi_mean[order]
 
-        if verbose:
+        if verbose and fiducial:
             fid_rank = np.searchsorted(ranked_nz_inv_chi_mean, gchi_mean_fid)
             print('Fiducial {0} realisation would have been ranked in {1} position with an approximate value for rank_hyperparm_1 = {2}'.format(data_set, fid_rank, fid_rank/n_realisations))
 
