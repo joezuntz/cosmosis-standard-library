@@ -48,6 +48,8 @@ def execute(block, config):
     # Annoyingly this does not fit elsewhere
     if block.has_value(cosmo, "log1e10As"):
         block[cosmo, "A_s"] = np.exp(block[cosmo, 'log1e10As']) * 1.0e-10
+    elif block.has_value(cosmo, "A_s_1e9"):
+        block[cosmo, "A_s"] = block[cosmo, "A_s_1e9"] * 1e-9
 
     # Set or replace the new values
     for param, value in list(filled_parameters.items()):
