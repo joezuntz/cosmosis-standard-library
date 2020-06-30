@@ -406,9 +406,9 @@ def Gp_plus_minus_Gm_binav(ells, cost_min, cost_max):
     common_part += coeff_l*(cost_max*lpns_max[1:-1] - cost_min*lpns_min[1:-1])
     common_part += coeff_lp1*(lpns_max[2:]-lpns_min[2:])
     common_part += coeff_dl*(dlpns_max[1:-1]-dlpns_min[1:-1])
-    common_part += coeff_xdlm1*(cost_max*dlpns_max[1:-1]-cost_min*dlpns_min[1:-1])
+    common_part += coeff_xdlm1*(cost_max*dlpns_max[:-2]-cost_min*dlpns_min[:-2])
     #---plus
-    Gp_plus_Gm_extra  = coeff_xdl_plus*(cost_max*dlpns_max[:-2]-cost_min*dlpns_min[:-2])
+    Gp_plus_Gm_extra  = coeff_xdl_plus*(cost_max*dlpns_max[1:-1]-cost_min*dlpns_min[1:-1])
     Gp_plus_Gm_extra += coeff_l_plus*(lpns_max[1:-1] - lpns_min[1:-1])
     Gp_plus_Gm_extra += coeff_dlm1_plus*(dlpns_max[:-2]-dlpns_min[:-2])
     Gp_plus_Gm[2:] = common_part + Gp_plus_Gm_extra
