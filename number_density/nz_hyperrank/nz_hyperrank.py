@@ -125,11 +125,8 @@ def setup(options):
     data_set = options.get_string(option_section, "data_set")
     upsampling = options.get_int(option_section, 'upsampling', 1)
     verbose = options.get_bool(option_section, 'verbose', False)
-    rank_output = options.get_string(option_section, 'rank_output', 'rank.txt')
-
-    # n_bins = options[option_section, 'n_bins']
-    # n_hist = options[option_section, 'n_hist']
-    # n_realisations = options[option_section, 'n_realisations']
+    rank_output = options.get_string(option_section, 'rank_output', 'ranks_{0}.txt'.format(mode))
+    weighting = options.get_bool(option_section, 'weight', False)
 
     nz_file = pyfits.open(nz_filename)
 
@@ -152,15 +149,21 @@ def setup(options):
     chi = np.zeros([n_realisations, n_bins, n_hist*upsampling])
     nz_mean = np.zeros([n_realisations, n_bins])
     inv_chi_mean = np.zeros([n_realisations, n_bins])
-
-    # Do the same for the fiducial distribution to compare its location in the rank
+    weights = np.ones(n_realisations)
 
     # Read all extensions from the input nz file and obtain their mean redshifts
     # and mean inverse comoving distances for all tomographic bins.
+
     for iext in np.arange(n_realisations):
 
         extname = 'nz_'+data_set+'_realisation_{0}'.format(iext)
         ext = nz_file[extname]
+
+        if weighting:
+            try:
+                weights[iext] = ext.header['weight']
+            except KeyError:
+                weights[iext] = 0
 
         for ibin in np.arange(1, n_bins+1):
             zmid, nz[iext, ibin-1] = load_histogram_form(ext, ibin, upsampling)
@@ -168,6 +171,12 @@ def setup(options):
             if mode.startswith('inv-chi'):
                 chi, gchi[iext, ibin-1] = nz_to_gchi(zmid, nz[iext, ibin-1])
                 inv_chi_mean[iext, ibin-1] = np.trapz(nz[iext, ibin-1]/chi, chi)
+
+    # Check that at least one weight is larger than zero. Issue warning if at least one is zero
+    if np.array_equal(np.array([0]) , np.unique(weights)):
+        raise RuntimeError("All realisations have zero weight. Set weight = False in the hyperrank configuration or check the weight key in the header of the input datafile")
+    elif 0 in weights:
+        print("Hyperrank warning: one or more realisations have zero weight")
 
     # For comparison with fiducial realisation
     fiducial = True
@@ -222,15 +231,16 @@ def setup(options):
     if mode == 'separate':
         ranked_nz = np.empty([n_realisations, n_bins, n_hist*upsampling])
         rank = np.empty([n_realisations, n_bins])
+        order = np.zeros([n_realisations, n_bins], dtype=int)
         for ibin in np.arange(1, n_bins+1):
 
             nz_mean_bin = nz_mean[:, ibin-1]
 
-            order = np.argsort(nz_mean_bin)
-            rank[:, ibin-1] = np.argsort(order)
+            order[:, ibin-1] = np.argsort(nz_mean_bin)
+            rank[:, ibin-1] = np.argsort(order[:, ibin-1])
 
-            ranked_nz[:, ibin-1] = nz[order, ibin-1]
-            ranked_nz_mean = nz_mean[order, ibin-1]
+            ranked_nz[:, ibin-1] = nz[order[:, ibin-1], ibin-1]
+            ranked_nz_mean = nz_mean[order[:, ibin-1], ibin-1]
 
 
     if mode == 'external':
@@ -271,15 +281,16 @@ def setup(options):
     if mode == 'inv-chi-separate':
         ranked_nz = np.empty([n_realisations, n_bins, n_hist*upsampling])
         rank = np.empty([n_realisations, n_bins])
+        order = np.empty([n_realisations, n_bins], dtype=int)
         for ibin in np.arange(1, n_bins+1):
 
             inv_chi_mean_bin = inv_chi_mean[:, ibin-1]
 
-            order = np.argsort(inv_chi_mean_bin)
-            rank[:, ibin-1] = np.argsort(order)
+            order[:, ibin-1] = np.argsort(inv_chi_mean_bin)
+            rank[:, ibin-1] = np.argsort(order[:, ibin-1])
 
-            ranked_nz[:, ibin-1] = nz[order, ibin-1]
-            ranked_nz_inv_chi_mean = inv_chi_mean[order, ibin-1]
+            ranked_nz[:, ibin-1] = nz[order[:, ibin-1], ibin-1]
+            ranked_nz_inv_chi_mean = inv_chi_mean[order[:, ibin-1], ibin-1]
 
     # create config dictionary with ranked rel and return it
     config = {}
@@ -291,9 +302,13 @@ def setup(options):
     config['n_bins'] = n_bins
     config['n_hist'] = n_hist*upsampling
 
+    weight_sum = np.sum(weights)
+    weights = weights[order]
+    weight_cumsum = np.cumsum(weights, axis=0) / weight_sum
+    config['weights'] = weight_cumsum
+
     if verbose:
         np.savetxt(rank_output, rank, fmt='%d')
-
 
     return config
 
@@ -311,42 +326,41 @@ def execute(block, config):
     n_realisations = config['n_realisations']
     nbin = config['n_bins']
     nhist = config['n_hist']
+    weights = config['weights']
 
     block[pz, 'nbin'] = config['n_bins']
 
     if mode in ['no-rank', 'unified', 'random', 'external', 'inv-chi-unified']:
         # A single rank_hyperparm_1 values is required, since all realisations
         # are considered a fixed collection of tomographic bins.
-        sample = block['ranks', 'rank_hyperparm_1']
-        sample = sample*n_realisations
-        sample = int(sample)
+        rank = block['ranks', 'rank_hyperparm_1']
+        sample = np.searchsorted(weights, rank)
 
         z, nz_sampled = ensure_starts_at_zero(config['zmid'], ranked_nz[sample])
         block[pz, 'z'] = z
         block[pz, 'nz'] = len(z)
 
         # write the nz to the data block. pz is the name of the data_set
-        for i in np.arange(1, nbin+1):
-            block[pz, 'bin_{0}'.format(i)] = nz_sampled[i-1]
+        for ibin in np.arange(1, nbin+1):
+            block[pz, 'bin_{0}'.format(ibin)] = nz_sampled[ibin-1]
 
     if mode in ['separate', 'inv-chi-separate']:
         # A rank_hyperparm_i values for each tomographic bin is required
         # Realisations are not considered fixed groups of tomographic bins.
         # i.e., tomographic bin mixing is allowed.
-        rank_indices = []
         nz_sampled = np.empty([nbin, nhist])
-        for i in np.arange(1, nbin+1):
-            rank = block['ranks', 'rank_hyperparm_{0}'.format(i)]
-            nz_sampled[i-1] = ranked_nz[int(rank*n_realisations), i-1]
-            rank_indices.append(int(rank*n_realisations))
+        for ibin in np.arange(1, nbin+1):
+            rank = block['ranks', 'rank_hyperparm_{0}'.format(ibin)]
+            sample = np.searchsorted(weights[:,ibin-1], rank)
+            nz_sampled[ibin-1] = ranked_nz[sample, ibin-1]
 
         z, nz_sampled = ensure_starts_at_zero(config['zmid'], nz_sampled)
         block[pz, 'z'] = z
         block[pz, 'nz'] = len(z)
 
         # write the nz to the data block. pz is the name of the data_set
-        for i in np.arange(1, nbin+1):
-            block[pz, 'bin_{0}'.format(i)] = nz_sampled[i-1]
+        for ibin in np.arange(1, nbin+1):
+            block[pz, 'bin_{0}'.format(ibin)] = nz_sampled[ibin-1]
 
     return 0
 
