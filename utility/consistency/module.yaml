@@ -24,6 +24,11 @@ explanation: |
     If you specify inconsistent parameters (e.g. omega values that do not add up to 1)
     then an error status is returned.
 
+    You can set an option to also calculate the Hubble parameter from the CosmoMC theta
+    parameter, and vice versa.  This is off by default as it's a little slow.
+    It matches the CosmoMC version to about 0.2%, which is enough for testing the
+    effects of changing prior but not for precision comparison of the value itself.
+
     The following relations are used:
 
     omega_m = ommh2/h/h
@@ -75,6 +80,7 @@ explanation: |
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
     verbose: "boolean T/F: explain how derived parameters were calculated and what assumptions used"
+    cosmomc_theta: "boolean T/F: add relations that calculate H0 from the CosmoMC theta parameter."
 
 inputs:
     cosmological_parameters:
