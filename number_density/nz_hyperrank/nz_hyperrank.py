@@ -198,7 +198,7 @@ def setup(options):
 
             if mode.startswith('inv-chi'):
                 chi_fid, gchi_fid = nz_to_gchi(zmid_fid, nz_fid)
-                inv_chi_mean_fid[ibin-1] = np.trapz(nz_fid/chi_fid, chi_fid)
+                gchi_mean_fid[ibin-1] = np.trapz(nz_fid/chi_fid, chi_fid)
 
         nz_mean_fid = np.mean(nz_mean_fid)
         gchi_mean_fid = np.mean(gchi_mean_fid)
@@ -292,7 +292,7 @@ def setup(options):
             ranked_nz[:, ibin-1] = nz[order[:, ibin-1], ibin-1]
             ranked_nz_inv_chi_mean = inv_chi_mean[order[:, ibin-1], ibin-1]
 
-    # create config dictionary with ranked rel and return it
+    # create config dictionary with ranked realisations and return it
     config = {}
     config['sample'] = data_set.upper()
     config['ranked_nz'] = ranked_nz
@@ -301,6 +301,8 @@ def setup(options):
     config['zmid'] = zmid
     config['n_bins'] = n_bins
     config['n_hist'] = n_hist*upsampling
+
+    config['ranks'] = rank
 
     weight_sum = np.sum(weights)
     weights = weights[order]
@@ -319,7 +321,6 @@ def execute(block, config):
     # range of values rank_hyperparm_i can take, [0, 1)
     # There are two families of rank modes: Unified modes and separate modes.
 
-
     ranked_nz = config['ranked_nz']
     mode = config['mode']
     pz = 'NZ_' + config['sample']
@@ -327,6 +328,7 @@ def execute(block, config):
     nbin = config['n_bins']
     nhist = config['n_hist']
     weights = config['weights']
+    rank_ids = config['ranks']
 
     block[pz, 'nbin'] = config['n_bins']
 
@@ -335,6 +337,9 @@ def execute(block, config):
         # are considered a fixed collection of tomographic bins.
         rank = block['ranks', 'rank_hyperparm_1']
         sample = np.searchsorted(weights, rank)
+
+        realisation = np.argwhere(rank_ids == sample)[0]
+        block['ranks', 'realisation_1'] = realisation
 
         z, nz_sampled = ensure_starts_at_zero(config['zmid'], ranked_nz[sample])
         block[pz, 'z'] = z
@@ -353,6 +358,9 @@ def execute(block, config):
             rank = block['ranks', 'rank_hyperparm_{0}'.format(ibin)]
             sample = np.searchsorted(weights[:,ibin-1], rank)
             nz_sampled[ibin-1] = ranked_nz[sample, ibin-1]
+
+            realisation = np.argwhere(rank_ids[:,ibin-1] == sample)[0]
+            block['ranks', 'realisation_{0}'.format(ibin)] = realisation
 
         z, nz_sampled = ensure_starts_at_zero(config['zmid'], nz_sampled)
         block[pz, 'z'] = z
