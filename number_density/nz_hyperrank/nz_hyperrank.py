@@ -348,6 +348,7 @@ def execute(block, config):
         # write the nz to the data block. pz is the name of the data_set
         for ibin in np.arange(1, nbin+1):
             block[pz, 'bin_{0}'.format(ibin)] = nz_sampled[ibin-1]
+            block['ranks', 'mean_z_{0}'.format(ibin)] = np.trapz(nz_sampled[ibin-1]*z, z)
 
     if mode in ['separate', 'inv-chi-separate']:
         # A rank_hyperparm_i values for each tomographic bin is required
@@ -369,6 +370,7 @@ def execute(block, config):
         # write the nz to the data block. pz is the name of the data_set
         for ibin in np.arange(1, nbin+1):
             block[pz, 'bin_{0}'.format(ibin)] = nz_sampled[ibin-1]
+            block['ranks', 'mean_z_{0}'.format(ibin)] = np.trapz(nz_sampled[ibin-1]*z, z)
 
     return 0
 
