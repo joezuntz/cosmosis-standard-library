@@ -818,7 +818,7 @@ double sm2_qrombergo(funcwithpars  func, void *intpar,
       if (j >= K) {
          sm2_polint(&h[j-K],&s[j-K],K,0.0,&ss,&dss,err);
          forwardError(*err,__LINE__,0);
-         testErrorRet(!finite(dss), math_infnan, "Inf or nan encountered", *err, __LINE__, 0.0);
+         testErrorRet(!isfinite(dss), math_infnan, "Inf or nan encountered", *err, __LINE__, 0.0);
          if (fabs(dss) <= EPS*fabs(ss)) return ss;
       }
       h[j+1]=h[j]/9.0;
@@ -847,7 +847,7 @@ double sm2_qromberg(funcwithpars func, double *intpar,
       if (j >= K) {
          sm2_polint(&h[j-K],&s[j-K],K,0.0,&ss,&dss,err);
          forwardError(*err,__LINE__,0);
-         testErrorRet(!finite(dss), math_infnan, "Inf or nan encountered", *err, __LINE__, 0.0);
+         testErrorRet(!isfinite(dss), math_infnan, "Inf or nan encountered", *err, __LINE__, 0.0);
          if (fabs(dss) <= EPS*fabs(ss)) return ss;
       }
       h[j+1]=0.25*h[j];
@@ -2037,7 +2037,7 @@ void hankel_kernel_mu(double k, fftw_complex *res, double q, double mu, error **
    (*res)[0] = pref*(co*d1-si*d2);
    (*res)[1] = pref*(si*d1+co*d2);
 
-   testErrorRet(!finite((*res)[0])||!finite((*res)[1]), math_infnan, "Inf or nan", *err, __LINE__,);
+   testErrorRet(!isfinite((*res)[0])||!isfinite((*res)[1]), math_infnan, "Inf or nan", *err, __LINE__,);
 }
 
 /* ============================================================ *
@@ -2071,7 +2071,7 @@ void hankel_kernel_mumu(double k, fftw_complex *res, double q, double mu, error 
    (*res)[0] *= pref;
    (*res)[1] *= pref;
 
-   testErrorRet(!finite((*res)[0]) || !finite((*res)[1]), math_infnan, "Inf or nan", *err, __LINE__,);
+   testErrorRet(!isfinite((*res)[0]) || !isfinite((*res)[1]), math_infnan, "Inf or nan", *err, __LINE__,);
 }
 
 void hankel_kernel_exp(double k, fftw_complex *res, error **err)
@@ -2083,7 +2083,7 @@ void hankel_kernel_exp(double k, fftw_complex *res, error **err)
    (*res)[0] = g[0]*0.5;
    (*res)[1] = g[1]*0.5;
 
-   testErrorRet(!finite((*res)[0]) || !finite((*res)[1]), math_infnan, "Inf or nan", *err, __LINE__,);
+   testErrorRet(!isfinite((*res)[0]) || !isfinite((*res)[1]), math_infnan, "Inf or nan", *err, __LINE__,);
 }
 
 void hankel_kernel_tophat(double k, fftw_complex *res, error **err)
