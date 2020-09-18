@@ -15,6 +15,8 @@ emu.exe: $(P) $(LIBRARY_FILES)
 interface.so: interface.c $(LIBRARY_FILES)
 	$(CC) $(CFLAGS) -shared -o $@  $^ $(LDFLAGS)
 
+test:
+	@echo "Alas, FrankenEmu has no tests"
 
 clean:
 	/bin/rm -rf *.o *.so *.dSYM emu.exe

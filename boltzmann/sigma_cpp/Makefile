@@ -8,6 +8,9 @@ all: sigma.so
 sigma.so : sigma.cpp
 	${CXX} ${CXXFLAGS} sigma.cpp -shared -o $(CURDIR)/sigma.so ${LDFLAGS}
 
+test:
+	@echo "Alas, sigma_cpp has no tests"
+
 clean :
 	rm -f sigma.so
 	rm -rf sigma.so.dSYM
