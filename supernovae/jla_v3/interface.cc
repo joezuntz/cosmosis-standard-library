@@ -75,7 +75,7 @@ setup(cosmosis::DataBlock* options)
   auto calculator = new JLALikelihood(verbosity);
   calculator->configure(config);
 
-  return (void*)calculator;
+  return calculator;
 }
 
 void
