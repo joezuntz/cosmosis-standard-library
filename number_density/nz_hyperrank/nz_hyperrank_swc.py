@@ -91,16 +91,11 @@ def load_histogram_form(ext, bin, upsampling):
 
     norm = np.trapz(nz, z)
 # Capture the normalization as m-priors
-    '''
-    m1=norm[0]-1.
-    m2=norm[1]-1.
-    m3=norm[2]-1.
-    m4=norm[3]-1.
-'''
+    mbias = norm-1.
     nz /= norm
 
 
-    return z, nz
+    return z, nz, mbias
 
 def ensure_starts_at_zero(z, nz):
     nbin = nz.shape[0]
@@ -231,6 +226,7 @@ def setup(options):
         rank = np.argsort(order)
 
         ranked_nz = nz[order]
+	ranked_cal = multiplicative_bias[order]
         ranked_nz_mean = nz_mean[order]
 
         if verbose and fiducial:
