@@ -68,6 +68,7 @@ setup(cosmosis::DataBlock* options)
   config.C12 = strdup(parameter.c_str());
 
   if (error != DBS_SUCCESS) {
+    std::cerr << "Reading parameters from DataBlock 'config' has failed\n";
     options->print_log();
     exit(1);
   }
