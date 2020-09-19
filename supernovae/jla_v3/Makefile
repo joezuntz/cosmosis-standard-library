@@ -1,9 +1,16 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-
 USER_CXXFLAGS+= -I ${GSL_INC}
+
+ifneq (Darwin, $(OS))
+  USER_CXXFLAGS+=-Wl,-rpath,${PWD}
+endif
+
 USER_LDFLAGS+=  -lcosmosis ${LAPACK_LINK} -L ${GSL_LIB} -lgslcblas -lgsl
 
+ifneq (Darwin, $(OS))
+  LDFLAGS+=-ldl
+endif
 
 all: libjla.so jla.so
 
