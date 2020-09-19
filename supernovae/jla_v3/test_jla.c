@@ -9,7 +9,10 @@ void * setup(void * options);
 
 int main(void) {
         /* Load the library */
-        void* lib = dlopen("jla.so", RTLD_LOCAL);
+        void* lib = dlopen("./jla.so", RTLD_NOW | RTLD_LOCAL);
+	if (!lib) {
+          printf("%s\n", dlerror());
+	}
         assert(lib);
 
         /* Get a callable pointer to the setup function */
