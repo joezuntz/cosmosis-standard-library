@@ -307,6 +307,7 @@ def setup(options):
     config['zmid'] = zmid
     config['n_bins'] = n_bins
     config['n_hist'] = n_hist*upsampling
+    config['multiplicative_bias'] = ranked_cal
 
     weight_sum = np.sum(weights)
     weights = weights[order]
@@ -329,10 +330,12 @@ def execute(block, config):
     ranked_nz = config['ranked_nz']
     mode = config['mode']
     pz = 'NZ_' + config['sample']
+    cal_section = 'cal_section'
     n_realisations = config['n_realisations']
     nbin = config['n_bins']
     nhist = config['n_hist']
     weights = config['weights']
+    mbias = config['ranked_cal']
 
     block[pz, 'nbin'] = config['n_bins']
 
@@ -341,6 +344,10 @@ def execute(block, config):
         # are considered a fixed collection of tomographic bins.
         rank = block['ranks', 'rank_hyperparm_1']
         sample = np.searchsorted(weights, rank)
+
+	mbias = ranked_cal[sample]
+        for ibin in range(nbin):
+	    block[cal_section, "m{}".format(ibin + 1)] = mbias[ibin]
 
         z, nz_sampled = ensure_starts_at_zero(config['zmid'], ranked_nz[sample])
         block[pz, 'z'] = z
