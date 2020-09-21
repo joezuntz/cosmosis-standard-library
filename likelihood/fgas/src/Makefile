@@ -1,4 +1,5 @@
 # modified for compatibility with COSMOSIS build
+include $(COSMOSIS_SRC_DIR)/config/compilers.mk
 
 OBJECTS =  clusters.o fgas.o lensing.o wrapper.o xray.o ConfigFile.o
 SEPOBJ = fwrapper.o
