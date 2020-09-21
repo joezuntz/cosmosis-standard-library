@@ -307,7 +307,7 @@ def setup(options):
     config['zmid'] = zmid
     config['n_bins'] = n_bins
     config['n_hist'] = n_hist*upsampling
-    config['multiplicative_bias'] = ranked_cal
+    config['ranked_cal'] = ranked_cal
 
     weight_sum = np.sum(weights)
     weights = weights[order]
@@ -335,7 +335,7 @@ def execute(block, config):
     nbin = config['n_bins']
     nhist = config['n_hist']
     weights = config['weights']
-    mbias = config['ranked_cal']
+    ranked_cal = config['ranked_cal']
 
     block[pz, 'nbin'] = config['n_bins']
 
