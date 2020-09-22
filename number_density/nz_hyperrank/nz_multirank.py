@@ -98,6 +98,21 @@ def gridmorph(x, shape, bounds_sigma=3., k_norm=2):
 
     return uu[iu]
 
+def factors(f, dim=2):
+    # Returns the squarest? possible factors for a given number of realisations
+    if dim == 1:
+        return f
+    p = np.zeros(dim, dtype=int)
+    pow = float(dim)
+    s = int(f**(1/pow))
+    # s+2 will yield wrong results for small numbers.
+    # should be s+1 but I don't know hot to deal with numeric errors in **1/3
+    for i in range(1,s+2):
+        if f % i == 0:
+            p[0] = i
+            p[1:] = factors(int(f/i), dim= dim-1)
+    return p
+
 def setup(options):
 
     # Read configuration from inifile
@@ -106,16 +121,20 @@ def setup(options):
     upsampling = options.get_int(option_section, 'upsampling', 1)
     debug = options.get_bool(option_section, 'debug', False)
 
-    dim1 = options.get_int(option_section, 'dimension_1')
-    dim2 = options.get_int(option_section, 'dimension_2')
-    bin_rank1 = options.get_int(option_section, 'bin_rank1', 1)
-    bin_rank2 = options.get_int(option_section, 'bin_rank2', 4)
+    dimensions = options.get_int(option_section, 'dimensions', 2)
+    bin_ranks = np.zeros(dimensions, dtype=int)
+    defaults = [1,4,3] # Any other suggestion?
+    for idim in range(dimensions):
+        bin_ranks[idim] = options.get_int(option_section, 'bin_rank{}'.format(idim+1), defaults[idim])
 
+    resume = options.get_bool(option_section, 'resume', False)
+    resume_path = options.get_string(option_section, 'resume_path')
+
+    # Determine number of realisations and array shapes from the file
     nz_file = pyfits.open(nz_filename)
-
     n_realisations = 0
     n_bins = 0
-    istart = 0
+    istart = 0 # This is so we can index extensions by number instead of name. Much faster
 
     for iext in np.arange(1, len(nz_file)):
         if nz_file[iext].header['EXTNAME'].startswith('nz_{0}_realisation'.format(data_set)):
@@ -141,37 +160,40 @@ def setup(options):
             zmid, nz[iext, ibin] = load_histogram_form(ext, ibin+1, upsampling)
             nz_mean[iext, ibin] = np.trapz(nz[iext, ibin]*zmid, zmid)
 
-    xx = nz_mean[:,[bin_rank1-1, bin_rank2-1]]
-    if debug:
-        print('Multirank is generating a uniform map to sample your realisations')
-    uu = gridmorph(xx, [dim1, dim2])
+    xx = nz_mean[:,bin_ranks-1]
+    map_shape = factors(n_realisations, dim=dimensions)
 
-    if debug:
-        plt.plot(xx[:,0],xx[:,1],'ro')
-        plt.gca().set_aspect('equal')
-        plt.title('original point positions')
-        plt.savefig('original_positions.png', dpi=200)
+    # Read previously computed uniform map or compute a new one.
+    if resume:
+        try:
+            uu = np.load(resume_path+'/uu.npy')
+            uu_loaded_dim = np.zeros(uu.shape[-1])
+            for idim in range(uu.shape[-1]):
+                uu_loaded_dim[idim] = len(np.unique(uu[:,idim]))
+            print('Found uniform map of dimensions ' + str(uu_loaded_dim))
+        except:
+            print('Tried to resume using previous uniform map but could not find it.')
+            print('Generating a new one of dimensions ' + str(map_shape) + ' with tomographic bins ' + str(bin_ranks))
+            uu = gridmorph(xx, map_shape)
+            np.save(resume_path+'/uu.npy', uu)
+    else:
+        print('Multirank is generating a {}-dimensional uniform map to sample realisations.'.format(dimensions))
+        print('Dimensions are ' + str(map_shape) + ' and uses tomographic bins ' + str(bin_ranks))
+        uu = gridmorph(xx, map_shape)
 
-        f, ax = plt.subplots(1,2, figsize=(10,4))
+    assert dimensions == uu.shape[-1], "Loaded uniform map was generated with a different dimensionality."
+    assert map_shape[0] == len(np.unique(uu[:,0])), "Loaded uniform map has a different shape than the one computed here."
+    assert map_shape[1] == len(np.unique(uu[:,1])), "Loaded uniform map has a different shape than the one computed here."
 
-        ax[0].scatter(uu[:,0],uu[:,1],c=xx[:,0],cmap='Spectral', s=5)
-        ax[0].set_aspect('equal')
-        ax[0].set_title('Original mean z {}'.format(bin_rank1))
-
-        ax[1].scatter(uu[:,0],uu[:,1],c=xx[:,1],cmap='Spectral', s=5)
-        ax[1].set_aspect('equal')
-        ax[1].set_title('Original z {}'.format(bin_rank2))
-
-        plt.savefig('uniform_grid_means.png', dpi=200)
-
-    # create config dictionary with ranked realisations and return it
+    # create config dictionary with mapped realisations and return it
     config = {}
     config['sample'] = data_set.upper()
     config['nz'] = nz
     config['nz_mean'] = nz_mean
     config['zmid'] = zmid
     config['uniform_grid'] = uu
-    config['dimensions'] = (dim1, dim2)
+    config['dimensions'] = dimensions
+    config['map_shape'] = map_shape
     config['debug'] =  debug
 
     return config
@@ -188,27 +210,21 @@ def execute(block, config):
     pz = 'NZ_' + config['sample']
     nz_mean = config['nz_mean']
     nbins = nz.shape[1]
-    dim1, dim2 = config['dimensions']
+    dimensions = config['dimensions']
+    map_shape = config['map_shape']
     debug = config['debug']
 
     # Extract coordinates from sampled hyperparameters
 
-    rank_1 = block['ranks', 'rank_hyperparm_1']
-    rank_2 = block['ranks', 'rank_hyperparm_2']
-    coordinate_1 = (int(rank_1*dim1) + 0.5)/dim1
-    coordinate_2 = (int(rank_2*dim2) + 0.5)/dim2
-    uu_1 = np.argwhere(uu[:,0] == coordinate_1).flatten()
-    uu_2 = np.argwhere(uu[:,1] == coordinate_2).flatten()
+    ranks = [block['ranks', 'rank_hyperparm_{}'.format(idim+1)] for idim in range(dimensions)]
+    coordinates = [(int(ranks[idim]*map_shape[idim]) + 0.5)/map_shape[idim] for idim in range(dimensions)]
+    uu_index = [np.argwhere(uu[:,idim] == coordinates[idim]).flatten() for idim in range(dimensions)]
 
-    index = int(np.intersect1d(uu_1, uu_2, assume_unique=True))
+    index = uu_index[-1]
+    for idim in range(dimensions-1):
+        index = np.intersect1d(index, uu_index[idim], assume_unique=True)
+    index = int(index)
     z, nz_sampled = ensure_starts_at_zero(zmid, nz[index])
-
-    if debug:
-        print('Sampled hyperparameters are {} {}'.format(rank_1, rank_2))
-        print('Uniform map coordinates are {} {}'.format(coordinate_1, coordinate_2))
-        print('Sampled realisation is {}'.format(index))
-        print(uu_1)
-        print(uu_2)
 
     # Write info to datablock
     block[pz, 'nbin'] = nbins
@@ -220,7 +236,6 @@ def execute(block, config):
         block['ranks', 'mean_z_{0}'.format(ibin)] = nz_mean[index, ibin]
 
     return 0
-
 
 def cleanup(config):
 
