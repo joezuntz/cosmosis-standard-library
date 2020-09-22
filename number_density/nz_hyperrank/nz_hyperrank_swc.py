@@ -46,7 +46,8 @@ setup.
 """
 
 try:
-    from cosmosis.datablock import option_section
+    from cosmosis.datablock import names, option_section
+    #from cosmosis.datablock import option_section
 except:
     option_section = "options"
 import numpy as np
@@ -177,6 +178,11 @@ def setup(options):
                 chi, gchi[iext, ibin-1] = nz_to_gchi(zmid, nz[iext, ibin-1])
                 inv_chi_mean[iext, ibin-1] = np.trapz(nz[iext, ibin-1]/chi, chi)
 
+    ### Find mean and std of multiplicative bias:
+    for i in range(1,n_bins+1):
+        mean=np.mean(multiplicative_bias[:,i-1])
+	std =np.std(multiplicative_bias[:,i-1])
+	print 'mean,std of m in bin', i,' is ', mean,std
     # Check that at least one weight is larger than zero. Issue warning if at least one is zero
     if np.array_equal(np.array([0]) , np.unique(weights)):
         raise RuntimeError("All realisations have zero weight. Set weight = False in the hyperrank configuration or check the weight key in the header of the input datafile")
@@ -227,6 +233,7 @@ def setup(options):
 
         ranked_nz = nz[order]
 	ranked_cal = multiplicative_bias[order]
+	
         ranked_nz_mean = nz_mean[order]
 
         if verbose and fiducial:
@@ -298,6 +305,9 @@ def setup(options):
             ranked_nz[:, ibin-1] = nz[order[:, ibin-1], ibin-1]
             ranked_nz_inv_chi_mean = inv_chi_mean[order[:, ibin-1], ibin-1]
 
+    cal_section = options.get_string(
+        option_section, "cal_section", default=names.shear_calibration_parameters)
+
     # create config dictionary with ranked rel and return it
     config = {}
     config['sample'] = data_set.upper()
@@ -308,6 +318,7 @@ def setup(options):
     config['n_bins'] = n_bins
     config['n_hist'] = n_hist*upsampling
     config['ranked_cal'] = ranked_cal
+    config['cal_section'] = cal_section
 
     weight_sum = np.sum(weights)
     weights = weights[order]
@@ -330,7 +341,7 @@ def execute(block, config):
     ranked_nz = config['ranked_nz']
     mode = config['mode']
     pz = 'NZ_' + config['sample']
-    cal_section = 'cal_section'
+    cal_section = config['cal_section']
     n_realisations = config['n_realisations']
     nbin = config['n_bins']
     nhist = config['n_hist']
@@ -348,6 +359,7 @@ def execute(block, config):
 	mbias = ranked_cal[sample]
         for ibin in range(nbin):
 	    block[cal_section, "m{}".format(ibin + 1)] = mbias[ibin]
+	    #print 'shear calibration in bin ', ibin, '= ', mbias[ibin]
 
         z, nz_sampled = ensure_starts_at_zero(config['zmid'], ranked_nz[sample])
         block[pz, 'z'] = z
