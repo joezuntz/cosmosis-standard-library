@@ -68,6 +68,7 @@ setup(cosmosis::DataBlock* options)
   config.C12 = strdup(parameter.c_str());
 
   if (error != DBS_SUCCESS) {
+    std::cerr << "Reading parameters from DataBlock 'config' has failed\n";
     options->print_log();
     exit(1);
   }
@@ -75,7 +76,7 @@ setup(cosmosis::DataBlock* options)
   auto calculator = new JLALikelihood(verbosity);
   calculator->configure(config);
 
-  return (void*)calculator;
+  return calculator;
 }
 
 void

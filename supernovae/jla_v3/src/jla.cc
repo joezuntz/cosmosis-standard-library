@@ -55,7 +55,7 @@ double * read_matrix(const char * filename, int verbosity)
   int N;
   double * mat = NULL;
 
-  std::ifstream fid(filename);
+  ifstream fid(filename);
 
   if (!fid){
     fid.close();
