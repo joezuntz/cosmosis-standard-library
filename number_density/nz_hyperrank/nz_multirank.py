@@ -5,6 +5,7 @@ except:
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 import matplotlib.pyplot as plt
+from nz_gz import nz_to_gchi
 
 try:
     import astropy.io.fits as pyfits
@@ -115,20 +116,24 @@ def factors(f, dim=2):
 
 def setup(options):
 
+    def get_arr_ints(x):
+        a = options[option_section, x]
+        a = np.array(a, dtype=int)
+        return a
+
     # Read configuration from inifile
     nz_filename = options[option_section, 'nz_file']
     data_set = options.get_string(option_section, "data_set")
     upsampling = options.get_int(option_section, 'upsampling', 1)
-    debug = options.get_bool(option_section, 'debug', False)
+    mode = options.get_string(option_section, 'mode', 'mean')
+    external_info = options.get_string(option_section, 'external_info', '')
 
+    bin_ranks = get_arr_ints('bin_ranks')
     dimensions = options.get_int(option_section, 'dimensions', 2)
-    bin_ranks = np.zeros(dimensions, dtype=int)
-    defaults = [1,4,3] # Any other suggestion?
-    for idim in range(dimensions):
-        bin_ranks[idim] = options.get_int(option_section, 'bin_rank{}'.format(idim+1), defaults[idim])
+    assert len(bin_ranks) == dimensions, 'You asked for {} dimensions but provided {} bins for the ranking.'.format(dimensions, len(bin_ranks))
 
     resume = options.get_bool(option_section, 'resume', False)
-    resume_path = options.get_string(option_section, 'resume_path')
+    resume_path = options.get_string(option_section, 'resume_path', "")
 
     # Determine number of realisations and array shapes from the file
     nz_file = pyfits.open(nz_filename)
@@ -150,7 +155,9 @@ def setup(options):
 
     # Initialize arrays for characteristic values from realisations
     nz = np.zeros([n_realisations, n_bins, n_hist*upsampling])
+    gchi = np.zeros([n_realisations, n_bins, n_hist*upsampling])
     nz_mean = np.zeros([n_realisations, n_bins])
+    inv_chi_mean = np.zeros([n_realisations, n_bins])
 
     for iext in np.arange(n_realisations):
 
@@ -159,14 +166,23 @@ def setup(options):
         for ibin in np.arange(n_bins):
             zmid, nz[iext, ibin] = load_histogram_form(ext, ibin+1, upsampling)
             nz_mean[iext, ibin] = np.trapz(nz[iext, ibin]*zmid, zmid)
+            if mode == 'invchi':
+                chi, gchi[iext, ibin] = nz_to_gchi(zmid, nz[iext, ibin])
+                inv_chi_mean[iext, ibin] = np.trapz(nz[iext, ibin]/chi, chi)
 
-    xx = nz_mean[:,bin_ranks-1]
+    if mode == 'mean':
+        xx = nz_mean[:,bin_ranks-1]
+    if mode == 'invchi':
+        xx = inv_chi_mean[:,bin_ranks-1]
+    if mode == 'external':
+        xx = np.load(external_info)
+
     map_shape = factors(n_realisations, dim=dimensions)
 
     # Read previously computed uniform map or compute a new one.
     if resume:
         try:
-            uu = np.load(resume_path+'/uu.npy')
+            uu = np.load(resume_path+'/uu_{}.npy'.format(mode))
             uu_loaded_dim = np.zeros(uu.shape[-1])
             for idim in range(uu.shape[-1]):
                 uu_loaded_dim[idim] = len(np.unique(uu[:,idim]))
@@ -175,7 +191,7 @@ def setup(options):
             print('Tried to resume using previous uniform map but could not find it.')
             print('Generating a new one of dimensions ' + str(map_shape) + ' with tomographic bins ' + str(bin_ranks))
             uu = gridmorph(xx, map_shape)
-            np.save(resume_path+'/uu.npy', uu)
+            np.save(resume_path+'/uu_{}.npy'.format(mode), uu)
     else:
         print('Multirank is generating a {}-dimensional uniform map to sample realisations.'.format(dimensions))
         print('Dimensions are ' + str(map_shape) + ' and uses tomographic bins ' + str(bin_ranks))
@@ -194,7 +210,6 @@ def setup(options):
     config['uniform_grid'] = uu
     config['dimensions'] = dimensions
     config['map_shape'] = map_shape
-    config['debug'] =  debug
 
     return config
 
@@ -212,7 +227,6 @@ def execute(block, config):
     nbins = nz.shape[1]
     dimensions = config['dimensions']
     map_shape = config['map_shape']
-    debug = config['debug']
 
     # Extract coordinates from sampled hyperparameters
 
