@@ -228,7 +228,7 @@ def execute(block, config):
     dimensions = config['dimensions']
     map_shape = config['map_shape']
 
-    # Extract coordinates from sampled hyperparameters
+    # Extract coordinates from sampled hyperparameters and find index from map
 
     ranks = [block['ranks', 'rank_hyperparm_{}'.format(idim+1)] for idim in range(dimensions)]
     coordinates = [(int(ranks[idim]*map_shape[idim]) + 0.5)/map_shape[idim] for idim in range(dimensions)]
@@ -238,6 +238,8 @@ def execute(block, config):
     for idim in range(dimensions-1):
         index = np.intersect1d(index, uu_index[idim], assume_unique=True)
     index = int(index)
+
+    # Extract sampled nz
     z, nz_sampled = ensure_starts_at_zero(zmid, nz[index])
 
     # Write info to datablock
@@ -248,6 +250,8 @@ def execute(block, config):
     for ibin in np.arange(nbins):
         block[pz, 'bin_{0}'.format(ibin+1)] = nz_sampled[ibin]
         block['ranks', 'mean_z_{0}'.format(ibin)] = nz_mean[index, ibin]
+
+    block['ranks', 'realisation_id'.format(ibin)] = index
 
     return 0
 
