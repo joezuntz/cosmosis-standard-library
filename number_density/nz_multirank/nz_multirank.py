@@ -126,7 +126,7 @@ def setup(options):
     data_set = options.get_string(option_section, "data_set")
     upsampling = options.get_int(option_section, 'upsampling', 1)
     mode = options.get_string(option_section, 'mode', 'mean')
-    external_info = options.get_string(option_section, 'external_info', '')
+    saved_stats = options.get_string(option_section, 'saved_stats', '')
 
     bin_ranks = get_arr_ints('bin_ranks')
     dimensions = options.get_int(option_section, 'dimensions', 2)
@@ -175,7 +175,7 @@ def setup(options):
     if mode == 'invchi':
         xx = inv_chi_mean[:,bin_ranks-1]
     if mode == 'external':
-        xx = np.load(external_info)
+        xx = np.load(saved_stats)
 
     map_shape = factors(n_realisations, dim=dimensions)
 
@@ -251,7 +251,7 @@ def execute(block, config):
         block[pz, 'bin_{0}'.format(ibin+1)] = nz_sampled[ibin]
         block['ranks', 'mean_z_{0}'.format(ibin)] = nz_mean[index, ibin]
 
-    block['ranks', 'realisation_id'.format(ibin)] = index
+    block['ranks', 'realisation_id'] = index
 
     return 0
 
