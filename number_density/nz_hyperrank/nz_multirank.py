@@ -133,7 +133,7 @@ def setup(options):
     assert len(bin_ranks) == dimensions, 'You asked for {} dimensions but provided {} bins for the ranking.'.format(dimensions, len(bin_ranks))
 
     resume = options.get_bool(option_section, 'resume', False)
-    resume_path = options.get_string(option_section, 'resume_path', "")
+    resume_map = options.get_string(option_section, 'resume_map', "")
 
     # Determine number of realisations and array shapes from the file
     nz_file = pyfits.open(nz_filename)
@@ -182,7 +182,7 @@ def setup(options):
     # Read previously computed uniform map or compute a new one.
     if resume:
         try:
-            uu = np.load(resume_path+'/uu_{}.npy'.format(mode))
+            uu = np.load(resume_map)
             uu_loaded_dim = np.zeros(uu.shape[-1])
             for idim in range(uu.shape[-1]):
                 uu_loaded_dim[idim] = len(np.unique(uu[:,idim]))
@@ -191,7 +191,7 @@ def setup(options):
             print('Tried to resume using previous uniform map but could not find it.')
             print('Generating a new one of dimensions ' + str(map_shape) + ' with tomographic bins ' + str(bin_ranks))
             uu = gridmorph(xx, map_shape)
-            np.save(resume_path+'/uu_{}.npy'.format(mode), uu)
+            np.save(resume_map, uu)
     else:
         print('Multirank is generating a {}-dimensional uniform map to sample realisations.'.format(dimensions))
         print('Dimensions are ' + str(map_shape) + ' and uses tomographic bins ' + str(bin_ranks))
