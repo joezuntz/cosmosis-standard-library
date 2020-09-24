@@ -249,7 +249,7 @@ def execute(block, config):
 
     for ibin in np.arange(nbins):
         block[pz, 'bin_{0}'.format(ibin+1)] = nz_sampled[ibin]
-        block['ranks', 'mean_z_{0}'.format(ibin)] = nz_mean[index, ibin]
+        block['ranks', 'mean_z_{0}'.format(ibin+1)] = nz_mean[index, ibin]
 
     block['ranks', 'realisation_id'] = index
 
