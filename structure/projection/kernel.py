@@ -4,7 +4,7 @@ import warnings
 
 class KernelSpline(object):
     def __init__(self, x, y, clip=1.e-6, ymin=1.e-12, 
-        norm=True, is_pos=True, xmin_clipped_min=0.1):
+        norm=True, is_pos=True, xmin_clipped_min=5.0):
         """
         A class for splining Kernels. For use in
         integrals, it's useful to find xmin and
@@ -23,6 +23,11 @@ class KernelSpline(object):
             Array of y values
         is_pos: bool (optional)
             assert that all y values are >=0. 
+        xmin_clipped_min: float (optional)
+            sets min l.o.s. distance for projection
+            integral. Currently set to 5 to prevent
+            dependence on very high k when n(z) doesn't
+            go to zero sufficiently quickly.
         """
 
         self.x = x
