@@ -166,7 +166,7 @@ def setup(options):
         ext = nz_file[iext + istart]
 
         for ibin in np.arange(n_bins):
-            zmid, nz[iext, ibin], multiplicative_bias[iext,ibin]  = load_histogram_form(ext, ibin, upsampling)
+            zmid, nz[iext, ibin], multiplicative_bias[iext,ibin]  = load_histogram_form(ext, ibin+1, upsampling)
             nz_mean[iext, ibin] = np.trapz(nz[iext, ibin]*zmid, zmid)
             if mode == 'invchi':
                 chi, gchi[iext, ibin] = nz_to_gchi(zmid, nz[iext, ibin])
@@ -207,7 +207,7 @@ def setup(options):
     assert dimensions == uu.shape[-1], "Loaded uniform map was generated with a different dimensionality."
     assert map_shape[0] == len(np.unique(uu[:,0])), "Loaded uniform map has a different shape than the one computed here."
     assert map_shape[1] == len(np.unique(uu[:,1])), "Loaded uniform map has a different shape than the one computed here."
-i
+
 
     # find section for calilbration
     cal_section = options.get_string(option_section, "cal_section", default=names.shear_calibration_parameters)
@@ -267,7 +267,7 @@ def execute(block, config):
 
     block['ranks', 'realisation_id'] = index
     ### Multiplicative bias
-    for ibin in range(nbin):
+    for ibin in range(nbins):
         block[cal_section, "m{}".format(ibin + 1)] = mbias[ibin]
     return 0
 
