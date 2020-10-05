@@ -90,7 +90,8 @@ def load_histogram_form(ext, bin, upsampling):
 
 
 
-    norm = np.trapz(nz, z)
+#    norm = np.trapz(nz, z)
+    norm = np.sum(nz)
 # Capture the normalization as m-priors
     mbias = norm-1.
     nz /= norm
@@ -170,7 +171,6 @@ def setup(options):
                 weights[iext] = ext.header['weight']
             except KeyError:
                 weights[iext] = 0
-
         for ibin in np.arange(1, n_bins+1):
             zmid, nz[iext, ibin-1], multiplicative_bias[iext,ibin-1]   = load_histogram_form(ext, ibin, upsampling)
             nz_mean[iext, ibin-1] = np.trapz(nz[iext, ibin-1]*zmid, zmid)
