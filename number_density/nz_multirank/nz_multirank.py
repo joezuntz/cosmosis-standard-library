@@ -4,7 +4,7 @@ except:
     option_section = "options"
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from nz_gz import nz_to_gchi
 
 try:
