@@ -1220,7 +1220,10 @@ class SpectrumCalculator(object):
                 self.ell = np.concatenate( (linear_ells, self.ell) )
             else:
                 self.ell = linear_ells
-        assert len(self.ell)>0
+        if len(self.ell) == 0:
+            raise ValueError("Ell range mis-specified.  You now must specify "
+                "ell_min_logspaced, ell_max_logspaced, n_ell_logspaced "
+                "and/or ell_min_linspaced etc.")
 
         #Sort out ells for exact calculation
         #We set a limber_ell_start and n_ell_exact in the options
@@ -1316,9 +1319,9 @@ class SpectrumCalculator(object):
 
             if isinstance(value, bool):
                 if value:
-                    print("""You need to provide an argument
+                    raise ValueError("""You now need to provide an argument
                         sample_a-sample_b for which to calculate
-                        spectrum %s"""%(spectrum.name()))
+                        spectrum %s, not just T/F"""%(option_name))
                 continue
 
             # There are various ways a user can describe the spectra:
