@@ -133,29 +133,46 @@ int copy_metadata(int status, c_datablock * block, const char* output_section,
                   const char* input_section){
 
     //save useful metadata to the block
-    //all just copied over from the cl_section actually - is there a convenience
-    //function for this?
+    //all just copied over from the cl_section actually.
+    // check in each case if read successfully before trying to copy
     //number of z bins
-    int nbin_a, nbin_b;
-    status |= c_datablock_get_int(block, input_section, "nbin_a", &nbin_a);
-    status |= c_datablock_get_int(block, input_section, "nbin_b", &nbin_b);
-    c_datablock_put_int(block, output_section, "nbin_a", nbin_a);
-    c_datablock_put_int(block, output_section, "nbin_b", nbin_b);
+
+    // keep track of the individual statuses as well as the overall one
+    int s;
+
+    int nbin_a;
+    s = c_datablock_get_int(block, input_section, "nbin_a", &nbin_a);
+    if (s == 0) s |= c_datablock_put_int(block, output_section, "nbin_a", nbin_a);
+    status |= s;
+
+    int nbin_b;
+    s = c_datablock_get_int(block, input_section, "nbin_b", &nbin_b);
+    if (s == 0) s |= c_datablock_put_int(block, output_section, "nbin_b", nbin_b);
+    status |= s;
+
     //is_auto
     bool is_auto;
-    status |= c_datablock_get_bool(block, input_section, "is_auto", &is_auto);
-    c_datablock_put_bool(block, output_section, "is_auto", is_auto);
+    s = c_datablock_get_bool(block, input_section, "is_auto", &is_auto);
+    if (s == 0) s |= c_datablock_put_bool(block, output_section, "is_auto", is_auto);
+    status |= s;
+
     //sample names
     char * sample_a;
-    status |= c_datablock_get_string(block, input_section, "sample_a", &sample_a);
-    c_datablock_put_string(block, output_section, "sample_a", sample_a);
+    s = c_datablock_get_string(block, input_section, "sample_a", &sample_a);
+    if (s == 0) s |= c_datablock_put_string(block, output_section, "sample_a", sample_a);
+    status |= s;
+
     char * sample_b;
-    status |= c_datablock_get_string(block, input_section, "sample_b", &sample_b);
-    c_datablock_put_string(block, output_section, "sample_b", sample_b);
+    s = c_datablock_get_string(block, input_section, "sample_b", &sample_b);
+    if (s == 0) s |= c_datablock_put_string(block, output_section, "sample_b", sample_b);
+    status |= s;
+
     //save name
     char * save_name;
-    status |= c_datablock_get_string(block, input_section, "save_name", &save_name);
-    c_datablock_put_string(block, output_section, "save_name", save_name);
+    s = c_datablock_get_string(block, input_section, "save_name", &save_name);
+    if (s == 0) s |= c_datablock_put_string(block, output_section, "save_name", save_name);
+    status |= s;
+
     return status;
 }
 
@@ -349,11 +366,11 @@ int execute(c_datablock * block, void * config_in)
 
         // Save to th block
         if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
-            c_datablock_put_double_array_1d(block, xi_section, name_out, xi[0], N_thetaH);
-            c_datablock_put_double_array_1d(block, xi_minus_section, name_out, xi[1], N_thetaH);
+            status |= c_datablock_put_double_array_1d(block, xi_section, name_out, xi[0], N_thetaH);
+            status |= c_datablock_put_double_array_1d(block, xi_minus_section, name_out, xi[1], N_thetaH);
         }
         else {
-            c_datablock_put_double_array_1d(block, xi_section, name_out,
+            status |= c_datablock_put_double_array_1d(block, xi_section, name_out,
                       xi[0], N_thetaH);
         }
         free(C_ell);
@@ -374,24 +391,24 @@ int execute(c_datablock * block, void * config_in)
     for (int i=0; i<N_thetaH; i++){
         theta_vals[i] = exp(log_theta_min+i*dlog_theta);
     }
-    c_datablock_put_double_array_1d(block, xi_section, "theta",
+    status |= c_datablock_put_double_array_1d(block, xi_section, "theta",
                   theta_vals, N_thetaH);
     //Include units
-    c_datablock_put_metadata(block, xi_section, "theta", "unit", "radians");
-    c_datablock_put_string(block, xi_section, "sep_name", "theta");
+    status |= c_datablock_put_metadata(block, xi_section, "theta", "unit", "radians");
+    status |= c_datablock_put_string(block, xi_section, "sep_name", "theta");
 
     //copy over metadata from cl_section
-    copy_metadata(status, block, xi_section,
+    status |= copy_metadata(status, block, xi_section,
                   config->input_section );
 
     if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
-        c_datablock_put_double_array_1d(block, xi_minus_section, "theta",
+        status |= c_datablock_put_double_array_1d(block, xi_minus_section, "theta",
                       theta_vals, N_thetaH);
         //Include units
-        c_datablock_put_metadata(block, xi_minus_section, "theta", "unit", "radians");
-        copy_metadata(status, block, xi_minus_section,
+        status |= c_datablock_put_metadata(block, xi_minus_section, "theta", "unit", "radians");
+        status |= copy_metadata(status, block, xi_minus_section,
                   config->input_section );
-        c_datablock_put_string(block, xi_minus_section, "sep_name", "theta");
+        status |= c_datablock_put_string(block, xi_minus_section, "sep_name", "theta");
     }
 
     //Clean up
