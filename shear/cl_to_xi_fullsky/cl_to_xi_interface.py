@@ -20,7 +20,7 @@ def read_theta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'a
     Short function to read in theta values from a specified fits file.
     Desired angle units in 'rad', 'arcmin', 'arcsec', 'deg
     """
-    warnings.warn("Note: we are assuming that the theta values for all bin pairs are the same. "
+    print("Note: we are assuming that the theta values for all bin pairs are the same. "
                   "If this is not true, you need to modify cl_to_xi_interface")
     T = twopoint.TwoPointFile.from_fits(filename)
     xi = T.get_spectrum(xi_type_2pt)
