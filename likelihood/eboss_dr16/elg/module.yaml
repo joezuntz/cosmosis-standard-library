@@ -6,7 +6,7 @@ interface: eboss16_elg.py
 attribution: ""
 rules: ""
 cite: 
-    - "Arnaud de Mattia et al, 2007.09008"
+    - "A. de Mattia et al, 2007.09008"
 assumptions:
     - "Non-Gaussian likelihood"
 
