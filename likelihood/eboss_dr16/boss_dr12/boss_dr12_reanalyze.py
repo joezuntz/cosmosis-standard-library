@@ -25,7 +25,7 @@ class Boss12LRGLikelihood(GaussianLikelihood):
 		# Allow override of these parameters
 		self.rd_fiducial = self.options.get_double("rd_fiducial", default_rd_fiducial)
 		self.mode = self.options.get_int("mode", default=0)
-		self.feedback = self.options.get_int("feedback", default=0)
+		self.feedback = self.options.get_bool("feedback", default=False)
 		
 	def build_data(self):
 		
@@ -94,26 +94,30 @@ class Boss12LRGLikelihood(GaussianLikelihood):
 			fsigma8 = block['growth_parameters', 'fsigma8_z']
 			# Find theory fsigma8 at fiducial redshift
 			fsigma8_z = interp(z_eff[2::3], z, fsigma8)
-			params = []
-			params.append(Dm_z_rd)
-			params.append(Dh_z_rd)
-			params.append(fsigma8_z)
+			params = [Dm_z_rd[0],Dh_z_rd[0],fsigma8_z[0],Dm_z_rd[1],Dh_z_rd[1],fsigma8_z[1]]
+
 			
 		else:
 			# Distances over rd
 			Dm_z_rd = interp(z_eff[0::2], z, Dm)/rd
 			Dh_z_rd= interp(z_eff[1::2], z, Dh)/rd
-			params = []
-			params.append(Dm_z_rd)
-			params.append(Dh_z_rd)
+			params = [Dm_z_rd[0],Dh_z_rd[0],Dm_z_rd[1],Dh_z_rd[1]]
 			
 		if self.feedback:
 			print()
 			print('             zeff   pred    data')
-			print('Dm_over_rd: %.3f  %.3f  %.3f' % (self.data_x[0], Dm_z_rd, self.data_y[0]))
-			print('Dh_over_rd: %.3f  %.3f  %.3f' %(self.data_x[1], Dh_z_rd, self.data_y[1]))
 			if self.mode:
-				print('fsigma8:    %.3f   %.3f   %.3f' %(self.data_x[2], fsigma8_z, self.data_y[2]))
+				print('Dm_over_rd: %.3f  %.3f  %.3f' % (self.data_x[0], Dm_z_rd[0], self.data_y[0]))
+				print('Dh_over_rd: %.3f  %.3f  %.3f' %(self.data_x[1], Dh_z_rd[0], self.data_y[1]))
+				print('fsigma8:    %.3f   %.3f   %.3f' %(self.data_x[2], fsigma8_z[0], self.data_y[2]))
+				print('Dm_over_rd: %.3f  %.3f  %.3f' % (self.data_x[3], Dm_z_rd[1], self.data_y[3]))
+				print('Dh_over_rd: %.3f  %.3f  %.3f' %(self.data_x[4], Dh_z_rd[1], self.data_y[4]))	
+				print('fsigma8:    %.3f   %.3f   %.3f' %(self.data_x[5], fsigma8_z[1], self.data_y[5]))
+			else:
+				print('Dm_over_rd: %.3f  %.3f  %.3f' % (self.data_x[0], Dm_z_rd[0], self.data_y[0]))
+				print('Dh_over_rd: %.3f  %.3f  %.3f' %(self.data_x[1], Dh_z_rd[0], self.data_y[1]))
+				print('Dm_over_rd: %.3f  %.3f  %.3f' % (self.data_x[2], Dm_z_rd[1], self.data_y[2]))
+				print('Dh_over_rd: %.3f  %.3f  %.3f' %(self.data_x[3], Dh_z_rd[1], self.data_y[3]))	
 			print()
 			
 		return params
