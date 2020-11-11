@@ -197,11 +197,20 @@ class GalaxyIntrinsicPower3D(Power3D):
     section = "galaxy_intrinsic_power"
     source_specific = True
 
+class WeylPower3D(Power3D):
+    section = "weyl_curvature_spectrum_nl"
+    source_specific = False
+
 def get_lensing_prefactor(block):
     c_kms = 299792.4580
     omega_m = block[names.cosmological_parameters, "omega_m"]
     shear_scaling = 1.5 * (100.0*100.0)/(c_kms*c_kms) * omega_m
     return shear_scaling
+
+def get_lensing_weyl_prefactor(block):
+    h = block[names.cosmological_parameters, "h0"]
+    shear_weyl_scaling = 1.0/h**2
+    return shear_weyl_scaling
 
 class Spectrum(object):
     """
@@ -269,6 +278,8 @@ class Spectrum(object):
             pass
         elif self.prefactor_type[0]=="lensing":
             prefactor *= self.source.lensing_prefactor
+        elif self.prefactor_type[0]=="lensing_weyl":
+            prefactor *= self.source.lensing_weyl_prefactor
         elif self.prefactor_type[0]=="mag":
             prefactor *= self.get_magnification_prefactor(block, 
                 self.sample_a, bin1) * self.source.lensing_prefactor
@@ -278,6 +289,8 @@ class Spectrum(object):
             pass
         elif self.prefactor_type[1]=="lensing":
             prefactor *= self.source.lensing_prefactor
+        elif self.prefactor_type[0]=="lensing_weyl":
+            prefactor *= self.source.lensing_weyl_prefactor
         elif self.prefactor_type[1]=="mag":
             prefactor *= self.get_magnification_prefactor(block, 
                 self.sample_b, bin2) * self.source.lensing_prefactor
@@ -941,6 +954,14 @@ class SpectrumType(Enum):
         name = names.shear_cl
         prefactor_type = ("lensing", "lensing")
         has_rsd = False
+        
+    class WeylWeyl(Spectrum):
+        power_3d_type = WeylPower3D
+        kernel_types = ("W_W", "W_W")
+        autocorrelation = True
+        name = "shear_cl"
+        prefactor_type = ("lensing_weyl","lensing_weyl")
+        has_rsd = False
 
     class ShearIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
@@ -1510,6 +1531,10 @@ class SpectrumCalculator(object):
     def load_lensing_prefactor(self, block):
         self.lensing_prefactor = get_lensing_prefactor(block)
 
+    def load_lensing_weyl_prefactor(self, block):
+        self.lensing_weyl_prefactor = get_lensing_weyl_prefactor(block)
+
+
     def compute_spectrum(self, block, spectrum):
 
         #Save some info about the spectrum
@@ -1577,6 +1602,7 @@ class SpectrumCalculator(object):
             # Load input information from the block
             self.load_distance_splines(block)
             self.load_lensing_prefactor(block)
+            self.load_lensing_weyl_prefactor(block)
             self.load_kernels(block)
 
             # Loading the kernels can often fail, so we catch that specifically
