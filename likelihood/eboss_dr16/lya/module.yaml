@@ -18,7 +18,7 @@ explanation: >
         This module computes the combined likelihoods of cross and auto.
         "
 params:
-        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+        feedback: "Boolean, amount of output to print.  False for no feedback (default).  True for basic."
 
 inputs: 
         distances:

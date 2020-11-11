@@ -14,7 +14,7 @@ explanation:
         "This module computes the likelihood of Dv_over_rd for BAO-only analysis and Dm_over_rd, Dh_over_rd, 
         and fsigma8 for BAO+FS analysis, both using eBOSS DR16 measurements from ELG."
 params:
-        feedback: "Boolean, amount of output to print.  F for no feedback (default).  T for basic."
+        feedback: "Boolean, amount of output to print.  False for no feedback (default).  True for basic."
         mode: "Integer, type of analysis. 0 for BAO-only. 1 for BAO + Full-shape"
 
 inputs: 

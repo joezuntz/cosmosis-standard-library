@@ -1,18 +1,18 @@
-name: eboss_dr16_lrg
+name: eboss_dr16_qso
 version: ""
-purpose: Compute the likelihood of eBOSS DR16 from LRG
+purpose: Compute the likelihood of eBOSS DR16 from QSO
 url: ""
-interface: eboss16_lrg.py
+interface: eboss16_qso.py
 attribution: ""
 rules: ""
 cite: 
-    - "J. Bautista et al, MNRAS 2020"
-    - "H. Gil-Marín et al, MNRAS 2020"
+    - "Neveux et al, MNRAS 2020"
+    - "Hou et al, MNRAS 2020"
 assumptions:
     - "Gaussian likelihood"
 
 explanation: >
-        "This module computes the likelihood of Dm_over_rd and Dh_over_rd for BAO-only analysis and Dm_over_rd, Dh_over_rd, and fsigma8 for BAO+FS analysis, both using eBOSS DR16 measurements from LRG. 
+        "This module computes the likelihood of Dm_over_rd and Dh_over_rd for BAO-only analysis and Dm_over_rd, Dh_over_rd, and fsigma8 for BAO+FS analysis, both using eBOSS DR16 measurements from QSO. 
         We assume likelihoods are Gaussian."
 params:
         feedback: "Boolean, amount of output to print.  False for no feedback (default).  True for basic."
@@ -28,9 +28,9 @@ inputs:
                 z: "1D real array, redshifts of samples"
                 fsigma8: "1D real array, matter growth parameter (if mode = 1)"
         data:
-                sdss_DR16_LRG_(BAO/FSBAO)_(DMDH/DMDHfs8).txt: "table, data vector with [zeff, (DMDH/DMDHfs8)] values"
-                sdss_DR16_LRG_(BAO/FSBAO)_(DMDH/DMDHfs8)_covtot.txt: "table, covariance matrix"
+                sdss_DR16_QSO_(BAO/FSBAO)_(DMDH/DMDHfs8).txt: "table, data vector with [zeff, (DMDH/DMDHfs8)] values"
+                sdss_DR16_QSO_(BAO/FSBAO)_(DMDH/DMDHfs8)_covtot.txt: "table, covariance matrix"
 
 outputs:
         likelihoods:
-                eboss16_lrg_like: "real, likelihood"
+                eboss16_qso_like: "real, likelihood"
