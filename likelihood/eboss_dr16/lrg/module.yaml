@@ -2,7 +2,7 @@ name: eboss_dr16_lrg
 version: ""
 purpose: Compute the likelihood of eBOSS DR16 from LRG
 url: ""
-interface: eboss16_lrg.py
+interface: eboss_dr16_lrg.py
 attribution: ""
 rules: ""
 cite: 

@@ -2,7 +2,7 @@ name: eboss_dr16_qso
 version: ""
 purpose: Compute the likelihood of eBOSS DR16 from QSO
 url: ""
-interface: eboss16_qso.py
+interface: eboss_dr16_qso.py
 attribution: ""
 rules: ""
 cite: 

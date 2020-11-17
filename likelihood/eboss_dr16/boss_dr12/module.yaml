@@ -3,7 +3,7 @@ name: boss_dr12_lrg_reanalyze
 version: "1607.03155v1"
 purpose: Compute the likelihood of the supplied expansion and growth history against BOSS DR12 data as reanalyzed by eBOSS DR16
 url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
-interface: boss_dr12.py
+interface: boss_dr12_lrg_reanalyze.py
 attribution: 
 rules: ""
 cite: 

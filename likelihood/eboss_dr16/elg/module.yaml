@@ -2,7 +2,7 @@ name: eboss_dr16_elg
 version: ""
 purpose: Compute the likelihood of eBOSS DR16 from ELG
 url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
-interface: eboss16_elg.py
+interface: eboss_dr16_elg.py
 attribution: ""
 rules: ""
 cite: 

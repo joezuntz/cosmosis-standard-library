@@ -2,7 +2,7 @@ name: eboss_dr16_lya
 version: ""
 purpose: Compute the likelihood of eBOSS DR16 from Lyman alpha 
 url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
-interface: eboss16_lya.py
+interface: eboss_dr16_lya.py
 attribution: ""
 rules: ""
 cite: 
@@ -28,4 +28,4 @@ inputs:
                 h:  "1D real array, hubble parameter with in units of Mpc"
 outputs:
         likelihoods:
-                eboss14_lya_like: "real, likelihood of Dh and Dm at z=2.34"
+                eboss16_lya_like: "real, likelihood of Dh and Dm at z=2.34"

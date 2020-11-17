@@ -72,7 +72,7 @@ def execute(block, config):
     H = c_km_per_s*block[dist, 'H'] # in c/Mpc
     Dh = c_km_per_s/H
     # Spherically averaged distance    
-    Dv = (z * Dh**2 *Dm)**(1/3) 
+    Dv = (z * Dm**2 *Dh)**(1/3) 
     
     # Configuration inputs    
     mode, feedback, zeff, rd_fiducial = config[0], config[1], config[2], config[3]
