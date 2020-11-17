@@ -1,0 +1,39 @@
+#This is a template for module description files
+name: mgs
+version: ""
+url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
+purpose: Compute the likelihood of MGS BAO and FS as distributed by eBOSS DR16
+interface: mgs.py
+attribution: MGS team, eBOSS DR16 team
+rules: ""
+cite: 
+    - "C. Howlett et al, MNRAS 2015"
+
+assumptions:
+    - "Gaussian likelihood"
+
+explanation: >
+    "This module computes the likelihood of MGS, using f*sigma8 and 
+    D_v/r_s measurements. "
+params:
+    data_file: "string, path to file with measured D_v(zeff),fsig8(zeff) values in (default: included file)"
+    cov_file: "string, path to covariance matrix file (default: included file)"
+    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=148.6)"
+    verbose: "Bool, Print extra output (default = False)"
+    mode: "0 for BAO only, 1 for BAO+FS measurements"
+inputs: 
+    growth_parameters:
+        d_z: "1D real array, linear growth factor D"
+        f_z: "1D real array, linear growth rate f"
+        z: "1D real array, redshift of samples "
+    cosmological_parameters:
+        omega_m:  "real, baryon + cdm density fraction today"
+        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
+        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+    distances:
+        z: "1D real array, redshifts of samples"
+        d_a: "1D real array, angular diameter distance in Mpc"
+        h:  "1D real array, hubble parameter with in units of Mpc"
+outputs:
+    likelihoods:
+        mgs_like: "real, likelihood of Dv and fsigma8 at z=0.15"
