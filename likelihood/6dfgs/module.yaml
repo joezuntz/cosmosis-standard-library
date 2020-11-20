@@ -16,10 +16,12 @@ explanation: >
         ""
 params:
         feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
-        mode: "Integer, 0 for BAO and 1 for fsigma8"
-        mean: "Real,  Dv (default = 457.) for mode 0 or fsigma8 (default  = 0.423) for mode 1"
-        sigma: "Real, sigma_Dv (default = 27.) for mode 0 or sigma_fsigma8 (default  = 0.055) for mode 1"
-        redshift: "Real, redshift (default  = 0.106 for mode 0 or 0.067 for mode 1)"
+        bao_like: "Boolean, true to use BAO likelihood"
+        bao_mode: "String, set to dv to use the measurement of D_v or set to rs_dv to use the ratio r_s/D_v"
+        rsd_like: "Boolean, true to use f*sigma8 measurement"
+        mean: "Real,  Dv (default = 457.) for bao_like and bao_mode = 'd_v', rs_dv (default = 0.336) for bao_like and bao_mode = 'r_s/D_v', fsigma8 (default  = 0.423) for rsd_like"
+        sigma: "Real, corresponding error bar on the measurements"
+        redshift: "Real, redshift (default  = 0.106 for mode bao_like or 0.067 for rsd_like)"
 inputs: 
         growth_parameters:
                 d_z: "1D real array, linear growth factor D"
@@ -37,4 +39,4 @@ inputs:
 
 outputs:
         likelihoods:
-                6dfgs_LIKE: "real, likelihood of supplied Dv(z=0.106) or fsigma8(z=0.067)"
+                6dfgs_LIKE: "real, likelihood of supplied Dv(z=0.106) or r_s/D_v(z=0.106) or fsigma8(z=0.067)"
