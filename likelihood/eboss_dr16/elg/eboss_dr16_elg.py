@@ -55,8 +55,8 @@ def setup(options):
                     DM_grid[i],DH_grid[j],fs8_grid[k],prob_grid[i,j,k] = tmp[num]
                     num += 1
 
-        like_spline = RegularGridInterpolator((DM_grid,DH_grid,fs8_grid), prob_grid, method='linear', bounds_error=True, fill_value=scipynan)
-        out = [mode, feedback, zeff, rd_fiducial, like_spline]     
+        loglike_spline = RegularGridInterpolator((DM_grid, DH_grid, fs8_grid), log(prob_grid), method='linear', bounds_error=False, fill_value=-inf)
+        out = [mode, feedback, zeff, rd_fiducial, loglike_spline]     
 
     return out
 
@@ -100,8 +100,8 @@ def execute(block, config):
         # Find theory fsigma8 at fiducial redshift
         fsigma8_z = interp(zeff, z, fsigma8)
         
-        like_spline = config[4]        
-        loglike = log(like_spline((Dm_z_rd, Dh_z_rd, fsigma8_z)))
+        loglike_spline = config[4]        
+        loglike = loglike_spline((Dm_z_rd, Dh_z_rd, fsigma8_z))
         
         if feedback:
             print()
