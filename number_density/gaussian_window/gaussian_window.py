@@ -15,6 +15,9 @@ def setup(options):
     sigma = options[option_section, "sigma"]
     section = options.get_string(
         option_section, "output_section", names.wl_number_density)
+    zmin = options.get_double(option_section, "zmin", 0.)
+    zmax = options.get_double(option_section, "zmax", 3.)
+    dz = options.get_double(option_section, "dz", 0.01)
     # in case just one bin, convert to arrays:
     if np.isscalar(z):
         z = [z]
@@ -23,7 +26,7 @@ def setup(options):
     assert len(z) == len(
         sigma), "sigma and z had different sizes in the ini file section for gaussian_window"
 
-    return (z, sigma, section)
+    return (z, sigma, section, zmin, zmax, dz)
 
 
 def gaussian(x, mu, sigma):
@@ -32,10 +35,10 @@ def gaussian(x, mu, sigma):
 
 
 def execute(block, config):
-    (mu, sigma, section) = config
+    (mu, sigma, section, zmin, zmax, dz) = config
     nbin = len(mu)
     # Set up z array.  Make sure ZMAX is inclusive
-    z = np.arange(0, ZMAX + DZ, DZ)
+    z = np.arange(zmin, zmax+dz, dz)
 
     # Save Z array and count info
     block[section, "Z"] = z

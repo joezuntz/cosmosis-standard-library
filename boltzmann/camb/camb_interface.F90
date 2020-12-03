@@ -489,22 +489,35 @@ module camb_interface_tools
 		!Save sigma8 at z=0 to the cosmological parameters section of the file
 		integer (cosmosis_block) :: block
 		integer (cosmosis_status) :: status
-		real(8) :: sigma8
+		real(8) :: sigma8, sigma12
 		real(8), parameter :: radius8 = 8.0_8
+		real(8), parameter :: radius12_mpc = 12.0_8  ! This is in mpc
+		real(8) :: h, radius12 ! we will calculate the mpc/h version
 		integer nz
 
-		!Ask camb for sigma8
-		status = 0
-		sigma8=0.0
-		call Transfer_Get_sigma8(MT,radius8)
-		
 		!It gives us the array sigma8(z).
 		!We want the entry for z=0
 		nz = CP%Transfer%num_redshifts
+
+
+		! We do 12 first, in case I have implicitly assumed
+		! anywhere later on that 8 is used.
+		h = (CP%h0/100.0d0)
+		radius12 = radius12_mpc * h
+
+		!Ask camb for sigma8
+		call Transfer_Get_sigma8(MT,radius12)
+		sigma12 = MT%sigma_8(nz,1)
+
+		! Now the same thing for the actual sigma8
+		call Transfer_Get_sigma8(MT,radius8)
 		sigma8 = MT%sigma_8(nz,1)
 
+
 		!Save sigma8
-		status = status + datablock_put_double(block, cosmological_parameters_section, "SIGMA_8", sigma8)
+		status = 0
+		status = datablock_put_double(block, cosmological_parameters_section, "SIGMA_8", sigma8)
+		status = datablock_put_double(block, cosmological_parameters_section, "SIGMA_12", sigma12)
 		return
 	end function
 	

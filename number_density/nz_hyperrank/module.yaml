@@ -9,7 +9,7 @@ rules: "If you use a file from a particular survey you should cite that survey"
 cite: []
 
 assumptions:
-    - "Realisations are provided in FITS extensions NZ_{NAME}_realisation_{NUMBER}"
+    - "Realisations are provided in FITS extensions NZ_{NAME}_realisation_{NUMBER} starting with NUMBER=0, in correlated order and without skips"
 
 explanation: |
     "This module is designed to work with the number density part of the FITS
@@ -45,10 +45,10 @@ params:
       no-rank, unified, separate, inv-chi-unified, inv-chi-separate, random, external"
     nz_file: "String; absolute or relative path to an n(z) file"
     data_set: "String, names of the extensions prefixes in the FITS files to load and save to the block"
-    n_bins: "Integer, number of tomographic bins"
-    n_hist: "Integer, number of redshift histogram bins at which n(z) is evaluated"
-    n_realisations: "Integer, number of realisations contained in the FITS file, numbered from 0 to n_realisations-1"
     external_ranking_filename: "String, path to a plain text file with a 1D array of length = n_realisations with values to be ranked"
+    verbose: "Flag to set additional output during setup"
+    rank_output: "If verbose = T, this is the filename for the output of the ranks"
+    weighting: "Flag to use weights in for each realisation in the ranking"
 
 inputs:
   ranks:

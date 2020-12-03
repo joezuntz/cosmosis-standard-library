@@ -9,6 +9,14 @@ class SpectrumInterp(object):
     """class for 1d interpolation of spectra"""
 
     def __init__(self, angle, spec, kind='cubic'):
+        assert np.all(angle>=0.)
+        starts_with_zero=False
+        self.spec0 = 0.
+        if angle[0]<1.e-9:
+            starts_with_zero=True
+            self.spec0 = spec[0]
+            angle, spec = angle[1:], spec[1:]
+
         if np.all(spec > 0):
             self.interp_func = interp.interp1d(np.log(angle), np.log(spec), bounds_error=False,
                                                kind=kind)
@@ -23,6 +31,7 @@ class SpectrumInterp(object):
             self.interp_type = "log_ang"
 
     def __call__(self, angle):
+        non_zero = angle>1.e-12
         if self.interp_type == 'loglog':
             spec = np.exp(self.interp_func(np.log(angle)))
         elif self.interp_type == 'minus_loglog':
@@ -30,8 +39,7 @@ class SpectrumInterp(object):
         else:
             assert self.interp_type == "log_ang"
             spec = self.interp_func(np.log(angle))
-        spec[np.isnan(spec)] = 0.
-        return spec
+        return np.where(non_zero, spec, self.spec0)
 
 def radians_to_arcmin(r):
     return np.degrees(r) * 60
@@ -52,7 +60,6 @@ def cl_to_xi_to_block(block, output_section, name,
         except TypeError:
             ells = np.arange(ell_max + 1)
             cl_interp = cl_interp(ells)
-
         for it, t in enumerate(thetas):
             xis[it] = np.sum(cl_interp * leg[it])
         block[o, name] = xis

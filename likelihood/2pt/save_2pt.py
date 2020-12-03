@@ -10,11 +10,10 @@ from builtins import range
 from builtins import object
 from cosmosis.datablock import option_section, names
 import numpy as np
-from scipy.interpolate import interp1d
 import twopoint
 from twopoint_cosmosis import type_table
 import gaussian_covariance
-from spec_tools import TheorySpectrum, SpectrumInterp, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
+from spec_tools import TheorySpectrum, real_space_cov, perarcmin2_to_perrad2, ClCov, arcmin_to_rad, convert_angle
 
 
 def get_scales( x_min, x_max, nbins, logspaced=True, integer_lims=False, two_thirds_midpoint=False):
@@ -81,15 +80,20 @@ def setup(options):
         "make_covariance": make_covariance,
         "copy_covariance": copy_covariance,
         "logspaced": logspaced, 
-        "angle_units": angle_units
+        "angle_units": angle_units,
     }
 
-    def read_list(key):
-        s = options.get_string(option_section, key)
+    def read_list(key, default=""):
+        s = options.get_string(option_section, key, default)
         return s.split()
 
     #Get the spectrum section names
     config["spectrum_sections"] = read_list("spectrum_sections")
+    auto_only_sections = read_list("auto_only")
+    if auto_only_sections is not "":
+        config["auto_only"] = [(s in auto_only_sections) for s in config["spectrum_sections"]]
+    else:
+        config["auto_only"] = []
 
     #And output names (name of extensions in output fits files)
     if options.has_value(option_section, "output_extensions" ):
@@ -235,6 +239,7 @@ def execute(block, config):
     print("Generating twopoint file with the following spectra:")
     print("    ", config['spectrum_sections'])
     for i_spec in range( len(config["spectrum_sections"]) ):
+        auto_only = config["auto_only"][i_spec]
         spectrum_section = config["spectrum_sections"][i_spec]
         output_extension = config["output_extensions"][i_spec]
 
@@ -244,14 +249,19 @@ def execute(block, config):
         kernel_name_a, kernel_name_b = "nz_"+sample_a, "nz_"+sample_b
         
         #Get kernels
-        if (kernel_name_a not in [ k.name for k in kernels ]) and (kernel_name_a not in no_kernel_found):
+        if ((kernel_name_a not in [ k.name for k in kernels ]) 
+            and (kernel_name_a not in no_kernel_found)):
             if block.has_section(kernel_name_a):
-                kernels.append( twopoint.NumberDensity.from_block( block, kernel_name_a ) )
+                kernels.append( 
+                    twopoint.NumberDensity.from_block( 
+                        block, kernel_name_a ) )
             else:
                 no_kernel_found.append(kernel_name_a)
         if kernel_name_b not in [ k.name for k in kernels ]:
             if block.has_section(kernel_name_b):
-                kernels.append( twopoint.NumberDensity.from_block( block, kernel_name_b ) )
+                kernels.append( 
+                    twopoint.NumberDensity.from_block( 
+                        block, kernel_name_b ) )
             else:
                 no_kernel_found.append(kernel_name_b)
 
@@ -259,7 +269,8 @@ def execute(block, config):
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
 
-        theory_spec = TheorySpectrum.from_block( block, spectrum_section )
+        theory_spec = TheorySpectrum.from_block( block, 
+            spectrum_section, auto_only=auto_only )
         theory_spec_list.append(theory_spec)
 
         #get angle_units
@@ -267,15 +278,20 @@ def execute(block, config):
             angle_units = config['angle_units'].name
         else:
             angle_units = None
-        spec_meas_list.append( theory_spec.get_spectrum_measurement( config['angle_mids_userunits'], 
-            (kernel_name_a, kernel_name_b), output_extension, angle_lims = config['angle_lims_userunits'], 
-            angle_units=angle_units ) )
+
+        spec_meas_list.append( 
+            theory_spec.to_twopoint_object(config['angle_mids_userunits'], 
+            (kernel_name_a, kernel_name_b), output_extension, 
+            angle_lims=config['angle_lims_userunits'], 
+            angle_units=angle_units))
         
         if make_covariance:
             if real_space:
                 #In this case we also need the corresponding Cl spectra to generate the covariance
                 cl_section = config["cl_sections"][i_spec]
-                cl_spec = TheorySpectrum.from_block( block, cl_section )
+                cl_spec = TheorySpectrum.from_block(block, cl_section, auto_only=False)
+                if cl_spec.is_bin_averaged:
+                    raise ValueError("We need interpolated C_ell values for covariances, but your pipeline supplied bin-averaged")
                 cl_theory_spec_list.append( cl_spec )
                 #Check cls have the same bin pairings as their corresponding real-space spectra
                 try:
@@ -365,6 +381,8 @@ def execute(block, config):
             if s1.name != s2.name:
                 raise ValueError("Different spectrum order in parent file")
             if len(s1) != len(s2):
+                print ("s1, s2",s1, s2)
+                print ("len s1, s2",len(s1), len(s2))
                 raise ValueError("Different spectrum lengths in parent file")
             if not ((s1.bin1 == s2.bin1).all() and (s1.bin2 == s2.bin2).all()):
                 raise ValueError("Different tomo bin order in parent file")

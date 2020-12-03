@@ -6,9 +6,10 @@ import numpy as np
 
 def setup(options):
     verbose = options.get_bool(option_section, "verbose", default=False)
+    cosmomc_theta = options.get_bool(option_section, "cosmomc_theta", default=False)
     relations_file = options.get_string(
         option_section, "relations_file", default="")
-    cons = consistency.cosmology_consistency(verbose, relations_file)
+    cons = consistency.cosmology_consistency(verbose, relations_file, cosmomc_theta)
     return cons
 
 

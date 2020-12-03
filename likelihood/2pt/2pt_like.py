@@ -11,7 +11,7 @@ import numpy as np
 import twopoint
 import gaussian_covariance
 import os
-from spec_tools import SpectrumInterp
+from spec_tools import TheorySpectrum
 default_array = np.repeat(-1.0, 99)
 
 
@@ -337,6 +337,7 @@ class TwoPointLikelihood(GaussianLikelihood):
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 
     def extract_spectrum_prediction(self, block, spectrum):
+
         # We may need theory predictions for multiple different
         # types of spectra: e.g. shear-shear, pos-pos, shear-pos.
         # So first we find out from the spectrum where in the data
@@ -349,95 +350,54 @@ class TwoPointLikelihood(GaussianLikelihood):
         # e.g. "shear_cl_des" instead of just "shear_cl".
         section += self.suffix
 
-        # We need the angle (ell or theta depending on the spectrum)
-        # for the theory spline points - we will be interpolating
-        # between these to get the data points
-        angle_theory = block[section, x_name]
+        # Initialize TheorySpectrum class from block
+        bin_pairs = spectrum.get_bin_pairs()
+        theory_spec = TheorySpectrum.from_block(block, 
+            section, bin_pairs=bin_pairs)
 
-        # Now loop through the data points that we have.
-        # For each one we have a pairs of bins and an angular value.
-        # This assumes that we can take a single sample point from
-        # each theory vector rather than integrating with a window function
-        # over the theory to get the data prediction - this will need updating soon.
-        bin_data = {}
+        # If the theory spectrum has been bin-averaged then we expect the
+        # data to be so also.  We check this by ensuring that angle_min is specified
+        # Based on this, we also generate the angle argument passed to the spectrum
+        # differently.  The bin-averaged version expects a tuple angle_min and angle_max,
+        # whereas the interpolated version just wants a single angle.
+        if theory_spec.is_bin_averaged:
+            if spectrum.angle_min is None:
+                raise ValueError("Your theory pipeline produced angle-binnned values, but your data it not binned.")
+            angles = list(zip(spectrum.angle_min, spectrum.angle_max))
+        else:
+            angles = spectrum.angle
+        
+        # We store the nominal mid-points for plotting later on, etc.
+        angle_mids = spectrum.angle
+
+        # This is a bit of a hack, but later on if we are making a covariance
+        # we need all the splines, so pull them out here.
+        bin_splines = {}
+
+        # We build up these vectors from all the data points.
+        # Only the theory vector is needed for the likelihood - the others
+        # are for convenience, debugging, etc.
         theory_vector = []
-
-        # For convenience we will also return the bin and angle (ell or theta)
-        # vectors for this bin too.
         angle_vector = []
         bin1_vector = []
         bin2_vector = []
-        for (b1, b2, angle) in zip(spectrum.bin1, spectrum.bin2, spectrum.angle):
-            # We are going to be making splines for each pair of values that we need.
-            # We make splines of these and cache them so we don't re-make them for every
-            # different theta/ell data point
-            if (b1, b2) in bin_data:
-                # either use the cached spline
-                theory_spline = bin_data[(b1, b2)]
-            else:
-                # or make a new cache value
-                # load from the data block and make a spline
-                # and save it
-                if block.has_value(section, y_name.format(b1, b2)):
-                    theory = block[section, y_name.format(b1, b2)]
-                # It is okay to swap if the spectrum types are the same - symmetrical
-                elif block.has_value(section, y_name.format(b2, b1)) and spectrum.type1 == spectrum.type2:
-                    theory = block[section, y_name.format(b2, b1)]
-                else:
-                    raise ValueError("Could not find theory prediction {} in section {}".format(
-                        y_name.format(b1, b2), section))
-                #theory_spline = interp1d(angle_theory, theory)
-                theory_spline = SpectrumInterp(angle_theory, theory)
-                bin_data[(b1, b2)] = theory_spline
-                # This is a bit silly, and is a hack because the
-                # book-keeping is very hard.
-                bin_data[y_name.format(b1, b2)] = theory_spline
 
-            # use our spline - interpolate to this ell or theta value
-            # and add to our list
-            try:
-                theory = theory_spline(angle)
-            except ValueError:
-                raise ValueError("""Tried to get theory prediction for {} {}, but ell or theta value ({}) was out of range.
-					"Maybe increase the range when computing/projecting or check units?""".format(section, y_name.format(b1, b2), angle))
+        for (b1, b2, angle, angle_mid) in zip(spectrum.bin1, spectrum.bin2, angles, angle_mids):
+            # The extra object will either be a spline (for interpolated spectra)
+            # or theta mid-point values (for bin-averaged ones, e.g. for plotting)
+            theory, extra = theory_spec.get_spectrum_value(b1, b2, angle)
+
+            # We can only record the splines for non-bin-averaged values
+            if not theory_spec.is_bin_averaged:
+                bin_splines[y_name.format(b1, b2)] = extra
+
+            # Build up the vector - we make this into an array later
             theory_vector.append(theory)
-            angle_vector.append(angle)
+            angle_vector.append(angle_mid)
             bin1_vector.append(b1)
             bin2_vector.append(b2)
 
-        # We are saving the theory splines as we may need them
-        # to calculate covariances later
-        self.theory_splines[section] = bin_data
-
-        if self.save_plot_to:
-            if not os.path.isdir(self.save_plot_to):
-                os.makedirs(self.save_plot_to)
-            import pylab
-            nbin = max(spectrum.nbin(), spectrum.nbin())
-            for b1 in range(1, nbin + 1):
-                for b2 in range(1, nbin + 1):
-                    if (b1, b2) not in bin_data:
-                        continue
-                    # pylab.subplot(nbin, nbin, (b1-1)*nbin+b2)
-                    y_theory = bin_data[(b1, b2)](angle_theory)
-                    x_theory = np.degrees(angle_theory) * 60
-                    pylab.plot(x_theory, y_theory)
-                    xdata, ydata = spectrum.get_pair(b1, b2)
-                    print("FIXME: Assuming units in pipeline are radians.  Prob true but check!")
-                    ymin = 0.1 * bin_data[(b1, b2)](xdata).min()
-                    ymax = 10 * bin_data[(b1, b2)](xdata).max()
-                    xplot = np.degrees(xdata) * 60
-                    yerr = spectrum.get_error(b1, b2)
-                    pylab.errorbar(xplot, ydata, yerr, fmt='o')
-                    pylab.yscale('log', nonposy='clip')
-                    pylab.xscale('log', nonposy='clip')
-                    pylab.xlim(xmin=xplot.min(), xmax=xplot.max())
-                    pylab.ylim(ymin=ymin, ymax=ymax)
-                    pylab.xlabel("theta")
-                    pylab.ylabel("{} {},{}".format(spectrum.name, b1, b2))
-                    pylab.savefig(os.path.join(self.save_plot_to,
-                                               "{}_{}_{}.png".format(spectrum.name, b1, b2)))
-                    pylab.close()
+        self.theory_splines[section] = bin_splines
 
         # Return the whole collection as an array
         theory_vector = np.array(theory_vector)
@@ -449,6 +409,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2_vector = np.array(bin2_vector, dtype=int)
 
         return theory_vector, angle_vector, bin1_vector, bin2_vector
+
 
     def extract_covariance(self, block):
         assert self.gaussian_covariance, "Set constant_covariance=F but somehow not with Gaussian covariance.  Internal error - please open an issue on the cosmosis site."
