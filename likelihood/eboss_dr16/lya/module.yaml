@@ -1,0 +1,31 @@
+name: eboss_dr16_lya
+version: ""
+purpose: Compute the likelihood of eBOSS DR16 from Lyman alpha 
+url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
+interface: eboss_dr16_lya.py
+attribution: ""
+rules: ""
+cite: 
+    - "du Mas des Bourboux, the Astrophysical Journal, 2020"
+assumptions:
+    - ""
+
+explanation: >
+        "This module computes the likelihood of Dm and Dh using eBOSS DR16
+        measurement from Lyman alpha, auto and cross correlations. 
+        These have only geometric information (no RSD). 
+
+        This module computes the combined likelihoods of cross and auto.
+        "
+params:
+        feedback: "Boolean, amount of output to print.  False for no feedback (default).  True for basic."
+
+inputs: 
+        distances:
+                z: "1D real array, redshifts of samples"
+                rs_zdrag: "real, value of predicted drag redshift "
+                d_m: "1D real array, physical angular diameter distance in Mpc"
+                h:  "1D real array, hubble parameter with in units of Mpc"
+outputs:
+        likelihoods:
+                eboss16_lya_like: "real, likelihood of Dh and Dm at z=2.34"
