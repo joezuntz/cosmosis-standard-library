@@ -3,7 +3,6 @@
 # replace all of this, but you need to keep this line
 # at the top:
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
-export
 
 USER_CXXFLAGS += -I${GSL_INC}
 USER_LDFLAGS += -lcosmosis -L${GSL_LIB}  -lgsl -lgslcblas
@@ -19,7 +18,7 @@ src/libclusters.so:
 	$(MAKE) -C src
 
 fgas.so: fgas_cosmosis.cpp src/libclusters.so
-	$(CXX) $(CXXFLAGS) fgas_cosmosis.cpp -shared -o fgas.so $(LDFLAGS) src/libclusters.so
+	$(CXX) $(CXXFLAGS) fgas_cosmosis.cpp -shared -o fgas.so $(LDFLAGS) -Lsrc -lclusters
 
 #Replace this to put in some kind of test command for
 #your module, if you have one.
