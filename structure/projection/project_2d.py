@@ -1491,6 +1491,11 @@ class SpectrumCalculator(object):
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z, 
                     self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels, 
                     dchi=self.shear_kernel_dchi)
+            
+            elif kernel_type == "W_W":
+                self.kernels[sample_name].set_wwofchi_splines(self.chi_of_z, 
+                    self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels, 
+                    dchi=self.shear_kernel_dchi)
 
             elif kernel_type == "F":
                 #This is the combined shear and IA kernel. We need to calculate 

@@ -59,7 +59,9 @@ def setup(options):
     nmin = options.get_int(option_section, "nmin", default=50)
     npoint = options.get_int(option_section, "npoint", default=3)
     nmax = options.get_int(option_section, "nmax", default=200)
-    return {"kmax": kmax, "kmin": kmin, "nmin": nmin, "nmax": nmax, "npoint": npoint}
+    extrapk = options.get_string(option_section, "extrapk", default='')
+    extrapk = extrapk.split(' ')
+    return {"kmax": kmax, "kmin": kmin, "nmin": nmin, "nmax": nmax, "npoint": npoint, "extrapk": extrapk}
 
 
 def execute(block, config):
@@ -68,9 +70,12 @@ def execute(block, config):
     nmin = config['nmin']
     nmax = config['nmax']
     npoint = config['npoint']
+    extrapk = config['extrapk']
+    if '' in extrapk:
+        extrapk.remove('')
 
     # extrapolate non-linear power
-    for section in [names.matter_power_nl, names.matter_power_lin]:
+    for section in [names.matter_power_nl, names.matter_power_lin]+extrapk:
         if block.has_section(section):
             extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint)
     return 0
