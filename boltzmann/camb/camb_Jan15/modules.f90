@@ -1924,7 +1924,7 @@
             +(b0**3-b0)*PK%ddmat(lhi,itf))*ho**2/6
     end if
 
-    outpower = exp(max(-30._dl,outpower))
+    outpower = exp(max(-45._dl,outpower))
 
     end function MatterPowerData_k
 
@@ -2041,7 +2041,7 @@
         lastix = lastix+1
     end do
 
-    outpower = exp(max(-30.d0,outpower))
+    outpower = exp(max(-45.d0,outpower))
 
     do il = 1, npoints
         k = exp(logmink + dlnkh*(il-1))*h

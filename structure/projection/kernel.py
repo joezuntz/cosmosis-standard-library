@@ -114,6 +114,7 @@ class TomoNzKernel(object):
         #These get set later
         self.nchi_splines = {} #n(chi) splines
         self.wchi_splines = {} #W(chi) splines
+        self.wwchi_splines = {} #W_weyl(chi) splines
 
     @classmethod
     def from_block(cls, block, section_name, norm=True):
@@ -157,6 +158,31 @@ class TomoNzKernel(object):
                 chi_start, nchi_spline.xmax) / a_vals[j]
         return w_of_chi
 
+    def set_wwofchi_splines(self, chi_of_z, dchidz, a_of_chi, clip=1.e-6, dchi=1.):
+        if len(self.nchi_splines) == 0:
+            self.set_nofchi_splines(chi_of_z, dchidz, clip=clip)
+        for i in range(1, self.nbin+1):
+            nchi_spline = self.nchi_splines[i]
+            nchi = int(np.ceil(nchi_spline.xmax/dchi))
+            chi_vals = np.linspace(0., nchi_spline.xmax, nchi)
+            a_vals = a_of_chi(chi_vals)
+            ww_of_chi_vals = self.get_wwofchi_vals(chi_vals, a_vals, nchi_spline)
+            self.wwchi_splines[i] = KernelSpline(chi_vals, ww_of_chi_vals, 
+                norm=False)
+
+    def get_wwofchi_vals(self, chi_vals, a_vals, nchi_spline):
+        ww_of_chi = np.zeros_like(chi_vals)
+        for j,chi in enumerate(chi_vals):
+            #integral \int_{chi}^{chi_max} dchi' n(chi') * (chi' - chi)/chi'
+            chi_start = max(chi, nchi_spline.xmin)
+            integrand = np.where(nchi_spline.x>chi, 
+                nchi_spline.y * (nchi_spline.x - chi)/nchi_spline.x, 0.)
+            integrand_spline = interp.InterpolatedUnivariateSpline(
+                nchi_spline.x, integrand)
+            ww_of_chi[j] = chi * integrand_spline.integral(
+                chi_start, nchi_spline.xmax) #/ a_vals[j]
+        return ww_of_chi
+
     def set_combined_shear_ia_splines(self, chi_of_z, dchidz, a_of_chi, 
         F_of_chi_spline, lensing_prefactor, clip=1.e-6, dchi=1.):
 
@@ -184,8 +210,10 @@ class TomoNzKernel(object):
             return self.nchi_splines[bin_number]
         elif kernel_type == "W":
             return self.wchi_splines[bin_number]
+        elif kernel_type == "W_W":
+            return self.wwchi_splines[bin_number]
         elif kernel_type == "F":
             return self.shear_ia_splines[bin_number]
         else:
             raise ValueError("""Invalid kernel_type: %s, 
-                should be one of N, W or F"""%(kernel_type))
+                should be one of N, W, W_W or F"""%(kernel_type))
