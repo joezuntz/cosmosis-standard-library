@@ -289,7 +289,7 @@ class Spectrum(object):
             pass
         elif self.prefactor_type[1]=="lensing":
             prefactor *= self.source.lensing_prefactor
-        elif self.prefactor_type[0]=="lensing_weyl":
+        elif self.prefactor_type[1]=="lensing_weyl":
             prefactor *= self.source.lensing_weyl_prefactor
         elif self.prefactor_type[1]=="mag":
             prefactor *= self.get_magnification_prefactor(block, 

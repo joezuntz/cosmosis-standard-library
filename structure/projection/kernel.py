@@ -216,4 +216,4 @@ class TomoNzKernel(object):
             return self.shear_ia_splines[bin_number]
         else:
             raise ValueError("""Invalid kernel_type: %s, 
-                should be one of N, W or F"""%(kernel_type))
+                should be one of N, W, W_W or F"""%(kernel_type))

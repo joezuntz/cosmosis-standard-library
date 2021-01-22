@@ -59,7 +59,7 @@ def setup(options):
     nmin = options.get_int(option_section, "nmin", default=50)
     npoint = options.get_int(option_section, "npoint", default=3)
     nmax = options.get_int(option_section, "nmax", default=200)
-    extrapk = options.get_string(option_section, "extrapk", default='')
+    extrapk = options.get_string(option_section, "power_spectra_names", default='')
     extrapk = extrapk.split(' ')
     return {"kmax": kmax, "kmin": kmin, "nmin": nmin, "nmax": nmax, "npoint": npoint, "extrapk": extrapk}
 
