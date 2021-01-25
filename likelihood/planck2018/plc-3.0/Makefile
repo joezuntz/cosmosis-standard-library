@@ -84,6 +84,7 @@ ifeq (${COSMOSIS_OMP},1)
 COPENMP = -fopenmp
 # what is the openmp option for your F90 compiler (leave empty to cmpile without openmp)
 FOPENMP = -fopenmp
+LDOMP = -fopenmp
 endif
 
 # what is the 32/64 bit option for your C compiler (leave empty if you don't want to know)
@@ -245,7 +246,7 @@ endif
 CFITSIO =  -L$(CFITSIO_LIBPATH) -lcfitsio
 
 #final LDFLAG
-LDFLAG = $(CM64) $(CFITSIO) $(LAPACK) $(FRUNTIME) -ldl -lm -lpthread
+LDFLAG = $(LDOMP) $(CM64) $(CFITSIO) $(LAPACK) $(FRUNTIME) -ldl -lm -lpthread
 
 # define some path to find the codes
 SRCPATHLIST := src src/minipmc src/cldf src/camspec src/bflike src/simall src/lenslike/plenslike src/cmbonly src/gibbs src/actspt src/lowlike src/plik src/plik/component_plugin/rel2015
