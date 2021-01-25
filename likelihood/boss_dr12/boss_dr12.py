@@ -19,7 +19,7 @@ ROOT_dir = os.path.split(os.path.abspath(__file__))[0]
 RED_file = os.path.join(ROOT_dir,'final_consensus_redshift.txt')
 
 c_km_per_s =  299792.458
-default_rs_fiducial = 148.6
+default_rs_fiducial = 147.78
 
 
 def setup(options):
