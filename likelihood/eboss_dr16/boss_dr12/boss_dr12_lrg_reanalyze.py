@@ -12,7 +12,7 @@ dist = section_names.distances
 ROOT_dir = os.path.split(os.path.abspath(__file__))[0]
 
 c_km_per_s = 299792.458
-default_rd_fiducial = 147.8
+default_rd_fiducial = 147.78
 
 
 class Boss12LRGLikelihood(GaussianLikelihood):
