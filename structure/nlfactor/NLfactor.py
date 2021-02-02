@@ -1,6 +1,7 @@
 from cosmosis.datablock import option_section, names
 from scipy.interpolate import interp1d
 from numpy import zeros_like, zeros
+import numpy as np
 
 # this module multiplies the "target_section" by the nonlinear boost (matter_power_nl/matter_power_lin). It assumes the target nonlinearity is traced by the matter perturbation field nonlinearity.
 
@@ -17,6 +18,9 @@ def execute(block, config):
     z_lin,k_lin,p_k_lin = block.get_grid(lin, "z","k_h", "P_k")
     z_nl,k_nl,p_k_nl = block.get_grid(nonlin, "z", "k_h","P_k")
     z_t,k_t,p_k_t = block.get_grid(target, "z","k_h", "P_k")
+    
+    if not (np.allclose(z_nl, z_lin) & np.allclose(z_t, z_lin)):
+        raise ValueError("NLFactor module requires the same z values for lin, nl matter power and the target power.")
 
     p_k_lin_at_nlk = zeros_like(p_k_nl)
     # assuming same z array
