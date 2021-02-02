@@ -1,0 +1,42 @@
+name: NLfactor
+version: Feb-2021
+purpose: "Compute nonlinear weyl potential (and other) spectrum by multiplying the linear spectrum with matter_power_nl/matter_power_lin"
+url: 
+interface: NLfactor.py
+attribution: [Danielle Leonard, Angela Chen]
+rules:
+    "It assumes the nonlinearity of the target spectrum is due to the nonlinearity of the matter perturbation. You should also make sure that the linear k_h is not in a narrower range than the nonlinear k_h. Target nonlinear pk will be truncated to the nonlinear matter power k_h range."
+cite:
+
+assumptions:
+    - It assumes the nonlinearity of the target spectrum is due to the nonlinearity of the matter perturbation.
+
+explanation: |
+    This module multiplies the target_section by the nonlinear boost (matter_power_nl/matter_power_lin).
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    linear_section: "The name of linear matter power spectrum section (default names.matter_power_lin)"
+    nonlinear_section: "The name of nonlinear matter power spectrum section (default names.matter_power_nl)"
+    target_section: "The name of target linear power spectrum section (default 'weyl_curvature_spectrum')"
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    matter_power_lin:
+        k_h: "real 1D array, sample values of linear spectrum in Mpc/h"
+        z: "real 1D array, redshift of linear spectrum samples"
+        P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}"
+    matter_power_nl:
+        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        z: "real 1D array, redshift of nonlinear spectrum samples"
+        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+    target_section:
+        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        z: "real 1D array, redshift of nonlinear spectrum samples"
+        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+
+outputs:
+    target_section_nl:
+        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
+        z: "real 1D array, redshift of nonlinear spectrum samples"
+        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
