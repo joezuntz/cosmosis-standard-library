@@ -22,7 +22,8 @@ explanation: >
 params:
     data_file: "string, path to file with measured D_m(z1),H(z1),fsig8(z1),D_m(z2),etc values in (default: included file)"
     cov_file: "string, path to covariance matrix file (default: included file)"
-    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=148.6)"
+    redshift_file: "string, path to file with the effective redshifts of the measurements (default: included file)"
+    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=147.78)"
     verbose: "Bool, Print extra output (default = False)"
     mode: "0 for BAO only, 1 for BAO+FS measurements"
 inputs: 
