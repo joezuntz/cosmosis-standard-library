@@ -1,5 +1,5 @@
 #This is a template for module description files
-name: "w0wa_sum_prior"
+name: w0wa_sum_prior
 version: "1.0"
 purpose: "Skip parameter sample without failing if w0+wa>0."
 url: ""
@@ -13,7 +13,7 @@ assumptions:
     - "Cosmological parameters include w and wa."
 
 explanation: |
-    "This module imposes a the requirement that  w_0+w_a<0, which 
+    This module imposes a the requirement that  w_0+w_a<0, which
     ensures that w(a)= w_0 + (1-a)w_a  is always negative. 
 
     This is useful because it allows us to avoid computational problems that
@@ -32,6 +32,6 @@ params:
 inputs:
     cosmological_parameters:
         w: "(real scalar) dark energy equation of state at z=0 (w_0)"
-        wa: "(real scalar) baryon density fraction of critical"
+        wa: "(real scalar) linear coefficient of dark energy equation of state on scale factor"
 
 outputs: {}
