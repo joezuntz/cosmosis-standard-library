@@ -101,7 +101,8 @@ def execute(block, config):
         fsigma8_z = interp(zeff, z, fsigma8)
         
         loglike_spline = config[4]        
-        loglike = loglike_spline((Dm_z_rd, Dh_z_rd, fsigma8_z))
+        loglike = loglike_spline([Dm_z_rd, Dh_z_rd, fsigma8_z])
+        loglike = loglike[0]
         
         if feedback:
             print()
