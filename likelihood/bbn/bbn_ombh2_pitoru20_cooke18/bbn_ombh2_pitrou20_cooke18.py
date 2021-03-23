@@ -3,22 +3,21 @@
 from cosmosis.datablock import names
 from cosmosis.gaussian_likelihood import SingleValueGaussianLikelihood
 
+luna_mn = 0.02195
+luna_sd = 0.00022
+
+cooke18_theory_mn = 0.02166
+cooke18_theory_sd = 0.00019
+
+invcov_weighted_mn = (luna_mn/luna_sd**2 + cooke18_theory_mn/cooke18_theory_sd**2) / (1/luna_sd**2 + 1/cooke18_theory_sd**2)
+
+sd_stat = luna_sd
+sd_sys = ombh_mn - invcov_weighted_mn
 
 class BBNLikelihood(SingleValueGaussianLikelihood):
     # The mean and standard deviation of the BBN measurements.
     # The user can over-ride these in the ini file if desired
-
-    luna_mn = 0.02195
-    luna_sd = 0.00022
-
-    cooke18_theory_mn = 0.02166
-    cooke18_theory_sd = 0.00019
-
-    invcov_weighted_mn = (luna_mn/luna_sd**2 + cooke18_theory_mn/cooke18_theory_sd**2) / (1/luna_sd**2 + 1/cooke18_theory_sd**2)
-
-    sd_stat = luna_sd
-    sd_sys = ombh_mn - invcov_weighted_mn
-
+    
     mean = luna_mn
     sigma = np.sqrt(sd_stat**2 + sd_sys**2)
 
