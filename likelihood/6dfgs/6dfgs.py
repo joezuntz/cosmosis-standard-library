@@ -50,12 +50,12 @@ def setup(options):
 	feedback = options.get_bool(section, "feedback", default=False)
 
 	norm = 0.5*log(2*pi*sigma**2)
-	return (bao_like,bao_mode,rsd_like,mean,sigma,norm,redshift,feedback)
+	return bao_like, bao_mode, mean, sigma, norm, redshift, feedback
 
 
 def execute(block, config):
 
-	mode,mean,sigma,norm,redshift,feedback = config
+	bao_like, bao_mode, mean, sigma, norm, redshift, feedback = config
 
 	if bao_like:
 		dist_z = block[dist, 'z']
