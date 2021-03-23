@@ -47,6 +47,8 @@ def setup(options):
 	mean = options.get_double(section, "mean", default=MEAN)
 	sigma = options.get_double(section, "sigma", default=SIGMA)
 	redshift = options.get_double(section, "redshift", default=REDSHIFT)
+	feedback = options.get_bool(section, "feedback", default=False)
+
 	norm = 0.5*log(2*pi*sigma**2)
 	return (bao_like,bao_mode,rsd_like,mean,sigma,norm,redshift,feedback)
 
