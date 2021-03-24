@@ -1,4 +1,5 @@
 # Based on https://arxiv.org/abs/2011.11320 and https://arxiv.org/abs/1710.11129
+import numpy as np
 
 from cosmosis.datablock import names
 from cosmosis.gaussian_likelihood import SingleValueGaussianLikelihood
