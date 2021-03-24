@@ -12,7 +12,7 @@ cooke18_theory_sd = 0.00019
 invcov_weighted_mn = (luna_mn/luna_sd**2 + cooke18_theory_mn/cooke18_theory_sd**2) / (1/luna_sd**2 + 1/cooke18_theory_sd**2)
 
 sd_stat = luna_sd
-sd_sys = ombh_mn - invcov_weighted_mn
+sd_sys = luna_mn - invcov_weighted_mn
 
 class BBNLikelihood(SingleValueGaussianLikelihood):
     # The mean and standard deviation of the BBN measurements.
