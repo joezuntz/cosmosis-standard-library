@@ -390,7 +390,7 @@ module camb_interface_tools
 		params%wantTensors = (params%initpower%rat(1) .ne. 0.0) .or. do_tensors
 
         params%Max_l=standard_lmax
-        params%Max_eta_k=2*standard_lmax
+        params%Max_eta_k=k_eta_max_scalar
 
         params%DoLensing = do_lensing
         params%DerivedParameters = .true.
