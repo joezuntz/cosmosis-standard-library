@@ -393,15 +393,26 @@ clik_lensing_object* _clik_lensing_init(char *fpath, error **err) {
       
     }
     
-    cors = NULL;
-    if (nlt!=0) {
-      nlt += lmax+1;
-      sz = nlt*nbins;
-      cors = cldf_readfloatarray(df,"clik_lensing/cors",&sz,err);
-      forwardError(*err,__LINE__,NULL);
-    } else {
-      nlt = lmax + 1;
-    }
+    // JAZ: Modified these lines following changes found by Yuki Omori
+    // to fix an apparent error that was making this code give different
+    // results to the primary CosmoMC / Cobaya codes likelihoods.  Quoting Yuki:
+    //
+    // The basic idea is that it opens up this hascl file and adds a counter
+    // if it is non-zero. However for some reason, the hascl file they provide
+    // is array([0, 0, 0, 0, 0, 0])  so nlt==0 after that first part, and
+    // consequently it goes through the else statement in the second block,
+    // without reading the clik_lensing/cors file.
+    // Without the cors file loaded  the block starting from line 72 doesn’t get executed,
+    // and the the linear correction (should be the sum of lines 68, 75 and 82)
+    // gets computed incorrectly (i.e. only uses line 68).
+    // My simple fix was to .. just let it load the cors file regardless of
+    // whether the variable nlt is 0 or not.
+    // Start of change
+    nlt += lmax + 1;
+    sz = nlt*nbins;
+    cors = cldf_readfloatarray(df,"clik_lensing/cors",&sz,err);
+    forwardError(*err,__LINE__,NULL);
+    // End of change
 
     sz = nlt;
     cl_fid = cldf_readfloatarray(df,"clik_lensing/cl_fid",&sz,err);
