@@ -142,6 +142,7 @@ class Consistency(object):
         # without using any of the default values.
         # Then we gradually start using more of the defaults
         # until (hopefully) we have a fully-specified model.
+        first_error = None
         for i in range(len(self.possible_defaults)):
             try:
                 defaults = self.possible_defaults[:i]
@@ -161,9 +162,11 @@ class Consistency(object):
                 if self.verbose:
                     unspecified = self.find_unspecified()
                     print("Model still unspecified: %s" % (", ".join(unspecified)))
+                first_error = "under"
             except OverSpecifiedModel:
                 if self.verbose:
                     print("Model overspecified - clashing assumptions.  Trying more.")
+                first_error = "over"
 
         # Our final run uses all the defaults we know about.
         # If this still doesn't work we'll throw the error.
@@ -171,7 +174,12 @@ class Consistency(object):
             text = ", ".join(["%s=%g" % d for d in self.possible_defaults])
             print()
             print("Trying assumptions: ", text)
-        q = self.run_with_defaults(parameters, self.possible_defaults)
+
+        try:
+            q = self.run_with_defaults(parameters, self.possible_defaults)
+        except PoorlySpecifiedModel as err:
+            err.first_error = first_error
+            raise err
         self.cached_defaults = self.possible_defaults[:]
         if self.verbose:
             print("Model okay.")
@@ -266,7 +274,7 @@ class Consistency(object):
                 if self.verbose:
                     print("Calculated %s = %g from %s" % (name, value, function))
                     print("But also value was already found as %s" % current_value)
-                raise OverSpecifiedModel("Model over-specified and consistency relations failed"
+                raise OverSpecifiedModel("Model over-specified and consistency relations failed "
                                          "for parameter %s (values %g and %g)" % (name, current_value, value))
 
     def find_unspecified(self):
