@@ -28,29 +28,35 @@ def setup(options):
 
 def execute(block, config):
     do_galaxy_galaxy, do_galaxy_shear, include_intrinsic = config
+
+    # Get the number of bins for the different spectra.
     if do_galaxy_galaxy:
         nbin_pos = block[names.galaxy_cl, 'nbin']
     elif do_galaxy_shear:
         nbin_pos = block["galaxy_shear_cl", 'nbin_a']
     if do_galaxy_shear:
         nbin_shear = block["galaxy_shear_cl", 'nbin_b']
+
     if do_galaxy_galaxy:
         # for galaxy_galaxy, we're replacing 'galaxy_cl' (the gg term) with gg+gm+mg+mm
         # so in case useful, save the gg term to galaxy_cl_gg.
         ells = block[names.galaxy_cl, 'ell']
         block["galaxy_cl_gg", 'ell'] = ells
+
+        # The different C_ell might conceivably be defined on different grids.
+        # If so we will need to interpolate
         gal_mag_ells = block["galaxy_magnification_cl", 'ell']
         mag_mag_ells = block["magnification_cl", "ell"]
-        resample_gal_mag = False
-        resample_mag_mag = False
-        if len(gal_mag_ells) != len(ells):
-            resample_gal_mag = True
-        elif not np.allclose(gal_mag_ells, ells):
-            resample_gal_mag = True
-        if len(mag_mag_ells) != len(ells):
-            resample_mag_mag = True
-        elif not np.allclose(mag_mag_ells, ells):
-            resample_mag_mag = True
+        resample_gal_mag = (len(gal_mag_ells) != len(ells)) or not np.allclose(gal_mag_ells, ells)
+        resample_mag_mag = (len(mag_mag_ells) != len(ells)) or not np.allclose(mag_mag_ells, ells)
+
+
+        if resample_gal_mag or resample_mag_mag:
+            index = ells > 0
+            log_ell = np.log(ells[index])
+            log_ell_gm = np.log(gal_mag_ells)
+            log_ell_mm = np.log(mag_mag_ells)
+
         #Get auto_only - if True, only auto-correlations for galaxy_cl
         #were computed.
         auto_only = block.get_bool(names.galaxy_cl, "auto_only", False)
@@ -60,30 +66,37 @@ def execute(block, config):
                     continue
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
                 bin_ji = 'bin_{1}_{0}'.format(i + 1, j + 1)
+
+                # Load the C_ell for this bin pair, for the different spectra
                 block["galaxy_cl_gg", bin_ij] = block[names.galaxy_cl, bin_ij]
                 gal_mag_ij_orig = block["galaxy_magnification_cl", bin_ij]
                 gal_mag_ji_orig = block["galaxy_magnification_cl", bin_ji]
                 mag_mag_orig = block["magnification_cl", bin_ij]
+
+
+                # Optionally resample the GM term, if needed
                 if resample_gal_mag:
                     gal_mag_ij = np.zeros_like(ells)
                     gal_mag_ji = np.zeros_like(ells)
                     mag_mag = np.zeros_like(ells)
-                    gal_mag_ij[ells>0] = InterpolatedUnivariateSpline(np.log(gal_mag_ells), 
-                        gal_mag_ij_orig)(np.log(ells[ells>0]))
-                    gal_mag_ji[ells>0] = InterpolatedUnivariateSpline(np.log(gal_mag_ells), 
-                        gal_mag_ji_orig)(np.log(ells[ells>0]))  
+                    gal_mag_ij[index] = InterpolatedUnivariateSpline(log_ell_gm,
+                        gal_mag_ij_orig)(log_ell)
+                    gal_mag_ji[index] = InterpolatedUnivariateSpline(log_ell_gm,
+                        gal_mag_ji_orig)(log_ell)
                 else:
                     gal_mag_ij = gal_mag_ij_orig
                     gal_mag_ji = gal_mag_ji_orig
+
+                # Optionally resample the MM term, if needed
                 if resample_mag_mag:
-                    mag_mag[ells>0] = InterpolatedUnivariateSpline(np.log(gal_mag_ells), 
-                        gal_mag_ji_orig)(np.log(ells[ells>0]))   
+                    mag_mag[index] = InterpolatedUnivariateSpline(log_ell_mm,
+                        mag_mag_orig)(log_ell)
                 else:
                     mag_mag = mag_mag_orig    
-                block[names.galaxy_cl, bin_ij] += (
-                    gal_mag_ij + gal_mag_ji
-                    + mag_mag   #mm
-                )
+
+                # Finally, combine all the terms together
+                block[names.galaxy_cl, bin_ij] += gal_mag_ij + gal_mag_ji + mag_mag
+
     #if include_intrinsic is True, we're replacing gG+gI with gG+gI+mG+mI       
     #else,                         we're replacing gG    with gG+mG 
     if do_galaxy_shear:
@@ -94,7 +107,7 @@ def execute(block, config):
                 block["galaxy_shear_cl", bin_ij] += (
                     block["magnification_shear_cl", bin_ij]
                     )
-                if include_intrinsic == True:
+                if include_intrinsic:
                     block["galaxy_shear_cl", bin_ij] += (
                         block["magnification_intrinsic_cl", bin_ij]
                         )
