@@ -35,7 +35,7 @@ class BBNLikelihood(SingleValueGaussianLikelihood):
             print("Using Cooke 2016 BBN measurement (combined version)")
             mean = 0.02208
             sigma = 0.00052
-        elif paper == "pitrou_2020":
+        elif paper == "pitrou_cooke_combined":
             print("Using Pitrou 2020 + Cooke 2018 BBN measurement")
             luna_mn = 0.02195
             luna_sd = 0.00022
@@ -52,7 +52,7 @@ class BBNLikelihood(SingleValueGaussianLikelihood):
         else:
             raise ValueError("Unknown 'paper' parameter value in bbn_ombh2. Must be "
                              "one of beringer_2012, cooke_2016_i, cooke_2016_ii, "
-                             "cooke_2016_combined, pitrou_2020.")
+                             "cooke_2016_combined, pitrou_cooke_combined.")
 
         print("Dataset mean = ", mean, " and sigma = ", sigma)
 
