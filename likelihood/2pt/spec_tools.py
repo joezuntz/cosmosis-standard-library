@@ -142,7 +142,7 @@ class TheorySpectrum(object):
             spectrum_name = section_name.replace("_%s"%save_name, "")
 
         #Get types from spectrum_name
-        type_table_items = type_table.items()
+        type_table_items = list(type_table.items())
         type_names_list, type_info_list = [t[0] for t in type_table_items], [t[1] for t in type_table_items]
         type_index = [t[0] for t in type_info_list].index(spectrum_name)
         type_names, type_info = type_names_list[type_index], type_info_list[type_index]

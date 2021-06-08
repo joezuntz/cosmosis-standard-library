@@ -87,26 +87,36 @@ def setup(options):
         s = options.get_string(option_section, key, default)
         return s.split()
 
-    #Get the spectrum section names
+    #Get the spectrum section names to be saved
     config["spectrum_sections"] = read_list("spectrum_sections")
-    auto_only_sections = read_list("auto_only")
-    if auto_only_sections is not "":
-        config["auto_only"] = [(s in auto_only_sections) for s in config["spectrum_sections"]]
-    else:
-        config["auto_only"] = []
 
-    #And output names (name of extensions in output fits files)
+    # Can optionally set a list of spectra where we should not save cross-correlations,
+    # only auto-correlations
+    auto_only_sections = read_list("auto_only")
+    config["auto_only"] = [(s in auto_only_sections) for s in config["spectrum_sections"]]
+
+    # And output names (name of extensions in output fits files).
+    # By default we save everything to the same name it has in cosmosis sections,
+    # but we can also rename things.
     if options.has_value(option_section, "output_extensions" ):
-        print('found output_extensions')
         config["output_extensions"] = read_list("output_extensions")
     else:
         config["output_extensions"] = config["spectrum_sections"]
 
+
+    # This module can either save real-space or fourier-space quantities.
+    # We decide which based on whether the user sets the parameters
+    # (theta_min, theta_max, n_theta) or (ell_min, ell_max, n_ell)
     if options.has_value(option_section, "theta_min"):
         config['real_space'] = True
         theta_min = options.get_double(option_section, "theta_min")
         theta_max = options.get_double(option_section, "theta_max")
         n_theta = options.get_int(option_section, "n_theta")
+
+        # There are a few different choices for how to select theta values
+        # from min/max/n values. We could do log-spaced or linear-spaced,
+        # or (2./3.) * (xmax**3 - xmin**3) / (xmax**2 - xmin**2) which is
+        # a good approximation to the correct area-weighted answer.
         theta_lims, theta_mids = get_scales(theta_min, theta_max, n_theta,
             logspaced=logspaced, two_thirds_midpoint=two_thirds_midpoint)
 
@@ -118,6 +128,8 @@ def setup(options):
             angle_units = twopoint.ANGULAR_UNITS[angle_units]
         config['angle_units'] = angle_units
 
+        # We also retain the theta limits in user-supplied units
+        # so that we can use them in feedback later.
         config['angle_lims_userunits'] = theta_lims
         config['angle_mids_userunits'] = theta_mids
 
@@ -128,20 +140,27 @@ def setup(options):
         print("Saving at these theta values (in %s):"%config['angle_units'])
         print(config['angle_mids_userunits'])
 
+
+        # If we are making covariances then we need the C_ell to compute them,
+        # even though we are only saving real-space quantities. In that case
+        # the user needs to supply the section names for C_ell values and also
+        # the corresponding xi section names to which they are transformed.
+        # TODO: Ideally this would be tracked earlier.
         if config['make_covariance']:
             config["cl_sections"] = read_list("cl_sections")
             config["cl_to_xi_types"] = read_list("cl_to_xi_types")
     else:
-        try:
-            assert options.has_value(option_section, "ell_min")
-        except AssertionError as e:
-            print("You must provide either (theta_min, theta_max and n_theta)")
-            print("or (ell_min, ell_max, n_ell)")
-            raise(e)
+        # The Fourier-space variant of the same thing.
+        if not options.has_value(option_section, "ell_min"):
+            raise ValueError("Must provide either (theta_min, theta_max and n_theta) "
+                             "or (ell_min, ell_max, n_ell)")
         config['real_space'] = False
         ell_min = options.get_int(option_section, "ell_min")
         ell_max = options.get_int(option_section, "ell_max")
         n_ell = options.get_int(option_section, "n_ell")
+
+        # The choices for ell values are similar to those for real-space values,
+        # except that we the two_thirds_midpoint is a lot less useful.
         ell_lims, ell_mids = get_ell_scales( ell_min, ell_max, n_ell,
             logspaced=logspaced, two_thirds_midpoint=two_thirds_midpoint)
         config['angle_lims'] = ell_lims
@@ -152,26 +171,31 @@ def setup(options):
         print("Saving at these ell values:")
         print(config['angle_mids'])
 
-    def get_arr(x):
-        a = options[option_section, x]
-        if not isinstance(a, np.ndarray):
-            a = np.array([a])
-        return a
+    def get_array(name):
+        val = options[option_section, name]
+        val = np.atleast_1d(np.array(val, dtype=float))
+        return val
 
     if config['make_covariance']:
-        #Read in noise ingredients
+        # Read in noise ingredients. If there is only a single bin these need to be
+        # converted from scalars to arrays for later.
         #Convert per arcmin^2 quantities to per radian^2
-        config["number_density_shear_arcmin2"] = get_arr(
-            "number_density_shear_arcmin2")
-        config["number_density_lss_arcmin2"] = get_arr("number_density_lss_arcmin2")
+        config["number_density_shear_arcmin2"] = get_array("number_density_shear_arcmin2")
+        config["number_density_lss_arcmin2"] = get_array("number_density_lss_arcmin2")
         config["number_density_shear_rad2"] = perarcmin2_to_perrad2(config["number_density_shear_arcmin2"])
         config["number_density_lss_rad2"] = perarcmin2_to_perrad2(config["number_density_lss_arcmin2"])        
+
+        # Previously user specified the parameter sigma_e, but it was never clear
+        # if this was total or per-component.  So check explicitly for users still
+        # setting that and explain the change.
         if (options.has_value(option_section, 'sigma_e') 
             and not options.has_value(option_section, 'sigma_e_total')):
-            raise ValueError("""The parameter sigma_e should now be specified as sigma_e_total instead.
-The input value should be sigma_e_total = sqrt(2) * sigma_e_per_component""")
+            raise ValueError("The parameter sigma_e should now be specified as "
+                             "'sigma_e_total' instead of the old (ambiguous) 'sigma_e', "
+                             "i.e. sigma_e_total = sqrt(2) * sigma_e_per_component")
+        config['sigma_e_total'] = get_array("sigma_e_total")
 
-        config['sigma_e_total'] = get_arr("sigma_e_total")
+        # Other covariance computation parameters
         config['fsky'] = options[option_section, "fsky"] 
         config['upsample_cov'] = options.get_int(option_section, "upsample_cov", 10)
         if config['upsample_cov'] < 2:
@@ -183,6 +207,12 @@ The input value should be sigma_e_total = sqrt(2) * sigma_e_per_component""")
     config['filename'] = options.get_string(option_section, "filename")
     config['overwrite'] = options.get_bool(option_section, "overwrite", False)
 
+
+    # Scale selections in the saved data and bins to remove completely are specified as
+    # angle_range_{bin1}_{bin2} = ang_min, ang_max
+    # and, for example
+    # cut_gamma_t = (bin1,bin2) (bin3,bin4)
+    # to delete the pairs (1,2) and (3,4) of the gamma_t output.
     scale_cuts = {}
     bin_cuts = []
     range_token = "angle_range_"
@@ -212,17 +242,16 @@ The input value should be sigma_e_total = sqrt(2) * sigma_e_per_component""")
 
 def execute(block, config):
 
+    # Get various output bits
     real_space = config['real_space']
     fourier_space = not real_space
-
     filename = config['filename']
-    #shear_nz = config['shear_nz']
-    #position_nz = config['position_nz']
     overwrite = config['overwrite']
-
     make_covariance = config['make_covariance']
     copy_covariance = config['copy_covariance']
 
+    # This module is not designed to be used during long-running
+    # MCMC analyses, so it's fine to have verbose output here.
     print("Saving two-point data to {}".format(filename))
 
     theory_spec_list = []
@@ -246,9 +275,11 @@ def execute(block, config):
         #Read in sample information from block
         sample_a, sample_b = ( block[spectrum_section, "sample_a"], 
                                block[spectrum_section, "sample_b"] )
-        kernel_name_a, kernel_name_b = "nz_"+sample_a, "nz_"+sample_b
+        kernel_name_a = "nz_"+sample_a
+        kernel_name_b = "nz_"+sample_b
         
-        #Get kernels
+        # Get n(z) kernels required, as these are saved in the output
+        # file.
         if ((kernel_name_a not in [ k.name for k in kernels ]) 
             and (kernel_name_a not in no_kernel_found)):
             if block.has_section(kernel_name_a):
@@ -257,6 +288,8 @@ def execute(block, config):
                         block, kernel_name_a ) )
             else:
                 no_kernel_found.append(kernel_name_a)
+
+        # And for the second kernel
         if kernel_name_b not in [ k.name for k in kernels ]:
             if block.has_section(kernel_name_b):
                 kernels.append( 
@@ -265,6 +298,7 @@ def execute(block, config):
             else:
                 no_kernel_found.append(kernel_name_b)
 
+        # Report any missing kernels, but this is not necessarily an error.
         if len(no_kernel_found)>0:
             print("No kernel found for kernel names:", no_kernel_found)
             print("This might not be a problem e.g. for CMB lensing.")
@@ -350,6 +384,9 @@ def execute(block, config):
 
         cl_cov = ClCov(cl_specs, fsky=config['fsky'])
 
+        # If saving real-space data we have to convert he Fourier C_ell covariance
+        # to the real-space version.  There are various ways to do this; the one
+        # here should be accurate enough for forecasting and testing but not for inference.
         if real_space:
 
             #If requested, apply bin cuts now - this will speed up the covariance calculation
@@ -369,6 +406,7 @@ def execute(block, config):
                                                          xi_lengths, covmat )
 
         else:
+            # Otherwise just convert directly to 2pt format
             covmat, cl_lengths = cl_cov.get_binned_cl_cov(config['angle_lims'])
             assert covmat.shape[0] == sum([len(s.value) for s in spec_meas_list])
             covmat_info = twopoint.CovarianceMatrixInfo( 'COVMAT', [s.name for s in spec_meas_list],
