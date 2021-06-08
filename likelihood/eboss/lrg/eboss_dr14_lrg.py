@@ -9,8 +9,6 @@ dist = section_names.distances
 
 c_km_per_s =  299792.458
 
-print("THIS MODULE IS CURRENTLY BEING TESTED")
-
 
 class Eboss14LRGLikelihood(SingleValueGaussianLikelihood):
     data_type = 'LRG'

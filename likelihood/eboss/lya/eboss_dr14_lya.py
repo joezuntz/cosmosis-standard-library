@@ -33,8 +33,6 @@ def setup(options):
     # Outside the table range we use -inf
     chi2_interp = interp2d(dm_rd_data, dh_rd_data, chi2_data, kind='cubic', fill_value=inf)
 
-    print("THIS MODULE IS CURRENTLY BEING TESTED")
-
     return chi2_interp, z_eff_fid, feedback, dm_rd_data, dh_rd_data
 
 def execute(block, config):
