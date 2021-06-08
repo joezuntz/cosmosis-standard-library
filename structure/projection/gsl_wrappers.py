@@ -22,8 +22,11 @@ def find_gsl():
 
 def load_gsl(libfile=None):
     if libfile is None:
-        libfile, cblas_libfile = find_gsl()
-    cblas = ct.CDLL(cblas_libfile, mode=ct.RTLD_GLOBAL)
+        try:
+            libfile, cblas_libfile = find_gsl()
+        except ValueError:
+            libfile = "libgsl.so"
+#    cblas = ct.CDLL(cblas_libfile, mode=ct.RTLD_GLOBAL)
     gsl = ct.CDLL(libfile, mode=ct.RTLD_GLOBAL)
     return gsl
 
