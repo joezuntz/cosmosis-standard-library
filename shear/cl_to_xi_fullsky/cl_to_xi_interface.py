@@ -214,13 +214,6 @@ def setup(options):
         if output_section == "":
             output_section = cl_section.replace("cl", "xi")
 
-    # JZ Not clear on the utility of this.  Might delete later.
-    if save_name != "":
-        add = "_%s"%save_name
-        try:
-            output_section += add
-        except TypeError:
-            output_section = ( output_section[0]+add, output_section[1]+add )
 
     print("Computing coefficients to transform {} -> {}".format(cl_section, output_section))
 
