@@ -13,8 +13,8 @@ from numpy import exp, log, log10, cos, sin, pi, cosh, sinh , sqrt
 from scipy.special import gamma 
 import sys
 from time import time 
-from fastpt_extr import p_window, c_window, pad_left, pad_right
-from gamma_funcs import g_m_vals, gamsn
+from .fastpt_extr import p_window, c_window, pad_left, pad_right
+from .gamma_funcs import g_m_vals, gamsn
 
 
 log2=log(2.)

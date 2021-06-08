@@ -6,7 +6,7 @@
 import numpy as np
 from numpy import exp, pi, sin, cos, log, sqrt 
 from scipy.special import gamma 
-from get_nu1_nu2 import nu1_nu2
+from .get_nu1_nu2 import nu1_nu2
 import sys 
 	
 log2=log(2.)	

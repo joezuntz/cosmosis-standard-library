@@ -1,6 +1,6 @@
 from __future__ import division 
 import numpy as np
-from J_table import J_table 
+from .J_table import J_table 
 import sys
 from time import time 
 from numpy import log, sqrt, exp, pi

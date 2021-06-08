@@ -1,5 +1,5 @@
 import numpy as np
-from J_table import J_table 
+from .J_table import J_table 
 import sys
 
 # The ordering is \alpha, \beta, l_1, l_2, l, A coefficient.

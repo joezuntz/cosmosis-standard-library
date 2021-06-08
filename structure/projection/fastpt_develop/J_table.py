@@ -6,7 +6,7 @@
 import numpy as np
 from numpy import pi 
 import sys
-from Wigner_symbols import three_j, six_j
+from .Wigner_symbols import three_j, six_j
 
 def J_range(l_a,l_b):
 	# returns J values for l_a, l_b such that

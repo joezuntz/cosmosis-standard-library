@@ -14,7 +14,7 @@ import numpy as np
 from numpy import log, sqrt, exp, pi
 from scipy.integrate import trapz
 from scipy.signal import fftconvolve
-from J_k import J_k
+from .J_k import J_k
 import sys
 
 

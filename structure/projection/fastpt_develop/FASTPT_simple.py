@@ -22,12 +22,12 @@ from numpy import exp, log, log10, cos, sin, pi, cosh, sinh , sqrt
 from scipy.special import gamma 
 import sys
 from time import time 
-from fastpt_extr import p_window, c_window, pad_left, pad_right
-from matter_power_spt import P_13_reg 
+from .fastpt_extr import p_window, c_window, pad_left, pad_right
+from .matter_power_spt import P_13_reg 
 from scipy.signal import convolve , fftconvolve 
 from scipy.interpolate import interp1d
-from gamma_funcs import g_m_vals, gamsn
-from P_extend import k_extend 
+from .gamma_funcs import g_m_vals, gamsn
+from .P_extend import k_extend 
 from scipy.integrate import quad
 
 log2=log(2.)

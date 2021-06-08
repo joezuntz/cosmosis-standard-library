@@ -35,7 +35,7 @@
 from __future__ import division
 from __future__ import print_function
 
-from info import __version__
+from .info import __version__
 
 import numpy as np
 from numpy.fft import fft, ifft, rfft, irfft, fftfreq
@@ -43,18 +43,18 @@ from numpy import exp, log, log10, cos, sin, pi, cosh, sinh, sqrt
 from scipy.special import gamma
 from scipy.signal import fftconvolve
 import scipy.integrate as integrate
-from fastpt_extr import p_window, c_window, pad_left, pad_right
-from matter_power_spt import P_13_reg, Y1_reg_NL, Y2_reg_NL
-from initialize_params import scalar_stuff, tensor_stuff
-from IA_tt import IA_tt
-from IA_ABD import IA_A, IA_DEE, IA_DBB, P_IA_B
-from IA_ta import IA_deltaE1, P_IA_deltaE2, IA_0E0E, IA_0B0B
-from OV import OV
-from kPol import kPol
-from RSD import RSDA, RSDB
-import RSD_ItypeII
-from P_extend import k_extend
-import FASTPT_simple as fastpt_simple
+from .fastpt_extr import p_window, c_window, pad_left, pad_right
+from .matter_power_spt import P_13_reg, Y1_reg_NL, Y2_reg_NL
+from .initialize_params import scalar_stuff, tensor_stuff
+from .IA_tt import IA_tt
+from .IA_ABD import IA_A, IA_DEE, IA_DBB, P_IA_B
+from .IA_ta import IA_deltaE1, P_IA_deltaE2, IA_0E0E, IA_0B0B
+from .OV import OV
+from .kPol import kPol
+from .RSD import RSDA, RSDB
+from . import RSD_ItypeII
+from .P_extend import k_extend
+from . import FASTPT_simple as fastpt_simple
 
 ## WHEN DOES THE IMPORT STEP OCCUR? DO WE WANT TO MOVE SOME OF THESE TO THE INITIALIZATION BLOCK TO SAVE TIME ON LIGHT RUNS?
 
