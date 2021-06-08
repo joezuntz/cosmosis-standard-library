@@ -14,6 +14,11 @@ c_km_per_s =  299792.458
 
 def setup(options):
 	section = option_section
+	if options.has_value(section, "mode"):
+		raise ValueError("The 6dfgs likelihood has changed and now uses parameters: "
+						 "bao_likelihood, bao_choice, rsd_likelihood.  See the docs "
+						 "for details")
+
 	bao_like = options.get_bool(section, "bao_likelihood",default=True)
 	bao_mode = options.get_string(section, "bao_choice",default='rs_dv')
 	rsd_like = options.get_bool(section, "rsd_likelihood",default=False)

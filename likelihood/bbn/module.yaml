@@ -3,10 +3,12 @@ version: "PDG13"
 purpose: "Simple prior on Omega_b h^2 from light element abundances"
 url: "http://pdg.lbl.gov/2013/reviews/rpp2013-rev-bbang-nucleosynthesis.pdf"
 interface: bbn_ombh2.py
-attribution: [B.D Fields, P. Molaro, S. Sarkar]
+attribution: ["CosmoSIS Team"]
 rules: "None."
 cite:
     - "J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)"
+    - "Cooke, R et al.  ApJ, 830, 2 (2016)"
+    - "Pitrou, C. et al, MNRAS, 502, 2, 2474–2481, (2021)"
 
 assumptions:
     - "Standard model of Big-Bang nucleosynthesis"
@@ -17,10 +19,14 @@ explanation: |
     Measurements of the abundances of light elements D, 3He, 4He, and 7Li
     constrain the density budget at the epoch of nucleosynthesis in the first
     three minutes after the big bang.
+
+    There are various measurements of the light element abundance, and this
+    module can select between different papers.
     "
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
+    paper: "str, default=beringer_2012 choice of which paper to use, beringer_2012, cooke_2016_i, cooke_2016_ii, cooke_2016_combined, pitrou_2020"
     mean: "float, replace the standard value measurement omega_b h^2 = 0.023 with a custom one (default 0.023)"
     sigma: "float, replace the standard value error 0.002 with a custom one (default 0.002)"
 
