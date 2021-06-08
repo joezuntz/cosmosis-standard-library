@@ -1,0 +1,30 @@
+#This is a template for module description files
+name: baryonic
+version: "1.0"
+purpose: "Apply baryonic effects to nonlinear pk based on hydrodynamic simulation measurements"
+url: ""
+interface: baryonic_interface.py
+attribution: [CosmoSIS Team, Angela Chen]
+rules: ""
+cite: []
+
+
+assumptions:
+    - Pk_baryonic/Pk_nonlinear = Pk_hydro/Pk_DMonly
+
+explanation: |
+    "This module reads in Pk_nonlinear from previous modules modifies it, applying
+    the ratio between DM-only and hydro simulations"
+
+params:
+    ratiotable: "Path to one of the ratio files supplied with in the module's data directory"
+
+inputs:
+    matter_power_nl:
+        z: "1D real array, redshifts of samples"
+        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h."
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3."
+
+outputs:
+    matter_power_nl:
+        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, modified in-place"
