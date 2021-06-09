@@ -20,8 +20,6 @@ def read_theta(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'a
     Short function to read in theta values from a specified fits file.
     Desired angle units in 'rad', 'arcmin', 'arcsec', 'deg
     """
-    print("Note: we are assuming that the theta values for all bin pairs are the same. "
-                  "If this is not true, you need to modify cl_to_xi_interface")
     T = twopoint.TwoPointFile.from_fits(filename)
     xi = T.get_spectrum(xi_type_2pt)
     # make sure the units are in arcmin (or whatever else you want)
@@ -96,6 +94,8 @@ def setup(options):
         print("*** Using bin averaged Legendre coefficients ***")
 
         if theta_file:
+            print("Note: we are assuming that the theta values for all bin pairs are "
+                "the same. If this is not true, you need to modify cl_to_xi_interface")
             # We read both the edge values and separately the mid points.
             # The edges are used for the actual calculation.  The former are used
             # for plotting and scale cuts.

@@ -284,8 +284,6 @@ class SpectrumMeasurement(object):
         old_unit = ANGULAR_UNITS[self.angle_unit]
         new_unit = ANGULAR_UNITS[unit]
 
-        print("Converting angle units of {} from {} -> {} (factor {})".format(
-            self.name, old_unit, new_unit, old_unit.to(new_unit)))
         angle_with_units = self.angle * old_unit
         self.angle = angle_with_units.to(new_unit).value
         self.angle_unit = unit
