@@ -1,4 +1,4 @@
-''' 
+r''' 
     python version of FFTLOG by Andrew Hamilton. I am it calling LOG Hankel Transfrom
     This version of the fast Hankle transform is due to 
     Andrew Hamilton (see http://casa.colorado.edu/~ajsh/FFTLog/). 
@@ -160,9 +160,7 @@ def fft_log(k,f_k,q,mu,kr=None):
     diff=np.diff(np.log(k))
     diff=np.diff(diff)
     if (np.sum(diff) >=1e-10):
-        print('You need to send in data that is sampled evenly in logspace')
-        print('Terminating code in fft_log')
-        sys.exit()
+        raise ValueError('You need to send in data that is sampled evenly in logspace')
         
     
     log_k0=log(k[N//2])

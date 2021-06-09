@@ -7,9 +7,9 @@ from scipy.interpolate import InterpolatedUnivariateSpline as IUS
 from scipy.interpolate import interp1d, RectBivariateSpline
 from scipy.integrate import quad
 import sys
-from LOG_HT import fft_log
 import time
-from fftlog import Fftlog
+from .LOG_HT import fft_log
+from .fftlog import Fftlog
 
 inv_sqrt2pi = 1./np.sqrt(2*np.pi)
 

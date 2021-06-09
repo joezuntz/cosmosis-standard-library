@@ -2,13 +2,12 @@
 import os
 import numpy as np
 from cosmosis.datablock import names, option_section, BlockError
-from enum34 import Enum
 import re
 import sys
 import scipy.interpolate as interp
-from kernel import TomoNzKernel
-from pk2cl_tools import exact_integral, limber_integral, get_dlogchi
-from fastpt_tools import get_Pk_basis_funcs, get_bias_params_bin, get_PXX, get_PXm
+from projection_tools import exact_integral, limber_integral, get_dlogchi, \
+                             TomoNzKernel, get_Pk_basis_funcs, get_bias_params_bin, \
+                             get_PXX, get_PXm, Enum
 
 # for timing
 from timeit import default_timer as timer
