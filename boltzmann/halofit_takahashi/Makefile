@@ -2,7 +2,7 @@ include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 all: halofit_interface.so
 
-USER_LDFLAGS=-L${COSMOSIS_SRC_DIR}/cosmosis/datablock  -lcosmosis
+USER_LDFLAGS=-L${COSMOSIS_SRC_DIR}//datablock  -lcosmosis
 
 halofit_interface.so: camb_params_stub.f90 matter_power_stub.f90 nonlinear.f90 halofit_interface.F90
 	$(FC) $(FFLAGS) -fPIC -c -o camb_params_stub.o camb_params_stub.f90

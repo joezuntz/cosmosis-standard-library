@@ -1,5 +1,5 @@
-#include "cosmosis/datablock/datablock.hh"
-#include "cosmosis/datablock/section_names.h"
+#include "datablock/datablock.hh"
+#include "datablock/section_names.h"
 #include <vector>
 #include <algorithm>
 #include "gsl/gsl_spline.h"

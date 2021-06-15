@@ -1,8 +1,8 @@
 /*CosmoSIS interface file for going from shear C(l) to xi+/-
 Uses function tpstat_via_hankel from Martin Kilbinger's nicaea
 */
-#include "cosmosis/datablock/c_datablock.h"
-#include "cosmosis/datablock/section_names.h"
+#include "datablock/c_datablock.h"
+#include "datablock/section_names.h"
 #include "maths.h"
 
 #include <stdio.h>

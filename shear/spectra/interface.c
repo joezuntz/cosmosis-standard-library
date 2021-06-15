@@ -1,5 +1,5 @@
 
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 #include "gsl/gsl_spline.h"
 #include "shear_shear.h"
 #include "utils.h"

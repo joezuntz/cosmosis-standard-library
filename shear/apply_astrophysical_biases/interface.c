@@ -1,4 +1,4 @@
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 #include "apply_biases.h"
 #include "utils.h"
 #include <stdio.h>

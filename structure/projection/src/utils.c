@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "stdio.h"
 #include "string.h"
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_interp2d.h>
 #include <gsl/gsl_spline2d.h>
