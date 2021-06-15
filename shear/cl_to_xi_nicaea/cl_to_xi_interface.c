@@ -170,6 +170,11 @@ int execute(c_datablock * block, void * config_in)
 	// Loop through bin combinations, loading ell,C_ell and computing xi+/-
 	int j_bin_start;
 	bool found_any = false;
+
+	// save bin counts
+	status |= c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
+	status |= c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
+
 	for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
 		for (int j_bin=1; j_bin<=num_z_bin_B; j_bin++) {
 			// read in C(l)
@@ -310,12 +315,10 @@ int execute(c_datablock * block, void * config_in)
 		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_logl, i_bin, j_bin, &err);
 		}
 		//Now save to block
-		c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
-		c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
-		c_datablock_put_double_array_1d(block, config->output_section, name_xip,
+		status |= c_datablock_put_double_array_1d(block, config->output_section, name_xip,
 		              xi[0], N_thetaH);
 		if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
-		  c_datablock_put_double_array_1d(block, config->output_section, name_xim, xi[1], N_thetaH);
+		  status |= c_datablock_put_double_array_1d(block, config->output_section, name_xim, xi[1], N_thetaH);
 		}
 		free(C_ell);
 		del_interTable(&d.cl_table);
@@ -332,13 +335,14 @@ int execute(c_datablock * block, void * config_in)
 	double logtheta_center = 0.5*(log_theta_max+log_theta_min);
 	int nc = N_thetaH/2+1;
 	double theta_vals[N_thetaH];
-	for (int i; i<N_thetaH; i++){
+	for (int i=0; i<N_thetaH; i++){
 		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
 	}
-	c_datablock_put_double_array_1d(block, config->output_section, "theta",
+	printf("theta %le %le %d  %le  %le\n", theta_vals[0], theta_vals[N_thetaH-1], N_thetaH, log_theta_min, log_theta_max);
+	status |= c_datablock_put_double_array_1d(block, config->output_section, "theta",
                   theta_vals, N_thetaH);
 	//Include units
-	c_datablock_put_metadata(block, config->output_section, "theta", "unit", "radians");
+	status |= c_datablock_put_metadata(block, config->output_section, "theta", "unit", "radians");
 
 	//Clean up
 
