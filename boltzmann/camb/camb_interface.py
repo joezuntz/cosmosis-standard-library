@@ -3,30 +3,6 @@ from cosmosis.datablock.cosmosis_py import errors
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 
-# The version we are using
-CAMB_VERSION="1.0.7"
-
-# First determine the version of python we are using
-import distutils.sysconfig
-python_version = distutils.sysconfig.get_python_version()
-
-# The current directory this file is in
-import os
-this_dir = os.path.split(__file__)[0]
-
-# Determine the camb library path and add it to our path.
-# Have to use addsitedir not just sys.path.append because
-# camb is installed as an egg link file.
-import site
-camb_dir = os.path.join(
-    this_dir,
-    "CAMB-{}".format(CAMB_VERSION),
-    "install",
-    "lib",
-    "python{}".format(python_version),
-    "site-packages")
-site.addsitedir(camb_dir)
-
 # Finally we can now import camb
 import camb
 
@@ -88,6 +64,7 @@ def setup(options):
         raise ValueError("Unknown mode {}.  Must be one of: {}".format(mode, MODES))
 
     config = {}
+    config["mode"] = mode
     config['WantCls'] = mode in [MODE_CMB, MODE_ALL]
     config['WantTransfer'] = mode in [MODE_POWER, MODE_ALL]
     config['WantScalars'] = True
@@ -135,7 +112,7 @@ def setup(options):
     more_config["nonlinear_params"] = get_optional_params(options, opt, ["halofit_version", "Min_kh_nonlinear"])
 
     halofit_version = more_config['nonlinear_params'].get('halofit_version')
-    known_halofit_versions = camb.nonlinear.halofit_version_names + [None]
+    known_halofit_versions = list(camb.nonlinear.halofit_version_names.keys()) + [None]
     if halofit_version not in known_halofit_versions:
         raise ValueError("halofit_version must be one of : {}.  You put: {}".format(known_halofit_versions, halofit_version))
 
@@ -305,11 +282,25 @@ def extract_nonlinear_params(block, config, more_config):
 
 
 def extract_camb_params(block, config, more_config):
+    want_perturbations = config['mode'] not in [MODE_BG, MODE_THERM]
+    want_thermal = config['mode'] != MODE_BG
+
+    # if want_perturbations:
     init_power = extract_initial_power_params(block, config, more_config)
+    nonlinear = extract_nonlinear_params(block, config, more_config)
+# else:
+    #     init_power = None
+    #     nonlinear = None
+
+    # if want_thermal:
     recomb = extract_recombination_params(block, config, more_config)
     reion = extract_reionization_params(block, config, more_config)
+    # else:
+    #     recomb = None
+    #     reion = None
+
     dark_energy = extract_dark_energy_params(block, config, more_config)
-    nonlinear = extract_nonlinear_params(block, config, more_config)
+
 
     # Currently the camb.model.*Params classes default to 0 for attributes (https://github.com/cmbant/CAMB/issues/50),
     # so we're not using them.
@@ -345,30 +336,29 @@ def extract_camb_params(block, config, more_config):
                     **more_config["cosmology_params"],
                     **cosmology_params)
 
-    # try:
-    # except camb.baseconfig.CAMBParamRangeError as e:
-    #     # Set likelihood to zero if there is no solution for H0 for a specified
-    #     # cosmomc_theta
-    #     raise errors.ZeroLikelihood(e)
 
     # Setting reionization before setting the cosmology can give problems when
     # sampling in cosmomc_theta
+    # if want_thermal:
     p.Reion = reion
 
     p.set_for_lmax(**more_config["lmax_params"])
     p.set_accuracy(**more_config["accuracy_params"])
 
-    if "zmid" in more_config:
-        z = np.concatenate((np.linspace(more_config['zmin'], 
-                                        more_config['zmid'], 
-                                        more_config['nz_mid'], 
-                                        endpoint=False),
-                            np.linspace(more_config['zmid'], 
-                                        more_config['zmax'], 
-                                        more_config['nz']-more_config['nz_mid'])))[::-1]
-    else:
-        z = np.linspace(more_config['zmin'], more_config['zmax'], more_config["nz"])[::-1]
-    p.set_matter_power(redshifts=z, nonlinear=config["NonLinear"] in ["NonLinear_both", "NonLinear_pk"], **more_config["transfer_params"])
+    if want_perturbations:
+        if "zmid" in more_config:
+            z = np.concatenate((np.linspace(more_config['zmin'], 
+                                            more_config['zmid'], 
+                                            more_config['nz_mid'], 
+                                            endpoint=False),
+                                np.linspace(more_config['zmid'], 
+                                            more_config['zmax'], 
+                                            more_config['nz']-more_config['nz_mid'])))[::-1]
+        else:
+            z = np.linspace(more_config['zmin'], more_config['zmax'], more_config["nz"])[::-1]
+
+        p.set_matter_power(redshifts=z, nonlinear=config["NonLinear"] in ["NonLinear_both", "NonLinear_pk"], **more_config["transfer_params"])
+
     return p
 
 
