@@ -6,7 +6,7 @@ import numpy as np
 def load_type_table():
     dirname = os.path.split(__file__)[0]
     table_name = os.path.join(dirname, "type_table.txt")
-    type_table = Table.read(table_name, format="ascii")
+    type_table = Table.read(table_name, format="ascii.commented_header")
     table = {}
     for (type1, type2, section, x, y) in type_table:
         table[(type1, type2)] = (section, x, y)
