@@ -338,7 +338,7 @@ int execute(c_datablock * block, void * config_in)
 	for (int i=0; i<N_thetaH; i++){
 		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
 	}
-	printf("theta %le %le %d  %le  %le\n", theta_vals[0], theta_vals[N_thetaH-1], N_thetaH, log_theta_min, log_theta_max);
+
 	status |= c_datablock_put_double_array_1d(block, config->output_section, "theta",
                   theta_vals, N_thetaH);
 	//Include units
