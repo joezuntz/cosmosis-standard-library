@@ -7,7 +7,7 @@ DEFINES = -D HAS_LAPACK -D LAPACK_CLIK -D NOHEALPIX -D CLIK_LENSING -D 'CLIKSVNV
 PLANCK_DIR=plc-3.0
 
 RPATH_FLAGS=-Wl,-rpath,$(PWD)/$(PLANCK_DIR)/lib -Wl,-rpath,$(PWD)/$(PLANCK_DIR)/buildir
-USER_LDFLAGS=-L$(PLANCK_DIR)/lib -lcosmosis_fortran -lcosmosis $(RPATH_FLAGS) -L$(CFITSIO_LIB) -lcfitsio $(LAPACK_LINK)
+USER_LDFLAGS=-L$(PLANCK_DIR)/lib -lcosmosis $(RPATH_FLAGS) -L$(CFITSIO_LIB) -lcfitsio $(LAPACK_LINK)
 
 PLANCK_LIB=lib/libclik.so
 USER_CFLAGS=-I$(PLANCK_DIR)/include  -D_GNU_SOURCE $(DEFINES)
