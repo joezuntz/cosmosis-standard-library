@@ -43,6 +43,12 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}
 
+    - uses: actions/cache@v2
+      name: Planck Data Cache
+      id: cache-planck
+      with:
+        path: likelihood/planck2018/baseline
+        key: ${{ runner.os }}-planck-2018
 
     - name: Install python dependencies
       run: |
@@ -56,6 +62,7 @@ jobs:
         source .github/ci-setup.sh && make
 
     - name: Download Planck 2018 Data
+      if: steps.cache-planck.outputs.cache-hit != 'true'
       run: |
           cd likelihood/planck2018
           curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o COM_Likelihood_Data-baseline_R3.00.tar.gz
