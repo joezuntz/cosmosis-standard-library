@@ -1,0 +1,62 @@
+#This is a template for module description files
+name: nz_hyperrank
+version: 1
+purpose: Load, rank, and sample a set of density n(z) realisations from a FITS file
+url: ""
+interface: nz_hyperrank.py
+attribution: Juan P. Cordero, Ian Harrison
+rules: "If you use a file from a particular survey you should cite that survey"
+cite: []
+
+assumptions:
+    - "Realisations are provided in FITS extensions NZ_{NAME}_realisation_{NUMBER}"
+
+explanation: |
+    "This module is designed to work with the number density part of the FITS
+    files described in:
+    http://github.com/joezuntz/2point/
+
+    Uncertainty in the redshift distributions is usually described by a nuisance
+    parameter which allows the mean of the distribution to be shifted from a fiducial
+    central value.
+    This value is then marginalized in the pipeline.
+    But higher order distribution moments which are not captured by this paramterization
+    can propagate into the cosmological parameters and its uncertainty ignored.
+
+    An empirical approach to solve this is to provide multiple realisations of the
+    redshift distributions n(z) containing realistic samples of the higher order moments.
+    as well as the small redshift scale variance.
+    We can then sample from them directly rather than using nuisance to capture the
+    full effect of the shapes of the redshift distributions, as well as their internal
+    correlation.
+
+    This module extends the load_nz_fits module to read multiple realisations, one per
+    extension.
+    It then ranks the realisations depending on the selected mode and maps it to a continuous
+    hyper-parameter which can be sampled in the pipeline.
+    The ranking is intended to provide a meaningful metric in the n(z) space, allowing
+    for better sampling efficiency over random sampling of the realisations.
+    "
+
+
+# List of parameters that can go in the params.ini file in the section for this module
+params:
+    mode: "String; ranking mode, use to define how the realisations are mapped to the hyperparameter. It has to be one of the following:
+      no-rank, unified, separate, inv-chi-unified, inv-chi-separate, random, external"
+    nz_file: "String; absolute or relative path to an n(z) file"
+    data_set: "String, names of the extensions prefixes in the FITS files to load and save to the block"
+    n_bins: "Integer, number of tomographic bins"
+    n_hist: "Integer, number of redshift histogram bins at which n(z) is evaluated"
+    n_realisations: "Integer, number of realisations contained in the FITS file, numbered from 0 to n_realisations-1"
+    external_ranking_filename: "String, path to a plain text file with a 1D array of length = n_realisations with values to be ranked"
+
+inputs:
+  ranks:
+    rank_hyperparm_i: "Real; hyperparameter mapped to a redshift distribution. If mode is separate, then i = 1...n_bins "
+
+outputs:
+    wl_number_density:
+        nz: "Integer; number of redshift samples"
+        nbin: "Integer; number of bins"
+        z: "Real vector; redshift sample values"
+        bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."

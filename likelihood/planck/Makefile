@@ -20,6 +20,7 @@ all: planck planck_interface.so
 
 planck: $(PLANCK_DIR)
 	cd $(PLANCK_DIR) && $(MAKE) install
+	
 
 planck_interface.so: planck planck_interface.c
 	$(CC) -shared $(CFLAGS) -o $@ planck_interface.c -lclik $(LDFLAGS) 

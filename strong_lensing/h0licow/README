@@ -1,0 +1,40 @@
+This directory contains all the files (likelihood,
+chains) needed to run a cosmographic analysis with
+the H0LiCOW time-delay distance (Dt) and deflector
+distance (Dd) measurements of 6 strongly lensed
+quasars in MontePython. The implementation has
+been tested with MontePython 3.1.0.
+
+
+To include the H0LiCOW 6-lens data in an existing
+MontePython installation, copy the content of the
+'data' and 'likelihood' folders to the respective
+directories in your MontePython tree. By default,
+their paths are:
+'your MontePython directory'/data/
+'your MontePython directory'/montepython/likelihoods/
+
+Then specify data.experiments=['timedelay_6lenses']
+in your parameter file.
+
+
+If you make use of the H0LiCOW Dd and Dt data,
+please don't forget to cite the following papers:
+ 
+ Suyu et al., 2010, ApJ, 711, 201 
+ Suyu et al., 2014, ApJ, 788, L35
+ Wong et al., 2017, MNRAS, 465, 4895
+ Birrer et al., 2019, MNRAS, 484, 4726
+ Chen et al., 2019, MNRAS, 490, 1743
+ Jee et al., 2019, Science, 365, 1134
+ Rusu et al., 2019, arXiv:1905.09338
+ 
+For details on the lens references see Table 2 of
+Wong et al., 2019, arXiv:1907.04869.
+
+
+If you make use of this implementation in MontePython, 
+please credit Stefan Taubenberger and Sherry Suyu by 
+referencing this Zenodo link:
+https://zenodo.org/record/3632967#.XjrsmRd7k0o
+(bibtex entry: https://zenodo.org/record/3632967/export/hx#.Xjrs5a2ZM0o )

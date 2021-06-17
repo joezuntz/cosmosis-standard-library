@@ -1,0 +1,8 @@
+You can download the H0LICOW data files in this directory like this:
+
+curl -o J1206_final.csv https://raw.githubusercontent.com/shsuyu/H0LiCOW-public/master/MontePython_cosmo_sampling/data/timedelay_6lenses/J1206_final.csv
+curl -o wfi2033_dt_bic.dat  https://raw.githubusercontent.com/shsuyu/H0LiCOW-public/master/MontePython_cosmo_sampling/data/timedelay_6lenses/wfi2033_dt_bic.dat
+curl -o HE0435_Ddt_AO+HST.dat  https://raw.githubusercontent.com/shsuyu/H0LiCOW-public/master/MontePython_cosmo_sampling/data/timedelay_6lenses/HE0435_Ddt_AO%2BHST.dat
+curl -o PG1115_AO+HST_Dd_Ddt.dat  https://raw.githubusercontent.com/shsuyu/H0LiCOW-public/master/MontePython_cosmo_sampling/data/timedelay_6lenses/PG1115_AO%2BHST_Dd_Ddt.dat
+curl -o RXJ1131_AO+HST_Dd_Ddt.dat  https://raw.githubusercontent.com/shsuyu/H0LiCOW-public/master/MontePython_cosmo_sampling/data/timedelay_6lenses/RXJ1131_AO%2BHST_Dd_Ddt.dat
+curl -o B1608_Dd_Ddt_params.dat  https://raw.githubusercontent.com/shsuyu/H0LiCOW-public/master/MontePython_cosmo_sampling/data/timedelay_6lenses/B1608_Dd_Ddt_params.dat

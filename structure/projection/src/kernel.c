@@ -259,6 +259,7 @@ int get_wchi_array(c_datablock * block, const char * nz_section,
 
   // tidy up bin-specific data
   gsl_spline_free(W);
+  return 0;
 }
 
 

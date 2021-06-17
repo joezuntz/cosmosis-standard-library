@@ -124,6 +124,7 @@ inputs:
         nnu: "float, N_eff, the effective relativistic degrees of freedom (Default=3.046)"
         standard_neutrino_neff: "float, default value for N_eff in fiducial cosmology used to calculate omnhu2 (Default=3.046)"
         A_lens: "float, scaling of the lensing potential compared to theory prediction (Default=1.0)fttt"
+        nu_mass_{i}: "real, mass of neutrino where i=1..massive_nu.  Default is -1000, in which case three neutrinos is expected and all are given the same mass"
 
 
     reionization:
@@ -155,7 +156,6 @@ inputs:
     de_equation_of_state:
         a: "real 1d array, of scale factor a values used if use_tabulated_w=T. (Default=None)"
         w: "real 1d array, of equation of state w(a) values used if use_tabulated_w=T. (Default=None)"
-
 
 
 outputs:

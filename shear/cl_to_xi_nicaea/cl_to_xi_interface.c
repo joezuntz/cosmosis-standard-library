@@ -17,6 +17,9 @@ const char * wl_nz = WL_NUMBER_DENSITY_SECTION;
 typedef enum {shear_shear=0, matter=1, ggl=2} corr_type_t;
 typedef enum {corrfct=0, map=1} filter_type_t;
 
+const char * corr_type_names[3] = {"2-2", "0-0", "0-2"};
+const char * filter_type_names[2] = {"correlation", "aperture"};
+
 typedef struct cl_to_xi_config {
 	char * input_section;
 	char * output_section;
@@ -77,6 +80,12 @@ void * setup(c_datablock * options)
 	  status = 1;
 	}
 
+    printf("Will Hankel transform %s -> %s with filter type '%s' and spins %s\n",
+      config->input_section,
+      config->output_section,
+      filter_type_names[filter_type],
+      corr_type_names[corr_type]
+      );
 	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
 	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
 

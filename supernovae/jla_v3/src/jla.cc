@@ -27,39 +27,6 @@ using namespace std;
 
 //-------------- Reading configuration and data from disk --------------------------
 
-
-/*
- * Handler for reading the config file through inih.
- */
- /* 
-static int configuration_handler(void* user, const char* section, const char* name,
-                                 const char* value)
-{
-  Configuration* pconfig = (Configuration*)user;
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-  if (MATCH("", "scriptmcut")) {
-    pconfig->scriptmcut = atof(value);
-  } else if (MATCH("", "data_file")) {
-    pconfig->data_file = strdup(value);
-  } else if (MATCH("", "mag_covmat_file")) {
-    pconfig->C00 = strdup(value);
-  } else if (MATCH("", "stretch_covmat_file")) {
-    pconfig->C11 = strdup(value);
-  } else if (MATCH("", "colour_covmat_file")) {
-    pconfig->C22 = strdup(value);
-  } else if (MATCH("", "mag_stretch_covmat_file")) {
-    pconfig->C01 = strdup(value);
-  } else if (MATCH("", "mag_colour_covmat_file")) {
-    pconfig->C02 = strdup(value);
-  } else if (MATCH("", "stretch_colour_covmat_file")) {
-    pconfig->C12 = strdup(value);
-  } else {
-    return 0;  
-  }
-  return 1;
-}
-*/
-
 /*
  * Read one entry in the lightcurve file.
  */
@@ -88,7 +55,7 @@ double * read_matrix(const char * filename, int verbosity)
   int N;
   double * mat = NULL;
 
-  std::ifstream fid(filename);
+  ifstream fid(filename);
 
   if (!fid){
     fid.close();
@@ -155,9 +122,6 @@ void JLALikelihood::configure(Configuration &config)
    
   if (verbosity > 1)
     cout << "Read " << lcpars.size() << " SNe in file " << config.data_file << endl;
-
-
-
 }
 
 

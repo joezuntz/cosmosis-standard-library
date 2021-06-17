@@ -5,95 +5,104 @@
 #include "gsl/gsl_spline.h"
 #include "src/jla.h"
 #include <cstring>
+#include <iomanip>
+
+inline void
+report_missing_param(char const* section, std::string const& name)
+{
+  std::cerr << "Could not find parameter named: " << name
+            << " in section: " << section << '\n';
+}
 
 extern "C" {
 
-
-int get_option(cosmosis::DataBlock * options, const std::string &name, std::string &parameter){
-	
-	auto status = options->get_val(OPTION_SECTION, name, parameter);
-	if (status!=DBS_SUCCESS) {
-		parameter = "";
-		std::cerr<< "Could not find or understand parameter in JLA section: " << name << std::endl; 
-		return 1;
-	}
-	return 0;
-}
-
-void * setup(cosmosis::DataBlock * options){
-	int verbosity;
-	int default_verbosity = 2;
-	int error = 0;
-	auto status = options->get_val(OPTION_SECTION, 
-		"verbosity", default_verbosity, verbosity);
-	if (status!=DBS_SUCCESS) {
-		std::cerr<< "JLA Parameter error: verbosity not set right" << std::endl; 
-		error|=status;
-	}
-	Configuration config;
-	std::string parameter;
-
-		
-	options->get_val(OPTION_SECTION, "scriptmcut", config.scriptmcut);
-
-	error|=get_option(options, "data_dir", parameter);
-	std::string data_dir = parameter;
-	if (data_dir!="") data_dir += "/";
-
-	error|=get_option(options, "data_file", parameter);
-	parameter = data_dir + parameter;
-	config.data_file = strdup(parameter.c_str());
-
-	error|=get_option(options, "mag_covmat_file", parameter);
-	parameter = data_dir + parameter;
-	config.C00 = strdup(parameter.c_str());
-
-	error|=get_option(options, "stretch_covmat_file", parameter);
-	parameter = data_dir + parameter;
-	config.C11 = strdup(parameter.c_str());
-
-	error|=get_option(options, "colour_covmat_file", parameter);
-	parameter = data_dir + parameter;
-	config.C22 = strdup(parameter.c_str());
-
-	error|=get_option(options, "mag_stretch_covmat_file", parameter);
-	parameter = data_dir + parameter;
-	config.C01 = strdup(parameter.c_str());
-
-	error|=get_option(options, "mag_colour_covmat_file", parameter);
-	parameter = data_dir + parameter;
-	config.C02 = strdup(parameter.c_str());
-
-	error|=get_option(options, "stretch_colour_covmat_file", parameter);
-	parameter = data_dir + parameter;
-	config.C12 = strdup(parameter.c_str());
-
-	if (error) exit(1);
-
-	auto calculator = new JLALikelihood(verbosity);
-	calculator->configure(config);
-
-
-	return (void*) calculator;
-}
-
-void cleanup(void * config){
-
-	auto calculator = (JLALikelihood*) config;
-	delete calculator;
-}
-
-gsl_spline * spline_from_vectors(std::vector<double> &x, std::vector<double> &y)
+void*
+setup(cosmosis::DataBlock* options)
 {
-	int n = x.size();
-	gsl_spline * s = gsl_spline_alloc(gsl_interp_akima, x.size());
-	double* px = &x[0];
-	double* py = &y[0];
-	gsl_spline_init(s, px, py, n);
-	return s;
+  int verbosity;
+  int default_verbosity = 2;
+  int error = 0;
+  auto status =
+    options->get_val("module_options", "verbosity", default_verbosity, verbosity);
+  if (status != DBS_SUCCESS) {
+    std::cerr << "JLA Parameter error: verbosity not set right" << std::endl;
+    error |= status;
+    abort();
+  }
+  Configuration config;
+
+  options->get_val("module_options", "scriptmcut", config.scriptmcut);
+
+  std::string data_dir;
+  error |= options->get_val("module_options", "data_dir", data_dir);
+  if (not data_dir.empty())
+    data_dir += "/";
+
+  std::string parameter;
+  error |= options->get_val("module_options", "data_file", parameter);
+  parameter = data_dir + parameter;
+  config.data_file = strdup(parameter.c_str());
+
+  error |= options->get_val("module_options", "mag_covmat_file", parameter);
+  parameter = data_dir + parameter;
+  config.C00 = strdup(parameter.c_str());
+
+  error |= options->get_val("module_options", "stretch_covmat_file", parameter);
+  parameter = data_dir + parameter;
+  config.C11 = strdup(parameter.c_str());
+
+  error |= options->get_val("module_options", "colour_covmat_file", parameter);
+  parameter = data_dir + parameter;
+  config.C22 = strdup(parameter.c_str());
+
+  error |= options->get_val("module_options", "mag_stretch_covmat_file", parameter);
+  parameter = data_dir + parameter;
+  config.C01 = strdup(parameter.c_str());
+
+  error |= options->get_val("module_options", "mag_colour_covmat_file", parameter);
+  parameter = data_dir + parameter;
+  config.C02 = strdup(parameter.c_str());
+
+  error |= options->get_val("module_options", "stretch_colour_covmat_file", parameter);
+  parameter = data_dir + parameter;
+  config.C12 = strdup(parameter.c_str());
+
+  if (error != DBS_SUCCESS) {
+    std::cerr << "Reading parameters from DataBlock 'config' has failed\n";
+    options->print_log();
+    exit(1);
+  }
+
+  auto calculator = new JLALikelihood(verbosity);
+  calculator->configure(config);
+
+  return calculator;
 }
 
-#define CHECK_ERR(p) if (status!=DBS_SUCCESS) {std::cerr<< "JLA error loading required thing: " << p << std::endl; return status;}
+void
+cleanup(void* config)
+{
+
+  auto calculator = (JLALikelihood*)config;
+  delete calculator;
+}
+
+gsl_spline*
+spline_from_vectors(std::vector<double>& x, std::vector<double>& y)
+{
+  int n = x.size();
+  gsl_spline* s = gsl_spline_alloc(gsl_interp_akima, x.size());
+  double* px = &x[0];
+  double* py = &y[0];
+  gsl_spline_init(s, px, py, n);
+  return s;
+}
+
+#define CHECK_ERR(p)                                                           \
+  if (status != DBS_SUCCESS) {                                                 \
+    std::cerr << "JLA error loading required thing: " << p << std::endl;       \
+    return status;                                                             \
+  }
 
 int execute(cosmosis::DataBlock * block, void * config){
 	auto calculator = (JLALikelihood*) config;
@@ -186,8 +195,6 @@ int execute(cosmosis::DataBlock * block, void * config){
 	status = block->put_metadata(LIKELIHOODS_SECTION, "JLA_LIKE", "number_supernova", std::to_string(n_sn));
 
 	return status;
-
 }
-
 
 } // end extern C

@@ -231,6 +231,8 @@ contains
     diffs(datap_s,1) = 0.d0
     diffs2(1,datap_s) = 0.d0
 
+    stop "ACT South likelihood in Planck 1.0 disabled: out of bounds problem. Open an issue if this affects you."
+
     do i =0,nbin11-1
        do j =0,nsp11_s-1
           diffs(i+1+j*nbin11,1) = btt_dat1(j+1,i) - btt_th(1,i+4)

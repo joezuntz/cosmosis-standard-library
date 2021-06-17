@@ -52,7 +52,7 @@ def bins_count_xi(block):
         n_z_bins_pos = block["galaxy_shear_xi", "nbin_a"]
 
     if block.has_section('galaxy_xi'):
-        n_z_bins_pos = block["galaxy_xi", "nbin"]
+        n_z_bins_pos = block["galaxy_xi", "nbin_a"]
 
     if n_z_bins_pos==0:
         raise ValueError("Used bin bias module with apply_to_cl=F but did not find any xi density tracers")

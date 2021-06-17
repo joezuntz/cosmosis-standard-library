@@ -10,5 +10,9 @@ all: nicaea_interface.so
 nicaea_interface.so: $(OBJS)
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
+test:
+	@echo "Alas, cl_to_xi_nicaea has no tests"
+
 clean:
 	rm -f nicaea_interface.so
+	rm -rf nicaea_interface.so.dSYM

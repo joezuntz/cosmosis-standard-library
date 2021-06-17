@@ -1,22 +1,20 @@
 # modified for compatibility with COSMOSIS build
-
-USER_CXXFLAGS += -O3 -fPIC
+include $(COSMOSIS_SRC_DIR)/config/compilers.mk
 
 OBJECTS =  clusters.o fgas.o lensing.o wrapper.o xray.o ConfigFile.o
 SEPOBJ = fwrapper.o
 
-ARCHIVES = libclusters.a
+MYLIB = libclusters.so
 
-default: objects archives
+default: objects $(MYLIB)
 
 listobjects:
 	@echo $(OBJECTS)
 
 objects: $(OBJECTS) $(SEPOBJ)
 
-archives: $(ARCHIVES)
-
-$(ARCHIVES): $(OBJECTS)
+$(MYLIB): $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -shared -o $(CURDIR)/$(MYLIB) -L$(GSL_LIB) -lgsl $(OBJECTS)
 
 clusters.o: clusters.hpp util.hpp
 fgas.o: clusters.hpp fgas.hpp lensing.hpp util.hpp xray.hpp
@@ -24,13 +22,8 @@ lensing.o: clusters.hpp lensing.hpp  util.hpp ConfigFile.h
 wrapper.o: clusters.hpp fgas.hpp lensing.hpp wrapper.hpp xray.hpp
 xray.o: clusters.hpp util.hpp xray.hpp
 
-
-
 %.o: %.cpp
-	$(CXX) -o $@ -c $(CXXFLAGS) $*.cpp
-
-%.a:
-	rm -f $@; ar -r $@ $(OBJECTS)
+	$(CXX) -o $@ -c $(CXXFLAGS) -I$(GSL_INC)  $*.cpp
 
 clean:
-	rm -f $(OBJECTS) $(SEPOBJ) $(ARCHIVES)
+	rm -f $(OBJECTS) $(SEPOBJ) $(MYLIB)
