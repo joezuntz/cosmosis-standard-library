@@ -397,7 +397,9 @@ def save_distances(r, block, more_config):
     block[names.distances, "D_L"] = d_L
 
     # Deal with mu(0), which is -np.inf
-    block[names.distances, "MU"] = np.insert(5*np.log10(d_L[1:])+25, 0, -np.inf)
+    mu = 5*np.log10(d_L)+25
+    mu[z_background<=0] = -np.inf
+    block[names.distances, "MU"] = mu
     block[names.distances, "H"] = r.h_of_z(z_background)
 
 def compute_growth_rates(r, block, P_tot, k, z, more_config):

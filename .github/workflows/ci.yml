@@ -49,16 +49,30 @@ jobs:
         python -m pip install --upgrade pip
         pip install cosmosis
         pip install --no-binary=mpi4py mpi4py
+        pip install camb fitsio astropy
 
     - name: Build
       run: |
         source .github/ci-setup.sh && make
 
-    - name: Demo 1
+    - name: Download Planck 2018 Data
       run: |
-        source .github/ci-setup.sh && cosmosis demos/demo1.ini && cosmosis-postprocess demos/demo1.ini
+          cd likelihood/planck2018
+          curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o COM_Likelihood_Data-baseline_R3.00.tar.gz
+          tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
 
-    - name: Demo 9
+    - name: Demo 2 Planck 2018 Likelihood
       run: |
-        source .github/ci-setup.sh && cosmosis demos/demo9.ini && cosmosis-postprocess demos/demo9.ini
+        source .github/ci-setup.sh
+        cosmosis demos/demo2.ini
+        cosmosis-postprocess demos/demo2.ini -o output/demo2
+        test -f output/demo2/comoving_distance.png
+        python .github/ci-checks.py
 
+
+    - name: Demo 9 Low-Resolution Multinest
+      run: |
+        source .github/ci-setup.sh
+        cosmosis demos/demo9.ini -p multinest.live_points=100
+        cosmosis-postprocess demos/demo9.ini -o output/demo9
+        test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
