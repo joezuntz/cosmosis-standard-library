@@ -98,7 +98,7 @@ distclean: clean
 	$(RM) $(WMAPLIB) $(PROGRAMS)
 
 interface: $(WMAPLIB)
-	$(F90) $(FFLAGS) wmap_interface.f90 -shared -o wmap_interface.so  -L. -l${WMAPLIBNAME}  $(INCS) $(LDFLAGS) -lcosmosis_fortran $(LIBS)
+	$(F90) $(FFLAGS) wmap_interface.f90 -shared -o wmap_interface.so  -L. -l${WMAPLIBNAME}  $(INCS) $(LDFLAGS)  $(LIBS)
 
 
 

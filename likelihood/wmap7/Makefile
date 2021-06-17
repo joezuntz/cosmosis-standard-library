@@ -2,7 +2,7 @@ include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 $(error Building WMAP7 is currently disabled.)
 
-LDFLAGS+= -lcosmosis_fortran -lcosmosis 
+LDFLAGS+=  -lcosmosis 
 
 ifeq ($(WMAP7_DATA_DIR),)
 ifneq ($(MAKECMDGOALS),clean)

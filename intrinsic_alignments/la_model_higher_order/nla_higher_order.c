@@ -3,7 +3,7 @@
 // and the correction in Hirata and Seljak (2010)
 // Simon Samuroff 01/16 
 
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 #include "gsl/gsl_spline.h"
 #include "utils.h"
 #include <stdio.h>

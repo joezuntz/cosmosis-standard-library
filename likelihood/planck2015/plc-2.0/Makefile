@@ -105,7 +105,7 @@ BDIR := $(shell pwd)/buildir
 ODIR := $(shell pwd)/buildir/tmp
 
 # tools
-LD = gcc
+LD = $(CC)
 INSTALL = install
 
 # get the os

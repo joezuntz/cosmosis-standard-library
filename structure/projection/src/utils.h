@@ -2,7 +2,7 @@
 #define _H_LIMBER_UTILS
 
 #include "gsl/gsl_spline.h"
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 #include "interp2d.h"
 
 

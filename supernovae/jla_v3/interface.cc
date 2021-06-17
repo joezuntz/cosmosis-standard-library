@@ -1,5 +1,5 @@
-#include "cosmosis/datablock/datablock.hh"
-#include "cosmosis/datablock/section_names.h"
+#include "datablock/datablock.hh"
+#include "datablock/section_names.h"
 #include <vector>
 #include <algorithm>
 #include "gsl/gsl_spline.h"
@@ -136,6 +136,8 @@ int execute(cosmosis::DataBlock * block, void * config){
 		MU.erase(MU.begin());
 	}
 
+  double z_min_calc = Z.front();
+
 
 	// Make an interpolating spline
 	gsl_spline * mu_of_z = spline_from_vectors(Z, MU);
@@ -150,20 +152,28 @@ int execute(cosmosis::DataBlock * block, void * config){
 	for (int i=0; i<n_sn; i++){
 		double z_helio = calculator->lcpars[i].zhel;
 		double helio_correction = 5*(log10(1+z_helio) - log10(1+z_sn[i]));
-		if (z_sn[i] > z_max_calc){
-			out_of_range = 1;
-			break;
-		}
+    if (z_sn[i] > z_max_calc){
+      out_of_range = 1;
+      break;
+    }
+    if (z_sn[i] < z_min_calc){
+      out_of_range = 2;
+      break;
+    }
 		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL) + helio_correction;
 	}
 
 	free(z_sn);
 	gsl_spline_free(mu_of_z);
 
-	if (out_of_range){
-		std::cerr << "ERROR: One or more JLA supernovae beyond calculated redshift max z=" << z_max_calc <<  std::endl;
-		return 1;
-	}
+  if (out_of_range == 1){
+    std::cerr << "ERROR: One or more JLA supernovae beyond calculated redshift max z=" << z_max_calc <<  std::endl;
+    return 1;
+  }
+  if (out_of_range == 2){
+    std::cerr << "ERROR: One or more JLA supernovae beneath calculated redshift min z=" << z_min_calc <<  std::endl;
+    return 1;
+  }
 
 	//Get the chi^2 and convert to log-like
 	double chi2 = calculator->computeLikelihood(mu_sn, nuisance);

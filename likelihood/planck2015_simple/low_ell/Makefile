@@ -1,7 +1,7 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_FFLAGS=-I.
-USER_LDFLAGS=-lcosmosis_fortran
+USER_LDFLAGS=-lcosmosis
 
 
 INTERFACE=planck2015_lowl.so

@@ -1,7 +1,7 @@
 #include "math.h"
 #include "stdlib.h"
 #include "stdio.h"
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 
 #include "params.h"
 
