@@ -74,5 +74,5 @@ jobs:
       run: |
         source .github/ci-setup.sh
         cosmosis demos/demo9.ini -p multinest.live_points=100
-        cosmosis-postprocess demos/demo9.ini -o output/demo9
+        cosmosis-postprocess output/demo9.txt -o output/demo9
         test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
