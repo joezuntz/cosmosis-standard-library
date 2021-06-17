@@ -1,5 +1,5 @@
 #include "clik.h"
-#include "cosmosis/datablock/c_datablock.h"
+#include "datablock/c_datablock.h"
 #include <math.h>
 
 // Hard-coded maximum number of likelihoods.
