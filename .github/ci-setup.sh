@@ -1,3 +1,12 @@
+# This sets up various paths, most importantly $COSMOSIS_SRC_DIR
+# which is used in most of the Makefiles to get the paths to cosmosis
+# headers
+source cosmosis-configure
+
+export CC=gcc
+export CXX=g++
+export FC=gfortran
+
 #The gnu science library
 export GSL_INC=/usr/include
 export GSL_LIB=/usr/lib
