@@ -397,8 +397,10 @@ def save_distances(r, block, more_config):
     block[names.distances, "D_L"] = d_L
 
     # Deal with mu(0), which is -np.inf
-    mu = 5*np.log10(d_L)+25
-    mu[z_background<=0] = -np.inf
+    mu = np.zeros_like(d_L)
+    p = d_L > 0
+    mu[p] = 5*np.log10(d_L[p])+25
+    mu[~p] = -np.inf
     block[names.distances, "MU"] = mu
     block[names.distances, "H"] = r.h_of_z(z_background)
 
