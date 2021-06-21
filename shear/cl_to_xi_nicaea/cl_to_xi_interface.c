@@ -25,6 +25,7 @@ typedef struct cl_to_xi_config {
 	char * output_section;
 	corr_type_t corr_type;
 	filter_type_t filter_type;
+	bool separate_xi;
 
 } cl_to_xi_config;
 
@@ -59,6 +60,7 @@ void * setup(c_datablock * options)
 
 	  sprintf(output_string,"shear_%s",filter_string);		
 	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+	  status |= c_datablock_get_bool_default(options, OPTION_SECTION, "separate_xi", true, &(config->separate_xi));
 
 	}
 	else if (corr_type==ggl){
@@ -138,6 +140,9 @@ int execute(c_datablock * block, void * config_in)
 	int count=2;
 	double ** xi = malloc(count*sizeof(double*));
 	for (int i=0; i<count; i++) xi[i] = malloc(sizeof(double)*N_thetaH);
+
+	const int slen = 128;
+	char output_section[slen];
 
 	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
@@ -225,8 +230,15 @@ int execute(c_datablock * block, void * config_in)
 			  switch(config->corr_type) {
 			    case shear_shear:
 			      tpstat = tp_xipm;
-			      snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
-			      snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
+			      if (config->separate_xi){
+				      snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
+				      snprintf(name_xim, 64, "bin_%d_%d",i_bin,j_bin);
+				  }
+				  else{
+				      snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
+				      snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
+
+				  }
 			      break;
 			    case matter:
 			      tpstat = tp_w;
@@ -323,22 +335,41 @@ int execute(c_datablock * block, void * config_in)
 		else {
 		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_logl, i_bin, j_bin, &err);
 		}
+
+
+		// Support the old naming scheme of shear_xi/xiplus_i_j and
+		// the new one shear_xi_plus/bin_i_j
+		if (config->separate_xi && config->corr_type == shear_shear){
+			snprintf(output_section, slen-1, "%s_plus", config->output_section);
+		}
+		else{
+			snprintf(output_section, slen-1, "%s", config->output_section);
+		}
+
+
 		//Now save to block
-		status |= c_datablock_put_double_array_1d(block, config->output_section, name_xip,
+		status |= c_datablock_put_double_array_1d(block, output_section, name_xip,
 		              xi[0], N_thetaH);
 		if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
-		  status |= c_datablock_put_double_array_1d(block, config->output_section, name_xim, xi[1], N_thetaH);
+
+		  if (config->separate_xi && config->corr_type == shear_shear){
+		  	snprintf(output_section, slen-1, "%s_minus", config->output_section);
+		  }
+
+		  status |= c_datablock_put_double_array_1d(block, output_section, name_xim, xi[1], N_thetaH);
 		}
 		free(C_ell);
 		del_interTable(&d.cl_table);
-		}
-	}
+	  }
+	} // ends the loop over bin pairs
+
 	if (!found_any){
 		fprintf(stderr, "WARNING: I COULD NOT FIND ANY SPECTRA OF THE FORM \n");
 		fprintf(stderr, "xiplus_i_j, ximinus_i_j, wmatter_i_j, or tanshear_i_j.\n");
 		fprintf(stderr, "THIS IS ALMOST CERTAINLY AN ERROR.\n");
 		status = 1;
 	}
+
 	// Save theta values...check these are being calculated correctly at some point
 	double dlog_theta= (log_theta_max-log_theta_min)/((double)N_thetaH-1.0);
 	double logtheta_center = 0.5*(log_theta_max+log_theta_min);
@@ -348,17 +379,29 @@ int execute(c_datablock * block, void * config_in)
 		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
 	}
 
-	status |= c_datablock_put_double_array_1d(block, config->output_section, "theta",
-                  theta_vals, N_thetaH);
-	//Include units
-	status |= c_datablock_put_metadata(block, config->output_section, "theta", "unit", "radians");
+
+	if (config->separate_xi && config->corr_type == shear_shear){
+		// Save to both sections
+		snprintf(output_section, slen-1, "%s_plus", config->output_section);
+		status |= c_datablock_put_double_array_1d(block, output_section, "theta",
+	                  theta_vals, N_thetaH);
+		snprintf(output_section, slen-1, "%s_minus", config->output_section);
+		status |= c_datablock_put_double_array_1d(block, output_section, "theta",
+	                  theta_vals, N_thetaH);
+	}
+	else{
+		// otherwise just save to the one section
+		status |= c_datablock_put_double_array_1d(block, config->output_section, "theta",
+	                  theta_vals, N_thetaH);
+
+	}
 
 	//Clean up
 
 	for (int i=0; i<count; i++) free(xi[i]);
 	free(xi);
 	free(ell);
-  free(theta_vals);
+ 	free(theta_vals);
 
 	return status;
 }
