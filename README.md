@@ -1,2 +1,1 @@
-Do not use this repository yet.
-Use https://bitbucket.org/joezuntz/cosmosis-standard-library
+See https://bitbucket.org/joezuntz/cosmosis for a full readme and links to docs
