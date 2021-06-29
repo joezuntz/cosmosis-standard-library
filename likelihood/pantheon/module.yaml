@@ -62,6 +62,5 @@ outputs:
         pantheon_data: "double 1D array. Fixed data vector mu_obs, only if likelihood_only=F"
         pantheon_simulation: "double 1D array. Simulated data vector including simulated noise for e.g. ABC, only if likelihood_only=F"
         pantheon_theory: "double 1D array. Predicted theory values mu_theory(z_obs) only if likelihood_only=F"
-        pantheon_covariance: "double. Fixed covariance matrix, only if likelihood_only=F"
         pantheon_chi2: "double. chi^2 value, only if likelihood_only=F"
 

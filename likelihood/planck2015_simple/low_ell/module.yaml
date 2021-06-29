@@ -23,7 +23,7 @@ explanation: |
 params:
     gaussfile: (String, default=${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/data/commander_rc2_v1.1_l2_29_B.clik/clik/lkl_0/_external) Path to sigma.fits data file
     lmin: (Integer; default=2) Lowest ell value to use
-    lmin: (Integer; default=29) Highest ell value to use
+    lmax: (Integer; default=29) Highest ell value to use
     delta_l: (Integer; default=29)  Width of banded covariance matrix
     handle: (Integer; default=1)  If using multiple different sigma.fits, select index to use for this one
 

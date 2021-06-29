@@ -4,7 +4,6 @@ version: "1.0"
 interface: sigma8_rescale.py
 purpose: "Rescale structure measures to use a specified sigma_8"
 url: ""
-interface: sigma8_rescale.py
 attribution: ["Susana Fernandez", "Jack Elvin-Poole"]
 rules: []
 cite: []
