@@ -72,7 +72,7 @@ inputs:
 outputs:
     distances:
         nz:
-            meaning: Number of z samples
+            meaning: Number of background z samples
             type: int
         z:
             meaning: Redshifts of samples

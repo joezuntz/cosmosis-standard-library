@@ -37,20 +37,20 @@ inputs:
             default:
     intrinsic_power:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         z:
-            meaning: Array; redshift values of P(k,z) samples
+            meaning: Redshift values of P(k,z) samples
             type: real 1d
             default:
         P_K:
-            meaning: ; spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}
+            meaning: Spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
     matter_intrinsic_power:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         z:
@@ -58,17 +58,17 @@ inputs:
             type: real 1d
             default:
         P_K:
-            meaning: ; spectrum of matter-intrinsic cross-power at samples in (Mpc/h)^{-3}
+            meaning: Spectrum of matter-intrinsic cross-power at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
 outputs:
     intrinsic_power:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h (unchanged from
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h (unchanged from
                 input)
             type: real 1d
         z:
-            meaning: Array; redshift values of P(k,z) samples (unchanged from input)
+            meaning: Redshift values of P(k,z) samples (unchanged from input)
             type: real 1d
         P_K:
             meaning: ; updated spectrum of intrinsic-intrinsic power at samples in
@@ -76,13 +76,13 @@ outputs:
             type: real 2d
     matter_intrinsic_power:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h (unchanged from
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h (unchanged from
                 input)
             type: real 1d
         z:
-            meaning: Array; redshift values of P(k,z) samples (unchanged from input)
+            meaning: Redshift values of P(k,z) samples (unchanged from input)
             type: real 1d
         P_K:
-            meaning: ; updated spectrum of matter-intrinsic cross-power at samples
+            meaning: Updated spectrum of matter-intrinsic cross-power at samples
                 in (Mpc/h)^{-3}
             type: real 2d

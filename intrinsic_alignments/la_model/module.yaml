@@ -40,23 +40,23 @@ explanation: |
     "
 params:
     method:
-        meaning: Choice of 'bk', 'bk_corrected', 'krhb', chooses which model to run
+        meaning: Which model to run. Choice of 'bk', 'bk_corrected', 'krhb', 
         type: str
         default:
     name:
-        meaning: Default is empty.  If set, save the outputs to sections with the
+        meaning: If set, save the outputs to sections with the
             name as a suffix, e.g intrinsic_power_NAME
         type: str
         default:
     grid_mode:
-        meaning: Default false. If set, save the fields b(k,z) and r(k,z) as described
+        meaning: Whether to save the fields b(k,z) and r(k,z) as described
             in Bridle & King instead of applying directly to P(k)
         type: bool
-        default:
+        default: false
     do_galaxy_intrinsic:
-        meaning: Default False. Compute the matter-IA cross correlation.
+        meaning: Compute the matter-IA cross correlation.
         type: bool
-        default:
+        default: false
 inputs:
     cosmological_parameters:
         omega_m:
@@ -70,81 +70,81 @@ inputs:
             default:
     matter_power_nl:
         z:
-            meaning: ; redshift values of P(k,z) samples
+            meaning: redshift values of P(k,z) samples
             type: real 1d
             default:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            meaning: k values of P(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         P_k:
-            meaning: ; non-linear matter power spectrum at samples in (Mpc/h)^{-3}
+            meaning: non-linear matter power spectrum at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
     matter_power_lin:
         z:
-            meaning: ; redshift values of P(k,z) samples
+            meaning: redshift values of P(k,z) samples
             type: real 1d
             default:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            meaning: k values of P(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         P_k:
-            meaning: ; linear matter power spectrum at samples in (Mpc/h)^{-3}
+            meaning: linear matter power spectrum at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
     matter_galaxy_power:
         z:
-            meaning: ; redshift values of P(k,z) samples (if do_galaxy_intrinsic)
+            meaning: redshift values of P(k,z) samples (if do_galaxy_intrinsic)
             type: real 1d
             default:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h (if do_galaxy_intrinsic)
+            meaning: k values of P(k,z) samples in units of Mpc/h (if do_galaxy_intrinsic)
             type: real 1d
             default:
         P_k:
-            meaning: ; nonlinear matter-galaxy cross power spectrum at samples in
+            meaning: Nonlinear matter-galaxy cross power spectrum at samples in
                 (Mpc/h)^{-3} (if do_galaxy_intrinsic)
             type: real 2d
             default:
 outputs:
     intrinsic_power:
         z:
-            meaning: ; redshift values of P(k,z) samples (if grid_mode=F, the default)
+            meaning: Redshift values of P(k,z) samples (if grid_mode=F, the default)
             type: real 1d
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h (if grid_mode=F,
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h (if grid_mode=F,
                 the default)
             type: real 1d
         P_k:
-            meaning: ; spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}
+            meaning: Spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}
                 (if grid_mode=F, the default)
             type: real 2d
     matter_intrinsic_power:
         z:
-            meaning: ; redshift values of P(k,z) samples (if grid_mode=F, the default)
+            meaning: Redshift values of P(k,z) samples (if grid_mode=F, the default)
             type: real 1d
         k_h:
             meaning: ; k values of P(k,z) samples in units of Mpc/h (if grid_mode=F,
                 the default)
             type: real 1d
         P_k:
-            meaning: ; spectrum of shear-intrinsic power at samples in (Mpc/h)^{-3}
+            meaning: Spectrum of shear-intrinsic power at samples in (Mpc/h)^{-3}
                 (if grid_mode=F, the default)
             type: real 2d
     intrinsic_alignment_parameters:
         z:
-            meaning: ; redshift values ofsamples (if grid_mode=F, the default)
+            meaning: Redshift values ofsamples (if grid_mode=F, the default)
             type: real 1d
         k_h:
-            meaning: ; k values ofsamples in units of Mpc/h (if grid_mode=F, the default)
+            meaning: Wavenumber k values of samples in units of Mpc/h (if grid_mode=F, the default)
             type: real 1d
         b_I:
-            meaning: ; The 'bias' term described in eqn 27 of Kirk, Rassat, Host Bridle.
+            meaning: The 'bias' term described in eqn 27 of Kirk, Rassat, Host Bridle.
                 (if grid_mode=T)
             type: real 2d
         r_I:
-            meaning: ; The cross-correlation 'bias' term described in eqn 28 of Kirk,
+            meaning: The cross-correlation 'bias' term described in eqn 28 of Kirk,
                 Rassat, Host Bridle. (if grid_mode=T)
             type: real 2d
