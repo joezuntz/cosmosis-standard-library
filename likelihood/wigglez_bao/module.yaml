@@ -1,17 +1,18 @@
 #This is a template for module description files
 name: WiggleZBao
-version: "1401.0358v2"
-purpose: Compute the likelihood of the supplied expansion history against WiggleZ BAO data
-url: "http://www.smp.uq.edu.au/wigglez-data/"
+version: 1401.0358v2
+purpose: Compute the likelihood of the supplied expansion history against WiggleZ
+    BAO data
+url: http://www.smp.uq.edu.au/wigglez-data/
 interface: wigglez_bao.py
 attribution: [WiggleZ Team, MontePython Team]
-rules: ""
-cite: 
-    - "MNRAS 441, 3524 (2014)"
+rules: ''
+cite:
+-   MNRAS 441, 3524 (2014)
 
 assumptions:
-    - "WiggleZ dark energy survey data set"
-    - "FLRW metric and standard BAO size"
+-   WiggleZ dark energy survey data set
+-   FLRW metric and standard BAO size
 
 explanation: |
     "This module gives a likelihood of the redshift-distance and redshift-Hubble
@@ -22,16 +23,44 @@ explanation: |
 
     A correlated Gaussian likelihood is then returned."
 params:
-    data_file: "string, path to file with measured z - D_v values in (default: included file)"
-    weight_file: "string, path to inverse covariance matrix file (default: included file)"
-    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=148.6)"
-    verbose: "Bool, Print extra output (default = False)"
-inputs: 
+    data_file:
+        meaning: 'Path to file with measured z - D_v values in (default: included
+            file)'
+        type: str
+        default:
+    weight_file:
+        meaning: 'Path to inverse covariance matrix file (default: included file)'
+        type: str
+        default:
+    rs_fiducial:
+        meaning: Fiducial value of sound horizon at last scattering used in making
+            data
+        type: real
+        default: 148.6
+    verbose:
+        meaning: Print extra output (default = False)
+        type: bool
+        default:
+inputs:
     distances:
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        h:  "1D real array, hubble parameter with in units of Mpc"
-        rz_zdrag:  "real, sound horizon at last scattering in Mpc"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rz_zdrag:
+            meaning: Sound horizon at last scattering in Mpc
+            type: real
+            default:
 outputs:
     likelihoods:
-        wigglez_bao_like: "real, likelihood of supplied expansion history"
+        wigglez_bao_like:
+            meaning: Likelihood of supplied expansion history
+            type: real

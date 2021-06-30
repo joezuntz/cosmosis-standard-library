@@ -2,30 +2,49 @@
 name: extract_growth
 version: 1
 purpose: returns growth factor and growth rate by examining small-scale P(k)
-url: ""
+url: ''
 interface: extract_growth.py
 attribution: [CosmoSIS Team]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - "Nonlinear or linear P(k,z) calculated at a small k value."
+-   Nonlinear or linear P(k,z) calculated at a small k value.
 
 explanation: |
-        "This simple module extracts the the linear growth factor D, and linear growth rate, from the matter power spectra
-        It takes the z spacing from the input module
-        "
+    "This simple module extracts the the linear growth factor D, and linear growth rate, from the matter power spectra
+    It takes the z spacing from the input module
+    "
 params:
-        input_section: "String, which input section (spectrum) to use (default=matter_power_nl)"
-        output_section: "String, which output section to put the results in (default="
-inputs: 
+    input_section:
+        meaning: Which input section (spectrum) to use
+        type: str
+        default: matter_power_nl
+    output_section:
+        meaning: Which output section to put the results in (default=
+        type: str
+        default:
+inputs:
     matter_power_nl:
-        k_h:  "Real 1D, wavenumbers of samples"
-        z:  "Real 1D, Redshifts of samples"
-        p_k:  "Real 2D, Matter power spectrum samples"
-
+        k_h:
+            meaning: Wavenumbers of samples
+            type: real 1d
+            default:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        p_k:
+            meaning: Matter power spectrum samples
+            type: real 2d
+            default:
 outputs:
     growth_parameters:
-        d_z: "1D real array, linear growth factor D"
-        f_z: "1D real array, linear growth rate f"
-        z: "1D real array, redshift of samples "
+        d_z:
+            meaning: Linear growth factor D
+            type: real 1d
+        f_z:
+            meaning: Linear growth rate f
+            type: real 1d
+        z:
+            meaning: Redshift of samples
+            type: real 1d

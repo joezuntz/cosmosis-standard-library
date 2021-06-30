@@ -1,19 +1,17 @@
 #This is a template for module description files
-name: "consistent_parameters"
-version: "1.0"
-purpose: "Deduce missing cosmological parameters and check consistency"
-url: ""
+name: consistent_parameters
+version: '1.0'
+purpose: Deduce missing cosmological parameters and check consistency
+url: ''
 interface: consistency_interface.py
 attribution: [CosmoSIS Team]
-rules:
-    "Please maintain attribution."
+rules: Please maintain attribution.
 cite: []
-
 assumptions:
-    - "LCDM parameterization"
-    - "First pass: tries no assumptions"
-    - "Second pass: tries omega_nu=0"
-    - "Third pass: tries omega_nu=0 and omega_k=0"
+-   LCDM parameterization
+-   'First pass: tries no assumptions'
+-   'Second pass: tries omega_nu=0'
+-   'Third pass: tries omega_nu=0 and omega_k=0'
 
 explanation: |
     "There are various ways of parameterizing cosmologies with different advantages
@@ -71,39 +69,104 @@ explanation: |
     omega_k = 1-omega_m-omega_lambda-omega_nu
 
     omega_nu = 1-omega_m-omega_lambda-omega_k"
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    verbose: "boolean T/F: explain how derived parameters were calculated and what assumptions used"
-
+    verbose:
+        meaning: 'Boolean T/F: explain how derived parameters were calculated and
+            what assumptions used'
+        type: ???
+        default:
 inputs:
     cosmological_parameters:
-        omega_m: "real scalar: matter density fraction of critical"
-        omega_b: "real scalar: baryon density fraction of critical"
-        omega_c: "real scalar: CDM density fraction of critical"
-        omega_k: "real scalar: curvature pseudo-density fraction of critical"
-        omega_nu: "real scalar: massive neutrino density fraction of critical"
-        omega_lambda: "real scalar: dark energy density fraction of critical"
-        ommh2: "real scalar: physical density omega_m * h^2"
-        ombh2: "real scalar: physical density omega_b * h^2"
-        omch2: "real scalar: physical density omega_c * h^2"
-        omnuh2: "real scalar: physical density omega_nu * h^2"
-        baryon_fraction: "real scalar: ratio omega_b/omega_m"
-        hubble: "real scalar: Hubble parameter H_0 in km/s/Mpc"
-        h: "real scalar: dimensionless Hubble h = H_0 / 100 km/s/Mpc"
-
+        omega_m:
+            meaning: Matter density fraction of critical
+            type: real
+            default:
+        omega_b:
+            meaning: Baryon density fraction of critical
+            type: real
+            default:
+        omega_c:
+            meaning: CDM density fraction of critical
+            type: real
+            default:
+        omega_k:
+            meaning: Curvature pseudo-density fraction of critical
+            type: real
+            default:
+        omega_nu:
+            meaning: Massive neutrino density fraction of critical
+            type: real
+            default:
+        omega_lambda:
+            meaning: Dark energy density fraction of critical
+            type: real
+            default:
+        ommh2:
+            meaning: Physical density omega_m * h^2
+            type: real
+            default:
+        ombh2:
+            meaning: Physical density omega_b * h^2
+            type: real
+            default:
+        omch2:
+            meaning: Physical density omega_c * h^2
+            type: real
+            default:
+        omnuh2:
+            meaning: Physical density omega_nu * h^2
+            type: real
+            default:
+        baryon_fraction:
+            meaning: Ratio omega_b/omega_m
+            type: real
+            default:
+        hubble:
+            meaning: Hubble parameter H_0 in km/s/Mpc
+            type: real
+            default:
+        h:
+            meaning: Dimensionless Hubble h = H_0 / 100 km/s/Mpc
+            type: real
+            default:
 outputs:
     cosmological_parameters:
-        omega_m: "real scalar: matter density fraction of critical"
-        omega_b: "real scalar: baryon density fraction of critical"
-        omega_c: "real scalar: CDM density fraction of critical"
-        omega_k: "real scalar: curvature pseudo-density fraction of critical"
-        omega_nu: "real scalar: massive neutrino density fraction of critical"
-        omega_lambda: "real scalar: dark energy density fraction of critical"
-        ommh2: "real scalar: physical density omega_m * h^2"
-        ombh2: "real scalar: physical density omega_b * h^2"
-        omch2: "real scalar: physical density omega_c * h^2"
-        omnuh2: "real scalar: physical density omega_nu * h^2"
-        baryon_fraction: "real scalar: ratio omega_b/omega_m"
-        hubble: "real scalar: Hubble parameter H_0 in km/s/Mpc"
-        h: "real scalar: dimensionless Hubble h = H_0 / 100 km/s/Mpc"
+        omega_m:
+            meaning: Matter density fraction of critical
+            type: real
+        omega_b:
+            meaning: Baryon density fraction of critical
+            type: real
+        omega_c:
+            meaning: CDM density fraction of critical
+            type: real
+        omega_k:
+            meaning: Curvature pseudo-density fraction of critical
+            type: real
+        omega_nu:
+            meaning: Massive neutrino density fraction of critical
+            type: real
+        omega_lambda:
+            meaning: Dark energy density fraction of critical
+            type: real
+        ommh2:
+            meaning: Physical density omega_m * h^2
+            type: real
+        ombh2:
+            meaning: Physical density omega_b * h^2
+            type: real
+        omch2:
+            meaning: Physical density omega_c * h^2
+            type: real
+        omnuh2:
+            meaning: Physical density omega_nu * h^2
+            type: real
+        baryon_fraction:
+            meaning: Ratio omega_b/omega_m
+            type: real
+        hubble:
+            meaning: Hubble parameter H_0 in km/s/Mpc
+            type: real
+        h:
+            meaning: Dimensionless Hubble h = H_0 / 100 km/s/Mpc
+            type: real

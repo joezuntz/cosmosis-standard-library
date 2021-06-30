@@ -1,15 +1,14 @@
 #This is a template for module description files
 name: wl_spectra
-version: "1.0"
-purpose: "Compute various weak lensing C_ell from P(k,z) with the Limber integral"
-url: ""
+version: '1.0'
+purpose: Compute various weak lensing C_ell from P(k,z) with the Limber integral
+url: ''
 interface: interface.so
 attribution: [CosmoSIS team, Matt Becker]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - "The Limber integral is valid on the scales in question"
+-   The Limber integral is valid on the scales in question
 
 explanation: |
     "
@@ -30,92 +29,229 @@ explanation: |
     Parts of this code and the underlying implementation of limber are based on cosmocalc:
     https://bitbucket.org/beckermr/cosmocalc-public
     "
-
-# List of parameters that can go in the params.ini file in the section for this module
 params:
-    n_ell: "Integer; number of log-spaced ell values to compute"
-    ell_min: "Real; minimum ell value to compute"
-    ell_max: "Real; maximum ell value to compute"
-    shear_shear: "Logical; compute shear auto-spectra? (Default: True)"
-    intrinsic_alignments: "Logical; compute intrinsic alignments spectra? (Default: False)"
-    matter_spectra: "Logical; compute matter power spectra? (Default: False)"
-    ggl_spectra: "Logical; compute galaxy-galaxy lensing spectra? (Default: False)"
-    gal_IA_cross_spectra: "Logical; compute cross-power between galaxy positions and alignments? (Default: False) - Not implemented"
-    mag_gal_cross_spectra: "Logical; compute lensing magnification cross-spectra? (Default: False)"
-    mag_mag: "Logical; compute lensing magnification auto-spectra? (Default: False)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    n_ell:
+        meaning: Number of log-spaced ell values to compute
+        type: int
+        default:
+    ell_min:
+        meaning: Minimum ell value to compute
+        type: real
+        default:
+    ell_max:
+        meaning: Maximum ell value to compute
+        type: real
+        default:
+    shear_shear:
+        meaning: Compute shear auto-spectra?
+        type: bool
+        default: true
+    intrinsic_alignments:
+        meaning: Compute intrinsic alignments spectra?
+        type: bool
+        default: false
+    matter_spectra:
+        meaning: Compute matter power spectra?
+        type: bool
+        default: false
+    ggl_spectra:
+        meaning: Compute galaxy-galaxy lensing spectra?
+        type: bool
+        default: false
+    gal_IA_cross_spectra:
+        meaning: Compute cross-power between galaxy positions and alignments?  - Not
+            implemented
+        type: bool
+        default: false
+    mag_gal_cross_spectra:
+        meaning: Compute lensing magnification cross-spectra?
+        type: bool
+        default: false
+    mag_mag:
+        meaning: Compute lensing magnification auto-spectra?
+        type: bool
+        default: false
 inputs:
     cosmological_parameters:
-        omega_m:  "Real; density fraction of all matter; used in the prefactor"
-        h0:  "Real; hubble factor H0 / 100 km/s/Mpc."
+        omega_m:
+            meaning: Density fraction of all matter; used in the prefactor
+            type: real
+            default:
+        h0:
+            meaning: Hubble factor H0 / 100 km/s/Mpc.
+            type: real
+            default:
     distances:
-        z: "real vector; redshift values of distance samples"
-        d_m: "real vector; comoving distnace to redshift values in units of Mpc (no factor h)"
+        z:
+            meaning: ; redshift values of distance samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: ; comoving distnace to redshift values in units of Mpc (no factor
+                h)
+            type: real 1d
+            default:
     matter_power_nl:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: ; non-linear matter power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     wl_number_density:
-        nbin: "integer; number of redshift bins"
-        z: "real vector; redshift values of n(z) samples"
-        bin_: "real_vector; bin n(z) values.  Need not be normalized. bin_1, bin_2, bin_3, ...."
+        nbin:
+            meaning: Number of redshift bins
+            type: int
+            default:
+        z:
+            meaning: ; redshift values of n(z) samples
+            type: real 1d
+            default:
+        bin_:
+            meaning: Real_vector; bin n(z) values.  Need not be normalized. bin_1,
+                bin_2, bin_3, ....
+            type: ???
+            default:
     matter_power_gal:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; non-linear galaxy power spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: ; non-linear galaxy power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     matter_power_gal_mass:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P_{gm}(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; non-linear galaxy-mass cross-power spectrum at samples in (Mpc/h)^{-3}"
-
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: ; k values of P_{gm}(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: ; non-linear galaxy-mass cross-power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
 outputs:
     shear_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     shear_cl_ii:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     shear_cl_gi:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     matter_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     ggl_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     gal_IA_cross_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     magnification_galaxy_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     magnification_magnification_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     magnification_intrinsic_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???
     magnification_shear_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
-
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: ???
+        nbin:
+            meaning: Number of redshift bins used
+            type: ???
+        bin_i_j:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: ???

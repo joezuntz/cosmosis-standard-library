@@ -2,18 +2,17 @@
 name: project_2d
 version: 1.0
 purpose: Project 3D power spectra to 2D tomographic bins using the Limber approximation
-url: ""
+url: ''
 interface: project_2d.py
 attribution: [CosmoSIS Team]
 rules: []
 cite: []
-
 assumptions:
-    - "The Limber approximation is reasonable for the fields being integrated"
-    - "Flat sky approximation"
-    - "GR is assumed in various ways"
+-   The Limber approximation is reasonable for the fields being integrated
+-   Flat sky approximation
+-   GR is assumed in various ways
 
-explanation: |
+explanation: |4
 
     The Limber approximation integrates a 3D power spectrum over the radial
     direction to get a 2D angular power spectrum.  It is an approximation
@@ -68,43 +67,127 @@ explanation: |
     https://bitbucket.org/beckermr/cosmocalc-public
     This is a python version of the shear/spectra module with some attempt made to rationalize
     the names of modules.
-
 params:
-    verbose: "Bool, default=F, print more output."
-    get_kernel_peaks: "Bool, default=F, save peak positions for the computed kernels"
-    ell_min: "Real, minimum ell value"
-    ell_max: "Real, maximum ell value"
-    n_ell: "Real, number of log-spaced C_ell values produced"
-    shear-shear: "String or Bool. See note in the explanation above for this and related parameters"
-    limber_abs_tol: "Real, default=0.0, absolute tolerance for the Limber integral"
-    limber_rel_tol: "Real, default=1e-3, relative tolerance for the Limber integral"
-
+    verbose:
+        meaning: Print more output.
+        type: bool
+        default: false
+    get_kernel_peaks:
+        meaning: Save peak positions for the computed kernels
+        type: bool
+        default: false
+    ell_min:
+        meaning: Minimum ell value
+        type: real
+        default:
+    ell_max:
+        meaning: Maximum ell value
+        type: real
+        default:
+    n_ell:
+        meaning: Number of log-spaced C_ell values produced
+        type: real
+        default:
+    shear-shear:
+        meaning: String or Bool. See note in the explanation above for this and related
+            parameters
+        type: ???
+        default:
+    limber_abs_tol:
+        meaning: Absolute tolerance for the Limber integral
+        type: real
+        default: 0.0
+    limber_rel_tol:
+        meaning: Relative tolerance for the Limber integral
+        type: real
+        default: 0.001
 inputs:
     matter_power_nl:
-        NOTE: "Many inputs P(k) sections may be required depending on what C_ell spectra are requested - see above." 
-        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
-        z: "real 1D array, redshift of nonlinear spectrum samples"
-        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+        NOTE:
+            meaning: Many inputs P(k) sections may be required depending on what C_ell
+                spectra are requested - see above.
+            type: ???
+            default:
+        k_h:
+            meaning: Sample values of nonlinear spectrum in Mpc/h
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of nonlinear spectrum samples
+            type: real 1d
+            default:
+        P_k:
+            meaning: Nonlinear spectrum in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     distances:
-        z: "Real 1D array, redshift samples of d_m"
-        a: "Real 1D array, scale factor samples of d_m"
-        d_m: "Real 1D array, comoving distance to sample points."
+        z:
+            meaning: Redshift samples of d_m
+            type: real 1d
+            default:
+        a:
+            meaning: Scale factor samples of d_m
+            type: real 1d
+            default:
+        d_m:
+            meaning: Comoving distance to sample points.
+            type: real 1d
+            default:
     cosmological_parameters:
-        h0: "The Hubble parameter H0/100 km/s/Mpc"
-        chi_star: "Real. Only needed if doing CMB Kappa spectra."
+        h0:
+            meaning: The Hubble parameter H0/100 km/s/Mpc
+            type: ???
+            default:
+        chi_star:
+            meaning: Only needed if doing CMB Kappa spectra.
+            type: real
+            default:
     wl_number_density:
-        NOTE: "A different section name to wl_number_density will be used depending on the options chose (see above)"
-        z: "Real 1D array, eedshift samples of binned n(z)"
-        nbin: "Integer, number of tomographic bins used"
-        bin_{i}: "Real 1D arrays, for i=1..nbin. n(z) samples for each tomographic bin."
-
+        NOTE:
+            meaning: A different section name to wl_number_density will be used depending
+                on the options chose (see above)
+            type: ???
+            default:
+        z:
+            meaning: Eedshift samples of binned n(z)
+            type: real 1d
+            default:
+        nbin:
+            meaning: Number of tomographic bins used
+            type: int
+            default:
+        bin_{i}:
+            meaning: S, for i=1..nbin. n(z) samples for each tomographic bin.
+            type: real 1d
+            default:
 outputs:
     shear_cl:
-        NOTE: "Various sections will have these outputs depending on the options chosen"
-        nbin_a: "integer, Number of tomographic bins for first of the two quantities correlated"
-        nbin_b: "integer, Number of tomographic bins for second of the two quantities correlated"
-        nbin: "integer, only if auto-correlation is calculated. Number of tomographic bins for the quantity (nbin=nbin_a=nbin_b)"
-        ell: "integer 1d array, values at which c_ell are calculated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations. C_ell calculated at corresponding ell."
-        chi_peak_{i}_{j}: "real, only if get_kernel_peaks=T. Peak of the n(z) or w(z) for this bin combination"
-        arcmin_per_Mpch_{i}_{j}: "real, only if get_kernel_peaks=T. Conversion factor from mpc/h to arcmin for this bin"
+        NOTE:
+            meaning: Various sections will have these outputs depending on the options
+                chosen
+            type: ???
+        nbin_a:
+            meaning: Number of tomographic bins for first of the two quantities correlated
+            type: int
+        nbin_b:
+            meaning: Number of tomographic bins for second of the two quantities correlated
+            type: int
+        nbin:
+            meaning: Only if auto-correlation is calculated. Number of tomographic
+                bins for the quantity (nbin=nbin_a=nbin_b)
+            type: int
+        ell:
+            meaning: Values at which c_ell are calculated
+            type: int 1d
+        bin_{i}_{j}:
+            meaning: S for relevant i and j combinations. C_ell calculated at corresponding
+                ell.
+            type: real 1d
+        chi_peak_{i}_{j}:
+            meaning: Only if get_kernel_peaks=T. Peak of the n(z) or w(z) for this
+                bin combination
+            type: real
+        arcmin_per_Mpch_{i}_{j}:
+            meaning: Only if get_kernel_peaks=T. Conversion factor from mpc/h to arcmin
+                for this bin
+            type: real

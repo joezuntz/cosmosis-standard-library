@@ -1,40 +1,89 @@
 #This is a template for module description files
 name: 6dFGS
-version: ""
+version: ''
 purpose: Compute the likelihood of supplied D_v or fsigma8(z=0.067)
-url: ""
+url: ''
 interface: 6dfgs_rsd.py
 attribution: [6dFGS Team]
-rules: ""
-cite: 
-    - "BAO MNRAS 416, 3017 3032 (2011)"
-    - "fsigma8 MMNRAS 423, 3430 3444 (2012)"
+rules: ''
+cite:
+-   BAO MNRAS 416, 3017 3032 (2011)
+-   fsigma8 MMNRAS 423, 3430 3444 (2012)
 assumptions:
-    - "6dFGS dataset"
+-   6dFGS dataset
 
 explanation: >
-        ""
+    ""
 params:
-        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
-        mode: "Integer, 0 for BAO and 1 for fsigma8"
-        mean: "Real,  Dv (default = 457.) for mode 0 or fsigma8 (default  = 0.423) for mode 1"
-        sigma: "Real, sigma_Dv (default = 27.) for mode 0 or sigma_fsigma8 (default  = 0.055) for mode 1"
-        redshift: "Real, redshift (default  = 0.106 for mode 0 or 0.067 for mode 1)"
-inputs: 
-        growth_parameters:
-                d_z: "1D real array, linear growth factor D"
-                f_z: "1D real array, linear growth rate f"
-                z: "1D real array, redshift of samples "
-        cosmological_parameters:
-                omega_m:  "real, baryon + cdm density fraction today"
-                sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
-                bias:  "real, galaxy bias "
-                h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
-        distances:
-                z: "1D real array, redshifts of samples"
-                d_m: "1D real array, physical angular diameter distance in Mpc"
-                h:  "1D real array, hubble parameter with in units of Mpc"
-
+    feedback:
+        meaning: Amount of output to print.  0 for no feedback.  1 for basic (default
+            = 0)
+        type: int
+        default:
+    mode:
+        meaning: 0 for BAO and 1 for fsigma8
+        type: int
+        default:
+    mean:
+        meaning: Dv (default = 457.) for mode 0 or fsigma8 (default  = 0.423) for
+            mode 1
+        type: real
+        default:
+    sigma:
+        meaning: Sigma_Dv (default = 27.) for mode 0 or sigma_fsigma8 (default  =
+            0.055) for mode 1
+        type: real
+        default:
+    redshift:
+        meaning: Redshift (default  = 0.106 for mode 0 or 0.067 for mode 1)
+        type: real
+        default:
+inputs:
+    growth_parameters:
+        d_z:
+            meaning: Linear growth factor D
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
+    cosmological_parameters:
+        omega_m:
+            meaning: Baryon + cdm density fraction today
+            type: real
+            default:
+        sigma_8:
+            meaning: Amplitude of linear matter power at 8/h Mpc at z=0
+            type: real
+            default:
+        bias:
+            meaning: Galaxy bias
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Physical angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
 outputs:
-        likelihoods:
-                6dfgs_LIKE: "real, likelihood of supplied Dv(z=0.106) or fsigma8(z=0.067)"
+    likelihoods:
+        6dfgs_LIKE:
+            meaning: Likelihood of supplied Dv(z=0.106) or fsigma8(z=0.067)
+            type: real

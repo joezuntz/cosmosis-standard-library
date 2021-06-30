@@ -1,18 +1,19 @@
-name: "planck_sz"
-version: "1.0"
-purpose: "Prior on sigma_8 * Omega_M ** 0.3 from Planck SZ cluster counts"
-url: ""
+name: planck_sz
+version: '1.0'
+purpose: Prior on sigma_8 * Omega_M ** 0.3 from Planck SZ cluster counts
+url: ''
 interface: sz.py
 attribution: [Planck collaboration (measurement), CosmoSIS team (code)]
-rules: "None."
+rules: None.
 cite:
-    - "arXiv:1303.5080, Planck 2013 results. XX. Cosmology from Sunyaev-Zeldovich cluster counts"
+-   arXiv:1303.5080, Planck 2013 results. XX. Cosmology from Sunyaev-Zeldovich cluster
+    counts
 
 assumptions:
-    - "Planck SZ data"
-    - "SZ signal Y - Mass relation calibrated from X-ray data"
-    - "Flat LCDM"
-    - "Tinker et al halo distribution"
+-   Planck SZ data
+-   SZ signal Y - Mass relation calibrated from X-ray data
+-   Flat LCDM
+-   Tinker et al halo distribution
 
 explanation: |
     "This small module was written for CosmoSIS.
@@ -27,19 +28,24 @@ explanation: |
     it can be reduced to a constraint on sigma_8 * Omega_M ** 0.3
 
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    measured_value: "float, replace the standard value measurement sigma_8 * Omega_M ** 0.3 = 0.764 with a custom one for simulations (default 0.764)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    measured_value:
+        meaning: Replace the standard value measurement sigma_8 * Omega_M ** 0.3 =
+            0.764 with a custom one for simulations
+        type: real
+        default: 0.764
 inputs:
     cosmological_parameters:
-        omega_m:  "real, matter density fraction at redshift 0"
-        sigma_8:  "real, matter fluctuation dispersion down to 8 Mpc/h"
-
+        omega_m:
+            meaning: Matter density fraction at redshift 0
+            type: real
+            default:
+        sigma_8:
+            meaning: Matter fluctuation dispersion down to 8 Mpc/h
+            type: real
+            default:
 outputs:
     likelihoods:
-        SZ_LIKE: "Gaussian likelihood value of supplied parameters"
-
+        SZ_LIKE:
+            meaning: Gaussian likelihood value of supplied parameters
+            type: ???

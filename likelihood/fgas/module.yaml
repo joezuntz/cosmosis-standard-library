@@ -1,53 +1,130 @@
-name: "fgas"
-version: "2014"
-purpose: "Likelihood of galaxy cluster gas-mass fractions"
-url: "http://www.slac.stanford.edu/~amantz/work/fgas14/"
+name: fgas
+version: '2014'
+purpose: Likelihood of galaxy cluster gas-mass fractions
+url: http://www.slac.stanford.edu/~amantz/work/fgas14/
 interface: fgas.so
 attribution: [Adam Mantz]
-rules: "MIT license"
+rules: MIT license
 cite:
-    - "Mantz et al., MNRAS, 440:2077 (2014)"
-    - "http://arxiv.org/abs/1402.6212"
-assumptions: ""
+-   Mantz et al., MNRAS, 440:2077 (2014)
+-   http://arxiv.org/abs/1402.6212
+assumptions: ''
 explanation: |
     Cluster gas mass fractions are a standard quantity whose value is related
     to the cosmic baryon mass fraction and whose apparent evolution depends
     on the expansion of the Universe.
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    numdatasets: integer, number of fgas data tables
-    datasetN with N=1,2,...: String, path to each data file
-    cl_cal_mean: real, mean of a Gaussian prior to be applied to the fgas calibration nuisance parameter. This will be deprecated once the gravitational lensing data that we use to direcly constrain this parameter are included in a future version. Default to 0.90 and 0.09.
-    cl_cal_sd: real, standard deviation of a Gaussian prior to be applied to the fgas calibration nuisance parameter. This will be deprecated once the gravitational lensing data that we use to direcly constrain this parameter are included in a future version. Default to 0.90 and 0.09.
-    fgas_rslope_mean: real, mean of a Gaussian prior to be applied to the power-law slope of the cluster fgas profile. Default to 0.442 and 0.035.
-    fgas_rslope_sd: real, standard deviation of a Gaussian prior to be applied to the power-law slope of the cluster fgas profile. Default to 0.442 and 0.035.
-    cl_lenssys_mean: real, mean of a Gaussian prior to be applied to the weak lensing calibration nuisance parameter. Default to 1.000 and 0.069.
-    cl_lenssys_sd: real, standard deviation of a Gaussian prior to be applied to the weak lensing calibration nuisance parameter. Default to 1.000 and 0.069.
-
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    numdatasets:
+        meaning: Number of fgas data tables
+        type: int
+        default:
+    datasetN with N=1,2,...:
+        meaning: Path to each data file
+        type: str
+        default:
+    cl_cal_mean:
+        meaning: Mean of a Gaussian prior to be applied to the fgas calibration nuisance
+            parameter. This will be deprecated once the gravitational lensing data
+            that we use to direcly constrain this parameter are included in a future
+            version. Default to 0.90 and 0.09.
+        type: real
+        default:
+    cl_cal_sd:
+        meaning: Standard deviation of a Gaussian prior to be applied to the fgas
+            calibration nuisance parameter. This will be deprecated once the gravitational
+            lensing data that we use to direcly constrain this parameter are included
+            in a future version. Default to 0.90 and 0.09.
+        type: real
+        default:
+    fgas_rslope_mean:
+        meaning: Mean of a Gaussian prior to be applied to the power-law slope of
+            the cluster fgas profile. Default to 0.442 and 0.035.
+        type: real
+        default:
+    fgas_rslope_sd:
+        meaning: Standard deviation of a Gaussian prior to be applied to the power-law
+            slope of the cluster fgas profile. Default to 0.442 and 0.035.
+        type: real
+        default:
+    cl_lenssys_mean:
+        meaning: Mean of a Gaussian prior to be applied to the weak lensing calibration
+            nuisance parameter. Default to 1.000 and 0.069.
+        type: real
+        default:
+    cl_lenssys_sd:
+        meaning: Standard deviation of a Gaussian prior to be applied to the weak
+            lensing calibration nuisance parameter. Default to 1.000 and 0.069.
+        type: real
+        default:
 inputs:
     cosmological_parameters:
-        baryon_fraction: "real, cosmic baryon mass fraction"
-        yhe:  "real, primordial helium mass fraction"
+        baryon_fraction:
+            meaning: Cosmic baryon mass fraction
+            type: real
+            default:
+        yhe:
+            meaning: Primordial helium mass fraction
+            type: real
+            default:
     distances:
-        z: "real 1D array, redshift"
-        D_A: "real 1D array, angular diameter distance"
-        D_L: "real 1D array, luminosity distance"
-        H: "real 1D array, Hubble parameter"
+        z:
+            meaning: Redshift
+            type: real 1d
+            default:
+        D_A:
+            meaning: Angular diameter distance
+            type: real 1d
+            default:
+        D_L:
+            meaning: Luminosity distance
+            type: real 1d
+            default:
+        H:
+            meaning: Hubble parameter
+            type: real 1d
+            default:
     fgas:
-        U_gas_0: "real, redshift-zero value of fgas, normalized to the cosmic baryon fraction"
-        U_gas_1: "real, linear-with-redshift evolution of fgas"
-        fgas_scatter: "real, log-normal intrinsic scatter in fgas"
-        fgas_rslope: "real, power-law slope of the cluster fgas profile"
-        cl_cal: "real, calibration nuisance parameter"
-        cl_calev: "real, linear-in-redshift evolution of the calibration"
-        cl_calscat: "real, intrinsic scatter in the calibration (e.g. due to non-thermal pressure)"
-        cl_lenssys: "real, nuisance parameter for weak graviational lensing masses"
-        cl_lnMwl_N: "real, with N=1,2,...,12 log masses for the clusters where we have gravitational lensing data"
-
+        U_gas_0:
+            meaning: Redshift-zero value of fgas, normalized to the cosmic baryon
+                fraction
+            type: real
+            default:
+        U_gas_1:
+            meaning: Linear-with-redshift evolution of fgas
+            type: real
+            default:
+        fgas_scatter:
+            meaning: Log-normal intrinsic scatter in fgas
+            type: real
+            default:
+        fgas_rslope:
+            meaning: Power-law slope of the cluster fgas profile
+            type: real
+            default:
+        cl_cal:
+            meaning: Calibration nuisance parameter
+            type: real
+            default:
+        cl_calev:
+            meaning: Linear-in-redshift evolution of the calibration
+            type: real
+            default:
+        cl_calscat:
+            meaning: Intrinsic scatter in the calibration (e.g. due to non-thermal
+                pressure)
+            type: real
+            default:
+        cl_lenssys:
+            meaning: Nuisance parameter for weak graviational lensing masses
+            type: real
+            default:
+        cl_lnMwl_N:
+            meaning: With N=1,2,...,12 log masses for the clusters where we have gravitational
+                lensing data
+            type: real
+            default:
 outputs:
     likelihoods:
-        fgas_like: "real, likelihood of the galaxy cluster gas-mass fractions "
+        fgas_like:
+            meaning: Likelihood of the galaxy cluster gas-mass fractions
+            type: real

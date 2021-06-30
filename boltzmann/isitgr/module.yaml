@@ -1,17 +1,18 @@
 name: isitgr-camb
-version: "1.1"
-purpose: "Modified version of CAMB to implement phenomenological modified gravity models"
+version: '1.1'
+purpose: Modified version of CAMB to implement phenomenological modified gravity models
 url: http://www.utdallas.edu/~jdossett/isitgr
 interface: camb.so
-attribution: [Jason Dossett, Mustapha Ishak, Jacob Moldenhauer, Antony Lewis, Anthony Challinor]
-rules:
-    "Since isitgr is derived from CAMB, please abide by the conditions set out in the CAMB license if you use this module http://camb.info/CAMBsubmit.html"
+attribution: [Jason Dossett, Mustapha Ishak, Jacob Moldenhauer, Antony Lewis, Anthony
+        Challinor]
+rules: Since isitgr is derived from CAMB, please abide by the conditions set out in
+    the CAMB license if you use this module http://camb.info/CAMBsubmit.html
 cite:
-    - "http://arxiv.org/abs/1109.4583"
-    - "Phys. Rev. D86, 103008, 2012"
+-   http://arxiv.org/abs/1109.4583
+-   Phys. Rev. D86, 103008, 2012
 
 assumptions:
-    - The modified gravity phenomenological model described in the referenced papers
+-   The modified gravity phenomenological model described in the referenced papers
 
 explanation: |
     ISiTGR, the Integrated Software in Testing General Relativity, is
@@ -37,111 +38,267 @@ explanation: |
 
     The CosmoSIS team packaged this module into cosmosis form so any issues
     running it here please ask us first.
-
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    scale_dependent: "logical. Use scale dependent parameterized functions.  If False, k_c is ignored." 
-    use_r_function: "logical.  Give R scale and time dependence instead of Q."
+    scale_dependent:
+        meaning: Use scale dependent parameterized functions.  If False, k_c is ignored.
+        type: bool
+        default:
+    use_r_function:
+        meaning: Give R scale and time dependence instead of Q.
+        type: bool
+        default:
     mode:
-        String, choose from Background, thermal, cmb, or all.
-
-        In background mode only the expansion history is calculated.
-        In thermal mode the recombination history is computed and rs_zdrag and related quantities also.
-        In cmb mode the CMB power spectra are also calculated.
-        In all mode the matter power spectrum at low redshift and sigma8 are also calculated.
-    lmax:  "Integer, only if mode!=background, default 1200 - the max ell to use for cmb calculation"
-    feedback: "Integer, amount of output to print.  0 for no feedback.  1 for basic, 2 for extended, maybe higher?"
-    use_tabulated_w: "Logical, set to true to load w(z) from previous module (default F)"
-    k_eta_max_scalar: "Integer, maximum value of (k eta) to evolve for scalars. (default 2*lmax)"
-    do_tensors: "Include tensor modes (default F) "
-    zmin: "Min value to save P(k,z) (default 0)"
-    zmax: "Max value to save P(k,z) (default 4)"
-    nz: "Number of z values to save P(k,z) (default 401, so that dz=0.01)"
-    do_nonlinear: "Apply non-linear halofit corrections to matter-power.  Relevant only for lensing right now (default F)"
-    do_lensing: "Include lensing of CMB, and save C_ell phi-phi (default F)"
-    high_ell_template: "Required for lensing - set to the file included in the camb dir (no default)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
-inputs: 
+        meaning: "Choose from Background, thermal, cmb, or all.\nIn background mode\
+            \ only the expansion history is calculated. In thermal mode the recombination\
+            \ history is computed and rs_zdrag and related quantities also. In cmb\
+            \ mode the CMB power spectra are also calculated. In all mode the matter\
+            \ power spectrum at low redshift and sigma8 are also calculated."
+        type: str
+        default:
+    lmax:
+        meaning: Only if mode!=background, default 1200 - the max ell to use for cmb
+            calculation
+        type: int
+        default:
+    feedback:
+        meaning: Amount of output to print.  0 for no feedback.  1 for basic, 2 for
+            extended, maybe higher?
+        type: int
+        default:
+    use_tabulated_w:
+        meaning: Set to true to load w(z) from previous module
+        type: bool
+        default: false
+    k_eta_max_scalar:
+        meaning: Maximum value of (k eta) to evolve for scalars. (default 2*lmax)
+        type: int
+        default:
+    do_tensors:
+        meaning: Include tensor modes
+        type: ???
+        default: false
+    zmin:
+        meaning: Min value to save P(k,z)
+        type: ???
+        default: 0
+    zmax:
+        meaning: Max value to save P(k,z)
+        type: ???
+        default: 4
+    nz:
+        meaning: Number of z values to save P(k,z) (default 401, so that dz=0.01)
+        type: ???
+        default:
+    do_nonlinear:
+        meaning: Apply non-linear halofit corrections to matter-power.  Relevant only
+            for lensing right now
+        type: ???
+        default: false
+    do_lensing:
+        meaning: Include lensing of CMB, and save C_ell phi-phi
+        type: ???
+        default: false
+    high_ell_template:
+        meaning: Required for lensing - set to the file included in the camb dir (no
+            default)
+        type: ???
+        default:
+inputs:
     modified_gravity:
-        d_0: "real, poisson equation modification at k<<k_c and z=0"
-        d_inf: "real, poisson equation modification at k>>k_c and z=0"
-        q_0: "real, gravitational slip modification at k<<k_c and z=0"
-        q_inf: "real, gravitational slip modification at k>>k_c and z=0"
-        s: "real, index of variation of effects with scale factor"
-        k_c: "real, transition scale between small and large k."
+        d_0:
+            meaning: Poisson equation modification at k<<k_c and z=0
+            type: real
+            default:
+        d_inf:
+            meaning: Poisson equation modification at k>>k_c and z=0
+            type: real
+            default:
+        q_0:
+            meaning: Gravitational slip modification at k<<k_c and z=0
+            type: real
+            default:
+        q_inf:
+            meaning: Gravitational slip modification at k>>k_c and z=0
+            type: real
+            default:
+        s:
+            meaning: Index of variation of effects with scale factor
+            type: real
+            default:
+        k_c:
+            meaning: Transition scale between small and large k.
+            type: real
+            default:
     cosmological_parameters:
-        # If these parameters are not those you would like to sample over (say omega_m or
-        # omegaa_ch2 are preferable), please use the consistency module.
-        omega_b:  "real, baryon density fraction today"
-        omega_c:  "real, cdm density fraction today"
-        omega_k:  "real, curvature density fraction today (default 0.0)"
-        omega_lambda:  "real, dark energy density fraction today"
-        hubble:  "real, hubble parameter H0 (km/s/Mpc)"
-        tau:  "real, optical depth to last-scattering (ignored in background mode)"
-        n_s:  "real, scalar spectral index (ignored in background/thermal mode)"
-        A_s:  "real, scalar spectrum primordial amplitude (ignored in background/thermal mode)"
-        k_s:  "real, Power spectrum pivot scale (default 0.05/Mpc)"
-        #There rest of these are always optional, CAMB will set defaults as appropriate
-        r_t:  "real, tensor to scalar ratio (default 0.0)"
-        n_run:  "real, running of scalar spectrum d n_s / d log_k (default 0.0)"
-        n_t:  "real, tensor spectral index (default 0.0)"
-        omega_nu:  "real, neutrino density fraction today (default 0.0)"
-        massless_nu:  "real, effective number of massless neutrinos (default 3.046)"
-        massive_nu:  "integer, number of massive neutrinos (default 0)"
-        sterile_neutrino:  "integer, number of sterile neutrinos (default 0)"
-        delta_neff:  "real, contribution to N_eff by sterile neutrino (default 0)"
-        sterile_mass_fraction:  "real, fraction of omega_nu in sterile neutrino"
-        yhe:  "real, helium fraction (default 0.24)"
-        w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
-        wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
-        cs2_de:  "real, dark energy sound speed/c (default 1.0)"
-
-
-
+        omega_b:
+            meaning: Baryon density fraction today
+            type: real
+            default:
+        omega_c:
+            meaning: Cdm density fraction today
+            type: real
+            default:
+        omega_k:
+            meaning: Curvature density fraction today
+            type: real
+            default: 0.0
+        omega_lambda:
+            meaning: Dark energy density fraction today
+            type: real
+            default:
+        hubble:
+            meaning: Hubble parameter H0 (km/s/Mpc)
+            type: real
+            default:
+        tau:
+            meaning: Optical depth to last-scattering (ignored in background mode)
+            type: real
+            default:
+        n_s:
+            meaning: Scalar spectral index (ignored in background/thermal mode)
+            type: real
+            default:
+        A_s:
+            meaning: Scalar spectrum primordial amplitude (ignored in background/thermal
+                mode)
+            type: real
+            default:
+        k_s:
+            meaning: Power spectrum pivot scale (default 0.05/Mpc)
+            type: real
+            default:
+        r_t:
+            meaning: Tensor to scalar ratio
+            type: real
+            default: 0.0
+        n_run:
+            meaning: Running of scalar spectrum d n_s / d log_k
+            type: real
+            default: 0.0
+        n_t:
+            meaning: Tensor spectral index
+            type: real
+            default: 0.0
+        omega_nu:
+            meaning: Neutrino density fraction today
+            type: real
+            default: 0.0
+        massless_nu:
+            meaning: Effective number of massless neutrinos
+            type: real
+            default: 3.046
+        massive_nu:
+            meaning: Number of massive neutrinos
+            type: int
+            default: 0
+        sterile_neutrino:
+            meaning: Number of sterile neutrinos
+            type: int
+            default: 0
+        delta_neff:
+            meaning: Contribution to N_eff by sterile neutrino
+            type: real
+            default: 0
+        sterile_mass_fraction:
+            meaning: Fraction of omega_nu in sterile neutrino
+            type: real
+            default:
+        yhe:
+            meaning: Helium fraction
+            type: real
+            default: 0.24
+        w:
+            meaning: W(z=0) equation of state of dark energy
+            type: real
+            default: -1.0
+        wa:
+            meaning: Equation of state parameter w(z) = w_0 + w_a z / (1+z)
+            type: real
+            default: 0.0
+        cs2_de:
+            meaning: Dark energy sound speed/c
+            type: real
+            default: 1.0
 outputs:
     modified_gravity:
-        v_0: "real, 2*d_0 - q_0"
-        v_inf: "real, 2*d_inf - q_inf"
-        r_0: "real, 2*d_0/q_0 - 1"
-        r_inf: "real,2*d_inf/q_inf - 1 "
-
+        v_0:
+            meaning: 2*d_0 - q_0
+            type: real
+        v_inf:
+            meaning: 2*d_inf - q_inf
+            type: real
+        r_0:
+            meaning: 2*d_0/q_0 - 1
+            type: real
+        r_inf:
+            meaning: 2*d_inf/q_inf - 1
+            type: real
     cosmological_parameters:
-        sigma_8: "real, only of mode=all. Amplitude of linear matter power at 8/h Mpc at z=0."
-
+        sigma_8:
+            meaning: Only of mode=all. Amplitude of linear matter power at 8/h Mpc
+                at z=0.
+            type: real
     distances:
-        nz: "integer, number of z samples"
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        d_m: "1D real array, co-moving distance in Mpc"
-        d_l: "1D real array, luminosity distance in Mpc"
-        mu:  "1D real array, distance modulus"
-        h:  "1D real array, hubble parameter with in units of Mpc"
-        # rho: "1D real array, matter density "
-        # Scalars:
-        age: "real, age of universe in GYr"
-        # zdrag: "real, redshift where baryons no longer dragged by photons"
-        # rs_zdrag: "real, sound horizon size at zdrag"
-        # zstar: "real, redshift of unity optical depth"
-        # theta: "real, angular size of sound horizon at zstar"
-        # chistar: "real, comoving distance to zstar"
-
+        nz:
+            meaning: Number of z samples
+            type: int
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+        d_m:
+            meaning: Co-moving distance in Mpc
+            type: real 1d
+        d_l:
+            meaning: Luminosity distance in Mpc
+            type: real 1d
+        mu:
+            meaning: Distance modulus
+            type: real 1d
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+        age:
+            meaning: Age of universe in GYr
+            type: real
     matter_power_lin:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
-
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: K wavenumbers of samples in Mpc/h
+            type: real 1d
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3
+            type: real 2d
     linear_cdm_transfer:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, k wavenumbers of samples in Mpc/h"
-        delta_cdm: "2D real array, Linear CDM transfer function at samples"
-
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: K wavenumbers of samples in Mpc/h
+            type: real 1d
+        delta_cdm:
+            meaning: Linear CDM transfer function at samples
+            type: real 2d
     cmb_cl:
-        ell: "1D integer array, angular frequencies"
-        tt:  "1D real array, ell * (ell+1) C_ell^TT / 2 pi in mu K^2"
-        ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2"
-        bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2"
-        te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2"
-        PhiPhi:  "1D real array, Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi"
+        ell:
+            meaning: Angular frequencies
+            type: int 1d
+        tt:
+            meaning: Ell * (ell+1) C_ell^TT / 2 pi in mu K^2
+            type: real 1d
+        ee:
+            meaning: Ell * (ell+1) C_ell^EE / 2 pi in mu K^2
+            type: real 1d
+        bb:
+            meaning: Ell * (ell+1) C_ell^BB / 2 pi in mu K^2
+            type: real 1d
+        te:
+            meaning: Ell * (ell+1) C_ell^TE / 2 pi in mu K^2
+            type: real 1d
+        PhiPhi:
+            meaning: 'Lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi'
+            type: real 1d

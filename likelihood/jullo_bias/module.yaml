@@ -1,15 +1,15 @@
 #This is a template for module description files
 name: JulloLikelihood
-version: "2012"
+version: '2012'
 purpose: Likelihood of Jullo et al (2012) measurements of a galaxy bias sample
-url: "http://www.sdss3.org"
+url: http://www.sdss3.org
 interface: jullo.py
 attribution: [Lucy Clerkin, CosmoSIS Team]
 rules: []
-cite: 
-        - "http://arxiv.org/abs/1202.6491"
+cite:
+-   http://arxiv.org/abs/1202.6491
 assumptions:
-    - "COSMOS survey galaxy samples"
+-   COSMOS survey galaxy samples
 
 explanation: |
     Galaxy bias refers to the relative density of galaxies compared to underlying dark matter,
@@ -18,14 +18,29 @@ explanation: |
     Jullo et al made measurements of galaxy bias for high and low mass samples.
 
     This module compares a predicted b(z) or b(k,z) from theory to these measurements.
-
 params:
-    mass: "string, low or high.  Choose which Jullo sample to work with"
-inputs: 
+    mass:
+        meaning: Low or high.  Choose which Jullo sample to work with
+        type: str
+        default:
+inputs:
     bias_field:
-        z: "1D real array, redshift of theory samples"
-        k_h: "1D real array, optional, wavenumber of samples in k_h. if not present then b(z) only is assumed"
-        b: "1D or 2D real array, bias as a function of either k and z or just z"
+        z:
+            meaning: Redshift of theory samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: Optional, wavenumber of samples in k_h. if not present then b(z)
+                only is assumed
+            type: real 1d
+            default:
+        b:
+            meaning: 1D or 2D real array, bias as a function of either k and z or
+                just z
+            type: ???
+            default:
 outputs:
     likelihoods:
-        JULLO_LIKE: "real, likelihood of supplied bias model"
+        JULLO_LIKE:
+            meaning: Likelihood of supplied bias model
+            type: real

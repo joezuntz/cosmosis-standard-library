@@ -1,47 +1,91 @@
-name: "distances"
-version: "2015"
+name: distances
+version: '2015'
 interface: distances.py
-purpose: "Output cosmological distance measures for dynamical dark energy"
-url: ""
-attribution: [ CosmoSIS team (code)]
-rules: "None."
+purpose: Output cosmological distance measures for dynamical dark energy
+url: ''
+attribution: [CosmoSIS team (code)]
+rules: None.
 cite:
-    - "Linder, E.V. 2003. Phys. Rev. Lett. 90:091301"
-    - "Huterer, D., Turner, M.S. 2001. Phys. Rev. D64:123527"
-    - "Wetterich, C. 2004 Physics Letters B, Volume 594"
+-   Linder, E.V. 2003. Phys. Rev. Lett. 90:091301
+-   Huterer, D., Turner, M.S. 2001. Phys. Rev. D64:123527
+-   Wetterich, C. 2004 Physics Letters B, Volume 594
 assumptions:
 explanation: |
     "This small module was written for CosmoSIS. This module computes the angular diameter distance, luminosity distance,
     and distance modulus for three different parametrisations of dark energy. w = w0 +(1-a)wa, w = w0+(ap-a)wa and and 2 parameter
     EDE w(a) model from Wetterich 2004."
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    verbose: "boolean, (default False)"
-    w_model: "int, = 0 for (w0,wa), =1 for (w0,wa,ap), =2 for EDE model (w0,ode_e)(default 0)"
-    zmin: "real, default=0.0; The minimum redshift at which to calculate the distance"
-    zmax: "real, default=0.0; The maximum redshift at which to calculate the distance"
-    dz: "real, default=0.01; The spacing between output redshift samples"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    verbose:
+        meaning: 'Whether to provide additional feedback'
+        type: bool
+        default: false
+    w_model:
+        meaning: Model choice. 0 for (w0,wa), 1 for (w0,wa,ap), 2 for EDE model (w0,ode_e)
+        type: int
+        default: 0
+    zmin:
+        meaning: The minimum redshift at which to calculate the distance
+        type: real
+        default: 0.0
+    zmax:
+        meaning: The maximum redshift at which to calculate the distance
+        type: real
+        default: 0.0
+    dz:
+        meaning: The spacing between output redshift samples
+        type: real
+        default: 0.01
 inputs:
     cosmological_parameters:
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
-        omega_k:  "real, curvature density fraction today (default 0.0)"
-        omega_b:  "real, baryon density fraction today"
-        omega_c:  "real, cdm density fraction today"
-        w0:  "real, w(z=0) equation of state of dark energy (default -1.0) "
-        wa:  "real, equation of state parameter w(a) = w_0 + w_a*(1-a)  (default 0.0)"
-        ap:  "real, pivot scale factor w(a) = w_0 + w_a*(ap-a)"
-        ode_e:  "real, Early dark energy parameters "
-
+        h0:
+            meaning: Hubble parameter H0 / (100 km/s/Mpc)
+            type: real
+            default:
+        omega_k:
+            meaning: Curvature density fraction today
+            type: real
+            default: 0.0
+        omega_b:
+            meaning: Baryon density fraction today
+            type: real
+            default:
+        omega_c:
+            meaning: CDM density fraction today
+            type: real
+            default:
+        w0:
+            meaning: Equation of state w(z=0) of dark energy
+            type: real
+            default: -1.0
+        wa:
+            meaning: Equation of state parameter w(a) = w_0 + w_a*(1-a)
+            type: real
+            default: 0.0
+        ap:
+            meaning: Pivot scale factor w(a) = w_0 + w_a*(ap-a)
+            type: real
+            default:
+        ode_e:
+            meaning: Early dark energy parameter
+            type: real
+            default:
 outputs:
     distances:
-        nz: "integer, number of z samples"
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        d_m: "1D real array, co-moving distance in Mpc"
-        d_l: "1D real array, luminosity distance in Mpc"
-        mu:  "1D real array, distance modulus"
-
+        nz:
+            meaning: Number of z samples
+            type: int
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+        d_m:
+            meaning: Co-moving distance in Mpc
+            type: real 1d
+        d_l:
+            meaning: Luminosity distance in Mpc
+            type: real 1d
+        mu:
+            meaning: Distance modulus
+            type: real 1d

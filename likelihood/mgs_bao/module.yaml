@@ -1,17 +1,17 @@
 #This is a template for module description files
 name: mgs_bao
-version: "1409.3242"
+version: '1409.3242'
 purpose: Compute the likelihood against SDSS MGS data
-url: ""
+url: ''
 interface: mgs_bao.py
 attribution: [MGS team]
-rules: ""
-cite: 
-    - "A. Ross et al, MNRAS 449 (2015)"
+rules: ''
+cite:
+-   A. Ross et al, MNRAS 449 (2015)
 
 assumptions:
-    - "MGS chi2"
-    - "FLRW metric and standard BAO size"
+-   MGS chi2
+-   FLRW metric and standard BAO size
 
 explanation: |
     "This module gives a likelihood of the redshift-distance and redshift-Hubble
@@ -20,13 +20,30 @@ explanation: |
     the predicted expansion since last scattering to predict the BAO size
     at the redshifts at which SDSS MGS measured them."
 params:
-    verbose: "Bool, Print extra output (default = False)"
-inputs: 
+    verbose:
+        meaning: Print extra output (default = False)
+        type: bool
+        default:
+inputs:
     distances:
-        z: "1D real array, redshifts of samples"
-        d_m: "1D real array, physical angular diameter distance in Mpc"
-        h:  "1D real array, hubble parameter with in units of Mpc"
-        rz_zdrag:  "real, sound horizon at last scattering in Mpc"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Physical angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rz_zdrag:
+            meaning: Sound horizon at last scattering in Mpc
+            type: real
+            default:
 outputs:
     likelihoods:
-        MGS_BAO_LIKE: "real, likelihood of supplied expansion history"
+        MGS_BAO_LIKE:
+            meaning: Likelihood of supplied expansion history
+            type: real

@@ -2,23 +2,24 @@
 name: planck2015
 version: 2
 purpose: Likelihood function of CMB from Planck 2015 data
-url: ""
+url: ''
 interface: planck_interface.so
 attribution: [The Planck Collaboration]
 rules: >
-    "Likelihood released by Planck Collaboration and packaged by cosmosis team.  
-    Contact the latter with problems in the first instance.  Different papers should
+    "Likelihood released by Planck Collaboration and packaged by cosmosis team.   Contact
+    the latter with problems in the first instance.  Different papers should
     be cited depending which data sets are used with this module.
     "
 cite:
-    - "Planck collaboration, arXiv:1303.5075"
-    - "Hinshaw et al, ApJS, 208, 2, 19, 25 (If low-ell polarization from WMAP used)"
-    - "Dunkley et al, JCAP, 07, 025 (If ACT data used)"
-    - "Hou et al, 2014 ApJ, 782, 74 (If SPT data used)"
+-   Planck collaboration, arXiv:1303.5075
+-   Hinshaw et al, ApJS, 208, 2, 19, 25 (If low-ell polarization from WMAP used)
+-   Dunkley et al, JCAP, 07, 025 (If ACT data used)
+-   Hou et al, 2014 ApJ, 782, 74 (If SPT data used)
 
 assumptions:
-    - "Highly accurate CMB calculations are required"
-    - "In the high-ell regime models for the foregrounds and secondary anisotropies are assumed"
+-   Highly accurate CMB calculations are required
+-   In the high-ell regime models for the foregrounds and secondary anisotropies are
+    assumed
 
 explanation: |
     "The Planck space telescope has provided the most powerful current
@@ -44,33 +45,82 @@ explanation: |
      you should use on nuisance parameters, are available here:
      http://wiki.cosmos.esa.int/planckpla2015/index.php/CMB_spectrum_%26_Likelihood_Code
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    data_1: (string; optional) File path to a Planck likelihood (clik/plik) file. Need at least one of lensing_1 or data_1.
-    data_2: "(string; optional) Additional likelihood files.  data_3, etc. allowed"
-    lensing_1: (string; optional) File path to a Planck lensing likelihood (clik/plik) file. Need at least one of lensing_1 or data_1.
-    lensing_2: "(string; optional) Additional lensing files.  data_3, etc. allowed."
-    save_separate_likelihoods: "(bool; optional) If true, save planck_like_1, planck_like_2, etc as well as the total."
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    data_1:
+        meaning: Optional) File path to a Planck likelihood (clik/plik) file. Need
+            at least one of lensing_1 or data_1.
+        type: str
+        default:
+    data_2:
+        meaning: Optional) Additional likelihood files.  data_3, etc. allowed
+        type: str
+        default:
+    lensing_1:
+        meaning: Optional) File path to a Planck lensing likelihood (clik/plik) file.
+            Need at least one of lensing_1 or data_1.
+        type: str
+        default:
+    lensing_2:
+        meaning: Optional) Additional lensing files.  data_3, etc. allowed.
+        type: str
+        default:
+    save_separate_likelihoods:
+        meaning: Optional) If true, save planck_like_1, planck_like_2, etc as well
+            as the total.
+        type: bool
+        default:
 inputs:
     cmb_cl:
-        ell: Integer vector of angular frequencies for CMB spectra
-        tt: Double vector of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
-        ee: Double vector of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-        bb: Double vector of B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-        te: Double vector of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-        pp: Double vector of phi-phi spectra in l*(l+1) C_ell (if using lensing)
+        ell:
+            meaning: Integer vector of angular frequencies for CMB spectra
+            type: ???
+            default:
+        tt:
+            meaning: Of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
+            type: real 1d
+            default:
+        ee:
+            meaning: Of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+                pol data)
+            type: real 1d
+            default:
+        bb:
+            meaning: Of B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+                pol data)
+            type: real 1d
+            default:
+        te:
+            meaning: Of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+            type: real 1d
+            default:
+        pp:
+            meaning: Of phi-phi spectra in l*(l+1) C_ell (if using lensing)
+            type: real 1d
+            default:
     planck:
-        nuisance_parameters: Various nuisance parameters are accepted depending on the likelihood file.  See cosmosis-standard-library/likelihood/planck2015/nuisance.txt for listing
-
-
+        nuisance_parameters:
+            meaning: Various nuisance parameters are accepted depending on the likelihood
+                file.  See cosmosis-standard-library/likelihood/planck2015/nuisance.txt
+                for listing
+            type: ???
+            default:
 outputs:
     likelihoods:
-        planck_1_like: (real; only if data_1 specified) Log-likelihood from first file
-        planck_2_like: (real; only if data_2 specified) Log-likelihood from second file.  Can also get planck_3_like etc.
-        planck_lensing_1_like: (real; only if lensing_1 specified) Log-likelihood from first lensing file. 
-        planck_lensing_2_like:  (real; only if lensing_2 specified) Log-likelihood from second lensing file.  Can also get planck_lensing_3_like etc.
-        planck2015_like: (real) Sum of all Planck 2015 log-likelihoods
+        planck_1_like:
+            meaning: Only if data_1 specified) Log-likelihood from first file
+            type: real
+        planck_2_like:
+            meaning: Only if data_2 specified) Log-likelihood from second file.  Can
+                also get planck_3_like etc.
+            type: real
+        planck_lensing_1_like:
+            meaning: Only if lensing_1 specified) Log-likelihood from first lensing
+                file.
+            type: real
+        planck_lensing_2_like:
+            meaning: Only if lensing_2 specified) Log-likelihood from second lensing
+                file.  Can also get planck_lensing_3_like etc.
+            type: real
+        planck2015_like:
+            meaning: (real) Sum of all Planck 2015 log-likelihoods
+            type: ???
