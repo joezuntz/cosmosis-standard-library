@@ -18,11 +18,11 @@ params:
     input_section:
         meaning: Which input section (spectrum) to use
         type: str
-        default: matter_power_nl
+        default: matter_power_lin
     output_section:
-        meaning: Which output section to put the results in (default=
+        meaning: Which output section to put the results in
         type: str
-        default:
+        default: growth_parameters
 inputs:
     matter_power_nl:
         k_h:
@@ -40,10 +40,10 @@ inputs:
 outputs:
     growth_parameters:
         d_z:
-            meaning: Linear growth factor D
+            meaning: Linear growth factor D(z)
             type: real 1d
         f_z:
-            meaning: Linear growth rate f
+            meaning: Linear growth rate f(z)
             type: real 1d
         z:
             meaning: Redshift of samples

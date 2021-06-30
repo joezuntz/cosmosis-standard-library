@@ -64,11 +64,11 @@ params:
 inputs:
     distances:
         z:
-            meaning: ; redshift sample values for theory
+            meaning: Redshift sample values for theory
             type: real 1d
             default:
         mu:
-            meaning: ; theory distance modulus at sample redshifts
+            meaning: Theory distance modulus at sample redshifts
             type: real 1d
             default:
     supernova_params:
@@ -93,4 +93,4 @@ outputs:
     likelihoods:
         JLA_LIKE:
             meaning: Gaussian likelihood for this data set and theory mu(z)
-            type: ???
+            type: real

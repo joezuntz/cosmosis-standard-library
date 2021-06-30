@@ -16,14 +16,13 @@ explanation: |
     "This module calculates the Sheth-Tormen mass function given the linear matter power spectrum."
 params:
     feedback:
-        meaning: Amount of output to print.  0 for no feedback.  1 for basic (default
-            = 0)
+        meaning: Amount of output to print.  0 for no feedback.  1 for basic.
         type: int
-        default:
+        default: 0
     redshift_0:
         meaning: 1 outputs only z=0 mf. 0 outputs mass functions for each Pk in datablock
         type: int
-        default:
+        default: 0
 inputs:
     matter_power_lin:
         k:

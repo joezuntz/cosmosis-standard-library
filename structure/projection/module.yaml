@@ -89,9 +89,9 @@ params:
         type: real
         default:
     shear-shear:
-        meaning: String or Bool. See note in the explanation above for this and related
+        meaning: See note in the explanation above for this and related
             parameters
-        type: ???
+        type: str or bool
         default:
     limber_abs_tol:
         meaning: Absolute tolerance for the Limber integral
@@ -103,13 +103,9 @@ params:
         default: 0.001
 inputs:
     matter_power_nl:
-        NOTE:
-            meaning: Many inputs P(k) sections may be required depending on what C_ell
-                spectra are requested - see above.
-            type: ???
-            default:
         k_h:
-            meaning: Sample values of nonlinear spectrum in Mpc/h
+            meaning: Sample values of nonlinear spectrum in Mpc/h. 
+                Many inputs P(k) sections may be required depending on what C_ell spectra are requested - see above.
             type: real 1d
             default:
         z:
@@ -136,20 +132,17 @@ inputs:
     cosmological_parameters:
         h0:
             meaning: The Hubble parameter H0/100 km/s/Mpc
-            type: ???
+            type: real
             default:
         chi_star:
-            meaning: Only needed if doing CMB Kappa spectra.
+            meaning: CMB distance. Only needed if doing CMB Kappa spectra.
             type: real
             default:
     wl_number_density:
         NOTE:
-            meaning: A different section name to wl_number_density will be used depending
-                on the options chose (see above)
-            type: ???
-            default:
         z:
-            meaning: Eedshift samples of binned n(z)
+            meaning: Redshift samples of binned n(z). A different section name to wl_number_density will be used depending
+                on the options chosen (see above)
             type: real 1d
             default:
         nbin:
@@ -157,17 +150,14 @@ inputs:
             type: int
             default:
         bin_{i}:
-            meaning: S, for i=1..nbin. n(z) samples for each tomographic bin.
+            meaning: Number density n(z) samples for each bin i=1..nbin.
             type: real 1d
             default:
 outputs:
     shear_cl:
-        NOTE:
-            meaning: Various sections will have these outputs depending on the options
-                chosen
-            type: ???
         nbin_a:
-            meaning: Number of tomographic bins for first of the two quantities correlated
+            meaning: Number of tomographic bins for first of the two quantities correlated.
+                Various sections will have these outputs depending on the options chosen
             type: int
         nbin_b:
             meaning: Number of tomographic bins for second of the two quantities correlated

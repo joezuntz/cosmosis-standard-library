@@ -59,8 +59,7 @@ params:
         type: bool
         default: false
     gal_IA_cross_spectra:
-        meaning: Compute cross-power between galaxy positions and alignments?  - Not
-            implemented
+        meaning: Compute cross-power between galaxy positions and alignments?
         type: bool
         default: false
     mag_gal_cross_spectra:
@@ -83,25 +82,25 @@ inputs:
             default:
     distances:
         z:
-            meaning: ; redshift values of distance samples
+            meaning: Redshift values of distance samples
             type: real 1d
             default:
         d_m:
-            meaning: ; comoving distnace to redshift values in units of Mpc (no factor
+            meaning: Comoving distnace to redshift values in units of Mpc (no factor
                 h)
             type: real 1d
             default:
     matter_power_nl:
         z:
-            meaning: ; redshift values of P(k,z) samples
+            meaning: Redshift values of P(k,z) samples
             type: real 1d
             default:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         P_k:
-            meaning: ; non-linear matter power spectrum at samples in (Mpc/h)^{-3}
+            meaning: Non-linear matter power spectrum at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
     wl_number_density:
@@ -110,148 +109,148 @@ inputs:
             type: int
             default:
         z:
-            meaning: ; redshift values of n(z) samples
+            meaning: Redshift values of n(z) samples
             type: real 1d
             default:
         bin_:
-            meaning: Real_vector; bin n(z) values.  Need not be normalized. bin_1,
+            meaning: Bin n(z) values.  Need not be normalized. bin_1,
                 bin_2, bin_3, ....
-            type: ???
+            type: real 1d
             default:
     matter_power_gal:
         z:
-            meaning: ; redshift values of P(k,z) samples
+            meaning: Redshift values of P(k,z) samples
             type: real 1d
             default:
         k_h:
-            meaning: ; k values of P(k,z) samples in units of Mpc/h
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         P_k:
-            meaning: ; non-linear galaxy power spectrum at samples in (Mpc/h)^{-3}
+            meaning: Non-linear galaxy power spectrum at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
     matter_power_gal_mass:
         z:
-            meaning: ; redshift values of P(k,z) samples
+            meaning: Redshift values of P(k,z) samples
             type: real 1d
             default:
         k_h:
-            meaning: ; k values of P_{gm}(k,z) samples in units of Mpc/h
+            meaning: Wavenumber k values of P_{gm}(k,z) samples in units of Mpc/h
             type: real 1d
             default:
         P_k:
-            meaning: ; non-linear galaxy-mass cross-power spectrum at samples in (Mpc/h)^{-3}
+            meaning: Non-linear galaxy-mass cross-power spectrum at samples in (Mpc/h)^{-3}
             type: real 2d
             default:
 outputs:
     shear_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: real 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     shear_cl_ii:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     shear_cl_gi:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     matter_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     ggl_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     gal_IA_cross_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     magnification_galaxy_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     magnification_magnification_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     magnification_intrinsic_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d
     magnification_shear_cl:
         ell:
             meaning: Sample ell values for output C_ell
-            type: ???
+            type: int 1d
         nbin:
             meaning: Number of redshift bins used
-            type: ???
-        bin_i_j:
+            type: int
+        bin_{i}_{j}:
             meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
                 Only stores j<=i.
-            type: ???
+            type: real 1d

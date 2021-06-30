@@ -34,21 +34,21 @@ inputs:
             default:
     shear_calibration_parameters:
         m0:
-            meaning: Only if m_per_bin=F. The multiplicative bias for all the bins/
+            meaning: Only if m_per_bin=F. The multiplicative bias for all the bins.
             type: real
             default:
-        m_i:
+        m_{i}:
             meaning: Only if m_per_bin=F; for i=1..nbin. The multiplicative bias for
                 each bin.
             type: int
             default:
     shear_cl:
-        bin_i_j:
-            meaning: ; for i and j=1..nbin. Shear power spectrum.
+        bin_{i}_{j}:
+            meaning: Shear power spectrum for i and j=1..nbin.
             type: real 1d
             default:
 outputs:
     shear_cl:
-        bin_i_j:
-            meaning: ; for i and j=1..nbin. Modified shear power spectrum.
+        bin_{i}_{j}:
+            meaning: Modified shear power spectrum for i and j=1..nbin.
             type: real 1d

@@ -21,10 +21,10 @@ explanation: |
      "
 params:
     lens_name:
-        meaning: Default='None'; name of lens to use. B1608 and RXJ1131 are accepted,
+        meaning: Name of lens to use. B1608 and RXJ1131 are accepted,
             if 'None', user must set remaining parameter manually
         type: str
-        default:
+        default: 'None'
     z_d:
         meaning: Only if lens_name='None'. Distance to the lens
         type: real

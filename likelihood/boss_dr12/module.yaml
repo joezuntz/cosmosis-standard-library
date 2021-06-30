@@ -21,41 +21,39 @@ explanation: >
 
     A correlated Gaussian likelihood is then returned."
 params:
+    mode:
+        meaning: 0 for BAO only, 1 for BAO+FS measurements
+        type: int
+        default: 0
     data_file:
-        meaning: 'Path to file with measured D_m(z1),H(z1),fsig8(z1),D_m(z2),etc values
-            in (default: included file)'
+        meaning: 'Path to file with measured D_m(z1), H(z1), fsig8(z1), D_m(z2), etc values'
         type: str
-        default:
+        default: Included file
     cov_file:
-        meaning: 'Path to covariance matrix file (default: included file)'
+        meaning: 'Path to covariance matrix file'
         type: str
-        default:
+        default: Included file
     redshift_file:
-        meaning: 'Path to file with the effective redshifts of the measurements (default:
-            included file)'
+        meaning: 'Path to file with the effective redshifts of the measurements'
         type: str
-        default:
+        default: Included file
     rs_fiducial:
         meaning: Fiducial value of sound horizon at last scattering used in making
             data
         type: real
         default: 147.78
-    verbose:
-        meaning: Print extra output (default = False)
-        type: bool
-        default:
-    mode:
-        meaning: 0 for BAO only, 1 for BAO+FS measurements
-        type: ???
-        default:
+    feedback:
+        meaning: Feedback level - 0 for no feedback, 1 for lots
+        type: int
+        default: 0
 inputs:
     growth_parameters:
         d_z:
-            meaning: Linear growth factor D
+            meaning: Linear growth factor D(z)
             type: real 1d
             default:
         f_z:
-            meaning: Linear growth rate f
+            meaning: Linear growth rate f(z)
             type: real 1d
             default:
         z:

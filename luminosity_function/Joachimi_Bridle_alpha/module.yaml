@@ -22,9 +22,9 @@ explanation: |
     "
 params:
     magnitude_limit:
-        meaning: Double; limiting r-band magnitude of the survey considered.
-        type: ???
-        default: 24
+        meaning: Limiting r-band magnitude of the survey considered.
+        type: real
+        default: 24.0
     binned_alpha:
         meaning: Compute alpha in the survey redshift bins, rather than as a continuous
             funtion of redshift.
@@ -42,29 +42,29 @@ inputs:
             type: int
             default:
         zmax:
-            meaning: Double; maximum redshift of the redshift distributions.
-            type: ???
+            meaning: Maximum redshift of the redshift distributions.
+            type: real
             default:
-        bin_i:
-            meaning: ; an array of Nz points evenly sampled from the galaxy redshift
+        bin_{i}:
+            meaning: An array of Nz points evenly sampled from the galaxy redshift
                 distribution in bin i in the range z={0...zmax}. The index ranges
-                i={0,1...nzbin}.
+                i={0, 1, ..., nzbin}.
             type: real 1d
             default:
 outputs:
     galaxy_luminosity_function:
         z:
-            meaning: ; redshift values of alpha(z) samples
+            meaning: Redshift values of alpha(z) samples
             type: real 1d
         alpha:
-            meaning: ; gradient of the logarithmic cumulative galaxy luminosity function
+            meaning: Gradient of the logarithmic cumulative galaxy luminosity function
                 at the limiting magnitude.
             type: real 1d
         z_binned:
-            meaning: ; median values of the n(z) in the survey redshift bins.
+            meaning: Median values of the n(z) in the survey redshift bins.
             type: real 1d
         alpha_binned:
-            meaning: ; gradient of the logarithmic cumulative galaxy luminosity function
+            meaning: Gradient of the logarithmic cumulative galaxy luminosity function
                 at the limiting magnitude, evaluated at the median redshift of each
                 bin.
             type: real 1d

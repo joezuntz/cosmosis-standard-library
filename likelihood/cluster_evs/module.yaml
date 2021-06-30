@@ -20,10 +20,6 @@ explanation: |
     Optionally, can also generate a full PDF with output_pdf=T
     "
 params:
-    feedback:
-        meaning: Verbose = 1
-        type: ???
-        default:
     redshift:
         meaning: 'Output z of cluster where integration limits: zmin = z - 0.02, zmax
             = z + 0.02'
@@ -31,25 +27,25 @@ params:
         default:
     output_pdf:
         meaning: If True, output PDF for range of masses, only recommended for test
-            runs (default = False)
+            runs
         type: bool
-        default:
+        default: false
     frac:
-        meaning: Fraction of the sky observed between zmin and zmax (default = 1.0)
+        meaning: Fraction of the sky observed between zmin and zmax
         type: real
-        default:
+        default: 1.0
     M_min:
-        meaning: Minimum mass for PDF in M_sun/h (default = 1.E14)
+        meaning: Minimum mass for PDF in M_sun/h
         type: real
-        default:
+        default: 1.0E14
     M_max:
-        meaning: Maximum mass for PDF in M_sun/h (default = 2.E15)
+        meaning: Maximum mass for PDF in M_sun/h
         type: real
-        default:
+        default: 2.0E15
     n_m:
-        meaning: Number of log-spaced masses for PDF (default = 100)
+        meaning: Number of log-spaced masses for PDF
         type: int
-        default:
+        default: 100
 inputs:
     cosmological_parameters:
         h0:

@@ -32,12 +32,12 @@ explanation: |
 params:
     dz:
         meaning: Spacing in redshift of output
-        type: ???
-        default:
+        type: real
+        default: 0.01
     nz:
         meaning: Number of redshift samples.  Need nz*dz<=4.0
-        type: ???
-        default:
+        type: int
+        default: 300
     do_distances:
         meaning: Whether to also calculate cosmological distances
         type: bool
@@ -53,9 +53,9 @@ inputs:
             type: real
             default:
         w:
-            meaning: Dark energy EoS.  Optional;
+            meaning: Dark energy EoS.
             type: real
-            default: -1
+            default:
         h0:
             meaning: Hubble/100km/s/Mpc
             type: real
@@ -65,9 +65,9 @@ inputs:
             type: real
             default:
         sigma_8:
-            meaning: Scalar spectral index running. Options;
+            meaning: Matter power amplitude
             type: real
-            default: -1
+            default:
 outputs:
     matter_power_nl:
         z:

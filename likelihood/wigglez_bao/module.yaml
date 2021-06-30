@@ -24,23 +24,22 @@ explanation: |
     A correlated Gaussian likelihood is then returned."
 params:
     data_file:
-        meaning: 'Path to file with measured z - D_v values in (default: included
-            file)'
+        meaning: 'Path to file with measured z - D_v values in'
         type: str
-        default:
+        default: included file
     weight_file:
-        meaning: 'Path to inverse covariance matrix file (default: included file)'
+        meaning: 'Path to inverse covariance matrix file'
         type: str
-        default:
+        default: included file
     rs_fiducial:
         meaning: Fiducial value of sound horizon at last scattering used in making
             data
         type: real
         default: 148.6
     verbose:
-        meaning: Print extra output (default = False)
+        meaning: Print extra output
         type: bool
-        default:
+        default: false
 inputs:
     distances:
         z:

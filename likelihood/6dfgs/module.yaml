@@ -16,36 +16,33 @@ explanation: >
     ""
 params:
     feedback:
-        meaning: Amount of output to print.  0 for no feedback.  1 for basic (default
-            = 0)
+        meaning: Amount of output to print.  0 for no feedback.  1 for basic
         type: int
-        default:
+        default: 0
     mode:
         meaning: 0 for BAO and 1 for fsigma8
         type: int
-        default:
+        default: 0
     mean:
-        meaning: Dv (default = 457.) for mode 0 or fsigma8 (default  = 0.423) for
-            mode 1
+        meaning: Dv for mode 0 or fsigma8 for mode 1
         type: real
-        default:
+        default: 457.0 or 0.423
     sigma:
-        meaning: Sigma_Dv (default = 27.) for mode 0 or sigma_fsigma8 (default  =
-            0.055) for mode 1
+        meaning: Sigma_Dv for mode 0 or sigma_fsigma8
         type: real
-        default:
+        default: 27.0 or 0.055
     redshift:
-        meaning: Redshift (default  = 0.106 for mode 0 or 0.067 for mode 1)
+        meaning: Redshift of measurements, depending on mode
         type: real
-        default:
+        default: 0.106 or 0.067
 inputs:
     growth_parameters:
         d_z:
-            meaning: Linear growth factor D
+            meaning: Linear growth factor D(z)
             type: real 1d
             default:
         f_z:
-            meaning: Linear growth rate f
+            meaning: Linear growth rate f(z)
             type: real 1d
             default:
         z:

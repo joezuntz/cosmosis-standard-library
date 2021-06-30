@@ -39,21 +39,18 @@ explanation: |
     "
 params:
     corr_type:
-        meaning: 'Integer/String, type of the correlation function: 0/xi, 1/wtheta,
-            2/gammat'
-        type: ???
+        meaning: 'Type of the correlation function: 0/xi, 1/wtheta, 2/gammat'
+        type: int or str
         default:
     input_section_name:
         meaning: "Name of the angular power spectrum input section. See shear/spectra\
-            \ module. (Default: 'shear_cl', 'galaxy_cl', or 'galaxy_shear_cl' depending\
-            \ on corr_type)"
+            \ module. (Default: )"
         type: str
-        default:
+        default: 'shear_cl, galaxy_cl, or galaxy_shear_cl, depending on corr_type'
     output_section_name:
-        meaning: "Name of the angular correlation function output section (Default:\
-            \ 'shear_xi', 'galaxy_shear_xi', or 'galaxy_xi' depending on corr_type)"
+        meaning: "Name of the angular correlation function output section"
         type: str
-        default:
+        default: 'shear_xi, galaxy_shear_xi, or galaxy_xi depending on corr_type'
 inputs:
     input_section_name:
         ell:
@@ -61,13 +58,11 @@ inputs:
             type: real 1d
             default:
         nbin_a:
-            meaning: Mainly for mode=2 (GGL) - the number of redshift bins in the
-                first quantity (position bins for GGL)
+            meaning: The number of redshift bins in the first quantity
             type: int
             default:
         nbin_b:
-            meaning: Mainly for mode=2 (GGL) - the number of redshift bins in the
-                first quantity (shear bins for GGL)
+            meaning: The number of redshift bins in the second quantity
             type: int
             default:
         nbin:
@@ -75,7 +70,7 @@ inputs:
             type: int
             default:
         bin_i_j:
-            meaning: S C_ell (no l(l+1) factor) for bin i and j. Only need j<=i for
+            meaning: C_ell (no l(l+1) factor) for bin i and j. Only need j<=i for
                 modes 0 and 1.
             type: real 1d
             default:
@@ -85,7 +80,7 @@ outputs:
             meaning: Sample theta values for output xi(theta)
             type: real 1d
         bin_i_j:
-            meaning: W(theta) or gamma_t(theta) for bin i and j, only if mode=1 or
+            meaning: w(theta) or gamma_t(theta) for bin i and j, only if mode=1 or
                 2 respectively. Only stores j<=i.
             type: real 1d
         nbin_a:

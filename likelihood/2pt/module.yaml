@@ -33,15 +33,15 @@ params:
         type: str
         default:
     data_sets:
-        meaning: Default 'all'. Space-separated list of which data sets from within
+        meaning: Space-separated list of which data sets from within
             the file to use for likelihoods.
         type: str
-        default:
+        default: all
     covmat_name:
-        meaning: Default 'COVMAT'. Name of the covariance matrix extension to use
+        meaning: Name of the covariance matrix extension to use
             in the data file.
         type: str
-        default:
+        default: COVMAT
     angle_range_{dataset}_{i}_{j}:
         meaning: Pair of real numbers. If set, for the given data set and pair of
             bins, cut down the data used to this angular range  (min and max)
@@ -57,28 +57,28 @@ params:
             of MC simulations and should thus have the Anderson-Hartlapp factor applied
             to increase its size. If zero, assume infinite number of realizations.
         type: int
-        default: -1.0
+        default: -1
     sellentin:
         meaning: If set, use the Sellentin-Heavens 2016 change to the likelihood to
             account for this distribution of the covariance estimates. This changes
             the likelihood to a student's-t form. Note that this invalidates the simulated
             data sets used for the ABC sampler.
         type: bool
-        default: f.
+        default: false
     save_plot_to:
         meaning: If set, save various plots to the named directory. May not work on
             all systems.
         type: str
         default:
     like_name:
-        meaning: Default '2pt'. The name of the likelihood to save.
+        meaning: The name of the likelihood to save.
         type: str
-        default:
+        default: 2pt
     kind:
-        meaning: Default='cubic'. The interpolation to do into the theory splines.
+        meaning: The interpolation to do into the theory splines.
             See scipy.interpolate.interp1d.
         type: str
-        default:
+        default: cubic
     gaussian_covariance:
         meaning: C_ell likelihoods only. Generate a Gaussian covariance matrix for
             the data.
@@ -89,12 +89,12 @@ params:
         type: real
         default:
     number_density_shear_bin:
-        meaning: If gaussian_covariance=T, the number of galaxies per bin in the WL
+        meaning: If gaussian_covariance=T, the number of galaxies per bin per sq arcmin in the WL
             data
         type: real
         default:
     number_density_lss_bin:
-        meaning: If gaussian_covariance=T, the number of galaxies per bin in the LSS
+        meaning: If gaussian_covariance=T, the number of galaxies per bin per sq arcmin in the LSS
             data
         type: real
         default:
@@ -104,55 +104,51 @@ params:
         type: real
         default:
 inputs:
-    section:
-        NOTE:
-            meaning: The name of both the section depends on the data type used from
-                the file. It might be galaxy_cl or shear_cl, for example.
-            type: ???
-            default:
+    shear_cl:
         ell:
             meaning: If a Fourier-space measurement is used, the angular wave-number
-                of the predicted theory curves.
-            type: ???
+                of the predicted theory curves.  The name of the section here depends on the data type used from
+                the file. It might be galaxy_cl or shear_cl, for example.
+            type: real 1d
             default:
         theta:
             meaning: If a real-space measurement is used, the angle in radians of
                 the predicted theory curves.
-            type: ???
+            type: real 1d
             default:
         bin_{i}_{j}:
             meaning: For various i,j depending what is found in the file, the theory
                 predictions for this value. For example, C_ell or xi(theta)
-            type: ???
+            type: real 1d
             default:
 outputs:
     likelihoods:
         2pt_like:
             meaning: Gaussian likelihood value. Name can be changed in parameter file
                 (see above) for this and the other outputs below.
-            type: ???
+            type: real
     data_vector:
         2pt_data:
             meaning: The full vector of data points used in the likelihood
-            type: ???
+            type: real 1d
         2pt_theory:
             meaning: The full vector of theory points used in the likelihood
-            type: ???
+            type: real 1d
         2pt_covariance:
             meaning: The covariance matrix used
-            type: ???
+            type: real 2d
         2pt_inverse_covariance:
             meaning: The inverse covariance matrix (precision matrix) used.
-            type: ???
+            type: real 2d
         2pt_simulation:
             meaning: A simulated data set from the given theory and covariance matrix.
-            type: ???
+            type: real 1d
         2pt_angle:
             meaning: The angular scale used for each data point.
-            type: ???
+            type: real 1d
         2pt_bin1:
             meaning: The first bin index used for each data point
-            type: ???
+            type: int 1d
         2pt_bin2:
             meaning: The second bin index used for each data point
-            type: ???
+            type: int 1d

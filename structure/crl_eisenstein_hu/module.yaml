@@ -22,37 +22,37 @@ explanation: |
     "
 params:
     zmin:
-        meaning: Min value of redshift to save P(k,z) (default = 0.0)
+        meaning: Min value of redshift to save P(k,z)
         type: real
-        default:
+        default: 0.0
     zmax:
-        meaning: Max value of redshift to save P(k,z) (default = 5.0)
+        meaning: Max value of redshift to save P(k,z)
         type: real
-        default:
+        default: 5.0
     nz_steps:
-        meaning: Number of steps used between zmin-zmax (default = 800)
+        meaning: Number of steps used between zmin-zmax
         type: int
-        default:
+        default: 800
     kmin:
-        meaning: Min value of k_h (Mpc/h) to save P(k,z) (default = 1.0*10^-5)
+        meaning: Min value of k_h (Mpc/h) to save P(k,z)
         type: real
-        default:
+        default: 1.0e-5
     kmax:
-        meaning: Min value of k_h (Mpc/h) to save P(k,z) (default = 10.0)
+        meaning: Min value of k_h (Mpc/h) to save P(k,z)
         type: real
-        default:
+        default: 10.0
     nk_steps:
-        meaning: Number of steps used between kmin-kmax (default = 800)
+        meaning: Number of steps used between kmin-kmax
         type: int
-        default:
+        default: 800
 inputs:
     growth_parameters:
         d_z:
-            meaning: Linear growth factor D
+            meaning: Linear growth factor D(z)
             type: real 1d
             default:
         f_z:
-            meaning: Linear growth rate f
+            meaning: Linear growth rate f(z)
             type: real 1d
             default:
         z:
@@ -69,7 +69,7 @@ inputs:
             type: real
             default:
         w:
-            meaning: Dark energy EoS.  Optional;
+            meaning: Dark energy EoS.
             type: real
             default: -1
         h0:
@@ -81,7 +81,7 @@ inputs:
             type: real
             default:
         n_run:
-            meaning: Scalar spectral index running. Options;
+            meaning: Scalar spectral index running.
             type: real
             default: -1
         a_s:

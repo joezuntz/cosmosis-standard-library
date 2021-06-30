@@ -53,11 +53,11 @@ params:
     theta_mins:
         meaning: Comma separated minimum angles in arcmin for the different bin pairs
         type: str
-        default: empty
+        default: 
     theta_maxs:
         meaning: Comma separated maximum angles in arcmin for the different bin pairs
         type: str
-        default: empty
+        default: 
 inputs:
     shear_xi:
         theta:
@@ -66,11 +66,11 @@ inputs:
             default:
         xi_plus_i_j:
             meaning: Xi_plus meausurements for i,j=(1..n_z_bins)
-            type: ???
+            type: real 1d
             default:
         xi_minus_i_j:
             meaning: Xi_minus meausurements for i,j=(1..n_z_bins)
-            type: ???
+            type: real 1d
             default:
 outputs:
     likelihoods:

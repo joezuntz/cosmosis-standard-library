@@ -39,18 +39,17 @@ params:
         type: str
         default:
     n_transform:
-        meaning: Number of points in the transform.  Default 8192
+        meaning: Number of points in the transform.
         type: int
-        default:
+        default: 8192
     ell_min_extrapolate:
-        meaning: Minimum value of ell to extrapolate the input ell to in the transform
+        meaning: Minimum value of ell to extrapolate the input ell to in the transform.
         type: real
         default: 0.0001
     ell_max_extrapolate:
-        meaning: Maximum value of ell to extrapolate the input ell to in the transform
-            (default 5.0e+06)
+        meaning: Maximum value of ell to extrapolate the input ell to in the transform.
         type: real
-        default:
+        default: 5.0e+06
     theta_min:
         meaning: Minimum value of output theta values to go to, in arcmin
         type: real
@@ -66,21 +65,19 @@ inputs:
             type: real 1d
             default:
         nbin_a:
-            meaning: Mainly for mode=2 (GGL) - the number of redshift bins in the
-                first quantity (position bins for GGL)
+            meaning: The number of redshift bins in the first quantity
             type: int
             default:
         nbin_b:
-            meaning: Mainly for mode=2 (GGL) - the number of redshift bins in the
-                first quantity (shear bins for GGL)
+            meaning: The number of redshift bins in thesecond quantity
             type: int
             default:
         nbin:
             meaning: Number of redshift bins used if nbin_a or b not found.
             type: int
             default:
-        bin_i_j:
-            meaning: S C_ell (no l(l+1) factor) for bin i and j. Only need j<=i for
+        bin_{i}_{j}:
+            meaning: C_ell (no l(l+1) factor) for bin i and j. Only need j<=i for
                 modes 0 and 1.
             type: real 1d
             default:
@@ -90,14 +87,14 @@ outputs:
             meaning: Sample theta values for output xi(theta)
             type: real 1d
         xiplus_i_j:
-            meaning: S, xi_plus(theta) bin i and j, only if mode=xi Only stores j<=i.
+            meaning: xi_plus(theta) bin i and j, only if mode=xi Only stores j<=i.
             type: real 1d
         ximinus_i_j:
-            meaning: S, xi_minus(theta) bin i and j, only if mode=xi. Only stores
+            meaning: xi_minus(theta) bin i and j, only if mode=xi. Only stores
                 j<=i.
             type: real 1d
         bin_i_j:
-            meaning: W(theta) or gamma_t(theta) for bin i and j, only if mode=w or
+            meaning: w(theta) or gamma_t(theta) for bin i and j, only if mode=w or
                 gamma respectively. Only stores j<=i.
             type: real 1d
         nbin_a:
