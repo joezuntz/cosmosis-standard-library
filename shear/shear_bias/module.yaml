@@ -1,15 +1,14 @@
 #This is a template for module description files
 name: shear_bias
 version: 1
-purpose: "Modify a set of calculated shear C_ell with a multiplicative bias"
-url: ""
+purpose: Modify a set of calculated shear C_ell with a multiplicative bias
+url: ''
 interface: shear_bias.py
 attribution: [CosmoSIS Team]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - "Simple multiplicative shear bias model: C^{ij}_ell -> (1+m_i)(1+m_j) C^{ij}_ell"
+-   'Simple multiplicative shear bias model: C^{ij}_ell -> (1+m_i)(1+m_j) C^{ij}_ell'
 
 explanation: |
     Errors in cosmic shear measurement can lead to a multiplicative factor
@@ -22,19 +21,34 @@ explanation: |
     including cross-spectra:
 
     C^{ij}_ell -> (1+m_i)(1+m_j) C^{ij}_ell
-
 params:
-    m_per_bin: "Boolean; default=T, If T use a separate m for each bin, otherwise a single global one"
-
+    m_per_bin:
+        meaning: If T use a separate m for each bin, otherwise a single global one
+        type: bool
+        default: true
 inputs:
     wl_number_density:
-        nbin: "Integer, number of tomographic bins."
+        nbin:
+            meaning: Number of tomographic bins.
+            type: int
+            default:
     shear_calibration_parameters:
-        m0: "Real; only if m_per_bin=F. The multiplicative bias for all the bins/"
-        m_i: "Integer; only if m_per_bin=F; for i=1..nbin. The multiplicative bias for each bin."
+        m0:
+            meaning: Only if m_per_bin=F. The multiplicative bias for all the bins.
+            type: real
+            default:
+        m_{i}:
+            meaning: Only if m_per_bin=F; for i=1..nbin. The multiplicative bias for
+                each bin.
+            type: int
+            default:
     shear_cl:
-        bin_i_j: "Real vector; for i and j=1..nbin. Shear power spectrum."
-
+        bin_{i}_{j}:
+            meaning: Shear power spectrum for i and j=1..nbin.
+            type: real 1d
+            default:
 outputs:
     shear_cl:
-        bin_i_j: "Real vector; for i and j=1..nbin. Modified shear power spectrum."
+        bin_{i}_{j}:
+            meaning: Modified shear power spectrum for i and j=1..nbin.
+            type: real 1d

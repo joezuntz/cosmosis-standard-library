@@ -1,16 +1,16 @@
-name: "Riess11"
-version: "2011"
-purpose: "Likelihood of hubble parameter H0 from Riess et al supernova sample"
-url: "http://pdg.lbl.gov/2013/reviews/rpp2013-rev-bbang-nucleosynthesis.pdf"
+name: Riess11
+version: '2011'
+purpose: Likelihood of hubble parameter H0 from Riess et al supernova sample
+url: http://pdg.lbl.gov/2013/reviews/rpp2013-rev-bbang-nucleosynthesis.pdf
 interface: riess11.py
 attribution: [Riess et al (measurement), CosmoSIS team (code)]
-rules: "None."
+rules: None.
 cite:
-    - "Riess et al, ApJ, 730, 2, 119 (2011)"
-    - "Riess et al, ApJ, 732, 2, 129 (2011)"
+-   Riess et al, ApJ, 730, 2, 119 (2011)
+-   Riess et al, ApJ, 732, 2, 129 (2011)
 assumptions:
-    - "FRW cosmological model"
-    - "Riess et al data set"
+-   FRW cosmological model
+-   Riess et al data set
 explanation: |
     "This small module was written for CosmoSIS.
 
@@ -21,19 +21,24 @@ explanation: |
 
     The Riess et al 3% solution measurement of H0 is used in this module.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    mean: "float, replace the standard value measurement H0 = 0.738 with a custom one for simulations (default 0.738)"
-    sigma: "float, replace the standard value error on H0 of 0.024 with a custom one (default 0.024)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    mean:
+        meaning: Replace the standard value measurement H0 = 0.738 with a custom one
+            for simulations
+        type: real
+        default: 0.738
+    sigma:
+        meaning: Replace the standard value error on H0 of 0.024 with a custom one
+        type: real
+        default: 0.024
 inputs:
     cosmological_parameters:
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
-
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
 outputs:
     likelihoods:
-        RIESS_LIKE: "Gaussian likelihood value of supplied parameters"
-
+        RIESS_LIKE:
+            meaning: Gaussian likelihood value of supplied parameters
+            type: real

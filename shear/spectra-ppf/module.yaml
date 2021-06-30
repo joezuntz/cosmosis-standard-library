@@ -1,15 +1,14 @@
 #This is a template for module description files
 name: wl_spectra_ppf
-version: "1.0"
-purpose: "Compute weak lensing C_ell from P(k,z) and MG D(k,z) with the Limber integral"
-url: ""
+version: '1.0'
+purpose: Compute weak lensing C_ell from P(k,z) and MG D(k,z) with the Limber integral
+url: ''
 interface: interface.so
 attribution: [CosmoSIS team, Matt Becker]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - "The Limber integral is valid on the scales in question"
+-   The Limber integral is valid on the scales in question
 
 explanation: |
     "
@@ -39,38 +38,88 @@ explanation: |
     Parts of this code and the underlying implementation of limber are based on cosmocalc:
     https://bitbucket.org/beckermr/cosmocalc-public
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    n_ell: "Integer; number of log-spaced ell values to compute"
-    ell_min: "Real; minimum ell value to compute"
-    ell_max: "Real; maximum ell value to compute"
-
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    n_ell:
+        meaning: Number of log-spaced ell values to compute
+        type: int
+        default:
+    ell_min:
+        meaning: Minimum ell value to compute
+        type: real
+        default:
+    ell_max:
+        meaning: Maximum ell value to compute
+        type: real
+        default:
 inputs:
     modified_gravity:
-        k_h: "real vector; k/h sample points for D(k,z)"
-        z: "real vector; z sample points for D(k,z)"
-        D: "real 2D array; D(k,z) values at sample points"
+        k_h:
+            meaning: Wavenumber k/h sample points for D(k,z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift sample points for D(k,z)
+            type: real 1d
+            default:
+        D:
+            meaning: D(k,z) values at sample points
+            type: real 2d
+            default:
     cosmological_parameters:
-        omega_m:  "Real; density fraction of all matter; used in the prefactor"
-        h0:  "Real; hubble factor H0 / 100 km/s/Mpc."
+        omega_m:
+            meaning: Density fraction of all matter; used in the prefactor
+            type: real
+            default:
+        h0:
+            meaning: Hubble factor H0 / 100 km/s/Mpc.
+            type: real
+            default:
     distances:
-        z: "real vector; redshift values of distance samples"
-        d_m: "real vector; comoving distnace to redshift values in units of Mpc (no factor h)"
+        z:
+            meaning: Redshift values of distance samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Comoving distnace to redshift values in units of Mpc (no factor
+                h)
+            type: real 1d
+            default:
     matter_power_nl:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: Redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: Non-linear matter power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     wl_number_density:
-        nbin: "integer; number of redshift bins"
-        z: "real vector; redshift values of n(z) samples"
-        bin_: "real_vector; bin n(z) values.  Need not be normalized. bin_1, bin_2, bin_3, ...."
-
+        nbin:
+            meaning: Number of redshift bins
+            type: int
+            default:
+        z:
+            meaning: Redshift values of n(z) samples
+            type: real 1d
+            default:
+        bin_{i}:
+            meaning: Bin n(z) values.  Need not be normalized. bin_1,
+                bin_2, bin_3, ....
+            type: real 1d
+            default:
 outputs:
     shear_cl:
-        ell: "Sample ell values for output C_ell"
-        nbin: "Number of redshift bins used"
-        bin_i_j: "C_ell (no l(l+1) factor) for (auto-correlation) bin i and j. Only stores j<=i."
+        ell:
+            meaning: Sample ell values for output C_ell
+            type: int 1d
+        nbin:
+            meaning: Number of redshift bins used
+            type: int
+        bin_{i}_{j}:
+            meaning: C_ell (no l(l+1) factor) for (auto-correlation) bin i and j.
+                Only stores j<=i.
+            type: real 1d

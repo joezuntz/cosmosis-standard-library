@@ -1,15 +1,13 @@
 name: sigma_cpp
 version: 1.0
-purpose: "Compute anisotropy dispersion sigma(R,z) in cpp"
-url: ""
+purpose: Compute anisotropy dispersion sigma(R,z) in cpp
+url: ''
 interface: sigma_cpp.py
 attribution: [Michel Aguena]
-rules:
-    ""
+rules: ''
 cite: []
-
 assumptions:
-    - "minimal assumptions; sigma computed directly from P(k,z)"
+-   minimal assumptions; sigma computed directly from P(k,z)
 
 explanation: |
     "sigma(R,z) is the variance of cosmic density fluctuations on scales
@@ -20,36 +18,98 @@ explanation: |
     The P(k,z) used could in general be linear or non-linear, but usually when people
     say sigma they mean the non-linear variant.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    zmin: "real, minimum redshift to generate values for"
-    zmax: "real, maximum redshift to generate values for"
-    dz: "real, output redshift sample spacing"
-    z: "real, values of redshift to generate values for, overwrites (zmin, zmax, dz)"
-    logmmin: "real, minimum value of log10(Mass) [in M_sun/h] to generate values for"
-    logmmax: "real, maximum value of log10(Mass) [in M_sun/h] to generate values for"
-    dlogm: "real, log10(Mass) spacing"
-    logm: "real, values of log10(Mass) [in M_sun/h] to generate values for, overwrites (logmmin, logmmax, dlogm)"
-    rmin: "real, minimum scale R in Mpc/h to generate values for"
-    rmax: "real, maximum scale R in Mpc/h to generate values for"
-    dr: "real, scale R spacing"
-    r: "real, values of R [Mpc/h] to generate values for, overwrites (rmin, rmax, dr)"
-    matter_power: "name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl"
-    use_m: "logical, uses the mass values as a base for the computation instead of R (default F)"
-    verbose: "logical, prints details of the computation (default F)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
-inputs:
+    zmin:
+        meaning: Minimum redshift to generate values for
+        type: real
+        default:
+    zmax:
+        meaning: Maximum redshift to generate values for
+        type: real
+        default:
+    dz:
+        meaning: Output redshift sample spacing
+        type: real
+        default:
+    z:
+        meaning: Values of redshift to generate values for, overwrites (zmin, zmax,
+            dz)
+        type: real
+        default:
+    logmmin:
+        meaning: Minimum value of log10(Mass) [in M_sun/h] to generate values for
+        type: real
+        default:
+    logmmax:
+        meaning: Maximum value of log10(Mass) [in M_sun/h] to generate values for
+        type: real
+        default:
+    dlogm:
+        meaning: log10(Mass) spacing
+        type: real
+        default:
+    logm:
+        meaning: Values of log10(Mass) [in M_sun/h] to generate values for, overwrites
+            (logmmin, logmmax, dlogm)
+        type: real
+        default:
+    rmin:
+        meaning: Minimum scale R in Mpc/h to generate values for
+        type: real
+        default:
+    rmax:
+        meaning: Maximum scale R in Mpc/h to generate values for
+        type: real
+        default:
+    dr:
+        meaning: Scale R spacing
+        type: real
+        default:
+    r:
+        meaning: Values of R [Mpc/h] to generate values for, overwrites (rmin, rmax,
+            dr)
+        type: real
+        default:
     matter_power:
-        k_h: "real 1D array, sample values of linear spectrum in Mpc/h.  Section name specified by parameter in ini file."
-        z: "real 1D array, redshift of linear spectrum samples.  Section name specified by parameter in ini file."
-        P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}.  Section name specified by parameter in ini file."
-
+        meaning: Name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl
+        type: str
+        default: matter_power_lin
+    use_m:
+        meaning: Uses the mass values as a base for the computation instead of R
+        type: bool
+        default: false
+    verbose:
+        meaning: Prints details of the computation
+        type: bool
+        default: false
+inputs:
+    matter_power_lin:
+        k_h:
+            meaning: Sample values of linear spectrum in Mpc/h.  Section name specified
+                by parameter in ini file.
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of linear spectrum samples.  Section name specified
+                by parameter in ini file.
+            type: real 1d
+            default:
+        P_k:
+            meaning: Linear spectrum in (Mpc/h)^{-3}.  Section name specified by parameter
+                in ini file.
+            type: real 2d
+            default:
 outputs:
     sigma_cpp:
-        R: "real 1D array, scale R of output in Mpc/h"
-        logm: "real 1D array, of log10(Mass) [in M_sun/h] output"
-        z: "real 1D array, redshift of output"
-        sigma: "real 2D array, variance sigma(R,z)"
+        R:
+            meaning: Scale R of output samples in Mpc/h
+            type: real 1d
+        logm:
+            meaning: log10(Mass) samples [in M_sun/h]; matches R
+            type: real 1d
+        z:
+            meaning: Redshift of output samples
+            type: real 1d
+        sigma:
+            meaning: Variance sigma(R,z) of samples
+            type: real 2d

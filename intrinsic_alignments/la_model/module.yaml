@@ -1,15 +1,14 @@
 #This is a template for module description files
 name: linear_alignments
-version: "1.0"
-purpose: "Compute the terms P_II and P_GI which go into intrinsic aligment calculations"
-url: ""
+version: '1.0'
+purpose: Compute the terms P_II and P_GI which go into intrinsic aligment calculations
+url: ''
 interface: linear_alignments_interface.py
 attribution: [CosmoSIS team, Donnacha Kirk]
-rules: ""
-cite: ["MNRAS 424 3 1647 (2012)", "New J Phys 9 12 444 (2007)"]
-
+rules: ''
+cite: [MNRAS 424 3 1647 (2012), New J Phys 9 12 444 (2007)]
 assumptions:
-    - "Uses one of three models for how matter power is turned into intrinsic alignments"
+-   Uses one of three models for how matter power is turned into intrinsic alignments
 
 explanation: |
     "
@@ -39,42 +38,113 @@ explanation: |
     See these papers for details of these models.
 
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    method: "string, choice of 'bk', 'bk_corrected', 'krhb', chooses which model to run"
-    name: "string, default is empty.  If set, save the outputs to sections with the name as a suffix, e.g intrinsic_power_NAME"
-    grid_mode: "bool, default false. If set, save the fields b(k,z) and r(k,z) as described in Bridle & King instead of applying directly to P(k)"
-    do_galaxy_intrinsic: "bool, default False. Compute the matter-IA cross correlation."
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
+    method:
+        meaning: Which model to run. Choice of 'bk', 'bk_corrected', 'krhb', 
+        type: str
+        default:
+    name:
+        meaning: If set, save the outputs to sections with the
+            name as a suffix, e.g intrinsic_power_NAME
+        type: str
+        default:
+    grid_mode:
+        meaning: Whether to save the fields b(k,z) and r(k,z) as described
+            in Bridle & King instead of applying directly to P(k)
+        type: bool
+        default: false
+    do_galaxy_intrinsic:
+        meaning: Compute the matter-IA cross correlation.
+        type: bool
+        default: false
 inputs:
     cosmological_parameters:
-        omega_m:  "Real; density fraction of all matter."
+        omega_m:
+            meaning: Density fraction of all matter.
+            type: real
+            default:
     intrinsic_alignment_parameters:
-        A: "real; single parameter scaling power spectra"
+        A:
+            meaning: Single parameter scaling power spectra
+            type: real
+            default:
     matter_power_nl:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: non-linear matter power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     matter_power_lin:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        P_k: "real 2d array; linear matter power spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: linear matter power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     matter_galaxy_power:
-        z: "real vector; redshift values of P(k,z) samples (if do_galaxy_intrinsic)"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h (if do_galaxy_intrinsic)"
-        P_k: "real 2d array; nonlinear matter-galaxy cross power spectrum at samples in (Mpc/h)^{-3} (if do_galaxy_intrinsic)"
+        z:
+            meaning: redshift values of P(k,z) samples (if do_galaxy_intrinsic)
+            type: real 1d
+            default:
+        k_h:
+            meaning: k values of P(k,z) samples in units of Mpc/h (if do_galaxy_intrinsic)
+            type: real 1d
+            default:
+        P_k:
+            meaning: Nonlinear matter-galaxy cross power spectrum at samples in
+                (Mpc/h)^{-3} (if do_galaxy_intrinsic)
+            type: real 2d
+            default:
 outputs:
     intrinsic_power:
-        z: "real vector; redshift values of P(k,z) samples (if grid_mode=F, the default)"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h (if grid_mode=F, the default)"
-        P_k: "real 2d array; spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3} (if grid_mode=F, the default)"
+        z:
+            meaning: Redshift values of P(k,z) samples (if grid_mode=F, the default)
+            type: real 1d
+        k_h:
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h (if grid_mode=F,
+                the default)
+            type: real 1d
+        P_k:
+            meaning: Spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}
+                (if grid_mode=F, the default)
+            type: real 2d
     matter_intrinsic_power:
-        z: "real vector; redshift values of P(k,z) samples (if grid_mode=F, the default)"
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h (if grid_mode=F, the default)"
-        P_k: "real 2d array; spectrum of shear-intrinsic power at samples in (Mpc/h)^{-3} (if grid_mode=F, the default)"
+        z:
+            meaning: Redshift values of P(k,z) samples (if grid_mode=F, the default)
+            type: real 1d
+        k_h:
+            meaning: ; k values of P(k,z) samples in units of Mpc/h (if grid_mode=F,
+                the default)
+            type: real 1d
+        P_k:
+            meaning: Spectrum of shear-intrinsic power at samples in (Mpc/h)^{-3}
+                (if grid_mode=F, the default)
+            type: real 2d
     intrinsic_alignment_parameters:
-        z: "real vector; redshift values ofsamples (if grid_mode=F, the default)"
-        k_h: "real vector; k values ofsamples in units of Mpc/h (if grid_mode=F, the default)"
-        b_I: "real 2d array; The 'bias' term described in eqn 27 of Kirk, Rassat, Host Bridle. (if grid_mode=T)"
-        r_I: "real 2d array; The cross-correlation 'bias' term described in eqn 28 of Kirk, Rassat, Host Bridle. (if grid_mode=T)"
+        z:
+            meaning: Redshift values ofsamples (if grid_mode=F, the default)
+            type: real 1d
+        k_h:
+            meaning: Wavenumber k values of samples in units of Mpc/h (if grid_mode=F, the default)
+            type: real 1d
+        b_I:
+            meaning: The 'bias' term described in eqn 27 of Kirk, Rassat, Host Bridle.
+                (if grid_mode=T)
+            type: real 2d
+        r_I:
+            meaning: The cross-correlation 'bias' term described in eqn 28 of Kirk,
+                Rassat, Host Bridle. (if grid_mode=T)
+            type: real 2d

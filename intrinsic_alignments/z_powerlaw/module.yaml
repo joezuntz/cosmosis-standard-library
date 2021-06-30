@@ -1,15 +1,15 @@
 #This is a template for module description files
 name: ia_z_powerlap
-version: "2.0"
-purpose: ""
-url: ""
+version: '2.0'
+purpose: ''
+url: ''
 interface: ia_z_powerlaw.py
 attribution: [CosmoSIS team, Niall Maccrann]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - "Modify the intrinsic alignment power spectra to have a power-law dependence in (1+z)"
+-   Modify the intrinsic alignment power spectra to have a power-law dependence in
+    (1+z)
 
 explanation: |
     "
@@ -24,32 +24,65 @@ explanation: |
     P_GI(k,z) -> (1+z)^alpha P_GI(k,z)
 
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    name: "String; a suffix to use for the input/output sections"
-
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    name:
+        meaning: A suffix to use for the input/output sections
+        type: str
+        default:
 inputs:
     intrinsic_alignment_parameters:
-        alpha:  "Real; power law index to apply."
+        alpha:
+            meaning: Power law index to apply.
+            type: real
+            default:
     intrinsic_power:
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        z: "real vectorarray; redshift values of P(k,z) samples"
-        P_K: "real 2d array; spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}"
+        k_h:
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        P_K:
+            meaning: Spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     matter_intrinsic_power:
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h"
-        z: "real vectorarray; redshift values of P(k,z) samples"
-        P_K: "real 2d array; spectrum of matter-intrinsic cross-power at samples in (Mpc/h)^{-3}"
-
+        k_h:
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h
+            type: real 1d
+            default:
+        z:
+            meaning: Array; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        P_K:
+            meaning: Spectrum of matter-intrinsic cross-power at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
 outputs:
     intrinsic_power:
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h (unchanged from input)"
-        z: "real vectorarray; redshift values of P(k,z) samples (unchanged from input)"
-        P_K: "real 2d array; updated spectrum of intrinsic-intrinsic power at samples in (Mpc/h)^{-3}"
+        k_h:
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h (unchanged from
+                input)
+            type: real 1d
+        z:
+            meaning: Redshift values of P(k,z) samples (unchanged from input)
+            type: real 1d
+        P_K:
+            meaning: ; updated spectrum of intrinsic-intrinsic power at samples in
+                (Mpc/h)^{-3}
+            type: real 2d
     matter_intrinsic_power:
-        k_h: "real vector; k values of P(k,z) samples in units of Mpc/h (unchanged from input)"
-        z: "real vectorarray; redshift values of P(k,z) samples (unchanged from input)"
-        P_K: "real 2d array; updated spectrum of matter-intrinsic cross-power at samples in (Mpc/h)^{-3}"
+        k_h:
+            meaning: Wavenumber k values of P(k,z) samples in units of Mpc/h (unchanged from
+                input)
+            type: real 1d
+        z:
+            meaning: Redshift values of P(k,z) samples (unchanged from input)
+            type: real 1d
+        P_K:
+            meaning: Updated spectrum of matter-intrinsic cross-power at samples
+                in (Mpc/h)^{-3}
+            type: real 2d

@@ -1,17 +1,16 @@
 #This is a template for module description files
 name: balmes
 version: 1
-purpose: ""
-url: ""
+purpose: ''
+url: ''
 interface: balmes.py
-attribution: ["I. Balmes & P.S. Corasaniti"]
-rules:
-    "Please cite the relevant papers if you use this module."
+attribution: [I. Balmes & P.S. Corasaniti]
+rules: Please cite the relevant papers if you use this module.
 cite:
-    - "arXiv:1206.5801 "
+-   'arXiv:1206.5801 '
 
 assumptions:
-    - "Strong lensing modelling details"
+-   Strong lensing modelling details
 
 explanation: |
     "
@@ -19,19 +18,21 @@ explanation: |
 
     This module uses a likelihood tabulated from their paper.
      "
-
-# List of parameters that can go in the params.ini file in the section for this module
 params:
-    data_file: "String; dir for data files. Data file containing 2 columns H0 and P. You should use the file taken from arXiv:1206.5801 and provided in CosmoSIS under the name balmes.txt unless you want to use a different dataset "
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    data_file:
+        meaning: Dir for data files. Data file containing 2 columns H0 and P. You
+            should use the file taken from arXiv:1206.5801 and provided in CosmoSIS
+            under the name balmes.txt unless you want to use a different dataset
+        type: str
+        default: modue_dir/balmes.txt
 inputs:
     cosmological_parameters:
-        h0:  "Real, Hubble parameter/100 km/s/Mpc "
-
-
+        h0:
+            meaning: Hubble parameter/100 km/s/Mpc
+            type: real
+            default:
 outputs:
     likelihoods:
-        balmes_sl_like: "1D real, likelihood of this strong lensing system given h0"
-
+        balmes_sl_like:
+            meaning: Likelihood of this strong lensing system given h0
+            type: real 1d

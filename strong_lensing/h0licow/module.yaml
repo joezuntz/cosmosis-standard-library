@@ -1,29 +1,28 @@
 #This is a template for module description files
 name: h0licow
 version: 1
-purpose: ""
-url: ""
+purpose: ''
+url: ''
 interface: time_delay_interface.py
 attribution:
-    - "Original code by Stefan Taubenberger and Sherry Suyu, see final citation link"
-    - Adapted from MontePython version by CosmoSIS team
+-   Original code by Stefan Taubenberger and Sherry Suyu, see final citation link
+-   Adapted from MontePython version by CosmoSIS team
 
-rules:
-    ""
+rules: ''
 cite:
-    - Suyu et al., 2010, ApJ, 711, 201 
-    - Suyu et al., 2014, ApJ, 788, L35
-    - Wong et al., 2017, MNRAS, 465, 4895
-    - Birrer et al., 2019, MNRAS, 484, 4726
-    - Chen et al., 2019, MNRAS, 490, 1743
-    - Jee et al., 2019, Science, 365, 1134
-    - Rusu et al., 2019, arXiv:1905.09338
-    - Wong et al., 2019, arXiv:1907.04869
-    - https://zenodo.org/record/3632967#.YDOUEC2cY4d
+-   Suyu et al., 2010, ApJ, 711, 201
+-   Suyu et al., 2014, ApJ, 788, L35
+-   Wong et al., 2017, MNRAS, 465, 4895
+-   Birrer et al., 2019, MNRAS, 484, 4726
+-   Chen et al., 2019, MNRAS, 490, 1743
+-   Jee et al., 2019, Science, 365, 1134
+-   Rusu et al., 2019, arXiv:1905.09338
+-   Wong et al., 2019, arXiv:1907.04869
+-   https://zenodo.org/record/3632967#.YDOUEC2cY4d
 
 assumptions:
-    - "Strong lensing modelling details."
-    - "Time delay distance structure"
+-   Strong lensing modelling details.
+-   Time delay distance structure
 
 explanation: |
     "
@@ -34,34 +33,82 @@ explanation: |
     using the data_ parameters.  The default configuration matches that
     in the released MontePython code.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module
 params:
-    data_dt_b1608: "(int, default=0), whether to include the dt_b1608 measurement in the likelihood (0=no, 1=yes)"
-    data_dd_dt_b1608: "(int, default=1), whether to include the dd_dt_b1608 measurement in the likelihood (0=no, 1=yes)"
-    data_dt_j1206: "(int, default=0), whether to include the dt_j1206 measurement in the likelihood (0=no, 1=yes)"
-    data_dd_dt_j1206: "(int, default=1), whether to include the dd_dt_j1206 measurement in the likelihood (0=no, 1=yes)"
-    data_dt_wfi2033: "(int, default=1), whether to include the dt_wfi2033 measurement in the likelihood (0=no, 1=yes)"
-    data_dt_he0435: "(int, default=1), whether to include the dt_he0435 measurement in the likelihood (0=no, 1=yes)"
-    data_dt_pg1115: "(int, default=0), whether to include the dt_pg1115 measurement in the likelihood (0=no, 1=yes)"
-    data_dd_dt_pg1115: "(int, default=1), whether to include the dd_dt_pg1115 measurement in the likelihood (0=no, 1=yes)"
-    data_dt_rxj1131: "(int, default=0), whether to include the dt_rxj1131 measurement in the likelihood (0=no, 1=yes)"
-    data_dd_dt_rxj1131: "(int, default=1), whether to include the dd_dt_rxj1131 measurement in the likelihood (0=no, 1=yes)"
-    data_dir: "(str, default=PWD/timedelay_6lenses), location of data files"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    data_dt_b1608:
+        meaning: Whether to include the dt_b1608 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 0
+    data_dd_dt_b1608:
+        meaning: Whether to include the dd_dt_b1608 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 1
+    data_dt_j1206:
+        meaning: Whether to include the dt_j1206 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 0
+    data_dd_dt_j1206:
+        meaning: Whether to include the dd_dt_j1206 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 1
+    data_dt_wfi2033:
+        meaning: Whether to include the dt_wfi2033 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 1
+    data_dt_he0435:
+        meaning: Whether to include the dt_he0435 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 1
+    data_dt_pg1115:
+        meaning: Whether to include the dt_pg1115 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 0
+    data_dd_dt_pg1115:
+        meaning: Whether to include the dd_dt_pg1115 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 1
+    data_dt_rxj1131:
+        meaning: Whether to include the dt_rxj1131 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 0
+    data_dd_dt_rxj1131:
+        meaning: Whether to include the dd_dt_rxj1131 measurement in the likelihood
+            (0=no, 1=yes)
+        type: int
+        default: 1
+    data_dir:
+        meaning: Location of data files
+        type: str
+        default: module_dir/timedelay_6lenses
 inputs:
     distances:
-        z : "1D real array, redshifts of samples"
-        d_a : "1D real array, angular diameter distance in Mpc"
-
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
     cosmological_parameters:
-        omega_k: "real, curvature density fraction today (default 0.0)"
-        hubble:  "real, hubble parameter H0 (km/s/Mpc)"
-
-
+        omega_k:
+            meaning: Curvature density fraction today
+            type: real
+            default: 0.0
+        hubble:
+            meaning: Hubble parameter H0 (km/s/Mpc)
+            type: real
+            default:
 outputs:
     likelihoods:
-        h0licow_like: "(float) total likelihood of system"
-
+        h0licow_like:
+            meaning: Total likelihood of system
+            type: real

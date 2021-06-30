@@ -1,46 +1,79 @@
 #This is a template for module description files
 name: shear_xi
-version: "1.0"
-purpose: "Compute the likelihood of a tomographic shear correlation function data set"
-url: ""
+version: '1.0'
+purpose: Compute the likelihood of a tomographic shear correlation function data set
+url: ''
 interface: xipm_like_interface.py
-attribution: ["Niall Maccrann"]
-rules: ""
+attribution: [Niall Maccrann]
+rules: ''
 cite: []
 assumptions:
-    - "Gaussian likelihood of shear xi"
-    - "Redshift distribution used correctly matches tomographic bins"
+-   Gaussian likelihood of shear xi
+-   Redshift distribution used correctly matches tomographic bins
 
 explanation: |
-        "
-        DEPRECATED: This module is not recommended for use any more; use the 2pt_like likelihood instead.
+    "
+    DEPRECATED: This module is not recommended for use any more; use the 2pt_like likelihood instead.
 
-        Several surveys are measuring the cosmic shear 2-pt correlation functions xi_+(theta) 
-        and xi_minus(theta) of the gravitational lensing in tomographic redshift bins.
+    Several surveys are measuring the cosmic shear 2-pt correlation functions xi_+(theta) 
+    and xi_minus(theta) of the gravitational lensing in tomographic redshift bins.
 
-        This module calculates the likelihood of theoretical xi(theta) values
-        values given a data set.  It assumes a simple Gaussian likelihood, so the only
-        complexities are:
-           selecting exactly which data to use - angular ranges, whether to use xi_minus
-           if the covariance matrix came from simulations this
-             adds noise to the covariance matrix - this the number of sims can be set
-        "
+    This module calculates the likelihood of theoretical xi(theta) values
+    values given a data set.  It assumes a simple Gaussian likelihood, so the only
+    complexities are:
+       selecting exactly which data to use - angular ranges, whether to use xi_minus
+       if the covariance matrix came from simulations this
+         adds noise to the covariance matrix - this the number of sims can be set
+    "
 params:
-    data_file: "string, file containing the data vector. Each row should be one angle, and then the ordering for e.g. three bins is: xip(0,1) xip(0,2) xip(1,1) xip(1,2) xip(2,2) xim(0,0) xim(0,1) xim(0,2) xim(1,1) xim(1,2) xim(2,2)"
-    covmat_file: "string, file containing the covariance matrix, either text file or numpy npy file. Ordering goes down the columns of the data vector first."
-    n_z_bins: "integer, number of redshift bins to use"
-    cov_num_rlzn: "integer; default=0, number of realizations to assume for covariance simulations. Zero means no simulation errors."
-    plus_only: "boolean; default=False, whether to use only xi+ and ignore xi-"
-    theta_mins: "string; default=empty,  Comma separated minimum angles in arcmin for the different bin pairs"
-    theta_maxs: "string; default=empty,  Comma separated maximum angles in arcmin for the different bin pairs"
-
-
-inputs: 
+    data_file:
+        meaning: 'File containing the data vector. Each row should be one angle, and
+            then the ordering for e.g. three bins is: xip(0,1) xip(0,2) xip(1,1) xip(1,2)
+            xip(2,2) xim(0,0) xim(0,1) xim(0,2) xim(1,1) xim(1,2) xim(2,2)'
+        type: str
+        default:
+    covmat_file:
+        meaning: File containing the covariance matrix, either text file or numpy
+            npy file. Ordering goes down the columns of the data vector first.
+        type: str
+        default:
+    n_z_bins:
+        meaning: Number of redshift bins to use
+        type: int
+        default:
+    cov_num_rlzn:
+        meaning: Number of realizations to assume for covariance simulations. Zero
+            means no simulation errors.
+        type: int
+        default: 0
+    plus_only:
+        meaning: Whether to use only xi+ and ignore xi-
+        type: bool
+        default: false
+    theta_mins:
+        meaning: Comma separated minimum angles in arcmin for the different bin pairs
+        type: str
+        default: 
+    theta_maxs:
+        meaning: Comma separated maximum angles in arcmin for the different bin pairs
+        type: str
+        default: 
+inputs:
     shear_xi:
-        theta: "1D real array, theta values of theory correlation functions"
-        xi_plus_i_j: "xi_plus meausurements for i,j=(1..n_z_bins)"
-        xi_minus_i_j: "xi_minus meausurements for i,j=(1..n_z_bins)"
-
+        theta:
+            meaning: Theta values of theory correlation functions
+            type: real 1d
+            default:
+        xi_plus_i_j:
+            meaning: Xi_plus meausurements for i,j=(1..n_z_bins)
+            type: real 1d
+            default:
+        xi_minus_i_j:
+            meaning: Xi_minus meausurements for i,j=(1..n_z_bins)
+            type: real 1d
+            default:
 outputs:
     likelihoods:
-        xipm_like: "real, likelihood of supplied theory correlation functions"
+        xipm_like:
+            meaning: Likelihood of supplied theory correlation functions
+            type: real

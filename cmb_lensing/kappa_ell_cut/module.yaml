@@ -1,39 +1,67 @@
 #This is a template for module description files
-name: "kappa_ell_cut"
-version: "1.0"
-purpose: "Apply minimum and maximum ell to cross-power spectra with CMB kappa."
-url: ""
-interface: "kappa_beam.py"
+name: kappa_ell_cut
+version: '1.0'
+purpose: Apply minimum and maximum ell to cross-power spectra with CMB kappa.
+url: ''
+interface: kappa_beam.py
 attribution: []
-rules:
-    "You can do what you want with this file."
+rules: You can do what you want with this file.
 cite: []
-
 assumptions:
-    - ""
+-   ''
 
 explanation: |
     "It is often useful to apply a maximum or minimum ell cut to a CMB lensing map before measuring correlation functions with galaxies and shears.  If such an ell-cut is applied, we must account for it on the modeling side.  This module applies the lmin/lmax cut to the relevant cross-power spectra."
-
 params:
-    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blank if none."
-    galkappa_section: "section name where harmonic-space cross-spectrum between galaxy density and CMB kappa is stored.  Leave blank if none." 
-    Lmin: "minimum ell to impose for CMB kappa cross-spectra."
-    Lmax: "maximum ell to impose for CMB kappa cross-spectra."
-
-
+    shearkappa_section:
+        meaning: Section name where harmonic-space cross-spectrum between galaxy shear
+            and CMB kappa is stored.  Leave blank if none.
+        type: str
+        default:
+    galkappa_section:
+        meaning: Section name where harmonic-space cross-spectrum between galaxy density
+            and CMB kappa is stored.  Leave blank if none.
+        type: str
+        default:
+    lmin:
+        meaning: Minimum ell to impose for CMB kappa cross-spectra.
+        type: 0
+        default:
+    lmax:
+        meaning: Maximum ell to impose for CMB kappa cross-spectra.
+        type: int
+        default: 999999
 inputs:
     shear_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell."
+        ell:
+            meaning: Angular frequency values at which Shear-kappa c_ell is evaluated
+            type: int 1d
+            default:
+        bin_{i}_{j}:
+            meaning: Shear-kappa C_ell calculated at corresponding ell for relevant i and j combinations
+            type: real 1d
+            default:
     galaxy_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell."
-
+        ell:
+            meaning: Angular frequency values at which Galaxy-kappa c_ell is evaluated
+            type: int 1d
+            default:
+        bin_{i}_{j}:
+            meaning: Galaxy-kappa C_ell calculated at corresponding ell for relevant i and j combinations
+            type: real 1d
+            default:
 outputs:
     shear_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell after smoothing."
+        ell:
+            meaning: Angular frequency values at which Shear-kappa c_ell is evaluated
+            type: int 1d
+        bin_{i}_{j}:
+            meaning: Shear-kappa C_ell, set to zero outside cuts
+            type: real 1d
     galaxy_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell after smoothing."
+        ell:
+            meaning: Values at which c_ell is evaluated
+            type: int 1d
+        bin_{i}_{j}:
+            meaning: Galaxy-kappa C_ell, set to zero outside cuts
+            type: real 1d

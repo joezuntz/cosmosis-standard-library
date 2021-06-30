@@ -1,49 +1,91 @@
 name: extrapolate
 version: 1.0
-purpose: "Simple log-linear extrapolation of P(k) to high k"
+purpose: Simple log-linear extrapolation of P(k) to high k
 url: https://bitbucket.org/joezuntz/cosmosis
 interface: extrapolate_power.py
 attribution: [CosmoSIS Team]
 rules: []
 cite: []
-
 assumptions:
-    - Linear extrapolation in log-space of P(k); this is not a great approximation
+-   Linear extrapolation in log-space of P(k); this is not a great approximation
 
 explanation: |
-  It is sometimes useful to extend matter power spectra P(k) to high values
-  of k. These values are unphysical but are useful for numerical stability.
+    It is sometimes useful to extend matter power spectra P(k) to high values
+    of k. These values are unphysical but are useful for numerical stability.
 
-  This module does a simple linear extrapolation in log-log space of P(k)
-  out to a specified kmin and kmax.  If the data already extends that far then
-  it does not do anything.
+    This module does a simple linear extrapolation in log-log space of P(k)
+    out to a specified kmin and kmax.  If the data already extends that far then
+    it does not do anything.
 
-  It tries both linear and non-linear spectra but does not complain if either or 
-  both are not present.
-
+    It tries both linear and non-linear spectra but does not complain if either or 
+    both are not present.
 params:
-    kmax:  "real, the max wavenumber k to extrapolate to"
-    kmin:  "real, the min wavenumber k to extrapolate to (default 1e10 - high enough for no extrapolation)"
-    nmin:  "integer, the number of points to add at low k (default 50)"
-    nmax:  "integer, the number of points to add at high k (default 200)"
-    npoint: "integer, the number of end k-samples to use to fit the line at the end (default 3)"
-
+    kmax:
+        meaning: The max wavenumber k to extrapolate to
+        type: real
+        default:
+    kmin:
+        meaning: The min wavenumber k to extrapolate to (default is high enough
+            for no extrapolation)
+        type: real
+        default: 1.0e10
+    nmin:
+        meaning: The number of points to add at low k
+        type: int
+        default: 50
+    nmax:
+        meaning: The number of points to add at high k
+        type: int
+        default: 200
+    npoint:
+        meaning: The number of end k-samples to use to fit the slope at the end
+        type: int
+        default: 3
 inputs:
     matter_power_lin:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h."
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3."
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: Inpu k wavenumbers of samples in Mpc/h.
+            type: real 1d
+            default:
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3.
+            type: real 2d
+            default:
     matter_power_nl:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h."
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3."
-
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: Inpu k wavenumbers of samples in Mpc/h.
+            type: real 1d
+            default:
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3.
+            type: real 2d
+            default:
 outputs:
     matter_power_lin:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h, extended to kmax"
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, extended to kmax"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: Inpu k wavenumbers of samples in Mpc/h, extended to kmax
+            type: real 1d
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3, extended to kmax
+            type: real 2d
     matter_power_nl:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h, extended to kmax"
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, extended to kmax"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: Inpu k wavenumbers of samples in Mpc/h, extended to kmax
+            type: real 1d
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3, extended to kmax
+            type: real 2d

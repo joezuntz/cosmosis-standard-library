@@ -21,7 +21,7 @@ def apply_lcut(block, section, Lmin, Lmax):
     w   = np.ones(ell.shape[0])
     w[ell<Lmin]=0
     w[ell>Lmax+1]=0
-    for bini in xrange(0,n_other):
+    for bini in range(0,n_other):
         C_ell_orig = block[section, 'bin_{}_1'.format(bini+1)]
         beamed_C_ell = C_ell_orig*w
         block[section, 'bin_{}_1'.format(bini+1)] = beamed_C_ell
