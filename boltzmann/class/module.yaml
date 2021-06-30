@@ -48,13 +48,13 @@ params:
         type: int
         default: 50.0
     zmax:
-        meaning: Max value to save P(k,z) and distances
-        type: ???
+        meaning: Max redshift to save P(k,z) and distances
+        type: real
         default: 4.0
 inputs:
     cosmological_parameters:
         ombh2:
-            meaning: Physbaryon density fraction today, Omega_b * h**2
+            meaning: Physical baryon density fraction today, Omega_b * h**2
             type: real
             default:
         omch2:
@@ -128,18 +128,18 @@ outputs:
             meaning: Angular frequencies. Only if mode=cmb or all
             type: int 1d
         tt:
-            meaning: Ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         ee:
-            meaning: Ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         bb:
-            meaning: Ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         te:
-            meaning: Ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d

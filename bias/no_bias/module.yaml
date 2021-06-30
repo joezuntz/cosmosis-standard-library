@@ -25,6 +25,9 @@ explanation: |
     In this module, b=1.  It generates the galaxy power and
     matter-galaxy cross-power from the non-linear power spectrum, just by copying them.
 
+    This can be useful if you plan to apply a more complicated bias model to calculated
+    observables later, for example.
+
     Optionally, if it finds you have generated the matter-intrinsic alignment cross-power,
     it will calculate the galaxy-intrinsic cross power from it.
     "
@@ -32,11 +35,11 @@ params: {}
 inputs:
     matter_power_nl:
         k_h:
-            meaning: Wavenumber in h/Mpc
+            meaning: Wavenumber in h/Mpc of NL matter power
             type: real 1d
             default:
         z:
-            meaning: Redshift
+            meaning: Redshift of NL matter power
             type: real 1d
             default:
         P_k:
@@ -45,7 +48,7 @@ inputs:
             default:
     matter_intrinsic_power:
         k_h:
-            meaning: Optional, wavenumber in h/Mpc
+            meaning: Wavenumber in h/Mpc of matter-intrinsic power (optional)
             type: real 1d
             default:
         z:

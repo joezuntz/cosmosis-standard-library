@@ -45,7 +45,7 @@ params:
         type: real
         default:
     dlogm:
-        meaning: Log10(Mass) spacing
+        meaning: log10(Mass) spacing
         type: real
         default:
     logm:
@@ -72,8 +72,8 @@ params:
         default:
     matter_power:
         meaning: Name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl
-        type: ???
-        default:
+        type: str
+        default: matter_power_lin
     use_m:
         meaning: Uses the mass values as a base for the computation instead of R
         type: bool
@@ -83,7 +83,7 @@ params:
         type: bool
         default: false
 inputs:
-    matter_power:
+    matter_power_lin:
         k_h:
             meaning: Sample values of linear spectrum in Mpc/h.  Section name specified
                 by parameter in ini file.
@@ -102,14 +102,14 @@ inputs:
 outputs:
     sigma_cpp:
         R:
-            meaning: Scale R of output in Mpc/h
+            meaning: Scale R of output samples in Mpc/h
             type: real 1d
         logm:
-            meaning: Of log10(Mass) [in M_sun/h] output
+            meaning: log10(Mass) samples [in M_sun/h]; matches R
             type: real 1d
         z:
-            meaning: Redshift of output
+            meaning: Redshift of output samples
             type: real 1d
         sigma:
-            meaning: Variance sigma(R,z)
+            meaning: Variance sigma(R,z) of samples
             type: real 2d

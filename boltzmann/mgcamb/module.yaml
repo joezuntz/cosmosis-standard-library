@@ -53,7 +53,7 @@ params:
         default:
     feedback:
         meaning: Amount of output to print.  0 for no feedback.  1 for basic, 2 for
-            extended, maybe higher?
+            extended.
         type: int
         default:
     use_tabulated_w:
@@ -66,33 +66,32 @@ params:
         default:
     do_tensors:
         meaning: Include tensor modes
-        type: ???
+        type: bool
         default: false
     zmin:
         meaning: Min value to save P(k,z)
-        type: ???
-        default: 0
+        type: real
+        default: 0.0
     zmax:
         meaning: Max value to save P(k,z)
-        type: ???
-        default: 4
+        type: real
+        default: 4.0
     nz:
-        meaning: Number of z values to save P(k,z) (default 401, so that dz=0.01)
-        type: ???
-        default:
+        meaning: Number of z values to save P(k,z) (default gives dz=0.01)
+        type: int
+        default: 401
     do_nonlinear:
         meaning: Apply non-linear halofit corrections to matter-power.  Relevant only
             for lensing right now
-        type: ???
+        type: bool
         default: false
     do_lensing:
         meaning: Include lensing of CMB, and save C_ell phi-phi
-        type: ???
+        type: bool
         default: false
     high_ell_template:
-        meaning: Required for lensing - set to the file included in the camb dir (no
-            default)
-        type: ???
+        meaning: Required for lensing - set to the file included in the camb dir
+        type: str
         default:
 inputs:
     modified_gravity:
@@ -162,7 +161,7 @@ inputs:
             type: real
             default:
         omega_c:
-            meaning: Cdm density fraction today
+            meaning: CDM density fraction today
             type: real
             default:
         omega_k:
@@ -235,11 +234,11 @@ inputs:
             type: real
             default: 0.24
         w:
-            meaning: W(z=0) equation of state of dark energy
+            meaning: Equation of state of dark energy w(z=0)
             type: real
             default: -1.0
         wa:
-            meaning: Equation of state parameter w(z) = w_0 + w_a z / (1+z)
+            meaning: Equation of state parameter in w(z) = w_0 + w_a z / (1+z)
             type: real
             default: 0.0
         cs2_de:
@@ -252,13 +251,13 @@ outputs:
             meaning: Redshifts of samples
             type: real 1d
         k_h:
-            meaning: K wavenumbers of samples in Mpc/h.
+            meaning: Wavenumber k samples in Mpc/h.
             type: real 1d
         D:
             meaning: D(k,z) modification to first perturbed Einstein equation
             type: real 2d
         Q:
-            meaning: Q(k,z) modification to first perturbed Einstein equation
+            meaning: Q(k,z) modification to second perturbed Einstein equation
             type: real 2d
     cosmological_parameters:
         sigma_8:
@@ -324,7 +323,7 @@ outputs:
             meaning: Redshifts of samples. Only if mode=all
             type: real 1d
         k_h:
-            meaning: K wavenumbers of samples in Mpc/h. Only if mode=all
+            meaning: Wavenumber k of samples in Mpc/h. Only if mode=all
             type: real 1d
         delta_cdm:
             meaning: Linear CDM transfer function at samples. Only if mode=all
@@ -334,19 +333,19 @@ outputs:
             meaning: Angular frequencies. Only if mode=cmb or all
             type: int 1d
         tt:
-            meaning: Ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         ee:
-            meaning: Ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         bb:
-            meaning: Ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         te:
-            meaning: Ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
+            meaning: ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
                 all
             type: real 1d
         PhiPhi:

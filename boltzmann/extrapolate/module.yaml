@@ -25,10 +25,10 @@ params:
         type: real
         default:
     kmin:
-        meaning: The min wavenumber k to extrapolate to (default 1e10 - high enough
+        meaning: The min wavenumber k to extrapolate to (default is high enough
             for no extrapolation)
         type: real
-        default:
+        default: 1.0e10
     nmin:
         meaning: The number of points to add at low k
         type: int
@@ -38,7 +38,7 @@ params:
         type: int
         default: 200
     npoint:
-        meaning: The number of end k-samples to use to fit the line at the end
+        meaning: The number of end k-samples to use to fit the slope at the end
         type: int
         default: 3
 inputs:

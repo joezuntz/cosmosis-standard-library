@@ -17,56 +17,51 @@ params:
     shearkappa_section:
         meaning: Section name where harmonic-space cross-spectrum between galaxy shear
             and CMB kappa is stored.  Leave blank if none.
-        type: ???
+        type: str
         default:
     galkappa_section:
         meaning: Section name where harmonic-space cross-spectrum between galaxy density
             and CMB kappa is stored.  Leave blank if none.
-        type: ???
+        type: str
         default:
     beam_sigma_arcmin:
         meaning: Sigma of Gaussian for smoothing CMB kappa (in arcminutes)
-        type: ???
+        type: real
         default:
     beam_fwhm_arcmin:
         meaning: FWHM of Gaussian for smoothing CMB kappa (in arcminutes)
-        type: ???
+        type: real
         default:
 inputs:
     shear_cmbkappa_cl:
         ell:
-            meaning: Values at which c_ell is evaluated
+            meaning: Angular frequency values at which Shear-kappa c_ell is evaluated
             type: int 1d
             default:
         bin_{i}_{j}:
-            meaning: S for relevant i and j combinations.  C_ell calculated at corresponding
-                ell.
+            meaning: Shear-kappa C_ell calculated at corresponding ell for relevant i and j combinations
             type: real 1d
             default:
     galaxy_cmbkappa_cl:
         ell:
-            meaning: Values at which c_ell is evaluated
+            meaning: Angular frequency values at which Galaxy-kappa c_ell is evaluated
             type: int 1d
             default:
         bin_{i}_{j}:
-            meaning: S for relevant i and j combinations.  C_ell calculated at corresponding
-                ell.
+            meaning: Galaxy-kappa C_ell calculated at corresponding ell for relevant i and j combinations
             type: real 1d
             default:
 outputs:
     shear_cmbkappa_cl:
         ell:
-            meaning: Values at which c_ell is evaluated
+            meaning: Angular frequency values at which Shear-kappa c_ell is evaluated
             type: int 1d
         bin_{i}_{j}:
-            meaning: S for relevant i and j combinations.  C_ell calculated at corresponding
-                ell after smoothing.
-            type: real 1d
+            meaning: Shear-kappa C_ell smoothed by beam
     galaxy_cmbkappa_cl:
         ell:
             meaning: Values at which c_ell is evaluated
             type: int 1d
         bin_{i}_{j}:
-            meaning: S for relevant i and j combinations.  C_ell calculated at corresponding
-                ell after smoothing.
+            meaning: Galaxy-kappa C_ell smoothed by beam
             type: real 1d

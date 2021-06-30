@@ -45,15 +45,15 @@ params:
         default:
     matter_power:
         meaning: Name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl
-        type: ???
-        default:
+        type: str
+        default: matter_power_lin
     crop_klim:
         meaning: Crops the klimits of the sigma integral to max(0.01/R, kmin), min(100/R,
             kmax)
         type: bool
         default: true
 inputs:
-    matter_power:
+    matter_power_lin:
         k_h:
             meaning: Sample values of linear spectrum in Mpc/h.  Section name specified
                 by parameter in ini file.

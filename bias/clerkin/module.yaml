@@ -114,14 +114,14 @@ outputs:
             type: real 2d
     bias_field:
         k_h:
-            meaning: Wavenumber in h/Mpc
+            meaning: Wavenumber samples in h/Mpc of bias b(k, z)
             type: real 1d
         z:
-            meaning: Redshift
+            meaning: Redshift samples
             type: real 1d
         b:
-            meaning: Galaxy bias
+            meaning: Galaxy bias b(k, z)
             type: real 2d
         r:
-            meaning: Stochastic bias (identically 1 for these models)
+            meaning: Stochastic bias r(k, z); identically 1 for these models.
             type: real 2d
