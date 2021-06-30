@@ -57,6 +57,7 @@ outputs:
             type: int 1d
         bin_{i}_{j}:
             meaning: Shear-kappa C_ell, set to zero outside cuts
+            type: real 1d
     galaxy_cmbkappa_cl:
         ell:
             meaning: Values at which c_ell is evaluated

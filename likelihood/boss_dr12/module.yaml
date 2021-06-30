@@ -5,7 +5,7 @@ purpose: Compute the likelihood of the supplied expansion and growth history aga
     BOSS DR12 data
 url: https://www.sdss3.org/science/boss_publications.php
 interface: boss_dr12.py
-attribution:
+attribution: ['CosmoSIS Team']
 rules: ''
 cite:
 -   ''

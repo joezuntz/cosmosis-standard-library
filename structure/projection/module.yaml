@@ -139,7 +139,6 @@ inputs:
             type: real
             default:
     wl_number_density:
-        NOTE:
         z:
             meaning: Redshift samples of binned n(z). A different section name to wl_number_density will be used depending
                 on the options chosen (see above)

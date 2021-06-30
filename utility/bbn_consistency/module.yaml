@@ -30,7 +30,9 @@ params:
         meaning: Filename for ombh2,DeltaN,YHe data. ( file)
         type: str
         default: included
-    input_name: delta_neff
+    input_name:
+        default: delta_neff
+        type: str
         meaning: Which parameter to start from, either massless_nu or delta_neff
 inputs:
     cosmological_parameters:
