@@ -40,4 +40,4 @@ outputs:
     likelihoods:
         RIESS16_LIKE:
             meaning: Gaussian likelihood value of supplied parameters
-            type: ???
+            type: real

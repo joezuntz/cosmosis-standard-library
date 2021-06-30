@@ -27,10 +27,10 @@ inputs:
     distances:
         cmbshift:
             meaning: CMB Shift parameter
-            type: ???
+            type: real
             default:
 outputs:
     likelihoods:
         shift_like:
             meaning: Combined log-likelihood from all WMAP components
-            type: ???
+            type: real

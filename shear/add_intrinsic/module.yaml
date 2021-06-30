@@ -24,27 +24,27 @@ inputs:
             type: int
             default:
         ell:
-            meaning: ; ell samples of theory
+            meaning: ell samples of theory
             type: real 1d
             default:
         bin_{i}_{j}:
-            meaning: ; for series of i,j values, the shear-shear angular spectra C_ell
+            meaning: Shear-shear angular spectra C_ell for pairs of i,j values
             type: real 1d
             default:
     shear_cl_ii:
         bin_{i}_{j}:
-            meaning: ; for series of i,j values, the intrinsic-intrinsic angular spectra
+            meaning: Intrinsic-intrinsic angular spectra for pairs of i,j values
                 C_ell
             type: real 1d
             default:
     shear_cl_gi:
         bin_{i}_{j}:
-            meaning: ; for series of i,j values, the shear-intrinsic angular spectra
+            meaning: Shear-intrinsic angular spectra for pairs of i,j values
                 C_ell
             type: real 1d
             default:
         bin_{j}_{i}:
-            meaning: ; for series of i,j values, the intrinsic_shear angular spectra
+            meaning: Intrinsic-shear angular spectra for pairs of i,j values
                 C_ell
             type: real 1d
             default:
@@ -54,8 +54,8 @@ outputs:
             meaning: Number of tomographic bins
             type: int
         ell:
-            meaning: ; ell samples of theory
+            meaning: ell samples of theory
             type: real 1d
         bin_{i}_{j}:
-            meaning: ; for series of i,j values, the total angular spectra C_ell
+            meaning: Total angular spectra C_ell for pairs of i,j values
             type: real 1d

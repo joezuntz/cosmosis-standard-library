@@ -9,6 +9,7 @@ rules: []
 cite: ['Comp.Phys.Commun.178:956-971,2008']
 assumptions:
 -   Standard Big Bang Nucleosynthesis
+-   ombh2 within the range of the input data
 
 explanation: |
     "
@@ -29,6 +30,8 @@ params:
         meaning: Filename for ombh2,DeltaN,YHe data. ( file)
         type: str
         default: included
+    input_name: delta_neff
+        meaning: Which parameter to start from, either massless_nu or delta_neff
 inputs:
     cosmological_parameters:
         ombh2:
@@ -36,8 +39,16 @@ inputs:
             type: real
             default:
         delta_neff:
-            meaning: Optional. Extra contribution to neutrino number density
+            meaning: Extra contribution to neutrino number density (if input_name == delta_neff)
             type: real
+            default: 0.0
+        massive_nu:
+            meaning: Effective number of massive neutrinos (if input_name == massless_nu)
+            type: real
+            default:
+        massless_nu:
+            meaning: Number of massless neutrinos (if input_name == massless_nu)
+            type: int
             default:
 outputs:
     cosmological_parameters:

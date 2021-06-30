@@ -33,23 +33,23 @@ params:
         type: str
         default:
     sample:
-        meaning: Optional; If set, look for n(z) in the section called sample, and
+        meaning: If set, look for n(z) in the section called sample, and
             error parameters in sample_errors
         type: str
         default:
     bias_section:
-        meaning: Optional; If set, look for input parameters in this named section
+        meaning: If set, look for input parameters in this named section
             instead of wl_photoz_errors. If not set but sample is set, look in sample_errors
         type: str
         default:
     interpolation:
         meaning: Type of interpolation to use in scipy.interpolate.interp1d
         type: str
-        default: cubic.
+        default: cubic
     per_bin:
-        meaning: Use one value per bin, if False, one value for all bins
+        meaning: Whether to use one value per bin, If False, use one value for all bins.
         type: bool
-        default: t.
+        default: true
 inputs:
     wl_number_density:
         nbin:
@@ -57,21 +57,21 @@ inputs:
             type: int
             default:
         z:
-            meaning: ; redshift sample points of n(z) estimates
+            meaning: Redshift sample points of n(z) estimates
             type: real 1d
             default:
         bin_i:
-            meaning: S; for i=1..nbin. n(z) estimates
+            meaning: n(z)for i=1..nbin. n(z) estimates
             type: real 1d
             default:
     wl_photoz_errors:
         bias_i:
-            meaning: For i=1..nbin if per_bin=T or i=0 otherwise. Bias size for this
+            meaning: For i=1..nbin if per_bin=T or i=0 otherwise. Bias delta-z for this
                 bin.
             type: real
             default:
 outputs:
     wl_number_density:
         bin_i:
-            meaning: S; for i=1..nbin. Modified n(z) estimates replaced old value
+            meaning: n(z) for i=1..nbin. Modified n(z) estimates replaced old value
             type: real 1d

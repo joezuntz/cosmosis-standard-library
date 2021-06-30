@@ -24,7 +24,7 @@ params:
             should use the file taken from arXiv:1206.5801 and provided in CosmoSIS
             under the name balmes.txt unless you want to use a different dataset
         type: str
-        default:
+        default: modue_dir/balmes.txt
 inputs:
     cosmological_parameters:
         h0:

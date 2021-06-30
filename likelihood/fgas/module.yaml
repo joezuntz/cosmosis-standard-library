@@ -17,45 +17,45 @@ params:
     numdatasets:
         meaning: Number of fgas data tables
         type: int
-        default:
-    datasetN with N=1,2,...:
-        meaning: Path to each data file
+        default: 0
+    dataset{N}:
+        meaning: Path to each data file, with N=1,2,...
         type: str
         default:
     cl_cal_mean:
         meaning: Mean of a Gaussian prior to be applied to the fgas calibration nuisance
             parameter. This will be deprecated once the gravitational lensing data
             that we use to direcly constrain this parameter are included in a future
-            version. Default to 0.90 and 0.09.
+            version.
         type: real
-        default:
+        default: 0.90
     cl_cal_sd:
         meaning: Standard deviation of a Gaussian prior to be applied to the fgas
             calibration nuisance parameter. This will be deprecated once the gravitational
             lensing data that we use to direcly constrain this parameter are included
-            in a future version. Default to 0.90 and 0.09.
+            in a future version.
         type: real
-        default:
+        default: 0.09
     fgas_rslope_mean:
         meaning: Mean of a Gaussian prior to be applied to the power-law slope of
-            the cluster fgas profile. Default to 0.442 and 0.035.
+            the cluster fgas profile.
         type: real
-        default:
+        default: 0.442
     fgas_rslope_sd:
         meaning: Standard deviation of a Gaussian prior to be applied to the power-law
-            slope of the cluster fgas profile. Default to 0.442 and 0.035.
+            slope of the cluster fgas profile.
         type: real
-        default:
+        default: 0.035
     cl_lenssys_mean:
         meaning: Mean of a Gaussian prior to be applied to the weak lensing calibration
-            nuisance parameter. Default to 1.000 and 0.069.
+            nuisance parameter.
         type: real
-        default:
+        default: 1.000
     cl_lenssys_sd:
         meaning: Standard deviation of a Gaussian prior to be applied to the weak
-            lensing calibration nuisance parameter. Default to 1.000 and 0.069.
+            lensing calibration nuisance parameter.
         type: real
-        default:
+        default: 0.069
 inputs:
     cosmological_parameters:
         baryon_fraction:
@@ -118,7 +118,7 @@ inputs:
             meaning: Nuisance parameter for weak graviational lensing masses
             type: real
             default:
-        cl_lnMwl_N:
+        cl_lnMwl_{N}:
             meaning: With N=1,2,...,12 log masses for the clusters where we have gravitational
                 lensing data
             type: real

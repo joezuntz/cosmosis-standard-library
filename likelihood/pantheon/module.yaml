@@ -34,85 +34,80 @@ explanation: |
     "
 params:
     data_file:
-        meaning: Optional. File containing supernova measurements ( dir + /lcparam_DS17f.txt)
+        meaning: Optional. File containing supernova measurements
         type: str
-        default: module
+        default: module_dir/lcparam_DS17f.txt
     covmat_file:
-        meaning: Optional. File containing supernova measurements ( dir + /lcparam_DS17f.txt)
+        meaning: Optional. File containing supernova measurements
         type: str
-        default: module
+        default: module_dir/lcparam_DS17f.txt
     x_section:
-        meaning: Optional.  Use to override the default datablock section for input
-            theory redshift
+        meaning: Datablock section for input theory redshift
         type: str
-        default:
+        default: distances
     x_name:
-        meaning: Optional.  Use to override the default datablock name for input theory
-            redshift
+        meaning: Datablock name for input theory redshift
         type: str
-        default:
+        default: z
     y_section:
-        meaning: Optional.  Use to override the default datablock section for input
-            theory distance modulus
+        meaning: Datablock section for input theory distance modulus
         type: str
-        default:
+        default: distances
     y_name:
-        meaning: Optional.  Use to override the default datablock name for input theory
-            distance modulus
+        meaning: Datablock name for input theory distance modulus
         type: str
-        default:
+        default: mu
     like_name:
-        meaning: Optional.  Use to override the default named for the saved output
-            likelihood
+        meaning: Named for the saved output likelihood
         type: str
-        default:
+        default: pantheon
     likelihood_only:
-        meaning: Optional.  Skip saving everything except the likelihood.  This prevents
+        meaning: Skip saving everything except the likelihood.  This prevents
             you from using e.g. the Fisher matrix sampler but can be faster for quick
             likelihoods
         type: bool
-        default:
+        default: false
     include_norm:
         meaning: Include the normalizing constant at the start of the likelihood.  May
             be needed when comparing models.
         type: bool
-        default: f.
+        default: false
 inputs:
     distances:
         z:
-            meaning: Double 1D array, redshifts of calculated theory mu(z)
-            type: ???
+            meaning: Redshifts of calculated theory mu(z)
+            type: real 1d
             default:
         mu:
-            meaning: Double 1D array, distance modulus mu(z) at given redshifts
-            type: ???
+            meaning: Distance modulus mu(z) at given redshifts
+            type: real 1d
             default:
     supernova_params:
         M:
-            meaning: Double, SN IA absolute magnitude
-            type: ???
+            meaning: SN IA absolute magnitude
+            type: real
             default:
 outputs:
     likelihoods:
         pantheon_like:
-            meaning: Double. Gaussian likelihood value of supplied theory mu(z) and
+            meaning: Gaussian likelihood value of supplied theory mu(z) and
                 M
-            type: ???
+            type: real
     data_vector:
         pantheon_covariance:
-            meaning: Double 2D array. Fixed covariance matrix, only if likelihood_only=F
-            type: ???
+            meaning: Fixed covariance matrix, only if likelihood_only=F
+            type: real 2d
         pantheon_data:
-            meaning: Double 1D array. Fixed data vector mu_obs, only if likelihood_only=F
-            type: ???
+            meaning: Fixed data vector mu_obs, only if likelihood_only=F
+            type: real 1d
         pantheon_simulation:
-            meaning: Double 1D array. Simulated data vector including simulated noise
+            meaning: Simulated data vector including simulated noise
                 for e.g. ABC, only if likelihood_only=F
-            type: ???
+            type: real 1d
         pantheon_theory:
-            meaning: Double 1D array. Predicted theory values mu_theory(z_obs) only
+            meaning: Predicted theory values mu_theory(z_obs) only
                 if likelihood_only=F
-            type: ???
+            type: real 1d
         pantheon_chi2:
-            meaning: Double. chi^2 value, only if likelihood_only=F
-            type: ???
+            meaning: chi^2 value, only if likelihood_only=F
+            type: real

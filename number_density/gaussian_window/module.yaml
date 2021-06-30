@@ -16,12 +16,12 @@ explanation: |
      sampling instead of the ini file."
 params:
     z:
-        meaning: Real scalar or vector; redshift(s) of the bins
-        type: ???
+        meaning: Redshift(s) of the bins
+        type: real or real 1d
         default:
     sigma:
-        meaning: Real scalar or vector; width of the bins in redshift
-        type: ???
+        meaning: Width of the bins in redshift
+        type: real or real 1d
         default:
 inputs: {}
 outputs:
@@ -33,8 +33,8 @@ outputs:
             meaning: Number of bins
             type: int
         z:
-            meaning: ; redshift sample values
+            meaning: Redshift sample values
             type: real 1d
-        bin_:
-            meaning: ; n(z) at redshift sample values.  bin_1, bin_2, ...
+        bin_{i}:
+            meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
             type: real 1d

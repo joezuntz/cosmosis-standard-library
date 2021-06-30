@@ -17,17 +17,17 @@ explanation: |
     linear perturbation, delta, with scale factor a: delta(a') = delta(a)*(D(a')/D(a)) and f = dlnD/dlna"
 params:
     zmin:
-        meaning: Min value to save f,D (default = 0.0)
+        meaning: Min value to save f,D
         type: real
-        default:
+        default: 0.0
     zmax:
-        meaning: Max value to save f,D (default = 3.0)
+        meaning: Max value to save f,D
         type: real
-        default:
+        default: 3.0
     dz:
-        meaning: Redshift binsize (default  = 0.01)
+        meaning: Redshift binsize
         type: real
-        default:
+        default: 0.01
     zmax_log:
         meaning: Redshift max for additional z values tacked above zmax, log space
         type: real
@@ -47,20 +47,20 @@ inputs:
             type: real
             default: 1-omega_m
         w:
-            meaning: W(z=0) equation of state of dark energy
+            meaning: Equation of state of dark energy w(z=0)
             type: real
             default: -1.0
         wa:
-            meaning: Equation of state parameter w(z) = w_0 + w_a z / (1+z)
+            meaning: Equation of state parameter in w(z) = w_0 + w_a z / (1+z)
             type: real
             default: 0.0
 outputs:
     growth_parameters:
         d_z:
-            meaning: Linear growth factor D
+            meaning: Linear growth factor D(z)
             type: real 1d
         f_z:
-            meaning: Linear growth rate f
+            meaning: Linear growth rate f(z)
             type: real 1d
         z:
             meaning: Redshift of samples

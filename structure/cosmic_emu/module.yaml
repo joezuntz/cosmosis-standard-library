@@ -37,24 +37,24 @@ params:
     nz:
         meaning: Number of redshift samples.  Note that the code will be interpolating
             between sample values
-        type: ???
+        type: int
         default: 50
 inputs:
     cosmological_parameters:
         ombh2:
-            meaning: Baryon content
+            meaning: Physical baryon content
             type: real
             default:
         ommh2:
-            meaning: Matter content
+            meaning: Physical matter content
             type: real
             default:
         w:
-            meaning: Dark energy EoS.  Optional;
+            meaning: Dark energy equation of state
             type: real
             default: -1.0
         wa:
-            meaning: Dark energy EoS derivative.  Optional;
+            meaning: Dark energy equation of state derivative
             type: real
             default: 0.0
         h0:
@@ -75,7 +75,7 @@ outputs:
             meaning: Redshifts of samples
             type: real 1d
         k_h:
-            meaning: K wavenumbers of samples in Mpc/h
+            meaning: Wavenumbers k of samples in Mpc/h
             type: real 1d
         p_k:
             meaning: Matter power spectrum at samples in (Mpc/h)^-3

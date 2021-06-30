@@ -27,38 +27,38 @@ params:
         type: int
         default:
     zmax:
-        meaning: Double; Maximum redshift to compute; min is zero
-        type: ???
+        meaning: Maximum redshift to compute; min is zero
+        type: real
         default:
     dz:
-        meaning: Double; spacing of samples to compute n(z) at.
-        type: ???
+        meaning: Spacing of samples to compute n(z) at.
+        type: real
         default:
 inputs:
     number_density_params:
         alpha:
-            meaning: Double; Smail distribution parameter. n(z) = z^{alpha} exp{-(z/z0)^beta}
-            type: ???
+            meaning: Smail distribution parameter. n(z) = z^{alpha} exp{-(z/z0)^beta}
+            type: real
             default:
         beta:
-            meaning: Double; Smail distribution parameter
-            type: ???
+            meaning: Smail distribution parameter
+            type: real
             default:
         z0:
-            meaning: Double; Smail distribution parameter
-            type: ???
+            meaning: Smail distribution parameter
+            type: real
             default:
         sigz:
-            meaning: Double; Photometric error at z=0
-            type: ???
+            meaning: Photometric error at z=0
+            type: real
             default:
         ngal:
-            meaning: Double; Total number density of galaxies per square arcmin
-            type: ???
+            meaning: Total number density of galaxies per square arcmin
+            type: real
             default:
         bias:
-            meaning: Double; Bias on all photometric measurements
-            type: ???
+            meaning: Bias on all photometric measurements
+            type: real
             default:
 outputs:
     wl_number_density:
@@ -69,12 +69,12 @@ outputs:
             meaning: Number of bins
             type: int
         z:
-            meaning: ; redshift sample values
+            meaning: Redshift sample values
             type: real 1d
-        bin_:
-            meaning: ; n(z) at redshift sample values.  bin_1, bin_2, ...
+        bin_{i}:
+            meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
             type: real 1d
-        edge_:
-            meaning: ;  The nominal edges of the redshift bins (i.e. edges if no photometric
+        edge_{i}:
+            meaning: The nominal edges of the redshift bins (i.e. edges if no photometric
                 errors)
             type: real 1d

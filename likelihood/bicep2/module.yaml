@@ -19,6 +19,10 @@ explanation: |
     on the scales that indicate a primordial gravitational wave bump.
 
     This module wraps the likelihood code released by the BICEP2 team.
+
+    WARNING: The BICEP 2014 results are generally considered to be incorrect;
+    this module is for historical interest only.
+
     "
 params: {}
 inputs:

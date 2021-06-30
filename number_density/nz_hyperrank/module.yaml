@@ -86,8 +86,8 @@ outputs:
             meaning: Number of bins
             type: int
         z:
-            meaning: ; redshift sample values
+            meaning: Redshift sample values
             type: real 1d
         bin_:
-            meaning: ; n(z) at redshift sample values.  bin_1, bin_2, ...
+            meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
             type: real 1d

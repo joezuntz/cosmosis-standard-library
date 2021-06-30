@@ -51,11 +51,11 @@ params:
         meaning: Add the prefix NZ_ to the names in data_sets when looking in the
             FITS file
         type: bool
-        default: t.
+        default: true
     prefix_section:
         meaning: Add the same NZ_ prefix to the section names used in the block.
         type: bool
-        default: t.
+        default: true
     upsampling:
         meaning: The number of sample points output for each one in the file. n(z)
             is assumed flat between them. See notes above.
@@ -71,8 +71,8 @@ outputs:
             meaning: Number of bins
             type: int
         z:
-            meaning: ; redshift sample values
+            meaning: Redshift sample values
             type: real 1d
-        bin_:
-            meaning: ; n(z) at redshift sample values.  bin_1, bin_2, ...
+        bin_{i}:
+            meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
             type: real 1d

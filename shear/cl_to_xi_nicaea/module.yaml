@@ -52,13 +52,11 @@ inputs:
             type: real 1d
             default:
         nbin_a:
-            meaning: Mainly for mode=2 (GGL) - the number of redshift bins in the
-                first quantity (position bins for GGL)
+            meaning: The number of redshift bins in the first quantity
             type: int
             default:
         nbin_b:
-            meaning: Mainly for mode=2 (GGL) - the number of redshift bins in the
-                first quantity (shear bins for GGL)
+            meaning: The number of redshift bins in the second quantity
             type: int
             default:
         nbin:
@@ -76,13 +74,13 @@ outputs:
             meaning: Sample theta values for output xi(theta)
             type: real 1d
         xiplus_i_j:
-            meaning: S, xi_plus(theta) bin i and j, only if mode=0 Only stores j<=i.
+            meaning: xi_plus(theta) bin i and j, only if mode=0 Only stores j<=i.
             type: real 1d
         ximinus_i_j:
-            meaning: S, xi_minus(theta) bin i and j, only if mode=0. Only stores j<=i.
+            meaning: xi_minus(theta) bin i and j, only if mode=0. Only stores j<=i.
             type: real 1d
         bin_i_j:
-            meaning: W(theta) or gamma_t(theta) for bin i and j, only if mode=1 or
+            meaning: w(theta) or gamma_t(theta) for bin i and j, only if mode=1 or
                 2 respectively. Only stores j<=i.
             type: real 1d
         nbin_a:

@@ -21,35 +21,35 @@ explanation: |
     There are two modes: mode=0 give the fsigma8(z=0.57) likelihood only; mode=1 give the more general BOSS likelihood."
 params:
     mode:
-        meaning: Mode=0 for a fsigma8 likelihood only. mode=1 uses the full results(default
-            = 0)
+        meaning: 'Mode=0 for a f*sigma8 likelihood only. mode=1 uses the full results,
+            a likelihood of H(z), D_A(z), ommh2, b * sigma_8, f * sigma_8]'
         type: int
-        default:
+        default: 0
     feedback:
         meaning: Amount of output to print.  0 for no feedback.  1 for basic (default
             = 0)
         type: int
         default:
     mean:
-        meaning: Fsigma8 (default  = 0.428)
+        meaning: Mean of f * sigma8
         type: real
-        default:
+        default: 0.428
     sigma:
-        meaning: Sigma (default  = 0.066)
+        meaning: Error bar on f * sigma8
         type: real
-        default:
+        default: 0.066
     redshift:
-        meaning: Redshift (default  = 0.57)
+        meaning: Redshift if measurement
         type: real
-        default:
+        default: 0.57
 inputs:
     growth_parameters:
         d_z:
-            meaning: Linear growth factor D
+            meaning: Linear growth factor D(z)
             type: real 1d
             default:
         f_z:
-            meaning: Linear growth rate f
+            meaning: Linear growth rate f(z)
             type: real 1d
             default:
         z:
@@ -58,7 +58,7 @@ inputs:
             default:
     cosmological_parameters:
         omega_m:
-            meaning: Baryon + cdm density fraction today
+            meaning: Baryon + CDM density fraction today
             type: real
             default:
         sigma_8:

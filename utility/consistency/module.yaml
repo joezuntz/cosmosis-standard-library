@@ -71,10 +71,9 @@ explanation: |
     omega_nu = 1-omega_m-omega_lambda-omega_k"
 params:
     verbose:
-        meaning: 'Boolean T/F: explain how derived parameters were calculated and
-            what assumptions used'
-        type: ???
-        default:
+        meaning: 'Whether to print how derived parameters were calculated and what assumptions used'
+        type: bool
+        default: false
 inputs:
     cosmological_parameters:
         omega_m:

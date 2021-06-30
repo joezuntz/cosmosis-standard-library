@@ -21,9 +21,9 @@ explanation: |
     at the redshifts at which SDSS MGS measured them."
 params:
     verbose:
-        meaning: Print extra output (default = False)
+        meaning: Print extra output
         type: bool
-        default:
+        default: false
 inputs:
     distances:
         z:

@@ -31,28 +31,28 @@ inputs:
     cmb_cl:
         ell:
             meaning: Integer vector of angular frequencies for CMB spectra
-            type: ???
+            type: int 1d
             default:
         tt:
-            meaning: Of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
+            meaning: Temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
             type: real 1d
             default:
         ee:
-            meaning: Of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+            meaning: E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
                 pol data)
             type: real 1d
             default:
         bb:
-            meaning: Of B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+            meaning: B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
                 pol data)
             type: real 1d
             default:
         te:
-            meaning: Of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+            meaning: Cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
             type: real 1d
             default:
 outputs:
     likelihoods:
         wmap9_like:
             meaning: Combined log-likelihood from all WMAP components
-            type: ???
+            type: real

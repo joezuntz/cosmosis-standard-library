@@ -35,59 +35,59 @@ explanation: |
     "
 params:
     data_dt_b1608:
-        meaning: ), whether to include the dt_b1608 measurement in the likelihood
+        meaning: Whether to include the dt_b1608 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 0
     data_dd_dt_b1608:
-        meaning: ), whether to include the dd_dt_b1608 measurement in the likelihood
+        meaning: Whether to include the dd_dt_b1608 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 1
     data_dt_j1206:
-        meaning: ), whether to include the dt_j1206 measurement in the likelihood
+        meaning: Whether to include the dt_j1206 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 0
     data_dd_dt_j1206:
-        meaning: ), whether to include the dd_dt_j1206 measurement in the likelihood
+        meaning: Whether to include the dd_dt_j1206 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 1
     data_dt_wfi2033:
-        meaning: ), whether to include the dt_wfi2033 measurement in the likelihood
+        meaning: Whether to include the dt_wfi2033 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 1
     data_dt_he0435:
-        meaning: ), whether to include the dt_he0435 measurement in the likelihood
+        meaning: Whether to include the dt_he0435 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 1
     data_dt_pg1115:
-        meaning: ), whether to include the dt_pg1115 measurement in the likelihood
+        meaning: Whether to include the dt_pg1115 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 0
     data_dd_dt_pg1115:
-        meaning: ), whether to include the dd_dt_pg1115 measurement in the likelihood
+        meaning: Whether to include the dd_dt_pg1115 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 1
     data_dt_rxj1131:
-        meaning: ), whether to include the dt_rxj1131 measurement in the likelihood
+        meaning: Whether to include the dt_rxj1131 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 0
     data_dd_dt_rxj1131:
-        meaning: ), whether to include the dd_dt_rxj1131 measurement in the likelihood
+        meaning: Whether to include the dd_dt_rxj1131 measurement in the likelihood
             (0=no, 1=yes)
         type: int
         default: 1
     data_dir:
-        meaning: /timedelay_6lenses), location of data files
+        meaning: Location of data files
         type: str
-        default: pwd
+        default: module_dir/timedelay_6lenses
 inputs:
     distances:
         z:
@@ -110,5 +110,5 @@ inputs:
 outputs:
     likelihoods:
         h0licow_like:
-            meaning: (float) total likelihood of system
-            type: ???
+            meaning: Total likelihood of system
+            type: real

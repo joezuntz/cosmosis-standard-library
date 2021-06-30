@@ -26,18 +26,16 @@ params:
 inputs:
     bias_field:
         z:
-            meaning: Redshift of theory samples
+            meaning: Redshift of bias samples
             type: real 1d
             default:
         k_h:
-            meaning: Optional, wavenumber of samples in k_h. if not present then b(z)
-                only is assumed
+            meaning: Wavenumber of samples in k_h. If not present then b(z) only is assumed
             type: real 1d
             default:
         b:
-            meaning: 1D or 2D real array, bias as a function of either k and z or
-                just z
-            type: ???
+            meaning: Bias as a function of either k and z or just z
+            type: real 1d or real 2d
             default:
 outputs:
     likelihoods:
