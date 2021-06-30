@@ -2,15 +2,15 @@
 name: planck2015_simple
 version: 2
 purpose: Simplified Likelihood function of CMB from Planck 2015 TT TE EE data
-url: ""
+url: ''
 interface: planck2015_simple.py
 attribution: [The Planck Collaboration (Data), CosmoSIS Team (Code)]
-rules: "Please cite the appropriate Planck paper"
+rules: Please cite the appropriate Planck paper
 cite: []
-
 assumptions:
-    - "Highly accurate CMB calculations are required"
-    - "In the high-ell regime models for the foregrounds and secondary anisotropies are assumed"
+-   Highly accurate CMB calculations are required
+-   In the high-ell regime models for the foregrounds and secondary anisotropies are
+    assumed
 
 explanation: |
     "See the Planck2015 module for general information about Planck.
@@ -22,22 +22,37 @@ explanation: |
     It turns the data in that file into just a Gaussian likelihood, ignoring the nuisance
     parameter.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    data_file: (String; default=data.txt) Text file containing ell in col 1 and TT TE and EE in col 2 (no ell(ell+1) factor)
-    covmat_file: (String; default=covmat.txt) Numpy format file containing covariance matrix
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    data_file:
+        meaning: ) Text file containing ell in col 1 and TT TE and EE in col 2 (no
+            ell(ell+1) factor)
+        type: str
+        default: data.txt
+    covmat_file:
+        meaning: ) Numpy format file containing covariance matrix
+        type: str
+        default: covmat.txt
 inputs:
     cmb_cl:
-        ell: Integer vector of angular frequencies for CMB spectra
-        tt: Double vector of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
-        ee: Double vector of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-        te: Double vector of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-
-
+        ell:
+            meaning: Integer vector of angular frequencies for CMB spectra
+            type: ???
+            default:
+        tt:
+            meaning: Of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
+            type: real 1d
+            default:
+        ee:
+            meaning: Of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+                pol data)
+            type: real 1d
+            default:
+        te:
+            meaning: Of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+            type: real 1d
+            default:
 outputs:
     likelihoods:
-        planck2014_simple_like: (real; only if data_1 specified) Log-likelihood from first file
+        planck2014_simple_like:
+            meaning: Only if data_1 specified) Log-likelihood from first file
+            type: real

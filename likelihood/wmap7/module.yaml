@@ -2,19 +2,19 @@
 name: wmap
 version: 4.1
 purpose: Likelihood function of CMB from WMAP
-url: ""
+url: ''
 interface: wmap_interface.so
 attribution: [The WMAP Collaboration]
 rules: >
-    "Likelihood released by WMAP Collaboration and packaged by cosmosis team.  
-    Contact the latter with problems in the first instance.
+    "Likelihood released by WMAP Collaboration and packaged by cosmosis team.   Contact
+    the latter with problems in the first instance.
     "
 cite:
-    - "Larson, D., et.al., 2011, ApJS, 192, 16L"
-    - "Komatsu, E., et.al., 2011, ApJS, 192, 18K"
+-   Larson, D., et.al., 2011, ApJS, 192, 16L
+-   Komatsu, E., et.al., 2011, ApJS, 192, 18K
 
 assumptions:
-    - "WMAP 9 year data"
+-   WMAP 9 year data
 
 explanation: |
     "The Wilkinson Microwave Anisotropy Probe measured the temperature
@@ -27,20 +27,33 @@ explanation: |
     The method used for the likelihood is different in different ell regimes
     and for different spectra.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params: {}
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
 inputs:
     cmb_cl:
-        ell: Integer vector of angular frequencies for CMB spectra
-        tt: Double vector of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
-        ee: Double vector of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-        bb: Double vector of B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-        te: Double vector of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
-
+        ell:
+            meaning: Integer vector of angular frequencies for CMB spectra
+            type: ???
+            default:
+        tt:
+            meaning: Of temperature spectra in l*(l+1) C_ell / uK^2 (if using TT data)
+            type: real 1d
+            default:
+        ee:
+            meaning: Of E-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+                pol data)
+            type: real 1d
+            default:
+        bb:
+            meaning: Of B-mode polarization spectra in l*(l+1) C_ell / uK^2 (if using
+                pol data)
+            type: real 1d
+            default:
+        te:
+            meaning: Of cross spectra in l*(l+1) C_ell / uK^2 (if using pol data)
+            type: real 1d
+            default:
 outputs:
     likelihoods:
-        wmap7_like: Combined log-likelihood from all WMAP components
+        wmap7_like:
+            meaning: Combined log-likelihood from all WMAP components
+            type: ???

@@ -1,17 +1,16 @@
 #This is a template for module description files
 name: strong_lens_time_delays
 version: 1
-purpose: ""
-url: ""
+purpose: ''
+url: ''
 interface: time_delay_interface.py
-attribution: ["Bonvin et al, MNRAS, 465, 4, p.4914-4930"]
-rules:
-    ""
+attribution: ['Bonvin et al, MNRAS, 465, 4, p.4914-4930']
+rules: ''
 cite:
-    - "http://arxiv.org/pdf/1306.4732v2.pdf and http://arxiv.org/pdf/0910.2773v2.pdf"
+-   http://arxiv.org/pdf/1306.4732v2.pdf and http://arxiv.org/pdf/0910.2773v2.pdf
 
 assumptions:
-    - "Strong lensing modelling details."
+-   Strong lensing modelling details.
 
 explanation: |
     "
@@ -20,34 +19,63 @@ explanation: |
     and http://arxiv.org/pdf/0910.2773v2.pdf
 
      "
-
-# List of parameters that can go in the params.ini file in the section for this module
 params:
-    lens_name: "String, default='None'; name of lens to use. B1608 and RXJ1131 are accepted, if 'None', user must set remaining parameter manually"
-    z_d: "Real, only if lens_name='None'. Distance to the lens"
-    z_s: "Real, only if lens_name='None'. Distance to the source"
-    lambda_d: "Real, only if lens_name='None'. See 0910.2773v2 equation 5"
-    mu_d: "Real, only if lens_name='None'. See 0910.2773v2 equation 5"
-    sigma_d: "Real, only if lens_name='None'. See 0910.2773v2 equation 5"
-    name: "String, Name for the strong lens"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    lens_name:
+        meaning: Default='None'; name of lens to use. B1608 and RXJ1131 are accepted,
+            if 'None', user must set remaining parameter manually
+        type: str
+        default:
+    z_d:
+        meaning: Only if lens_name='None'. Distance to the lens
+        type: real
+        default:
+    z_s:
+        meaning: Only if lens_name='None'. Distance to the source
+        type: real
+        default:
+    lambda_d:
+        meaning: Only if lens_name='None'. See 0910.2773v2 equation 5
+        type: real
+        default:
+    mu_d:
+        meaning: Only if lens_name='None'. See 0910.2773v2 equation 5
+        type: real
+        default:
+    sigma_d:
+        meaning: Only if lens_name='None'. See 0910.2773v2 equation 5
+        type: real
+        default:
+    name:
+        meaning: Name for the strong lens
+        type: str
+        default:
 inputs:
     distances:
-
-        z : "1D real array, redshifts of samples"
-        d_m : "1D real array, co-moving distance in Mpc"
-
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Co-moving distance in Mpc
+            type: real 1d
+            default:
     cosmological_parameters:
-
-        omega_k: "real, curvature density fraction today (default 0.0)"
-        hubble:  "real, hubble parameter H0 (km/s/Mpc)"
-
-
+        omega_k:
+            meaning: Curvature density fraction today
+            type: real
+            default: 0.0
+        hubble:
+            meaning: Hubble parameter H0 (km/s/Mpc)
+            type: real
+            default:
 outputs:
     likelihoods:
-        B1608_like: "Real, only if lens_name=B1608. Likelihood of B1608 system"
-        RXJ1131_like: "Real, only if lens_name=RXJ1131. Likelihood of RXJ1131 system"
-        name_like: "Real, general case, name from ini file. Likelihood of named system"
-
+        B1608_like:
+            meaning: Only if lens_name=B1608. Likelihood of B1608 system
+            type: real
+        RXJ1131_like:
+            meaning: Only if lens_name=RXJ1131. Likelihood of RXJ1131 system
+            type: real
+        name_like:
+            meaning: General case, name from ini file. Likelihood of named system
+            type: real

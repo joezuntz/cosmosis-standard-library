@@ -1,14 +1,14 @@
-name: "pantheon"
-version: "2018"
-purpose: "Likelihood of the Pantheon supernova analysis"
-url: "http://dx.doi.org/10.17909/T95Q4X"
+name: pantheon
+version: '2018'
+purpose: Likelihood of the Pantheon supernova analysis
+url: http://dx.doi.org/10.17909/T95Q4X
 interface: pantheon.py
 attribution: [Scolnic et al (measurement), CosmoSIS team (code)]
-rules: "None."
+rules: None.
 cite:
-    - "Scolnic et al, ApJ, 859, 28"
+-   Scolnic et al, ApJ, 859, 28
 assumptions:
-    - "Pantheon statistical and systematic analysis"
+-   Pantheon statistical and systematic analysis
 explanation: |
     " Supernova IA can be used as standardisable candles,
     letting us estimate a redshift-distance relation.
@@ -32,35 +32,87 @@ explanation: |
     into a single systematic covariance matrix.  This code therefore omits
     that machinery for simlicitiy.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    data_file: "string, optional. File containing supernova measurements (default=module dir + /lcparam_DS17f.txt)"
-    covmat_file: "string, optional. File containing supernova measurements (default=module dir + /lcparam_DS17f.txt)"
-    x_section: "string, optional.  Use to override the default datablock section for input theory redshift"
-    x_name: "string, optional.  Use to override the default datablock name for input theory redshift"
-    y_section: "string, optional.  Use to override the default datablock section for input theory distance modulus"
-    y_name: "string, optional.  Use to override the default datablock name for input theory distance modulus"
-    like_name: "string, optional.  Use to override the default named for the saved output likelihood"
-    likelihood_only: "bool, optional.  Skip saving everything except the likelihood.  This prevents you from using e.g. the Fisher matrix sampler but can be faster for quick likelihoods"
-    include_norm: "bool, default=F.  Include the normalizing constant at the start of the likelihood.  May be needed when comparing models."
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    data_file:
+        meaning: Optional. File containing supernova measurements ( dir + /lcparam_DS17f.txt)
+        type: str
+        default: module
+    covmat_file:
+        meaning: Optional. File containing supernova measurements ( dir + /lcparam_DS17f.txt)
+        type: str
+        default: module
+    x_section:
+        meaning: Optional.  Use to override the default datablock section for input
+            theory redshift
+        type: str
+        default:
+    x_name:
+        meaning: Optional.  Use to override the default datablock name for input theory
+            redshift
+        type: str
+        default:
+    y_section:
+        meaning: Optional.  Use to override the default datablock section for input
+            theory distance modulus
+        type: str
+        default:
+    y_name:
+        meaning: Optional.  Use to override the default datablock name for input theory
+            distance modulus
+        type: str
+        default:
+    like_name:
+        meaning: Optional.  Use to override the default named for the saved output
+            likelihood
+        type: str
+        default:
+    likelihood_only:
+        meaning: Optional.  Skip saving everything except the likelihood.  This prevents
+            you from using e.g. the Fisher matrix sampler but can be faster for quick
+            likelihoods
+        type: bool
+        default:
+    include_norm:
+        meaning: Include the normalizing constant at the start of the likelihood.  May
+            be needed when comparing models.
+        type: bool
+        default: f.
 inputs:
     distances:
-        z:  "double 1D array, redshifts of calculated theory mu(z)"
-        mu:  "double 1D array, distance modulus mu(z) at given redshifts"
+        z:
+            meaning: Double 1D array, redshifts of calculated theory mu(z)
+            type: ???
+            default:
+        mu:
+            meaning: Double 1D array, distance modulus mu(z) at given redshifts
+            type: ???
+            default:
     supernova_params:
-        M: "double, SN IA absolute magnitude"
-
+        M:
+            meaning: Double, SN IA absolute magnitude
+            type: ???
+            default:
 outputs:
     likelihoods:
-        pantheon_like: "double. Gaussian likelihood value of supplied theory mu(z) and M"
+        pantheon_like:
+            meaning: Double. Gaussian likelihood value of supplied theory mu(z) and
+                M
+            type: ???
     data_vector:
-        pantheon_covariance: "double 2D array. Fixed covariance matrix, only if likelihood_only=F"
-        pantheon_data: "double 1D array. Fixed data vector mu_obs, only if likelihood_only=F"
-        pantheon_simulation: "double 1D array. Simulated data vector including simulated noise for e.g. ABC, only if likelihood_only=F"
-        pantheon_theory: "double 1D array. Predicted theory values mu_theory(z_obs) only if likelihood_only=F"
-        pantheon_chi2: "double. chi^2 value, only if likelihood_only=F"
-
+        pantheon_covariance:
+            meaning: Double 2D array. Fixed covariance matrix, only if likelihood_only=F
+            type: ???
+        pantheon_data:
+            meaning: Double 1D array. Fixed data vector mu_obs, only if likelihood_only=F
+            type: ???
+        pantheon_simulation:
+            meaning: Double 1D array. Simulated data vector including simulated noise
+                for e.g. ABC, only if likelihood_only=F
+            type: ???
+        pantheon_theory:
+            meaning: Double 1D array. Predicted theory values mu_theory(z_obs) only
+                if likelihood_only=F
+            type: ???
+        pantheon_chi2:
+            meaning: Double. chi^2 value, only if likelihood_only=F
+            type: ???

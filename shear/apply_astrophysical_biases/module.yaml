@@ -1,15 +1,14 @@
 #This is a template for module description files
 name: apply_astrophysical_biases
-version: "1.0"
-purpose: "Apply various astrophysical biases to the matter power spectrum P(k,z)"
-url: ""
+version: '1.0'
+purpose: Apply various astrophysical biases to the matter power spectrum P(k,z)
+url: ''
 interface: interface.so
 attribution: [CosmoSIS team, Simon Samuroff]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - ""
+-   ''
 
 explanation: |
     "
@@ -21,49 +20,116 @@ explanation: |
     using a series of scale and time dependent biases, which map the matter power spectrum onto the observable
     fields.   
     "
-
-# List of parameters that can go in the params.ini file in the section for this module
 params:
-    intrinsic_alignments: "Bool; calculate intrisic alignment spectra? (Default: True)"
-    galaxy_bias: "Bool; calculate galaxy position spectra? (Default: True)"
-    verbosity: "Integer; parameter setting the level of terminal output (Default: 1)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    intrinsic_alignments:
+        meaning: Calculate intrisic alignment spectra?
+        type: bool
+        default: true
+    galaxy_bias:
+        meaning: Calculate galaxy position spectra?
+        type: bool
+        default: true
+    verbosity:
+        meaning: Parameter setting the level of terminal output
+        type: int
+        default: 1
 inputs:
     matter_power_nl:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        P_k: "real 2d array; non-linear matter power spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+            default:
+        P_k:
+            meaning: ; non-linear matter power spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
+            default:
     intrinsic_alignment_parameters:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        b_I: "real 2d array; intrinsic alignment bias"
-        r_I: "real 2d array; stochastic intrinsic alignment bias"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+            default:
+        b_I:
+            meaning: ; intrinsic alignment bias
+            type: real 2d
+            default:
+        r_I:
+            meaning: ; stochastic intrinsic alignment bias
+            type: real 2d
+            default:
     bias_field:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        b_g: "real 2d array; galaxy bias"
-        r_g: "real 2d array; stochastic galaxy bias"
-
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+            default:
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+            default:
+        b_g:
+            meaning: ; galaxy bias
+            type: real 2d
+            default:
+        r_g:
+            meaning: ; stochastic galaxy bias
+            type: real 2d
+            default:
 outputs:
     ia_spectrum_ii:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        P_II: "real 2d array; intrinsic-intrinsic shape spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+        P_II:
+            meaning: ; intrinsic-intrinsic shape spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
     ia_spectrum_gi:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        P_GI: "real 2d array; mass-intrinsic shape spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+        P_GI:
+            meaning: ; mass-intrinsic shape spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
     matter_power_gal_mass:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        P_k: "real 2d array; galaxy position-mass spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+        P_k:
+            meaning: ; galaxy position-mass spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
     matter_power_gal:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        P_k: "real 2d array; galaxy position-position spectrum at samples in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+        P_k:
+            meaning: ; galaxy position-position spectrum at samples in (Mpc/h)^{-3}
+            type: real 2d
     matter_power_gal_intrinsic:
-        z: "real vector; redshift values of P(k,z) samples"
-        k_h: "real vector; k values of P(k,z) samples in Mpc/h"
-        P_k: "real 2d array; Fourier space correlation between galaxy position and intrinsic shape in (Mpc/h)^{-3}"
+        z:
+            meaning: ; redshift values of P(k,z) samples
+            type: real 1d
+        k_h:
+            meaning: ; k values of P(k,z) samples in Mpc/h
+            type: real 1d
+        P_k:
+            meaning: ; Fourier space correlation between galaxy position and intrinsic
+                shape in (Mpc/h)^{-3}
+            type: real 2d

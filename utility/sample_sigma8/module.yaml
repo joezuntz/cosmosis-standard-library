@@ -1,14 +1,14 @@
 #This is a template for module description files
-name: "sigma8_rescale"
-version: "1.0"
+name: sigma8_rescale
+version: '1.0'
 interface: sigma8_rescale.py
-purpose: "Rescale structure measures to use a specified sigma_8"
-url: ""
-attribution: ["Susana Fernandez", "Jack Elvin-Poole"]
+purpose: Rescale structure measures to use a specified sigma_8
+url: ''
+attribution: [Susana Fernandez, Jack Elvin-Poole]
 rules: []
 cite: []
 assumptions:
-    - "Spectra scale quadratically with sigma_8"
+-   Spectra scale quadratically with sigma_8
 
 explanation: |
     Boltzmann codes like CAMB and CLASS typically take a primordial power spectrum
@@ -25,30 +25,66 @@ explanation: |
     be sampled over, and a fixed fiducial A_s value.  After the Boltzmann code is run
     and sigma_8 for the fiducial amplitude calculated, the CMB and matter power spectra
     are scaled by (sigma8_input**2)/(sigma8_boltzmann**2), and sigma_8 is overwritten.
-
-
 params: {}
-
 inputs:
     cosmological_parameters:
-        sigma_8:  "real, late time amplitude sigma_8 as output from CAMB or another Boltzmann code"
-        sigma8_input:  "real, The desired sigma_8, usually from the sampler"
-        A_s:  "real, The fixed fiducial primordial amplitude"
+        sigma_8:
+            meaning: Late time amplitude sigma_8 as output from CAMB or another Boltzmann
+                code
+            type: real
+            default:
+        sigma8_input:
+            meaning: The desired sigma_8, usually from the sampler
+            type: real
+            default:
+        A_s:
+            meaning: The fixed fiducial primordial amplitude
+            type: real
+            default:
     cmb_cl:
-        TT: "real 1D array, CMB TT power spectrum"
-        EE: "real 1D array, CMB EE power spectrum"
-        BB: "real 1D array, CMB BB power spectrum"
-        TE: "real 1D array, CMB TE power spectrum"
+        TT:
+            meaning: CMB TT power spectrum
+            type: real 1d
+            default:
+        EE:
+            meaning: CMB EE power spectrum
+            type: real 1d
+            default:
+        BB:
+            meaning: CMB BB power spectrum
+            type: real 1d
+            default:
+        TE:
+            meaning: CMB TE power spectrum
+            type: real 1d
+            default:
     matter_power_lin:
-        P_K: "real 1D or 2D array, matter power spectrum P(k,z)"
+        P_K:
+            meaning: Real 1D or 2D array, matter power spectrum P(k,z)
+            type: ???
+            default:
 outputs:
     cosmological_parameters:
-        sigma_8:  "real, re-scaled sigma_8, set to sigma_8_input"
-        A_s:  "real, rescaled A_s"
+        sigma_8:
+            meaning: Re-scaled sigma_8, set to sigma_8_input
+            type: real
+        A_s:
+            meaning: Rescaled A_s
+            type: real
     cmb_cl:
-        TT: "real 1D array, rescaled CMB TT power spectrum"
-        EE: "real 1D array, rescaled CMB EE power spectrum"
-        BB: "real 1D array, rescaled CMB BB power spectrum"
-        TE: "real 1D array, rescaled CMB TE power spectrum"
+        TT:
+            meaning: Rescaled CMB TT power spectrum
+            type: real 1d
+        EE:
+            meaning: Rescaled CMB EE power spectrum
+            type: real 1d
+        BB:
+            meaning: Rescaled CMB BB power spectrum
+            type: real 1d
+        TE:
+            meaning: Rescaled CMB TE power spectrum
+            type: real 1d
     matter_power_lin:
-        P_K: "real 1D or 2D array, rescaled matter power spectrum P(k,z)"
+        P_K:
+            meaning: Real 1D or 2D array, rescaled matter power spectrum P(k,z)
+            type: ???

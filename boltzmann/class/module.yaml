@@ -1,24 +1,26 @@
 name: class
 version: 2.4.1
-purpose: "Boltzmann and background integrator for BG, CMB, matter power, and more"
+purpose: Boltzmann and background integrator for BG, CMB, matter power, and more
 url: http://class-code.net
 interface: class_interface.py
-attribution: [Julien Lesgourgues, Thomas Tram, Benjamin Audren, Simon Prunet, Jesus Torrado, Miguel
-Zumalacarregui, etc]
+attribution: [Julien Lesgourgues, Thomas Tram, Benjamin Audren, Simon Prunet, Jesus
+        Torrado, Miguel Zumalacarregui, etc]
 rules:
-    - "You can use CLASS freely, provided that in your publications, you cite at least the paper CLASS II: Approximation schemes. Feel free to cite more CLASS papers!"
+-   'You can use CLASS freely, provided that in your publications, you cite at least
+    the paper CLASS II: Approximation schemes. Feel free to cite more CLASS papers!'
 cite:
-    - "http://arxiv.org/abs/1104.2932"
-    - "JCAP 07 (2011) 034"
-    - "http://arxiv.org/abs/1104.2934"
-    - "JCAP 09 (2011) 032"
+-   http://arxiv.org/abs/1104.2932
+-   JCAP 07 (2011) 034
+-   http://arxiv.org/abs/1104.2934
+-   JCAP 09 (2011) 032
 
 assumptions:
-    - The LCDM model
-    - Various choices for approximations and implementations of the Boltzmann and related equations
+-   The LCDM model
+-   Various choices for approximations and implementations of the Boltzmann and related
+    equations
 
-explanation: |
-    
+explanation: |4
+
     CLASS is one of the standard cosmology codes for evolving perturbations
     in the primordial universe into CMB and other power spectra, as
     well as various other quantities. This is a very preliminary interface 
@@ -36,46 +38,108 @@ explanation: |
 
     The CosmoSIS team packaged this module into cosmosis form so any issues
     running it here please ask us first.
-
 params:
-    lmax:  "Integer, max angular frequency ell to use for cmb calculation (default 2000)"
-    kmax:  "Integer, the max wavenumber k to use for P(k,z) calculation (default 50.0)"
-    zmax:  "Max value to save P(k,z) and distances (default 4.0)"
-
+    lmax:
+        meaning: Max angular frequency ell to use for cmb calculation
+        type: int
+        default: 2000
+    kmax:
+        meaning: The max wavenumber k to use for P(k,z) calculation
+        type: int
+        default: 50.0
+    zmax:
+        meaning: Max value to save P(k,z) and distances
+        type: ???
+        default: 4.0
 inputs:
     cosmological_parameters:
-        # If these parameters are not those you would like to sample over (say omega_m or
-        # omegaa_ch2 are preferable), please use the consistency module.
-        ombh2:  "real, physbaryon density fraction today, Omega_b * h**2"
-        omch2:  "real, physical cdm density fraction today, Omega_c * h**2"
-        h0:  "real, hubble parameter H0 / 100 km/s/Mpc"
-        tau:  "real, optical depth to last-scattering"
-        n_s:  "real, scalar spectral index"
-        A_s:  "real, scalar spectrum primordial amplitude"
-        massless_nu:  "real, effective number of massless neutrinos (default 3.046)"
-        t_cmb: "real, the CMB temperature today in Kelvin (default=2.726)"
-
+        ombh2:
+            meaning: Physbaryon density fraction today, Omega_b * h**2
+            type: real
+            default:
+        omch2:
+            meaning: Physical cdm density fraction today, Omega_c * h**2
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter H0 / 100 km/s/Mpc
+            type: real
+            default:
+        tau:
+            meaning: Optical depth to last-scattering
+            type: real
+            default:
+        n_s:
+            meaning: Scalar spectral index
+            type: real
+            default:
+        A_s:
+            meaning: Scalar spectrum primordial amplitude
+            type: real
+            default:
+        massless_nu:
+            meaning: Effective number of massless neutrinos
+            type: real
+            default: 3.046
+        t_cmb:
+            meaning: The CMB temperature today in Kelvin
+            type: real
+            default: 2.726
 outputs:
     cosmological_parameters:
-        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0.  Only calculated if mode=all"
-
+        sigma_8:
+            meaning: Amplitude of linear matter power at 8/h Mpc at z=0.  Only calculated
+                if mode=all
+            type: real
     distances:
-        nz: "integer, number of z samples"
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        d_m: "1D real array, co-moving distance in Mpc"
-        d_l: "1D real array, luminosity distance in Mpc"
-        age: "real, age of universe in GYr"
-        rs_zdrag: "real, sound horizon size at zdrag. Only if mode!=background"
-
+        nz:
+            meaning: Number of z samples
+            type: int
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+        d_m:
+            meaning: Co-moving distance in Mpc
+            type: real 1d
+        d_l:
+            meaning: Luminosity distance in Mpc
+            type: real 1d
+        age:
+            meaning: Age of universe in GYr
+            type: real
+        rs_zdrag:
+            meaning: Sound horizon size at zdrag. Only if mode!=background
+            type: real
     matter_power_lin:
-        z: "1D real array, redshifts of samples. Only if mode=all"
-        k_h: "1D real array, k wavenumbers of samples in Mpc/h. Only if mode=all"
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3. Only if mode=all"
-
+        z:
+            meaning: Redshifts of samples. Only if mode=all
+            type: real 1d
+        k_h:
+            meaning: K wavenumbers of samples in Mpc/h. Only if mode=all
+            type: real 1d
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3. Only if mode=all
+            type: real 2d
     cmb_cl:
-        ell: "1D integer array, angular frequencies. Only if mode=cmb or all"
-        tt:  "1D real array, ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or all"
-        ee:  "1D real array, ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or all"
-        bb:  "1D real array, ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or all"
-        te:  "1D real array, ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or all"
+        ell:
+            meaning: Angular frequencies. Only if mode=cmb or all
+            type: int 1d
+        tt:
+            meaning: Ell * (ell+1) C_ell^TT / 2 pi in mu K^2. Only if mode=cmb or
+                all
+            type: real 1d
+        ee:
+            meaning: Ell * (ell+1) C_ell^EE / 2 pi in mu K^2. Only if mode=cmb or
+                all
+            type: real 1d
+        bb:
+            meaning: Ell * (ell+1) C_ell^BB / 2 pi in mu K^2. Only if mode=cmb or
+                all
+            type: real 1d
+        te:
+            meaning: Ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
+                all
+            type: real 1d

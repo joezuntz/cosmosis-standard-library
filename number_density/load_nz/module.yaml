@@ -2,32 +2,47 @@
 name: load_nz
 version: 1
 purpose: Load a number density n(z) for weak lensing from a file
-url: ""
+url: ''
 interface: load_nz.py
 attribution: [CosmoSIS Team]
-rules: "If you use a file from a particular survey you should cite that survey"
+rules: If you use a file from a particular survey you should cite that survey
 cite: []
-
 assumptions:
-    - "n(z) file first column = z, others = bin n(z)"
+-   n(z) file first column = z, others = bin n(z)
 
 explanation: |
     "This simple module just loads a set of n(z) for different bins from a
     fixed file and provides it as-is.  The n(z) are normalized before being saved."
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    filepath: "String; absolute or relative path to an n(z) file"
-    des_fmt: "Bool, default=F; use the DES format n(z) with columns zmin, zmax, nz1, nz2..."
-    histogram: "Bool, default=F; Assume that the given z values are lower edges of histogram bins, not sample points."
-    output_section: "String, default ''wl_number_density''. The section to which to save the output."
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    filepath:
+        meaning: Absolute or relative path to an n(z) file
+        type: str
+        default:
+    des_fmt:
+        meaning: ; use the DES format n(z) with columns zmin, zmax, nz1, nz2...
+        type: bool
+        default: false
+    histogram:
+        meaning: ; Assume that the given z values are lower edges of histogram bins,
+            not sample points.
+        type: bool
+        default: false
+    output_section:
+        meaning: Default ''wl_number_density''. The section to which to save the output.
+        type: str
+        default:
 inputs: {}
-
 outputs:
     output_section:
-        nz: "Integer; number of redshift samples. By default all these will go in wl_number_density."
-        nbin: "Integer; number of bins"
-        z: "Real vector; redshift sample values"
-        bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."
+        nz:
+            meaning: Number of redshift samples. By default all these will go in wl_number_density.
+            type: int
+        nbin:
+            meaning: Number of bins
+            type: int
+        z:
+            meaning: ; redshift sample values
+            type: real 1d
+        bin_:
+            meaning: ; n(z) at redshift sample values.  bin_1, bin_2, ...
+            type: real 1d

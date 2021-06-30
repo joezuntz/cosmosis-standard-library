@@ -1,36 +1,67 @@
 #This is a template for module description files
 name: growth_factor
 version: 1
-purpose: returns linear growth factor and growth rate for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa
-url: ""
+purpose: returns linear growth factor and growth rate for flat cosmology with either
+    const w or variable DE eos w(a) = w + (1-a)*wa
+url: ''
 interface: interface.so
 attribution: [CosmoSIS Team]
-rules: "If you use a file from a particular survey you should cite that survey"
+rules: If you use a file from a particular survey you should cite that survey
 cite: []
-
 assumptions:
-    - "linear growth factor and rate in flat cosmology"
+-   linear growth factor and rate in flat cosmology
 
 explanation: |
-        "This simple module calculates the linear growth factor D, and linear growth rate, f, for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa. 
-        Where D, f are defined by the growth of a
-        linear perturbation, delta, with scale factor a: delta(a') = delta(a)*(D(a')/D(a)) and f = dlnD/dlna"
+    "This simple module calculates the linear growth factor D, and linear growth rate, f, for flat cosmology with either const w or variable DE eos w(a) = w + (1-a)*wa. 
+    Where D, f are defined by the growth of a
+    linear perturbation, delta, with scale factor a: delta(a') = delta(a)*(D(a')/D(a)) and f = dlnD/dlna"
 params:
-        zmin: "Real, min value to save f,D (default = 0.0)"
-        zmax: "Real, max value to save f,D (default = 3.0)"
-        dz: "Real, redshift binsize (default  = 0.01)"
-        zmax_log: "Real, default=1100. redshift max for additional z values tacked above zmax, log space"
-        nz_log: "int, default=0. number of log spaced values (if 0 then no log-spaced values)"
-
-inputs: 
+    zmin:
+        meaning: Min value to save f,D (default = 0.0)
+        type: real
+        default:
+    zmax:
+        meaning: Max value to save f,D (default = 3.0)
+        type: real
+        default:
+    dz:
+        meaning: Redshift binsize (default  = 0.01)
+        type: real
+        default:
+    zmax_log:
+        meaning: Redshift max for additional z values tacked above zmax, log space
+        type: real
+        default: 1100.0
+    nz_log:
+        meaning: Number of log spaced values (if 0 then no log-spaced values)
+        type: int
+        default: 0.0
+inputs:
     cosmological_parameters:
-        omega_m:  "real, baryon + cdm density fraction today"
-        omega_lambda:  "real, dark energy density today (default 1-omega_m)"
-        w:  "real, w(z=0) equation of state of dark energy (default -1.0) "
-        wa:  "real, equation of state parameter w(z) = w_0 + w_a z / (1+z)  (default 0.0)"
-
+        omega_m:
+            meaning: Baryon + cdm density fraction today
+            type: real
+            default:
+        omega_lambda:
+            meaning: Dark energy density today
+            type: real
+            default: 1-omega_m
+        w:
+            meaning: W(z=0) equation of state of dark energy
+            type: real
+            default: -1.0
+        wa:
+            meaning: Equation of state parameter w(z) = w_0 + w_a z / (1+z)
+            type: real
+            default: 0.0
 outputs:
     growth_parameters:
-        d_z: "1D real array, linear growth factor D"
-        f_z: "1D real array, linear growth rate f"
-        z: "1D real array, redshift of samples "
+        d_z:
+            meaning: Linear growth factor D
+            type: real 1d
+        f_z:
+            meaning: Linear growth rate f
+            type: real 1d
+        z:
+            meaning: Redshift of samples
+            type: real 1d
