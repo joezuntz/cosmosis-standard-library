@@ -1,4 +1,4 @@
-name: pycamb
+name: camb
 version: 2.0
 purpose: Boltzmann and background integrator for BG, CMB, and matter power
 url: http://camb.info
