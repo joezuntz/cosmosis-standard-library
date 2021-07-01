@@ -6,13 +6,13 @@ purpose: Compute the likelihood of the supplied expansion and growth history aga
 url: https://www.sdss3.org/science/boss_publications.php
 interface: boss_dr12.py
 attribution: ['CosmoSIS Team']
-rules: ''
+rules: 'You can do what you want with the python code here'
 cite:
--   ''
+-   'arxiv: 1607.03155'
 
 assumptions:
--   ''
--   ''
+-   'LCDM Model'
+-   'Details of BOSS reconstruction'
 
 explanation: >
     "This module gives a likelihood of the comoving angular diameter
