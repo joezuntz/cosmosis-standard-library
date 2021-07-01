@@ -1,13 +1,17 @@
-from builtins import zip
-from builtins import str
 from cosmosis.datablock import option_section
+import re
 
 
 def setup(options):
     source = str(options[option_section, "source"])
-    source = source.split(',')
     dest = str(options[option_section, "dest"])
-    dest = dest.split(',')
+
+    # Split on either comma or space
+    source = re.split("[ ,]+", source)
+    dest = re.split("[ ,]+", dest)
+    if len(source) != len(dest):
+        raise ValueError("In the rename module the source and dest parameters must "
+                         "have the same number of sections in")
     return (source, dest)
 
 

@@ -1,10 +1,11 @@
-from __future__ import print_function
 from cosmosis.datablock import option_section
-
+import re
 
 def setup(options):
     sections = options.get_string(option_section, "sections")
-    sections = sections.split()
+    # Split on either comma or space
+    sections = re.split("[ ,]+", sections)
+
     if not sections:
         print("WARNING: No sections specified to delete in delete_section")
     return sections

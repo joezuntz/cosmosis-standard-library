@@ -1,0 +1,24 @@
+#This is a template for module description files
+name: copy
+version: '1.0'
+purpose: Copy a section to a new section
+url: ''
+interface: copy_section.py
+attribution: ["CosmoSIS Team"]
+rules: You can do what you want with this file.
+cite: []
+assumptions: []
+
+explanation: "Use this module to copy one section to another section.  This is only needed in quite complex pipelines"
+params:
+    source:
+        meaning: Comma or space-separated list of source section names
+        type: str
+        default:
+    source:
+        meaning: Comma or space-separated list of destination section names, matching one-to-one with source
+        type: str
+        default:
+
+inputs: {}
+outputs: {}
