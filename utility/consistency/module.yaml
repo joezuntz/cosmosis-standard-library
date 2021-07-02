@@ -1,5 +1,5 @@
 #This is a template for module description files
-name: consistent_parameters
+name: consistency
 version: '1.0'
 purpose: Deduce missing cosmological parameters and check consistency
 url: ''
@@ -74,6 +74,12 @@ params:
         meaning: 'Whether to print how derived parameters were calculated and what assumptions used'
         type: bool
         default: false
+
+    relations_file:
+        meaning: Path to an alternative parameter relations file
+        type: str
+        default:
+
 inputs:
     cosmological_parameters:
         omega_m:

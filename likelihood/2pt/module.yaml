@@ -54,7 +54,7 @@ params:
         default:
     covariance_realizations:
         meaning: If >0, assume that the Covariance matrix was estimated from a set
-            of MC simulations and should thus have the Anderson-Hartlapp factor applied
+            of MC simulations and should thus have the Anderson-Hartlap factor applied
             to increase its size. If zero, assume infinite number of realizations.
         type: int
         default: -1

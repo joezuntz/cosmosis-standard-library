@@ -39,7 +39,7 @@ class XipmLikelihood(object):
             n_mu = cov_num_rlzn
             alpha = (n_mu - p - 2.0) / (n_mu - 1.0)
             weight *= alpha
-            print('applying Anderson-Hartlapp correction: ', alpha)
+            print('applying Anderson-Hartlap correction: ', alpha)
         self.weight = weight
         # np.savetxt('inv_cov.txt',weight)
 
