@@ -1,7 +1,7 @@
 
 
 # can vary by up to 0.01 it seems
-planck_like_expected = -6288.687206797994
+planck_like_expected = -6288.551579031301
 
 # demo 2 check
 planck_like = float(open("output/demo2/likelihoods/values.txt").read().split()[-1])
