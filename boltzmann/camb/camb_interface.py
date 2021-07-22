@@ -2,6 +2,7 @@ from cosmosis.datablock import names, option_section as opt
 from cosmosis.datablock.cosmosis_py import errors
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
+import warnings
 
 # Finally we can now import camb
 import camb
@@ -312,6 +313,14 @@ def extract_camb_params(block, config, more_config):
         ["TCMB", "YHe", "mnu", "nnu", "standard_neutrino_neff", "num_massive_neutrinos",
         ("A_lens", "Alens")])
 
+    if block.has_value(cosmo, "massless_nu"):
+        warnings.warn("Parameter massless_nu is being ignored. Set nnu, the effective number of relativistic species in the early Universe.")
+
+    if (block.has_value(cosmo, "omega_nu") or block.has_value(cosmo, "omnuh2")) and not (block.has_value(cosmo, "mnu")):
+        warnings.warn("Parameter omega_nu and omnuh2 are being ignored. Set mnu and num_massive_neutrinos instead.")
+
+
+
     # Set h if provided, otherwise look for theta_mc
     if block.has_value(cosmo, "hubble"):
         cosmology_params["H0"] = block[cosmo, "hubble"]
@@ -336,6 +345,9 @@ def extract_camb_params(block, config, more_config):
                     **more_config["cosmology_params"],
                     **cosmology_params)
 
+    # Fix for CAMB version < 1.0.10
+    if np.isclose(p.omnuh2, 0) and "nnu" in cosmology_params and not np.isclose(cosmology_params["nnu"], p.num_nu_massless): 
+        p.num_nu_massless = cosmology_params["nnu"]
 
     # Setting reionization before setting the cosmology can give problems when
     # sampling in cosmomc_theta
@@ -371,14 +383,32 @@ def save_derived_parameters(r, p, block):
         block[names.distances, k] = v
     block[names.distances, 'rs_zdrag'] = block[names.distances, 'rdrag']
     
-    for name, val in [
-            ("cosmomc_theta", 100*r.cosmomc_theta()),
-            ("h0", p.h),
-            ("omnuh2", p.omnuh2),
-            ("nnu", p.num_nu_massless),
-            ("num_nu_massless", p.num_nu_massive)]:
-        if not block.has_value(names.cosmological_parameters, name):
-            block[names.cosmological_parameters, name] = val
+    p.omegal = 1 - p.omegam - p.omk
+    p.ommh2 = p.omegam * p.h**2
+
+    for cosmosis_name, CAMB_name, scaling in [("h0"               , "h",               1),
+                                              ("hubble"           , "h",             100),
+                                              ("omnuh2"           , "omnuh2",          1),
+                                              ("n_eff"            , "N_eff",           1),
+                                              ("num_nu_massless"  , "num_nu_massless", 1),
+                                              ("num_nu_massive"   , "num_nu_massive",  1),
+                                              ("massive_nu"       , "num_nu_massive",  1),
+                                              ("massless_nu"      , "num_nu_massless", 1),
+                                              ("omega_b"          , "omegab",          1),
+                                              ("omega_c"          , "omegac",          1),
+                                              ("omega_nu"         , "omeganu",         1),
+                                              ("omega_m"          , "omegam",          1),
+                                              ("omega_lambda"     , "omegal",          1),
+                                              ("ommh2"            , "ommh2",           1),]:
+
+        CAMB_value = getattr(p, CAMB_name)*scaling
+
+        if block.has_value(names.cosmological_parameters, cosmosis_name):
+            input_value = block[names.cosmological_parameters, cosmosis_name]
+            if not np.isclose(input_value, CAMB_value, rtol=0.002):
+                warnings.warn(f"Parameter {cosmosis_name} inconsistent: input was {input_value} but value is now {CAMB_value}.")
+        # Either way we save the results
+        block[names.cosmological_parameters, cosmosis_name] = CAMB_value
 
 
 def save_distances(r, block, more_config):
@@ -403,6 +433,10 @@ def save_distances(r, block, more_config):
     mu[~p] = -np.inf
     block[names.distances, "MU"] = mu
     block[names.distances, "H"] = r.h_of_z(z_background)
+
+    rs_DV, _, _, F_AP = r.get_BAO(z_background, p).T
+    block[names.distances, "rs_DV"] = rs_DV
+    block[names.distances, "F_AP"] = F_AP
 
 def compute_growth_rates(r, block, P_tot, k, z, more_config):
     if P_tot is None:
@@ -492,6 +526,21 @@ def save_matter_power(r, p, block, more_config):
     block[names.growth_parameters, "f_z"] = f
 
     block[names.cosmological_parameters, "sigma_8"] = sigma_8[0]    
+
+    # sigma12 and S_8 - other variants of sigma_8
+    sigma12 = r.get_sigmaR(R=12.0, z_indices=-1, hubble_units=False)
+    block[names.cosmological_parameters, "sigma_12"] = sigma12
+    block[names.cosmological_parameters, "S_8"] = sigma_8[0]*np.sqrt(p.omegam/0.3)
+
+    if p.DoLensing:
+        # Get CMB lensing potential
+        # The cosmosis-standard-library clik interface expects ell(ell+1)/2 pi Cl
+        # for all angular power spectra, including the lensing potential.
+        # For compatability reasons, we provide that scaling here as well.
+        cl = r.get_lens_potential_cls(lmax=ell[-1], raw_cl=True, CMB_unit="muK")
+        block[names.cmb_cl, "PP"] = cl[2:,0]*(ell*(ell+1))/(2*np.pi)
+        block[names.cmb_cl, "PT"] = cl[2:,1]*(ell*(ell+1))/(2*np.pi)
+        block[names.cmb_cl, "PE"] = cl[2:,2]*(ell*(ell+1))/(2*np.pi)
 
 
 def save_cls(r, p, block):
