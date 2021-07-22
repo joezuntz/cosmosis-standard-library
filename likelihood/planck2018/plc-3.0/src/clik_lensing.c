@@ -149,6 +149,7 @@ void* dts_lensing_init(int lmax,int *hascl, int nbins, double* bins, double *p_h
         ds->nlt += lmax+1;
       }
     }
+    //_DEBUGHERE_("","");
     ds->cors = malloc_err(sizeof(double)*nbins*ds->nlt,err);
     forwardError(*err,__LINE__,NULL);
 
@@ -393,15 +394,31 @@ clik_lensing_object* _clik_lensing_init(char *fpath, error **err) {
       
     }
     
+    // JAZ The lines below are changes we got back from
+    // Karim that fix the issue found by Yuki Omori with
+    // the CMB lensing likelihood.  This should have the same
+    // effect as the changes we previous made, but we adopt
+    // these as the "official" ones.
+    nlt += lmax+1; // add size of lensing Cl
+
     cors = NULL;
-    if (nlt!=0) {
-      nlt += lmax+1;
+
+    hk = cldf_haskey(df,"clik_lensing/cors",err);
+    forwardError(*err,__LINE__,NULL);
+    if (hk==1) { //has a first order correction, read it !
       sz = nlt*nbins;
       cors = cldf_readfloatarray(df,"clik_lensing/cors",&sz,err);
       forwardError(*err,__LINE__,NULL);
-    } else {
-      nlt = lmax + 1;
     }
+
+    //if (nlt!=0) {
+    //  nlt += lmax+1;
+    //  sz = nlt*nbins;
+    //  cors = cldf_readfloatarray(df,"clik_lensing/cors",&sz,err);
+    //  forwardError(*err,__LINE__,NULL);
+    //} else {
+    //  nlt = lmax + 1;
+    //}
 
     sz = nlt;
     cl_fid = cldf_readfloatarray(df,"clik_lensing/cl_fid",&sz,err);
