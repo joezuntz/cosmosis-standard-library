@@ -411,7 +411,7 @@ def save_derived_parameters(r, p, block):
         block[names.cosmological_parameters, cosmosis_name] = CAMB_value
 
 
-def save_distances(r, block, more_config):
+def save_distances(r, p, block, more_config):
 
     # Evaluate z on a different grid than the spectra, so we can easily extend it further
     z_background = np.linspace(
@@ -428,9 +428,9 @@ def save_distances(r, block, more_config):
 
     # Deal with mu(0), which is -np.inf
     mu = np.zeros_like(d_L)
-    p = d_L > 0
-    mu[p] = 5*np.log10(d_L[p])+25
-    mu[~p] = -np.inf
+    pos = d_L > 0
+    mu[pos] = 5*np.log10(d_L[pos])+25
+    mu[~pos] = -np.inf
     block[names.distances, "MU"] = mu
     block[names.distances, "H"] = r.h_of_z(z_background)
 
@@ -532,16 +532,6 @@ def save_matter_power(r, p, block, more_config):
     block[names.cosmological_parameters, "sigma_12"] = sigma12
     block[names.cosmological_parameters, "S_8"] = sigma_8[0]*np.sqrt(p.omegam/0.3)
 
-    if p.DoLensing:
-        # Get CMB lensing potential
-        # The cosmosis-standard-library clik interface expects ell(ell+1)/2 pi Cl
-        # for all angular power spectra, including the lensing potential.
-        # For compatability reasons, we provide that scaling here as well.
-        cl = r.get_lens_potential_cls(lmax=ell[-1], raw_cl=True, CMB_unit="muK")
-        block[names.cmb_cl, "PP"] = cl[2:,0]*(ell*(ell+1))/(2*np.pi)
-        block[names.cmb_cl, "PT"] = cl[2:,1]*(ell*(ell+1))/(2*np.pi)
-        block[names.cmb_cl, "PE"] = cl[2:,2]*(ell*(ell+1))/(2*np.pi)
-
 
 def save_cls(r, p, block):
     # Get total (scalar + tensor) lensed CMB Cls
@@ -555,10 +545,13 @@ def save_cls(r, p, block):
 
     if p.DoLensing:
         # Get CMB lensing potential
-        cl = r.get_lens_potential_cls(lmax=len(ell)-1, raw_cl=False, CMB_unit="muK")
-        block[names.cmb_cl, "PP"] = cl[2:,0]
-        block[names.cmb_cl, "PT"] = cl[2:,1]
-        block[names.cmb_cl, "PE"] = cl[2:,2]
+        # The cosmosis-standard-library clik interface expects ell(ell+1)/2 pi Cl
+        # for all angular power spectra, including the lensing potential.
+        # For compatability reasons, we provide that scaling here as well.
+        cl = r.get_lens_potential_cls(lmax=ell[-1], raw_cl=True, CMB_unit="muK")
+        block[names.cmb_cl, "PP"] = cl[2:,0]*(ell*(ell+1))/(2*np.pi)
+        block[names.cmb_cl, "PT"] = cl[2:,1]*(ell*(ell+1))/(2*np.pi)
+        block[names.cmb_cl, "PE"] = cl[2:,2]*(ell*(ell+1))/(2*np.pi)
 
 
 def execute(block, config):
@@ -573,7 +566,7 @@ def execute(block, config):
         r = camb.get_results(p)
 
     save_derived_parameters(r, p, block)
-    save_distances(r, block, more_config)
+    save_distances(r, p, block, more_config)
 
     if p.WantTransfer:
         save_matter_power(r, p, block, more_config)
