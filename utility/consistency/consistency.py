@@ -86,6 +86,8 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
     ("omega_m", "1-omega_lambda-omega_k"),
     ("omega_k", "1-omega_m-omega_lambda"),
     ("K", "-hubble*hubble*omega_k/299792.458/299792.458"),
+    ("omnuh2", "mnu/93.14"),
+    ("mnu", "omnuh2*93.14"),
 ]
 
 # We want K in megaparsec units.  Hubble is in km/s/mpc.
