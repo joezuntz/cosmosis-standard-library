@@ -1,14 +1,7 @@
-from builtins import range
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names
 import numpy as np
 import scipy.integrate
-
-DZ = 0.01
-ZMAX = 3.0
-
-# Option setup part.  Read options from in ifile.
-
 
 def setup(options):
     z = options[option_section, "z"]

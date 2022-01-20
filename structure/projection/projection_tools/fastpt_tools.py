@@ -5,8 +5,8 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline as intspline
 from scipy.interpolate import RectBivariateSpline
 
-from .fastpt_develop import FASTPT as FASTPT
-from .fastpt_develop.P_extend import k_extend
+from fastpt import FASTPT as FASTPT
+from fastpt.P_extend import k_extend
 
 from cosmosis.datablock import names
 
