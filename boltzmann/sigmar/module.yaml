@@ -1,15 +1,13 @@
 name: sigma_r
 version: 1.0
-purpose: "Compute anisotropy dispersion sigma(R,z)"
-url: ""
+purpose: Compute anisotropy dispersion sigma(R,z)
+url: ''
 interface: sigmar.py
 attribution: [Scott Dodelson]
-rules:
-    ""
+rules: ''
 cite: []
-
 assumptions:
-    - "minimal assumptions; sigma computed directly from P(k,z)"
+-   minimal assumptions; sigma computed directly from P(k,z)
 
 explanation: |
     "sigma(R,z) is the variance of cosmic density fluctuations on scales
@@ -20,28 +18,65 @@ explanation: |
     The P(k,z) used could in general be linear or non-linear, but usually when people
     say sigma they mean the non-linear variant.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    zmin: "real, minimum redshift to generate values for"
-    zmax: "real, maximum redshift to generate values for"
-    dz: "real, output redshift sample spacing"
-    rmin: "real, minimum scale R in Mpc/h to generate values for"
-    rmax: "real, maximum scale R in Mpc/h to generate values for"
-    dr: "real, scale R spacing"
-    matter_power: "name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl"
-    crop_klim: "logical, crops the klimits of the sigma integral to max(0.01/R, kmin), min(100/R, kmax)  (default T)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
-inputs:
+    zmin:
+        meaning: Minimum redshift to generate values for
+        type: real
+        default:
+    zmax:
+        meaning: Maximum redshift to generate values for
+        type: real
+        default:
+    dz:
+        meaning: Output redshift sample spacing
+        type: real
+        default:
+    rmin:
+        meaning: Minimum scale R in Mpc/h to generate values for
+        type: real
+        default:
+    rmax:
+        meaning: Maximum scale R in Mpc/h to generate values for
+        type: real
+        default:
+    dr:
+        meaning: Scale R spacing
+        type: real
+        default:
     matter_power:
-        k_h: "real 1D array, sample values of linear spectrum in Mpc/h.  Section name specified by parameter in ini file."
-        z: "real 1D array, redshift of linear spectrum samples.  Section name specified by parameter in ini file."
-        P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}.  Section name specified by parameter in ini file."
-
+        meaning: Name of section to get P(k,z) from, e.g. matter_power_lin, matter_power_nl
+        type: str
+        default: matter_power_lin
+    crop_klim:
+        meaning: Crops the klimits of the sigma integral to max(0.01/R, kmin), min(100/R,
+            kmax)
+        type: bool
+        default: true
+inputs:
+    matter_power_lin:
+        k_h:
+            meaning: Sample values of linear spectrum in Mpc/h.  Section name specified
+                by parameter in ini file.
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of linear spectrum samples.  Section name specified
+                by parameter in ini file.
+            type: real 1d
+            default:
+        P_k:
+            meaning: Linear spectrum in (Mpc/h)^{-3}.  Section name specified by parameter
+                in ini file.
+            type: real 2d
+            default:
 outputs:
     sigmar:
-        R: "real 1D array, scale R of output in Mpc/h"
-        z: "real 1D array, redshift of output"
-        sigma2: "real 2D array, variance sigma^2(R,z)"
+        R:
+            meaning: Scale R of output in Mpc/h
+            type: real 1d
+        z:
+            meaning: Redshift of output
+            type: real 1d
+        sigma2:
+            meaning: Variance sigma^2(R,z)
+            type: real 2d

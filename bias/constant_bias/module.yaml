@@ -1,14 +1,14 @@
 #This is a template for module description files
 name: constant_bias
 version: 1
-purpose: "Apply a galaxy bias constant with k and z."
-url: ""
+purpose: Apply a galaxy bias constant with k and z.
+url: ''
 interface: constant_bias.py
-attribution: ["CosmoSIS Team"]
+attribution: [CosmoSIS Team]
 rules: []
 cite: []
 assumptions:
-    - "Galaxy bias constant with k and z"
+-   Galaxy bias constant with k and z
 
 explanation: |
     "Galaxy bias relates the distribution of galaxies to the underlying (dark) matter
@@ -26,35 +26,69 @@ explanation: |
     matter-galaxy cross-power from the non-linear power spectrum.
 
     Optionally, if it finds you have generated the matter-intrinsic alignment cross-power,
-    it will calculate the galaxy-intrinsic cross power from it.
+    it will calculate and save the galaxy-intrinsic cross power from it.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params: {}
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
 inputs:
     galaxy_bias:
-        b: "Real, constant galaxy bias."
+        b:
+            meaning: Constant galaxy bias value.
+            type: real
+            default:
     matter_power_nl:
-        k_h: "1D real vector, wavenumber in h/Mpc"
-        z: "1D real vector, redshift"
-        P_k: "2D real vector, nonlinear matter power"
+        k_h:
+            meaning: Wavenumber samples in h/Mpc for NL power
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift samples for NL power
+            type: real 1d
+            default:
+        P_k:
+            meaning: Nonlinear matter power grid
+            type: real 2d
+            default:
     matter_intrinsic_power:
-        k_h: "1D real vector, optional, wavenumber in h/Mpc"
-        z: "1D real vector, optional, redshift"
-        P_k: "2D real vector, optional, nonlinear matter power"
-
+        k_h:
+            meaning: Optional wavenumber in h/Mpc for matter-intrinsic cross-power
+            type: real 1d
+            default:
+        z:
+            meaning: Optional redshift for matter-intrinsic cross-power
+            type: real 1d
+            default:
+        P_k:
+            meaning: Optional nonlinear matter-intrinsic cross-power
+            type: real 2d
+            default:
 outputs:
     galaxy_power:
-        k_h: "1D real vector, wavenumber in h/Mpc"
-        z: "1D real vector, redshift"
-        P_k: "2D real vector, galaxy power"
+        k_h:
+            meaning: Wavenumber in h/Mpc of galaxy density power
+            type: real 1d
+        z:
+            meaning: Redshift of galaxy density power
+            type: real 1d
+        P_k:
+            meaning: Galaxy density power spectrum
+            type: real 2d
     matter_galaxy_power:
-        k_h: "1D real vector, wavenumber in h/Mpc"
-        z: "1D real vector, redshift"
-        P_k: "2D real vector, matter-galaxy cross power"
+        k_h:
+            meaning: Wavenumber in h/Mpc of matter-galaxy cross-power
+            type: real 1d
+        z:
+            meaning: Redshift of matter-galaxy cross-power
+            type: real 1d
+        P_k:
+            meaning: Matter-galaxy cross power
+            type: real 2d
     galaxy_intrinsic_power:
-        k_h: "1D real vector, only if matter_intrinsic_power found, wavenumber in h/Mpc"
-        z: "1D real vector, only if matter_intrinsic_power found, optional, redshift"
-        P_k: "2D real vector, only if matter_intrinsic_power found, optional, nonlinear matter power"
+        k_h:
+            meaning:  Wavenumber in h/Mpc of matter-intrinsic power (if computed)
+            type: real 1d
+        z:
+            meaning: Redshift of matter-intrinsic power (if computed)
+            type: real 1d
+        P_k:
+            meaning: Non-linear cross galaxy-intrinsic power spectrum (if computed)
+            type: real 2d

@@ -1,0 +1,43 @@
+name: Riess21
+version: '2021'
+purpose: Likelihood of hubble parameter H0 from Riess et al supernova sample
+url: ""
+interface: riess21.py
+attribution: [Riess et al (measurement), CosmoSIS team (code)]
+rules: None.
+cite:
+-   Riess et al, ApJLett, 908, 1
+assumptions:
+-   FRW cosmological model
+-   Riess et al data set
+explanation: |
+    "This small module was written for CosmoSIS.
+
+    Supernova type IA measurements are a standard(izable) candle 
+    that can be used to probe the relation between luminosity distance 
+    and redshift.  At low redshifts this directly probes the Hubble parameter,
+    H0.
+
+    The Riess et al 1% solution measurement of H0 is used in this module.
+    "
+params:
+    mean:
+        meaning: Replace the standard value measurement H0 = 0.732 with a custom one
+            for simulations
+        type: real
+        default: 0.732
+    sigma:
+        meaning: Replace the standard value error on H0 of 0.013 with a custom one
+        type: real
+        default: 0.013
+inputs:
+    cosmological_parameters:
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
+outputs:
+    likelihoods:
+        RIESS21_LIKE:
+            meaning: Gaussian likelihood value of supplied parameters
+            type: real

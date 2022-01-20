@@ -1,18 +1,18 @@
 #This is a template for module description files
 name: clerkin
 version: 1
-purpose: "Compute galaxy bias as function of k, z for 3-parameter Clerkin et al 2014 model"
-url: ""
+purpose: Compute galaxy bias as function of k, z for 3-parameter Clerkin et al 2014
+    model
+url: ''
 interface: clerkin_interface.py
-attribution: ["L. Clerkin"]
-rules:
-    "Please cite the relevant papers if you use this module."
+attribution: [L. Clerkin]
+rules: Please cite the relevant papers if you use this module.
 cite:
-    - "arXiv:1405.5521"
-    - "Cole et al, MNRAS, 362, 2, 505–534"
+-   arXiv:1405.5521
+-   "Cole et al, MNRAS, 362, 2, 505\u2013534"
 
 assumptions:
-    - "3-parameter bias model from Clerkin et al l 2014"
+-   3-parameter bias model from Clerkin et al l 2014
 
 explanation: |
     "The GTD bias model provides a benchmark expression for 
@@ -41,37 +41,87 @@ explanation: |
     The version of this model without redshift dependence is from Cole et al.
 
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    bias_only:  "(bool, default=F) If set, do not use the matter power spectrum, just save the bias field"
-    model: "'gtd', 'q', or 'q-gtd' to use the GTD three-parameter model (z evolution only), the 2-parameter Q model (k scale only) or both"
-    suffix: "(string, default='') A suffix to append to the output section names below"
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    bias_only:
+        meaning: ) If set, do not use the matter power spectrum, just save the bias
+            field
+        type: bool
+        default: false
+    model:
+        meaning: "Model choice. gtd, q, or q-gtd to use the GTD three-parameter model (z evolution\
+            \ only), the 2-parameter Q model (k scale only), or both"
+        type: str
+        default: gtd
+    suffix:
+        meaning: A suffix to append to the output section names below
+        type: str
+        default: "''"
 inputs:
     galaxy_bias:
-        b0:  real scalar. bias at z=0 if GTD model used
-        c:  real scalar. bias parameter for GTD model
-        alpha:  real scalar. power law index for growth in GTD model
-        Q:  real scalar. parameter of Q model
-        A:  real scalar.  parameter of Q model
+        b0:
+            meaning: Bias at z=0 if GTD model used
+            type: real
+            default:
+        c:
+            meaning: Bias parameter for GTD model
+            type: real
+            default:
+        alpha:
+            meaning: Power law index for growth in GTD model
+            type: real
+            default:
+        Q:
+            meaning: Numerator parameter in Q model
+            type: real
+            default:
+        A:
+            meaning: Denominator parameter in Q model
+            type: real
+            default:
     matter_power_nl:
-        k_h: "1D real vector, wavenumber in h/Mpc only if mode=power or both"
-        z: "1D real vector, redshift only if mode=power or both"
-        P_k: "2D real vector, nonlinear matter power only if mode=power or both"
-
+        k_h:
+            meaning: Wavenumber in h/Mpc only if mode=power or both
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift only if mode=power or both
+            type: real 1d
+            default:
+        P_k:
+            meaning: Nonlinear matter power only if mode=power or both
+            type: real 2d
+            default:
 outputs:
     galaxy_power:
-        k_h: "1D real vector, wavenumber in h/Mpc, only if bias_only=F"
-        z: "1D real vector, redshift, only if bias_only=F"
-        P_k: "2D real vector, galaxy power, only if bias_only=F"
+        k_h:
+            meaning: Wavenumber in h/Mpc, only if bias_only=F
+            type: real 1d
+        z:
+            meaning: Redshift, only if bias_only=F
+            type: real 1d
+        P_k:
+            meaning: Galaxy power, only if bias_only=F
+            type: real 2d
     matter_galaxy_power:
-        k_h: "1D real vector, wavenumber in h/Mpc, only if bias_only=F"
-        z: "1D real vector, redshift, only if bias_only=F"
-        P_k: "2D real vector, matter-galaxy cross power, only if bias_only=F"
+        k_h:
+            meaning: Wavenumber in h/Mpc, only if bias_only=F
+            type: real 1d
+        z:
+            meaning: Redshift, only if bias_only=F
+            type: real 1d
+        P_k:
+            meaning: Matter-galaxy cross power, only if bias_only=F
+            type: real 2d
     bias_field:
-        k_h: "1D real vector, wavenumber in h/Mpc"
-        z: "1D real vector, redshift"
-        b: "2D real vector, galaxy bias"
-        r: "2D real vector, stochastic bias (identically 1 for these models)"
+        k_h:
+            meaning: Wavenumber samples in h/Mpc of bias b(k, z)
+            type: real 1d
+        z:
+            meaning: Redshift samples
+            type: real 1d
+        b:
+            meaning: Galaxy bias b(k, z)
+            type: real 2d
+        r:
+            meaning: Stochastic bias r(k, z); identically 1 for these models.
+            type: real 2d

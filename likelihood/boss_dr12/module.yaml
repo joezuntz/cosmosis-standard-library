@@ -1,17 +1,18 @@
 #This is a template for module description files
 name: boss_dr12
-version: "1607.03155v1"
-purpose: Compute the likelihood of the supplied expansion and growth history against BOSS DR12 data
-url: "https://www.sdss3.org/science/boss_publications.php"
+version: 1607.03155v1
+purpose: Compute the likelihood of the supplied expansion and growth history against
+    BOSS DR12 data
+url: https://www.sdss3.org/science/boss_publications.php
 interface: boss_dr12.py
-attribution: 
-rules: ""
-cite: 
-    - ""
+attribution: ['CosmoSIS Team']
+rules: 'You can do what you want with the python code here'
+cite:
+-   'arxiv: 1607.03155'
 
 assumptions:
-    - ""
-    - ""
+-   'LCDM Model'
+-   'Details of BOSS reconstruction'
 
 explanation: >
     "This module gives a likelihood of the comoving angular diameter
@@ -20,24 +21,73 @@ explanation: >
 
     A correlated Gaussian likelihood is then returned."
 params:
-    data_file: "string, path to file with measured D_m(z1),H(z1),fsig8(z1),D_m(z2),etc values in (default: included file)"
-    cov_file: "string, path to covariance matrix file (default: included file)"
-    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=148.6)"
-    verbose: "Bool, Print extra output (default = False)"
-    mode: "0 for BAO only, 1 for BAO+FS measurements"
-inputs: 
+    mode:
+        meaning: 0 for BAO only, 1 for BAO+FS measurements
+        type: int
+        default: 0
+    data_file:
+        meaning: 'Path to file with measured D_m(z1), H(z1), fsig8(z1), D_m(z2), etc values'
+        type: str
+        default: Included file
+    cov_file:
+        meaning: 'Path to covariance matrix file'
+        type: str
+        default: Included file
+    redshift_file:
+        meaning: 'Path to file with the effective redshifts of the measurements'
+        type: str
+        default: Included file
+    rs_fiducial:
+        meaning: Fiducial value of sound horizon at last scattering used in making
+            data
+        type: real
+        default: 147.78
+    feedback:
+        meaning: Feedback level - 0 for no feedback, 1 for lots
+        type: int
+        default: 0
+inputs:
     growth_parameters:
-        d_z: "1D real array, linear growth factor D"
-        f_z: "1D real array, linear growth rate f"
-        z: "1D real array, redshift of samples "
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f(z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
     cosmological_parameters:
-        omega_m:  "real, baryon + cdm density fraction today"
-        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        omega_m:
+            meaning: Baryon + cdm density fraction today
+            type: real
+            default:
+        sigma_8:
+            meaning: Amplitude of linear matter power at 8/h Mpc at z=0
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
     distances:
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        h:  "1D real array, hubble parameter with in units of Mpc"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
 outputs:
     likelihoods:
-        boss_dr12_like: "real, likelihood of supplied expansion history"
+        boss_dr12_like:
+            meaning: Likelihood of supplied expansion history
+            type: real

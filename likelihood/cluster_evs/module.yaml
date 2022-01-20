@@ -1,14 +1,14 @@
-name: "Extreme_Value_Statistics"
+name: Extreme_Value_Statistics
 version: 1.0
-purpose: "PDF of the maximum cluster mass given cosmological parameters"
-url: ""
+purpose: PDF of the maximum cluster mass given cosmological parameters
+url: ''
 interface: cluster_evs.py
 attribution: [Harrison & Coles 2012, CosmoSIS team (code)]
-rules: "None."
+rules: None.
 cite:
-    - "Harrison and Coles, MNRAS 421 2012"
+-   Harrison and Coles, MNRAS 421 2012
 assumptions:
-    - "FRW cosmological model"
+-   FRW cosmological model
 explanation: |
     Computes the likelihood of the largest observed cluster near
     the specified redshift range being M_max, as loaded from the datablock, 
@@ -19,31 +19,74 @@ explanation: |
 
     Optionally, can also generate a full PDF with output_pdf=T
     "
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    feedback: "verbose = 1"
-    redshift: "float, output z of cluster where integration limits: zmin = z - 0.02, zmax = z + 0.02"
-    output_pdf: "bool, if True, output PDF for range of masses, only recommended for test runs (default = False)"
-    frac: "float, fraction of the sky observed between zmin and zmax (default = 1.0)"
-    M_min: "float, minimum mass for PDF in M_sun/h (default = 1.E14)"
-    M_max: "float, maximum mass for PDF in M_sun/h (default = 2.E15)"
-    n_m: "int, number of log-spaced masses for PDF (default = 100)"
-
+    redshift:
+        meaning: 'Output z of cluster where integration limits: zmin = z - 0.02, zmax
+            = z + 0.02'
+        type: real
+        default:
+    output_pdf:
+        meaning: If True, output PDF for range of masses, only recommended for test
+            runs
+        type: bool
+        default: false
+    frac:
+        meaning: Fraction of the sky observed between zmin and zmax
+        type: real
+        default: 1.0
+    M_min:
+        meaning: Minimum mass for PDF in M_sun/h
+        type: real
+        default: 1.0E14
+    M_max:
+        meaning: Maximum mass for PDF in M_sun/h
+        type: real
+        default: 2.0E15
+    n_m:
+        meaning: Number of log-spaced masses for PDF
+        type: int
+        default: 100
 inputs:
     cosmological_parameters:
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
-        omega_m:  "real, Omega matter"
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
+        omega_m:
+            meaning: Omega matter
+            type: real
+            default:
     distances:
-        z:  "real 1D array, redshifts"
-        d_a:  "real, angular diameter distance as a function of z"
+        z:
+            meaning: Redshifts
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance as a function of z
+            type: real
+            default:
     mass_function:
-        z:  "real 1D array, redshifts"
-        r_h:  "real 1D array, radii (Mpc/h)"
-        dndlnmh:  "real 1D array, mass function (h^3 Mpc^-3)"
-
-outputs:        
+        z:
+            meaning: Redshifts
+            type: real 1d
+            default:
+        r_h:
+            meaning: Radii (Mpc/h)
+            type: real 1d
+            default:
+        dndlnmh:
+            meaning: Mass function (h^3 Mpc^-3)
+            type: real 1d
+            default:
+outputs:
     evs:
-        m: "real 1D array, mass (M_sun/h) (if output_pdf=True)"
-        logphi: "real 1D array, log of PDF (if output_pdf=True)"
+        m:
+            meaning: Mass (M_sun/h) (if output_pdf=True)
+            type: real 1d
+        logphi:
+            meaning: Log of PDF (if output_pdf=True)
+            type: real 1d
     likelihoods:
-        evs_like: "real, likelihood of M_max"
+        evs_like:
+            meaning: Likelihood of M_max
+            type: real

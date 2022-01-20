@@ -1,32 +1,36 @@
-name: "Cluster_mass"
-version: "1.0"
-purpose: "Likelihood of z=1.59 Cluster mass from Santos et al. 2011"
-url: ""
+name: Cluster_mass
+version: '1.0'
+purpose: Likelihood of z=1.59 Cluster mass from Santos et al. 2011
+url: ''
 interface: cluster_mass.py
-attribution: [Santos et al. 2011 (measurement), Harrison & Coles 2012, CosmoSIS team (code)]
+attribution: [Santos et al. 2011 (measurement), Harrison & Coles 2012, CosmoSIS team
+        (code)]
 rules: []
 cite:
-     - "Santos et al. 2011 "
-     - "Harrison & Coles 2012 "
+-   'Santos et al. 2011 '
+-   'Harrison & Coles 2012 '
 assumptions: []
 explanation: |
     "This small module was written for CosmoSIS.
         The Extreme Value statistics module (evs) should be run in the pipeline prior to this module.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    mean: "float, mass in M_sun/h"
-    sigma: "float, error in M_sun/h "
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
-
+    mean:
+        meaning: Mass in M_sun/h
+        type: real
+        default:
+    sigma:
+        meaning: Error in M_sun/h
+        type: real
+        default:
 inputs:
     clusters:
-        M_max:  "real, mass (M_sun/h)"
-
+        M_max:
+            meaning: Mass (M_sun/h)
+            type: real
+            default:
 outputs:
     likelihoods:
-        MAXMASS_LIKE: "Gaussian likelihood value of supplied parameters"
-
+        MAXMASS_LIKE:
+            meaning: Gaussian likelihood value of supplied parameters
+            type: real

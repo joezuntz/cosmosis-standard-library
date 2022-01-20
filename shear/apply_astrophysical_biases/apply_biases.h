@@ -1,5 +1,5 @@
-#include "cosmosis/datablock/c_datablock.h"
-#include "cosmosis/datablock/section_names.h"
+#include "datablock/c_datablock.h"
+#include "datablock/section_names.h"
 #include "utils.h"
 #include <stdio.h>
 #include <math.h>

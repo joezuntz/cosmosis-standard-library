@@ -1,18 +1,22 @@
-
-name: "BBN"
-version: "PDG13"
-purpose: "Simple prior on Omega_b h^2 from light element abundances"
-url: "http://pdg.lbl.gov/2013/reviews/rpp2013-rev-bbang-nucleosynthesis.pdf"
-interface: bbn_ombh2.py
-attribution: ["CosmoSIS Team"]
-rules: "None."
 cite:
     - "J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)"
     - "Cooke, R et al.  ApJ, 830, 2 (2016)"
     - "Pitrou, C. et al, MNRAS, 502, 2, 2474–2481, (2021)"
+=======
+name: BBN
+version: PDG13
+purpose: Simple prior on Omega_b h^2 from light element abundances
+url: http://pdg.lbl.gov/2013/reviews/rpp2013-rev-bbang-nucleosynthesis.pdf
+interface: bbn_ombh2.py
+attribution: [B.D Fields, P. Molaro, S. Sarkar]
+rules: None.
+cite:
+- J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)
+- Cooke, R et al.  ApJ, 830, 2 (2016)
+- Pitrou, C. et al, MNRAS, 502, 2, 2474–2481, (2021)
 
 assumptions:
-    - "Standard model of Big-Bang nucleosynthesis"
+-   Standard model of Big-Bang nucleosynthesis
 
 explanation: |
     "This small module was written for CosmoSIS.
@@ -24,21 +28,32 @@ explanation: |
     There are various measurements of the light element abundance, and this
     module can select between different papers.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    paper: "str, default=beringer_2012 choice of which paper to use, beringer_2012, cooke_2016_i, cooke_2016_ii, cooke_2016_combined, pitrou_cooke_combined"
-    mean: "float, replace the standard value measurement omega_b h^2 = 0.023 with a custom one (default 0.023)"
-    sigma: "float, replace the standard value error 0.002 with a custom one (default 0.002)"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    paper:
+        meaning: Choice of which paper to use, beringer_2012, cooke_2016_i, cooke_2016_ii, cooke_2016_combined, pitrou_cooke_combined
+        type: str
+        default: beringer_2012
+    mean:
+        meaning: Replace the standard value measurement omega_b h^2 = 0.023 with a
+            custom one
+        type: real
+        default: 0.023
+    sigma:
+        meaning: Replace the standard value error 0.002 with a custom one
+        type: real
+        default: 0.002
 inputs:
     cosmological_parameters:
-        omega_b:  "real, baryon density fraction today"
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
-
+        omega_b:
+            meaning: Baryon density fraction today
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
 outputs:
     likelihoods:
-        BBN_LIKE: "Gaussian likelihood value of supplied parameters"
-
+        BBN_LIKE:
+            meaning: Gaussian likelihood value of supplied parameters
+            type: real

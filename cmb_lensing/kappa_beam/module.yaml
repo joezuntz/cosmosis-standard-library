@@ -1,38 +1,68 @@
 #This is a template for module description files
-name: "kappa_beam"
-version: "1.0"
-purpose: "Apply smoothing function to cross-correlations with CMB kappa in harmonic space."
-url: ""
-interface: "kappa_beam.py"
+name: kappa_beam
+version: '1.0'
+purpose: Apply smoothing function to cross-correlations with CMB kappa in harmonic
+    space.
+url: ''
+interface: kappa_beam.py
 attribution: []
-rules:
-    "You can do what you want with this file."
+rules: You can do what you want with this file.
 cite: []
-
 assumptions:
-    - ""
+-   ''
 
 explanation: |
     "It is often useful to convolve an estimated CMB lensing map with a Gaussian beam before measuring correlation functions with galaxies and shears.  If such smoothing is applied, we must account for it on the modeling side.  This module accounts for such smoothing by multiplying the theoretical power spectra by the necessary beam factors."
-
 params:
-    shearkappa_section: "section name where harmonic-space cross-spectrum between galaxy shear and CMB kappa is stored.  Leave blank if none."
-    galkappa_section: "section name where harmonic-space cross-spectrum between galaxy density and CMB kappa is stored.  Leave blank if none." 
-    beam_sigma_arcmin: "sigma of Gaussian for smoothing CMB kappa (in arcminutes)"
-    beam_fwhm_arcmin: "FWHM of Gaussian for smoothing CMB kappa (in arcminutes)"
-
+    shearkappa_section:
+        meaning: Section name where harmonic-space cross-spectrum between galaxy shear
+            and CMB kappa is stored.  Leave blank if none.
+        type: str
+        default:
+    galkappa_section:
+        meaning: Section name where harmonic-space cross-spectrum between galaxy density
+            and CMB kappa is stored.  Leave blank if none.
+        type: str
+        default:
+    beam_sigma_arcmin:
+        meaning: Sigma of Gaussian for smoothing CMB kappa (in arcminutes)
+        type: real
+        default:
+    beam_fwhm_arcmin:
+        meaning: FWHM of Gaussian for smoothing CMB kappa (in arcminutes)
+        type: real
+        default:
 inputs:
     shear_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell."
+        ell:
+            meaning: Angular frequency values at which Shear-kappa c_ell is evaluated
+            type: int 1d
+            default:
+        bin_{i}_{j}:
+            meaning: Shear-kappa C_ell calculated at corresponding ell for relevant i and j combinations
+            type: real 1d
+            default:
     galaxy_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell."
-
+        ell:
+            meaning: Angular frequency values at which Galaxy-kappa c_ell is evaluated
+            type: int 1d
+            default:
+        bin_{i}_{j}:
+            meaning: Galaxy-kappa C_ell calculated at corresponding ell for relevant i and j combinations
+            type: real 1d
+            default:
 outputs:
     shear_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell after smoothing."
+        ell:
+            meaning: Angular frequency values at which Shear-kappa c_ell is evaluated
+            type: int 1d
+        bin_{i}_{j}:
+            meaning: Shear-kappa C_ell smoothed by beam
+            type: real 1d
     galaxy_cmbkappa_cl:
-        ell: "integer 1d array, values at which c_ell is evaluated"
-        bin_{i}_{j}: "real 1d arrays for relevant i and j combinations.  C_ell calculated at corresponding ell after smoothing."
+        ell:
+            meaning: Values at which c_ell is evaluated
+            type: int 1d
+        bin_{i}_{j}:
+            meaning: Galaxy-kappa C_ell smoothed by beam
+            type: real 1d

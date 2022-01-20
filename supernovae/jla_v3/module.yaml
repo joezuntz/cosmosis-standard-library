@@ -1,18 +1,17 @@
 #This is a template for module description files
-name: "jla"
-version: "3"
-purpose: "Supernova likelihood for SDSS-II/SNLS3"
-url: "http://supernovae.in2p3.fr/sdss_snls_jla/ReadMe.html"
+name: jla
+version: '3'
+purpose: Supernova likelihood for SDSS-II/SNLS3
+url: http://supernovae.in2p3.fr/sdss_snls_jla/ReadMe.html
 interface: jla.so
 attribution: [Marc Betoule]
-rules:
-    ""
+rules: ''
 cite:
-    - "http://arxiv.org/abs/1401.4064"
+-   http://arxiv.org/abs/1401.4064
 
 assumptions:
-    - "SALT2 used to fit light curves"
-    - "Akima interpolation between mu(z) samples"
+-   SALT2 used to fit light curves
+-   Akima interpolation between mu(z) samples
 
 explanation: |
     "This JLA code uses 731 supernovae from the JLA SDSS-II/SNLS3 sample 
@@ -23,31 +22,75 @@ explanation: |
 
     You can copy the standard parameters to use for this from demos/demo5.ini
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    data_dir: "String; dir for other files. Use cosmosis-standard-library/supernovae/jla_v3/data (unless trying a different data set)"
-    data_file: "String; dir for other files. Use jla_lcparams.txt (unless trying a different data set)"
-    scriptmcut: "String; dir for other files. Use 10.0"
-    mag_covmat_file: "String; dir for other files. Use jla_v0_covmatrix.dat"
-    stretch_covmat_file: "String; dir for other files. Use jla_va_covmatrix.dat"
-    colour_covmat_file: "String; dir for other files. Use jla_vb_covmatrix.dat"
-    mag_stretch_covmat_file: "String; dir for other files. Use jla_v0a_covmatrix.dat"
-    mag_colour_covmat_file: "String; dir for other files. Use jla_v0b_covmatrix.dat"
-    stretch_colour_covmat_file: "String; dir for other files. Use jla_vab_covmatrix.dat"
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
+    data_dir:
+        meaning: Dir for other files. Use cosmosis-standard-library/supernovae/jla_v3/data
+            (unless trying a different data set)
+        type: str
+        default:
+    data_file:
+        meaning: Dir for other files. Use jla_lcparams.txt (unless trying a different
+            data set)
+        type: str
+        default:
+    scriptmcut:
+        meaning: Dir for other files. Use 10.0
+        type: str
+        default:
+    mag_covmat_file:
+        meaning: Dir for other files. Use jla_v0_covmatrix.dat
+        type: str
+        default:
+    stretch_covmat_file:
+        meaning: Dir for other files. Use jla_va_covmatrix.dat
+        type: str
+        default:
+    colour_covmat_file:
+        meaning: Dir for other files. Use jla_vb_covmatrix.dat
+        type: str
+        default:
+    mag_stretch_covmat_file:
+        meaning: Dir for other files. Use jla_v0a_covmatrix.dat
+        type: str
+        default:
+    mag_colour_covmat_file:
+        meaning: Dir for other files. Use jla_v0b_covmatrix.dat
+        type: str
+        default:
+    stretch_colour_covmat_file:
+        meaning: Dir for other files. Use jla_vab_covmatrix.dat
+        type: str
+        default:
 inputs:
     distances:
-        z:  "Real vector; redshift sample values for theory "
-        mu:  "Real vector; theory distance modulus at sample redshifts"
+        z:
+            meaning: Redshift sample values for theory
+            type: real 1d
+            default:
+        mu:
+            meaning: Theory distance modulus at sample redshifts
+            type: real 1d
+            default:
     supernova_params:
-        alpha: "Real; SN shape parameter coefficient"
-        beta: "Real; SN color parameter coefficient"
-        M: "Real; SN magnitude parameter baseline value; leave this fixed and vary deltaM."
-        deltaM: "Real; SN magnitude parameter where M_actual = M + deltaM"
-
+        alpha:
+            meaning: SN shape parameter coefficient
+            type: real
+            default:
+        beta:
+            meaning: SN color parameter coefficient
+            type: real
+            default:
+        M:
+            meaning: SN magnitude parameter baseline value; leave this fixed and vary
+                deltaM.
+            type: real
+            default:
+        deltaM:
+            meaning: SN magnitude parameter where M_actual = M + deltaM
+            type: real
+            default:
 outputs:
     likelihoods:
-        JLA_LIKE: Gaussian likelihood for this data set and theory mu(z)
+        JLA_LIKE:
+            meaning: Gaussian likelihood for this data set and theory mu(z)
+            type: real

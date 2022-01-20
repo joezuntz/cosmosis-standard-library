@@ -1,51 +1,101 @@
 name: CRL_Eisenstein_Hu
-version: "1"
+version: '1'
 purpose: Komatsu's CRL code to compute the power spectrum using EH fitting formula.
-url: "http://www.mpa-garching.mpg.de/~komatsu/crl/"
+url: http://www.mpa-garching.mpg.de/~komatsu/crl/
 interface: nowiggle_module.so
 attribution: [Komatsu-CRL]
-rules: ""
+rules: ''
 cite:
-        - "http://www.mpa-garching.mpg.de/~komatsu/crl/"
-        - " Eisenstein and Hu, ApJ, 496, 605 (1998)"
+-   http://www.mpa-garching.mpg.de/~komatsu/crl/
+-   ' Eisenstein and Hu, ApJ, 496, 605 (1998)'
 assumptions:
-    - "DEPENDENCIES: You need to run a module to compute the growth rate before this one."
+-   'DEPENDENCIES: You need to run a module to compute the growth rate before this
+    one.'
 
 explanation: |
-        "This module uses Eiichiro Komatsu's CRL code to calculate the power spectrum
-        without BAO in it following Eisenstein and Hu, ApJ, 496, 605 (1998). 
-        This is faster but less accurate than a Boltzmann code like CAMB.
+    "This module uses Eiichiro Komatsu's CRL code to calculate the power spectrum
+    without BAO in it following Eisenstein and Hu, ApJ, 496, 605 (1998). 
+    This is faster but less accurate than a Boltzmann code like CAMB.
 
-        The CosmoSIS seam modified this slightly to remove some copyrighted 
-        N*merical R*cipes code.
-        "
-
+    The CosmoSIS seam modified this slightly to remove some copyrighted 
+    N*merical R*cipes code.
+    "
 params:
-        zmin: "Real, min value of redshift to save P(k,z) (default = 0.0)"
-        zmax: "Real, max value of redshift to save P(k,z) (default = 5.0)"
-        nz_steps: "Integer, number of steps used between zmin-zmax (default = 800)"
-        kmin: "Real, min value of k_h (Mpc/h) to save P(k,z) (default = 1.0*10^-5)"
-        kmax: "Real, min value of k_h (Mpc/h) to save P(k,z) (default = 10.0)"
-        nk_steps: "Integer, number of steps used between kmin-kmax (default = 800)"
-
-
+    zmin:
+        meaning: Min value of redshift to save P(k,z)
+        type: real
+        default: 0.0
+    zmax:
+        meaning: Max value of redshift to save P(k,z)
+        type: real
+        default: 5.0
+    nz_steps:
+        meaning: Number of steps used between zmin-zmax
+        type: int
+        default: 800
+    kmin:
+        meaning: Min value of k_h (Mpc/h) to save P(k,z)
+        type: real
+        default: 1.0e-5
+    kmax:
+        meaning: Min value of k_h (Mpc/h) to save P(k,z)
+        type: real
+        default: 10.0
+    nk_steps:
+        meaning: Number of steps used between kmin-kmax
+        type: int
+        default: 800
 inputs:
-        growth_parameters:
-            d_z: "1D real array, linear growth factor D"
-            f_z: "1D real array, linear growth rate f"
-            z: "1D real array, redshift of samples "
-        cosmological_parameters:
-            omega_b: "real scalar, baryon content"
-            omega_m: "real scalar, matter content"
-            w: "real scalar, dark energy EoS.  Optional; default=-1"
-            h0: "real scalar, Hubble/100km/s/Mpc"
-            n_s: "real scalar, scalar spectral index"
-            n_run: "real scalar, scalar spectral index running. Options; default=-1"
-            a_s: "real scalar, primordial amplitude"
-
+    growth_parameters:
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f(z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
+    cosmological_parameters:
+        omega_b:
+            meaning: Baryon content
+            type: real
+            default:
+        omega_m:
+            meaning: Matter content
+            type: real
+            default:
+        w:
+            meaning: Dark energy EoS.
+            type: real
+            default: -1
+        h0:
+            meaning: Hubble/100km/s/Mpc
+            type: real
+            default:
+        n_s:
+            meaning: Scalar spectral index
+            type: real
+            default:
+        n_run:
+            meaning: Scalar spectral index running.
+            type: real
+            default: -1
+        a_s:
+            meaning: Primordial amplitude
+            type: real
+            default:
 outputs:
-        matter_power_no_bao:
-                z: "1D real array, redshifts of samples"
-                k_h: "1D real array, k wavenumbers of samples in Mpc/h"
-                p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3"
-
+    matter_power_no_bao:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: K wavenumbers of samples in Mpc/h
+            type: real 1d
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3
+            type: real 2d

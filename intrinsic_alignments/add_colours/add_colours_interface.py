@@ -46,4 +46,4 @@ def execute(block, config):
         (1 + z)**(alpha_blue) * (1 + z)**(alpha_red)
 
     P_GI = f_red * A_red * P_GI_red * (1 + z)**(alpha_red)
-    P_GI = f_blue * A_blue * P_GI_blue * (1 + z)**(alpha_blue)
+    P_GI += f_blue * A_blue * P_GI_blue * (1 + z)**(alpha_blue)

@@ -1,15 +1,14 @@
 #This is a template for module description files
 name: add_intrinsic
-version: "1.0"
-purpose: "Sum together intrinsic aligments with shear signal"
-url: ""
+version: '1.0'
+purpose: Sum together intrinsic aligments with shear signal
+url: ''
 interface: add_intrinsic.py
 attribution: [CosmoSIS team]
-rules: ""
+rules: ''
 cite: []
-
 assumptions:
-    - "Linear sum of C_ell for IA components"
+-   Linear sum of C_ell for IA components
 
 explanation: |
     Observerd shape spectra contain a sum of intrinsic and shear spectra, and the
@@ -17,23 +16,46 @@ explanation: |
     accounting for the fact that C_GI != C_IG for two bins
 
     It may be replaced at some point with changes to the shear computation modules.
-
 params: {}
-
 inputs:
     shear_cl_gg:
-        nbin:  "Integer; number of tomographic bins"
-        ell:  "Real 1D array; ell samples of theory"
-        bin_{i}_{j}:  "Real 1D array; for series of i,j values, the shear-shear angular spectra C_ell"
+        nbin:
+            meaning: Number of tomographic bins
+            type: int
+            default:
+        ell:
+            meaning: ell samples of theory
+            type: real 1d
+            default:
+        bin_{i}_{j}:
+            meaning: Shear-shear angular spectra C_ell for pairs of i,j values
+            type: real 1d
+            default:
     shear_cl_ii:
-        bin_{i}_{j}:  "Real 1D array; for series of i,j values, the intrinsic-intrinsic angular spectra C_ell"
+        bin_{i}_{j}:
+            meaning: Intrinsic-intrinsic angular spectra for pairs of i,j values
+                C_ell
+            type: real 1d
+            default:
     shear_cl_gi:
-        bin_{i}_{j}:  "Real 1D array; for series of i,j values, the shear-intrinsic angular spectra C_ell"
-        bin_{j}_{i}:  "Real 1D array; for series of i,j values, the intrinsic_shear angular spectra C_ell"
-
-
+        bin_{i}_{j}:
+            meaning: Shear-intrinsic angular spectra for pairs of i,j values
+                C_ell
+            type: real 1d
+            default:
+        bin_{j}_{i}:
+            meaning: Intrinsic-shear angular spectra for pairs of i,j values
+                C_ell
+            type: real 1d
+            default:
 outputs:
     shear_cl:
-        nbin:  "Integer; number of tomographic bins"
-        ell:  "Real 1D array; ell samples of theory"
-        bin_{i}_{j}:  "Real 1D array; for series of i,j values, the total angular spectra C_ell"
+        nbin:
+            meaning: Number of tomographic bins
+            type: int
+        ell:
+            meaning: ell samples of theory
+            type: real 1d
+        bin_{i}_{j}:
+            meaning: Total angular spectra C_ell for pairs of i,j values
+            type: real 1d

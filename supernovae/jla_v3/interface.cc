@@ -1,11 +1,11 @@
-#include "cosmosis/datablock/datablock.hh"
-#include "cosmosis/datablock/section_names.h"
+#include "datablock/datablock.hh"
+#include "datablock/section_names.h"
+#include <vector>
+#include <algorithm>
 #include "gsl/gsl_spline.h"
 #include "src/jla.h"
-#include <algorithm>
 #include <cstring>
 #include <iomanip>
-#include <vector>
 
 inline void
 report_missing_param(char const* section, std::string const& name)
@@ -104,94 +104,97 @@ spline_from_vectors(std::vector<double>& x, std::vector<double>& y)
     return status;                                                             \
   }
 
-int
-execute(cosmosis::DataBlock* block, void* config)
-{
-  auto calculator = (JLALikelihood*)config;
+int execute(cosmosis::DataBlock * block, void * config){
+	auto calculator = (JLALikelihood*) config;
 
-  // Space for Z and MU
-  std::vector<double> Z;
-  std::vector<double> MU;
+	// Space for Z and MU
+	std::vector<double> Z;
+	std::vector<double> MU;
 
-  // Load Z
-  auto status = block->get_val(DISTANCES_SECTION, "z", Z);
-  CHECK_ERR("z");
+	//Load Z
+	auto status = block->get_val(DISTANCES_SECTION, "z", Z);
+	CHECK_ERR("z");
 
-  // Load MU
-  status = block->get_val(DISTANCES_SECTION, "mu", MU);
-  CHECK_ERR("mu");
+	//Load MU
+	status =  block->get_val(DISTANCES_SECTION, "mu", MU);
+	CHECK_ERR("mu");
 
-  // Load the four nuisance params
-  double nuisance[4];
-  const char* section = SUPERNOVA_PARAMS_SECTION;
-  status = block->get_val(section, "alpha", nuisance[0]);
-  CHECK_ERR("alpha");
+	// Load the four nuisance params
+	double nuisance[4];
+	const char * section = SUPERNOVA_PARAMS_SECTION;
+	status =  block->get_val(section, "alpha", nuisance[0]);
+	CHECK_ERR("alpha");
 
-  status = block->get_val(section, "beta", nuisance[1]);
-  CHECK_ERR("beta");
+	status =  block->get_val(section, "beta", nuisance[1]);
+	CHECK_ERR("beta");
 
-  status = block->get_val(section, "M", nuisance[2]);
-  CHECK_ERR("M");
+	status =  block->get_val(section, "M", nuisance[2]);
+	CHECK_ERR("M");
 
-  status = block->get_val(section, "deltaM", nuisance[3]);
-  CHECK_ERR("deltaM");
+	status =  block->get_val(section, "deltaM", nuisance[3]);
+	CHECK_ERR("deltaM");
 
-  // Reverse if needed
-  if (Z[1] < Z[0]) {
-    std::reverse(Z.begin(), Z.end());
-    std::reverse(MU.begin(), MU.end());
-  }
+	// Reverse if needed
+	if (Z[1]<Z[0]) {std::reverse(Z.begin(), Z.end()); std::reverse(MU.begin(), MU.end());}
 
-  double z_max_calc = Z.back();
+	double z_max_calc = Z.back();
 
-  // Get rid of the first element at z=0 since there mu=-inf
-  if (Z[0] == 0.0) {
-    Z.erase(Z.begin());
-    MU.erase(MU.begin());
-  }
+	// Get rid of the first element at z=0 since there mu=-inf
+	if (Z[0]==0.0){
+		Z.erase(Z.begin());
+		MU.erase(MU.begin());
+	}
 
-  // Make an interpolating spline
-  gsl_spline* mu_of_z = spline_from_vectors(Z, MU);
+  double z_min_calc = Z.front();
 
-  // Get the number of SN and their redshifts
-  int n_sn = calculator->size();
-  double* z_sn = calculator->getZ();
-  double mu_sn[n_sn];
-  int out_of_range = 0;
 
-  // Evaluate our theory mu(z) for each supernova
-  for (int i = 0; i < n_sn; i++) {
-    double z_helio = calculator->lcpars[i].zhel;
-    double helio_correction = 5 * (log10(1 + z_helio) - log10(1 + z_sn[i]));
-    if (z_sn[i] > z_max_calc) {
+	// Make an interpolating spline
+	gsl_spline * mu_of_z = spline_from_vectors(Z, MU);
+
+	// Get the number of SN and their redshifts
+	int n_sn = calculator->size();
+	double * z_sn = calculator->getZ();
+	double mu_sn[n_sn];
+	int out_of_range = 0;
+
+	// Evaluate our theory mu(z) for each supernova
+	for (int i=0; i<n_sn; i++){
+		double z_helio = calculator->lcpars[i].zhel;
+		double helio_correction = 5*(log10(1+z_helio) - log10(1+z_sn[i]));
+    if (z_sn[i] > z_max_calc){
       out_of_range = 1;
       break;
     }
-    mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL) + helio_correction;
+    if (z_sn[i] < z_min_calc){
+      out_of_range = 2;
+      break;
+    }
+		mu_sn[i] = gsl_spline_eval(mu_of_z, z_sn[i], NULL) + helio_correction;
+	}
+
+	free(z_sn);
+	gsl_spline_free(mu_of_z);
+
+  if (out_of_range == 1){
+    std::cerr << "ERROR: One or more JLA supernovae beyond calculated redshift max z=" << z_max_calc <<  std::endl;
+    return 1;
   }
-
-  free(z_sn);
-  gsl_spline_free(mu_of_z);
-
-  if (out_of_range) {
-    std::cerr
-      << "ERROR: One or more JLA supernovae beyond calculated redshift max z="
-      << z_max_calc << std::endl;
+  if (out_of_range == 2){
+    std::cerr << "ERROR: One or more JLA supernovae beneath calculated redshift min z=" << z_min_calc <<  std::endl;
     return 1;
   }
 
-  // Get the chi^2 and convert to log-like
-  double chi2 = calculator->computeLikelihood(mu_sn, nuisance);
-  double like = -chi2 / 2.0;
+	//Get the chi^2 and convert to log-like
+	double chi2 = calculator->computeLikelihood(mu_sn, nuisance);
+	double like = -chi2/2.0;
 
-  // Save the likelihood
-  status = block->put_val(LIKELIHOODS_SECTION, "JLA_LIKE", like);
-  if (status != DBS_SUCCESS)
-    return status;
-  status = block->put_metadata(
-    LIKELIHOODS_SECTION, "JLA_LIKE", "number_supernova", std::to_string(n_sn));
 
-  return status;
+	// Save the likelihood
+	status = block->put_val(LIKELIHOODS_SECTION, "JLA_LIKE", like);
+	if (status!=DBS_SUCCESS) return status;
+	status = block->put_metadata(LIKELIHOODS_SECTION, "JLA_LIKE", "number_supernova", std::to_string(n_sn));
+
+	return status;
 }
 
 } // end extern C

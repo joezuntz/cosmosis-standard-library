@@ -2,16 +2,16 @@
 name: wmap_shift
 version: 1.0
 purpose: Massively simplified WMAP9 likelihood reduced to just shift parameter
-url: ""
+url: ''
 interface: wmap_shift.so
 attribution: [The WMAP Collaboration (measurement), CosmoSIS team (code)]
-rules: ""
+rules: ''
 cite:
-    - "Hinshaw et al, ApJS, 208, 2, 19, 25"
+-   Hinshaw et al, ApJS, 208, 2, 19, 25
 
 assumptions:
-    - "CMB shift parameter as in LCDM"
-    - "WMAP9 measurement of parameter"
+-   CMB shift parameter as in LCDM
+-   WMAP9 measurement of parameter
 
 explanation: |
     "The full WMAP likelihood is slow and requires a full Boltzmann
@@ -22,16 +22,15 @@ explanation: |
 
     This does not provide as much information as the full likelihood.
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params: {}
-
-#Inputs for a given choice of a parameter, from the values.ini or from other modules
-#If no such choices, just do one of these omitting mode=something part:
 inputs:
     distances:
-        cmbshift: "CMB Shift parameter"
-
+        cmbshift:
+            meaning: CMB Shift parameter
+            type: real
+            default:
 outputs:
     likelihoods:
-        shift_like: Combined log-likelihood from all WMAP components
+        shift_like:
+            meaning: Combined log-likelihood from all WMAP components
+            type: real

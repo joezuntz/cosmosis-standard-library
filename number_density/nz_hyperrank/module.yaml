@@ -2,12 +2,11 @@
 name: nz_hyperrank
 version: 1
 purpose: Load, rank, and sample a set of density n(z) realisations from a FITS file
-url: ""
+url: ''
 interface: nz_hyperrank.py
 attribution: Juan P. Cordero, Ian Harrison
-rules: "If you use a file from a particular survey you should cite that survey"
+rules: If you use a file from a particular survey you should cite that survey
 cite: []
-
 assumptions:
     - "Realisations are provided in FITS extensions NZ_{NAME}_realisation_{NUMBER} starting with NUMBER=0, in correlated order and without skips"
 
@@ -37,26 +36,63 @@ explanation: |
     The ranking is intended to provide a meaningful metric in the n(z) space, allowing
     for better sampling efficiency over random sampling of the realisations.
     "
-
-
-# List of parameters that can go in the params.ini file in the section for this module
 params:
-    mode: "String; ranking mode, use to define how the realisations are mapped to the hyperparameter. It has to be one of the following:
-      no-rank, unified, separate, inv-chi-unified, inv-chi-separate, random, external"
-    nz_file: "String; absolute or relative path to an n(z) file"
-    data_set: "String, names of the extensions prefixes in the FITS files to load and save to the block"
-    external_ranking_filename: "String, path to a plain text file with a 1D array of length = n_realisations with values to be ranked"
-    verbose: "Flag to set additional output during setup"
-    rank_output: "If verbose = T, this is the filename for the output of the ranks"
-    weighting: "Flag to use weights in for each realisation in the ranking"
+    mode:
+        meaning: 'Ranking mode, use to define how the realisations are mapped to the
+            hyperparameter. It has to be one of the following: no-rank, unified, separate,
+            inv-chi-unified, inv-chi-separate, random, external'
+        type: str
+        default:
+    nz_file:
+        meaning: Absolute or relative path to an n(z) file
+        type: str
+        default:
+    data_set:
+        meaning: Names of the extensions prefixes in the FITS files to load and save
+            to the block
+        type: str
+        default:
+    upsampling:
+        meaning: The number of sample points output for each one in the file. n(z)
+            is assumed flat between them. See notes above.
+        type: int
+        default: 1
+    verbose:
+        meaning: Whether to print more output and save ranks to text file during setup
+        type: bool
+        default: False
+    rank_output:
+        meaning: File name for rank output (only used if verbose=T)
+        type: str
+        default: ranks_{mode}.txt
+    external_ranking_filename:
+        meaning: Path to a plain text file with a 1D array of length = n_realisations
+            with values to be ranked, only needed if mode=external
+        type: str
+        default:
+    weighting:
+        meaning: Whether to read a weight from each realisation extension
+        type: bool
+        default: False
 
 inputs:
-  ranks:
-    rank_hyperparm_i: "Real; hyperparameter mapped to a redshift distribution. If mode is separate, then i = 1...n_bins "
-
+    ranks:
+        rank_hyperparm_i:
+            meaning: Hyperparameter mapped to a redshift distribution. If mode is
+                separate, then i = 1...n_bins
+            type: real
+            default:
 outputs:
     wl_number_density:
-        nz: "Integer; number of redshift samples"
-        nbin: "Integer; number of bins"
-        z: "Real vector; redshift sample values"
-        bin_: "Real vector; n(z) at redshift sample values.  bin_1, bin_2, ..."
+        nz:
+            meaning: Number of redshift samples
+            type: int
+        nbin:
+            meaning: Number of bins
+            type: int
+        z:
+            meaning: Redshift sample values
+            type: real 1d
+        bin_:
+            meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
+            type: real 1d

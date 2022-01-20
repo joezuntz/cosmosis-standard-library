@@ -1,8 +1,8 @@
 /*CosmoSIS interface file for going from shear C(l) to xi+/-
 Uses function tpstat_via_hankel from Martin Kilbinger's nicaea
 */
-#include "cosmosis/datablock/c_datablock.h"
-#include "cosmosis/datablock/section_names.h"
+#include "datablock/c_datablock.h"
+#include "datablock/section_names.h"
 #include "maths.h"
 
 #include <stdio.h>
@@ -21,64 +21,64 @@ const char * corr_type_names[3] = {"2-2", "0-0", "0-2"};
 const char * filter_type_names[2] = {"correlation", "aperture"};
 
 typedef struct cl_to_xi_config {
-    char * input_section;
-    char * output_section;
-    corr_type_t corr_type;
-    filter_type_t filter_type;
+	char * input_section;
+	char * output_section;
+	corr_type_t corr_type;
+	filter_type_t filter_type;
 
 } cl_to_xi_config;
 
 
 void * setup(c_datablock * options)
 {
-    cl_to_xi_config * config = malloc(sizeof(cl_to_xi_config));
-    int corr_type,filter_type;
-    int status = 0;
-    bool auto_corr;
+	cl_to_xi_config * config = malloc(sizeof(cl_to_xi_config));
+	int corr_type,filter_type;
+	int status = 0;
+	bool auto_corr;
 
-    char *filter_string=malloc(10*sizeof(char));
-    char *output_string=malloc(100*sizeof(char));
+	char *filter_string=malloc(10*sizeof(char));
+	char *output_string=malloc(100*sizeof(char));
 
-    status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
+	status |= c_datablock_get_int_default(options, OPTION_SECTION, "corr_type", 0, &corr_type);
 
-    status |= c_datablock_get_int_default(options, OPTION_SECTION, "filter_type", 0, &filter_type);
+	status |= c_datablock_get_int_default(options, OPTION_SECTION, "filter_type", 0, &filter_type);
 
-    if (filter_type==corrfct) {
-      sprintf(filter_string,"xi");
-    }
-    else if (filter_type==map) {
-      sprintf(filter_string,"map");
-    }
-    else {
-      fprintf(stderr, "Unknown filter type in cl_to_xi (%d).\n",filter_type);
-      status = 1;
-    }
+	if (filter_type==corrfct) {
+	  sprintf(filter_string,"xi");
+	}
+	else if (filter_type==map) {
+	  sprintf(filter_string,"map");
+	}
+	else {
+	  fprintf(stderr, "Unknown filter type in cl_to_xi (%d).\n",filter_type);
+	  status = 1;
+	}
 
-    if (corr_type==shear_shear){
-      status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
+	if (corr_type==shear_shear){
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "shear_cl", &(config->input_section));
 
-      sprintf(output_string,"shear_%s",filter_string);      
-      status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+	  sprintf(output_string,"shear_%s",filter_string);		
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
 
-    }
-    else if (corr_type==ggl){
-      status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_shear_cl", &(config->input_section));
+	}
+	else if (corr_type==ggl){
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_shear_cl", &(config->input_section));
 
-      sprintf(output_string,"galaxy_shear_%s",filter_string);       
-      status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+	  sprintf(output_string,"galaxy_shear_%s",filter_string);		
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
 
-    }
-    else if (corr_type==matter){
-      status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_cl", &(config->input_section));
+	}
+	else if (corr_type==matter){
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "input_section_name", "galaxy_cl", &(config->input_section));
 
-      sprintf(output_string,"galaxy_%s",filter_string);     
-      status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
+	  sprintf(output_string,"galaxy_%s",filter_string);		
+	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
 
-    }
-    else{
-      fprintf(stderr, "Unknown corr_type in cl_to_xi (%d). It should be one of %d (shear-shear), %d (shear-galaxy) or %d (position-galaxy).\n",corr_type,shear_shear,ggl,matter);
-      status = 1;
-    }
+	}
+	else{
+	  fprintf(stderr, "Unknown corr_type in cl_to_xi (%d). It should be one of %d (shear-shear), %d (shear-galaxy) or %d (position-galaxy).\n",corr_type,shear_shear,ggl,matter);
+	  status = 1;
+	}
 
     printf("Will Hankel transform %s -> %s with filter type '%s' and spins %s\n",
       config->input_section,
@@ -86,47 +86,47 @@ void * setup(c_datablock * options)
       filter_type_names[filter_type],
       corr_type_names[corr_type]
       );
-    //auto_corr tells us whether we have an auto-correlation or cross-correlation.
-    status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
+	//auto_corr tells us whether we have an auto-correlation or cross-correlation.
+	status |= c_datablock_get_bool_default(options, OPTION_SECTION, "auto_corr", true, &auto_corr);
 
-    config->corr_type = (corr_type_t)corr_type;
-    config->filter_type = (filter_type_t)filter_type;
+	config->corr_type = (corr_type_t)corr_type;
+	config->filter_type = (filter_type_t)filter_type;
 
-    if (status){
-      fprintf(stderr, "Please specify input_section_name, output_section_name, filter_type=0,1, and corr_type=0,1, or 2 in the cl_to_xi module.\n");
-      exit(status);
-    }
+	if (status){
+	  fprintf(stderr, "Please specify input_section_name, output_section_name, filter_type=0,1, and corr_type=0,1, or 2 in the cl_to_xi module.\n");
+	  exit(status);
+	}
 
-    free(filter_string);
-    free(output_string);
-    return config;
+	free(filter_string);
+	free(output_string);
+	return config;
 }
 
 typedef struct p_projected_data{
-    interTable * cl_table;
+	interTable * cl_table;
 } p_projected_data;
 
 static double P_projected_loglog(void *info, double ell, int bin_i, int bin_j, error ** err)
 {
-    p_projected_data * data = (p_projected_data*) info;
-    interTable * cl_table = data->cl_table;
-    double cl;
-    cl =  exp(interpol_wr(cl_table, log(ell), err));
-    return cl;
+	p_projected_data * data = (p_projected_data*) info;
+	interTable * cl_table = data->cl_table;
+	double cl;
+	cl =  exp(interpol_wr(cl_table, log(ell), err));
+	return cl;
 }
 
 static double P_projected_logl(void *info, double ell, int bin_i, int bin_j, error ** err)
 {
-    p_projected_data * data = (p_projected_data*) info;
-    interTable * cl_table = data->cl_table;
-    //FILE * f = data->f;
-    double cl;
-    // if (ell<20.0) cl = 0.0;
-    // else if (ell>3000.0) cl = 0.0;
-    // else
-    cl =  interpol_wr(cl_table, log(ell), err);
-    //fprintf(f,"%le  %le\n", ell, cl);
-    return cl;
+	p_projected_data * data = (p_projected_data*) info;
+	interTable * cl_table = data->cl_table;
+	//FILE * f = data->f;
+	double cl;
+	// if (ell<20.0) cl = 0.0;
+	// else if (ell>3000.0) cl = 0.0;
+	// else
+	cl =  interpol_wr(cl_table, log(ell), err);
+	//fprintf(f,"%le  %le\n", ell, cl);
+	return cl;
 }
 
 int copy_metadata(int status, c_datablock * block, const char* output_section,
@@ -176,6 +176,7 @@ int copy_metadata(int status, c_datablock * block, const char* output_section,
     return status;
 }
 
+
 int execute(c_datablock * block, void * config_in)
 {
     DATABLOCK_STATUS status=0;
@@ -184,6 +185,9 @@ int execute(c_datablock * block, void * config_in)
     int count=2;
     double ** xi = malloc(count*sizeof(double*));
     for (int i=0; i<count; i++) xi[i] = malloc(sizeof(double)*N_thetaH);
+
+    const int slen = 128;
+    char output_section[slen];
 
     cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
@@ -423,8 +427,8 @@ int execute(c_datablock * block, void * config_in)
 
 int cleanup(void * config_in)
 {
-    // Free the memory that we allocated in the setup
-    cl_to_xi_config * config = (cl_to_xi_config*) config_in;
-    free(config);
-    return 0;
+	// Free the memory that we allocated in the setup
+	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
+	free(config);
+  return 0;
 }

@@ -1,15 +1,15 @@
 #This is a template for module description files
-name: "BBN-Consistency"
-version: "0705.0290"
-purpose: "Compute consistent Helium fraction from baryon density given BBN"
-url: "http://parthenope.na.infn.it/"
+name: BBN-Consistency
+version: '0705.0290'
+purpose: Compute consistent Helium fraction from baryon density given BBN
+url: http://parthenope.na.infn.it/
 interface: bbn_consistency.py
 attribution: [CosmoSIS Team]
 rules: []
-cite: ["Comp.Phys.Commun.178:956-971,2008"]
-
+cite: ['Comp.Phys.Commun.178:956-971,2008']
 assumptions:
-    - "Standard Big Bang Nucleosynthesis"
+-   Standard Big Bang Nucleosynthesis
+-   ombh2 within the range of the input data
 
 explanation: |
     "
@@ -25,16 +25,35 @@ explanation: |
     before any physics modules. It's effectively an optional consistency module.
 
     "
-
-# List of parameters that can go in the params.ini file in the section for this module    
 params:
-    data: "string. Filename for ombh2,DeltaN,YHe data. (default=included file)"
-
+    data:
+        meaning: Filename for ombh2,DeltaN,YHe data. ( file)
+        type: str
+        default: included
+    input_name:
+        default: delta_neff
+        type: str
+        meaning: Which parameter to start from, either massless_nu or delta_neff
 inputs:
     cosmological_parameters:
-        ombh2: "real, physical matter density parameter"
-        delta_neff: "real, optional. Extra contribution to neutrino number density"
-
+        ombh2:
+            meaning: Physical matter density parameter
+            type: real
+            default:
+        delta_neff:
+            meaning: Extra contribution to neutrino number density (if input_name == delta_neff)
+            type: real
+            default: 0.0
+        massive_nu:
+            meaning: Effective number of massive neutrinos (if input_name == massless_nu)
+            type: real
+            default:
+        massless_nu:
+            meaning: Number of massless neutrinos (if input_name == massless_nu)
+            type: int
+            default:
 outputs:
     cosmological_parameters:
-        yhe: "real, cosmological helium fraction"
+        yhe:
+            meaning: Cosmological helium fraction
+            type: real
