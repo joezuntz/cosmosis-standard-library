@@ -1,7 +1,3 @@
-from __future__ import print_function
-from builtins import zip
-from builtins import range
-from builtins import object
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 from twopoint_cosmosis import theory_names, type_table
