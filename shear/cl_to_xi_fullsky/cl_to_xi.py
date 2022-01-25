@@ -47,6 +47,23 @@ def radians_to_arcmin(r):
 def arcmin_to_radians(a):
     return np.radians(a / 60.)
 
+
+def cl_to_xi_to_block_eb(block, output_section, name,
+                          e_plus_b, e_minus_b,  thetas, legfacs):
+    cl = [e_plus_b, e_minus_b]
+    for (cl_interp, o, leg) in zip(cl, output_section, legfacs ):
+        xis = np.zeros_like(thetas)
+        ell_max = leg.shape[1] - 1
+        try:
+            assert len(cl_interp) == leg.shape[1]
+        except TypeError:
+            ells = np.arange(ell_max + 1)
+            cl_interp = cl_interp(ells)
+        for it, t in enumerate(thetas):
+            xis[it] = np.sum(cl_interp * leg[it])
+        block[o, name] = xis
+
+
 def cl_to_xi_to_block(block, output_section, name,
                           cl_interp, thetas, legfacs):
     if not isinstance(output_section, tuple):

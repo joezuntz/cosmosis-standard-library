@@ -4,7 +4,7 @@ from __future__ import print_function
 from builtins import range
 import numpy as np
 from cosmosis.datablock import option_section, names as section_names
-from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block
+from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block, cl_to_xi_to_block_eb
 from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav, get_legfactors_00_binav, get_legfactors_22_binav
 from past.builtins import basestring
 import sys
@@ -50,9 +50,10 @@ def setup(options):
     xi_type = options.get_string(option_section, 'xi_type')
 
     # Check xi_type is one of the allowed values
-    if xi_type not in ['22', '22+', '22-', '02', '02+', '00']:
+    if xi_type not in ['22', '22+', '22-', '02', '02+', '00', 'EB']:
         raise ValueError(
             "xi_type should be '22', '22+' or '22-' for spin 2 autocorrelations e.g. xi+/-(theta), "
+            "'EB' for the pair of E+B and E-B calculations for xi+/- respectively, "
             "00 for scalar autocorrelations e.g. w(theta), "
             "or '02' or '02+' for spin 0 x spin 2 correlations e.g. gamma_t(theta)")
 
@@ -63,6 +64,7 @@ def setup(options):
     # Where we get the theta values from
     theta_file = options.get_string(option_section, "theta_file", "")
     default_file_section = {
+        'EB': 'xip',
         '22': 'xip',
         '22+': 'xip',
         '22-': 'xim',
@@ -164,6 +166,8 @@ def setup(options):
             theta_max = arcmin_to_radians(theta_max)
             theta = np.logspace(np.log10(theta_min), np.log10(theta_max), n_theta)
 
+    e_plus_b_name = None
+
     # setup precompute functions and I/O sections
     if xi_type in ["22", "22+", "22-"]:
 
@@ -183,6 +187,27 @@ def setup(options):
             output_section = (cl_section.replace("cl","xi_plus"), cl_section.replace("cl","xi_minus"))
         else:
             output_section = (output_section + "_plus", output_section + "_minus")
+    elif xi_type == "EB":
+        # Function to use to pre-compute the Legnendre factors
+        if bin_avg:
+            precomp_func = get_legfactors_22_binav
+        else:    
+            precomp_func = get_legfactors_22
+        
+        # The default section to read the C_ell values from
+        if cl_section:
+            cl_section = tuple(cl_section.split())
+        else:
+            cl_section = ("shear_cl", "shear_cl_bb")
+
+        # where to save the output values.
+        # Default is to just change cl->xipm
+        if output_section:
+            output_section = tuple(output_section.split())
+        else:
+            output_section = ("shear_xi_plus", "shear_xi_minus")
+
+        e_plus_b_name = options.get_string(option_section, "e_plus_b_name", "shear_cl")
 
     elif xi_type == "00":
         # Same for wtheta - function that makes the big transfer matrix
@@ -233,11 +258,41 @@ def setup(options):
         else:
             legfacs = apply_filter( ell_max, high_l_filter, legfacs )
 
-    return theta, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg
+    return xi_type, theta, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg, e_plus_b_name
+
+def combine_eb(block, ee_section, bb_section, e_plus_b_name):
+    nbin_shear = block[ee_section, 'nbin']
+    p_section, m_section = e_plus_b_name + "_eplusb", e_plus_b_name + "_eminusb"
+
+    # clone the EE section, such that we retain all of the metadata
+    block._copy_section(ee_section,p_section)
+    block._copy_section(ee_section,m_section)
+
+    ell = block[ee_section, "ell"]
+    block[p_section, "ell"] = ell
+    block[m_section, "ell"] = ell
+    block[p_section, "nbin"] = nbin_shear
+    block[m_section, "nbin"] = nbin_shear
+    for i in range(nbin_shear):
+        for j in range(0,i+1):
+            bin_ij = 'bin_{0}_{1}'.format(i+1,j+1)
+            ee = block[ee_section, bin_ij]
+            bb = block[bb_section, bin_ij]
+            block[p_section, bin_ij] = ee+bb
+            block[m_section, bin_ij] = ee-bb
+
+    return p_section, m_section
+
 
 def execute(block, config):
 
-    thetas, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg = config
+    xi_type, thetas, theta_edges, ell_max, legfacs, cl_section, output_section, save_name, bin_avg, e_plus_b_name = config
+
+    # If we are doing the special EB mode then we first want to combine
+    # the E and B modes into a E+B and E-B sections
+    if xi_type == "EB":
+        p_section, m_section = combine_eb(block, cl_section[0], cl_section[1], e_plus_b_name)
+        cl_section, bb_section = cl_section
 
     ell = block[cl_section, "ell"]
     min_ell = ell[0]
@@ -253,13 +308,23 @@ def execute(block, config):
     for i in range(1, nbina + 1):
         for j in range(1, nbinb + 1):
             name = 'bin_%d_%d' % (i, j)
-            if block.has_value(cl_section, name):
-                c_ell = block[cl_section, name]
-            else:
+            if not block.has_value(cl_section, name):
                 continue
-            cl_interp = SpectrumInterp(ell, c_ell)
-            cl_to_xi_to_block(block, output_section, name,
-                          cl_interp, thetas, legfacs)
+
+            if xi_type == "EB":
+                # Get the E+B and E-B separately.
+                # These were just calculated above when we called combine_eb 
+                e_plus_b = block[p_section, name]
+                e_minus_b = block[m_section, name]
+                e_plus_b_interp = SpectrumInterp(ell, e_plus_b)
+                e_minus_b_interp = SpectrumInterp(ell, e_minus_b)
+                cl_to_xi_to_block_eb(block, output_section, name,
+                              e_plus_b_interp, e_minus_b_interp, thetas, legfacs)
+            else:
+                c_ell = block[cl_section, name]
+                cl_interp = SpectrumInterp(ell, c_ell)
+                cl_to_xi_to_block(block, output_section, name,
+                              cl_interp, thetas, legfacs)
 
     if isinstance(output_section, basestring):
         output_section = (output_section,)

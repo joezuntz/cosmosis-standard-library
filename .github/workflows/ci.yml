@@ -84,7 +84,7 @@ jobs:
         cosmosis-postprocess output/demo9.txt -o output/demo9
         test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
 
-    - name: DES Y3 likelihood
-      run: |
-        source .github/ci-setup.sh
-        cosmosis examples/des-y3.ini
+    # - name: DES Y3 likelihood
+    #   run: |
+    #     source .github/ci-setup.sh
+    #     #cosmosis examples/des-y3.ini
