@@ -5,7 +5,6 @@ import ctypes as ct
 import scipy as sp
 path = os.path.join(current_dir, '../../structure/projection/projection_tools')
 sys.path.append(path)
-print(sys.path)
 from gsl_wrappers import GSLSpline
 from cosmosis.datablock import names
 from cosmosis.datablock import option_section
@@ -14,7 +13,6 @@ import numpy as np
 import scipy.integrate
 import astropy.units as u
 import astropy.constants as const
-import pdb
 
 sigcrit_inv_fac = (4 * np.pi * const.G)/(const.c**2)
 sigcrit_inv_fac_Mpc_Msun = (sigcrit_inv_fac.to(u.Mpc/u.M_sun)).value
@@ -91,8 +89,17 @@ def execute(block, config):
         chi_lens = chi_of_z(z_lens)
         chi_source = chi_of_z(z_source)
     
+        chi_lmat = np.tile(chi_lens.reshape(len(z_lens), 1), (1, len(z_source)))
+        chi_smat = np.tile(chi_source.reshape(1, len(z_source)), (len(z_lens), 1))
+        num = chi_smat - chi_lmat
+        ind_lzero = np.where(num <= 0)
+        num[ind_lzero] = 0
+
     if config['add_togammat']:
         theta_th = block['galaxy_shear_xi','theta']
+
+
+
 
     for j1 in range(num_lens_z):
         if config['add_togammat']:
@@ -101,12 +108,7 @@ def execute(block, config):
             if (config['use_fiducial'] and ((str(j1) + '_' + str(j2)) not in list(config['betaj1j2']))) or (not config['use_fiducial']):
                 nz_lens = block[config['lens_nz_section'], "bin_%d" % (j1 + 1)][1:]
                 nz_source = block[config['source_nz_section'], "bin_%d" % (j2 + 1)][1:]
-                # import pdb; pdb.set_trace()   
-                chi_lmat = np.tile(chi_lens.reshape(len(z_lens), 1), (1, len(z_source)))
-                chi_smat = np.tile(chi_source.reshape(1, len(z_source)), (len(z_lens), 1))
-                num = chi_smat - chi_lmat
-                ind_lzero = np.where(num <= 0)
-                num[ind_lzero] = 0
+
                 ng_array_source_rep = np.tile(nz_source.reshape(1, len(z_source)), (len(z_lens), 1))
                 int_sourcez = sp.integrate.simps(ng_array_source_rep * (num / chi_smat), z_source)
 
@@ -122,7 +124,6 @@ def execute(block, config):
                 if (config['use_fiducial']):
                     config['betaj1j2'][str(j1) + '_' + str(j2)] = betaj1j2_pm
             else:
-                # print('using previous computation')
                 betaj1j2_pm = config['betaj1j2'][str(j1) + '_' + str(j2)]
             
             if config['add_togammat']:
@@ -133,15 +134,11 @@ def execute(block, config):
 
                 # Add the point mass term as evaluated above
                 gt_addpm = gt_j1j2 + Cj1j2_pm/(theta_th ** 2)
-                # if j1==2 and j2==3:
-                #     pdb.set_trace()
-                # pdb.set_trace()
+
                 # Write it back to the theory section
                 block[config["gammat_section"], "bin_" + str(j1 + 1) + '_' + str(j2 + 1)] = gt_addpm
                 block['point_mass',"bin_" + str(j1 + 1) + '_' + str(j2 + 1)] = Cj1j2_pm
 
             block[config["sigcrit_inv_section"],"sigma_crit_inv_%d_%d"%(j1+1, j2+1)] = 1e13 * betaj1j2_pm
-            # print(betaj1j2_pm)
 
-    # pdb.set_trace()
     return 0
