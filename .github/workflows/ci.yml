@@ -55,7 +55,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install cosmosis
         pip install --no-binary=mpi4py mpi4py
-        pip install camb fitsio astropy
+        pip install camb fitsio astropy fast-pt
 
     - name: Build
       run: |
