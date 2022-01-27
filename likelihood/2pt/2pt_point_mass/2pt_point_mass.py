@@ -1,61 +1,73 @@
-from __future__ import print_function
-from builtins import zip
-from builtins import range
-from builtins import object
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
-from twopoint_cosmosis import theory_names, type_table
 from astropy.io import fits
 from scipy.interpolate import interp1d
 import numpy as np
+import os
+import sys
+
+# We need the modules below from the parent directory
+dirname = os.path.split(__file__)[0]
+sys.path.append(os.path.join(dirname, os.pardir))
+
+
+from twopoint_cosmosis import theory_names, type_table
 import twopoint
 import gaussian_covariance
-import os
+
+
+# Kids, don't name your python modules starting with a number.
+# One day you will need to import them
 twopt_like = __import__("2pt_like")
 
-default_array = np.repeat(-1.0, 99)
 
 class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
+    """
+    This subclass of the 2pt likelihood adds marginalization over
+    point-mass contributions to the small-scale galaxy galaxy-lensing
+    """
     like_name='2pt'
     def __init__(self, options):
         super(TwoPointGammatMargLikelihood, self).__init__(options)
         
     def build_data(self):
-        #Options
         filename = self.options.get_string('data_file')
-        self.save_plot_to = self.options.get_string('save_plot_to', default="")
-        suffix = self.options.get_string('suffix', default="")
-        if suffix:
-            self.suffix = "_" + suffix
-        else:
-            self.suffix = suffix
+        self.suffix = self.options.get_string('suffix', default="")
+        if self.suffix:
+            self.suffix = "_" + self.suffix
+
         covmat_name = self.options.get_string("covmat_name", "COVMAT")
 
 
         #Prior width for analytically marginalized parameters
         #If <1. assume infinite prior
         self.sigma_a = self.options.get_double( "sigma_a", -1. )
+
         #do point-mass marginalization
         self.do_pm_marg = self.options.get_bool("do_pm_marg", False)
+
         #marginalize over small-scale gamma_t shear ratios
         self.do_smallscale_marg = self.options.get_bool("do_smallscale_marg", False)
+
         #name of gammat extension in datavector file
         self.gammat_name = self.options.get_string("gammat_name", "gammat")
+
         #use sigma_crit_inv factors in point-mass marginalization
         self.do_pm_sigcritinv = self.options.get_bool("do_pm_sigcritinv", False)
+
         #don't apply det factor in likelihood
         self.no_det_fac = self.options.get_bool("no_det_fac", False)
 
-        print("doing point-mass marginalization:", self.do_pm_marg)
-        print("using sigma_crit_inv factors in pm-marg:", self.do_pm_sigcritinv)
-        print("doing small-scale marginalization:", self.do_smallscale_marg)
+        print("Doing point-mass marginalization:", self.do_pm_marg)
+        print("Using sigma_crit_inv factors in pm-marg:", self.do_pm_sigcritinv)
+        print("Doing small-scale marginalization:", self.do_smallscale_marg)
 
         # This is the main work - read data in from the file
         self.two_point_data = twopoint.TwoPointFile.from_fits(
             filename, covmat_name)
 
         self.rescale_area = self.options.get_double( "rescale_area", -1.)
-        if self.rescale_area>0.:
+        if self.rescale_area > 0.:
             print("rescaling covariance by factor 1./rescale_area = %f"%(1./self.rescale_area))
             self.two_point_data.covmat /= self.rescale_area
 
@@ -156,12 +168,12 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
         if len(datavector) == 0:
             raise ValueError(
                 """No data was chosen to be used from 2-point data file {0}. 
-                It was either not selectedin data_sets or cut out""".format(filename))
+                It was either not selected in data_sets or cut out""".format(filename))
 
         #get covariance - this is what we start from before any analytic marginalization
         self.cov_orig = self.build_covariance()
         self.inv_cov_orig = np.linalg.inv( self.cov_orig )
-        print("orig cov slog(det):", np.linalg.slogdet(self.cov_orig))
+        print("Original covariance log(det):", np.linalg.slogdet(self.cov_orig))
         self.logdet_fac = 0.
         #use self.det_fac to record changes in covariance determinant when we've applied
         #analytic marginalization terms - this is required to normalize the likelihood
@@ -195,9 +207,7 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
 
                 #Now loop through lens-source pairs constructing the template matrices.
                 bin_pairs = gammat_spec.get_bin_pairs()
-                #list of lens bin ids
                 self.lens_bin_ids = list(set([p[0] for p in bin_pairs]))
-                #list of source bin ids
                 self.source_bin_ids = list(set([p[1] for p in bin_pairs]))
 
                 if self.do_pm_marg:
@@ -244,10 +254,10 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
                         self.template_matrix_pm = template_matrix
 
                         if not self.do_smallscale_marg:
-                            #We're not using sigma_crit_inv factors for the point-mass 
-                            #marginalization, and we're not doing the small-scale marginalization
-                            #so nothing cosmology-dependent, so we can go ahead and doctor the covariance now
-                            #Now use Woodbury matrix identity
+                            # We're not using sigma_crit_inv factors for the point-mass 
+                            # marginalization, and we're not doing the small-scale marginalization
+                            # so nothing cosmology-dependent, so we can go ahead and doctor the covariance now
+                            # using  Woodbury matrix identity
                             U, V = template_matrix.T, template_matrix
                             UCinvV = np.matmul(V, np.matmul(self.inv_cov_orig, U))
                             if self.sigma_a>0.:

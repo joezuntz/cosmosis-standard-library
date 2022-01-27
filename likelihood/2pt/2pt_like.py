@@ -48,12 +48,9 @@ class TwoPointLikelihood(GaussianLikelihood):
 
     def build_data(self):
         filename = self.options.get_string('data_file')
-        self.save_plot_to = self.options.get_string('save_plot_to', default="")
-        suffix = self.options.get_string('suffix', default="")
-        if suffix:
-            self.suffix = "_" + suffix
-        else:
-            self.suffix = suffix
+        self.suffix = self.options.get_string('suffix', default="")
+        if self.suffix:
+            self.suffix = "_" + self.suffix
 
         if self.gaussian_covariance:
             covmat_name = None
