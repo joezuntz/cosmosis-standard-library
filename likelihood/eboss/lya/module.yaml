@@ -50,7 +50,7 @@ inputs:
             type: real
             default:
 outputs:
-        likelihoods:
-            eboss14_lya_like:
-                meaning: likelihood of Dh and Dm at z=2.34
-                type: real
+    likelihoods:
+        eboss14_lya_like:
+            meaning: likelihood of Dh and Dm at z=2.34
+            type: real

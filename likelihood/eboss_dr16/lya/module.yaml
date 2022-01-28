@@ -21,11 +21,25 @@ params:
         feedback: "Boolean, amount of output to print.  False for no feedback (default).  True for basic."
 
 inputs: 
-        distances:
-                z: "1D real array, redshifts of samples"
-                rs_zdrag: "real, value of predicted drag redshift "
-                d_m: "1D real array, physical angular diameter distance in Mpc"
-                h:  "1D real array, hubble parameter with in units of Mpc"
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Physical angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rs_zdrag:
+            meaning: Value of predicted drag redshift
+            type: real
+            default:
 outputs:
-        likelihoods:
-                eboss16_lya_like: "real, likelihood of Dh and Dm at z=2.34"
+    likelihoods:
+        eboss16_lya_like:
+            meaning: likelihood of Dh and Dm at z=2.334
+            type: real
