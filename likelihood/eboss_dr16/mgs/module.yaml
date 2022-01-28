@@ -23,17 +23,46 @@ params:
     mode: "0 for BAO only, 1 for BAO+FS measurements"
 inputs: 
     growth_parameters:
-        d_z: "1D real array, linear growth factor D"
-        f_z: "1D real array, linear growth rate f"
-        z: "1D real array, redshift of samples "
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f(z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
     cosmological_parameters:
-        omega_m:  "real, baryon + cdm density fraction today"
-        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        omega_m:
+            meaning: Matter density fraction of critical
+            type: real
+            default:
+        sigma_8:
+            meaning: "Amplitude of linear matter power at 8/h Mpc at z=0"
+            type: real
+            default:
+        h0:
+            meaning: "Hubble parameter H0 / (100 km/s/Mpc)"
+            type: real
+            default:
     distances:
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        h:  "1D real array, hubble parameter with in units of Mpc"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
 outputs:
     likelihoods:
-        mgs_like: "real, likelihood of Dv and fsigma8 at z=0.15"
+        mgs_like:
+            meaning: "Likelihood of Dv and fsigma8 at z=0.15"
+            type: real

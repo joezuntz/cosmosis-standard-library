@@ -14,22 +14,48 @@ explanation:
         "This module computes the likelihood of Dv_over_rd for BAO-only analysis and Dm_over_rd, Dh_over_rd, 
         and fsigma8 for BAO+FS analysis, both using eBOSS DR16 measurements from ELG."
 params:
-        feedback: "Boolean, amount of output to print.  False for no feedback (default).  True for basic."
-        mode: "Integer, type of analysis. 0 for BAO-only. 1 for BAO + Full-shape"
+    feedback:
+        type: bool
+        meaning: Whether to print extra output
+        default: False
+    mode:
+        meaning: Whether to include full-shape information instead of just BAO
+        type: bool
+        default: False
 
 inputs: 
-        distances:
-                z: "1D real array, redshifts of samples"
-                rs_zdrag: "real, value of predicted drag redshift "
-                d_m: "1D real array, physical angular diameter distance in Mpc"
-                h:  "1D real array, hubble parameter with in units of Mpc"
-        growth:
-                z: "1D real array, redshifts of samples"
-                fsigma8: "1D real array, matter growth parameter (if mode = 1)"
-        data:
-                sdss_DR16_ELG_BAO_DVtable.txt: "table, a grid of the relative probability as function of Dv_over_rd at zeff = 0.845 (if mode = 0)"
-                sdss_DR16_ELG_FSBAO_DNDHfs8gridlikelihood.txt: "table, a grid of the relative probability as function of Dm_over_rd, Dh_over_rd, and fsigma8 at zeff = 0.845 (if mode = 1)"
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Comoving distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rs_zdrag:
+            meaning: Value of predicted drag redshift
+            type: real
+            default:
+    growth_parameters:
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f(z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
 
 outputs:
-        likelihoods:
-                eboss16_elg_like: "real, likelihood"
+    likelihoods:
+        meaning: ELG BAO likelihood
+        type: real

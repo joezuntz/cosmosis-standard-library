@@ -26,24 +26,69 @@ explanation: >
 
     A correlated Gaussian likelihood is then returned."
 params:
-    data_file: "string, path to file with measured D_m(z1),H(z1),fsig8(z1),D_m(z2),etc values in (default: included file)"
-    cov_file: "string, path to covariance matrix file (default: included file)"
-    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=148.6)"
-    verbose: "Bool, Print extra output (default = False)"
-    mode: "0 for BAO only, 1 for BAO+FS measurements"
+    mode:
+        meaning: 0 for BAO only, 1 for BAO+FS measurements
+        type: int
+        default: 0
+    data_file: 
+        meaning: path to file with measured data values in
+        type: str
+        default: sdss_DR12_LRG_BAO_DMDH.txt or sdss_DR12_LRG_FSBAO_DMDHfs8.txt
+    cov_file:
+        meaning: path to covariance matrix file
+        type: str
+        default: sdss_DR12_LRG_BAO_DMDH_covtot.txt or sdss_DR12_LRG_FSBAO_DMDHfs8_covtot.txt
+    rs_fiducial: "Real,  (default=148.6)"
+        meaning: Fiducial value of sound horizon at last scattering used in making data
+        type: real
+        default: 147.78
+    verbose: 
+        meaning: Whether to print extra output
+        type: bool
+        default: False
+
 inputs: 
     growth_parameters:
-        d_z: "1D real array, linear growth factor D"
-        f_z: "1D real array, linear growth rate f"
-        z: "1D real array, redshift of samples "
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f(z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
     cosmological_parameters:
-        omega_m:  "real, baryon + cdm density fraction today"
-        sigma_8: "real, amplitude of linear matter power at 8/h Mpc at z=0"
-        h0:  "real, hubble parameter H0/(100 km/s/Mpc)"
+        omega_m:
+            meaning: Baryon + cdm density fraction today
+            type: real
+            default:
+        sigma_8:
+            meaning: Amplitude of linear matter power at 8/h Mpc at z=0
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
     distances:
-        z: "1D real array, redshifts of samples"
-        d_a: "1D real array, angular diameter distance in Mpc"
-        h:  "1D real array, hubble parameter with in units of Mpc"
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
 outputs:
     likelihoods:
-        boss_dr12_like: "real, likelihood of supplied expansion history"
+        boss12_lrg_like:
+            meaning: Likelihood of supplied expansion history
+            type: real

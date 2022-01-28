@@ -1,5 +1,4 @@
-#This is a template for module description files
-name: lya
+name: eboss_dr14_lya
 version: ""
 purpose: Compute the likelihood of eBOSS DR14 D_m and D_h from Lyman alpha 
 url: ""
@@ -27,13 +26,31 @@ explanation: >
                 log(like) = -chi2/2
         "
 params:
-        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+        feedback:
+            meaning: Amount of output to print.  0 for no feedback.  1 for basic
+            type: int
+            default: 0
+
 inputs: 
-        distances:
-                z: "1D real array, redshifts of samples"
-                rs_zdrag: "real, value of predicted drag redshift "
-                d_m: "1D real array, physical angular diameter distance in Mpc"
-                h:  "1D real array, hubble parameter with in units of Mpc"
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Physical angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rs_zdrag:
+            meaning: Value of predicted drag redshift
+            type: real
+            default:
 outputs:
         likelihoods:
-                eboss14_lya_like: "real, likelihood of Dh and Dm at z=2.34"
+            eboss14_lya_like:
+                meaning: likelihood of Dh and Dm at z=2.34
+                type: real

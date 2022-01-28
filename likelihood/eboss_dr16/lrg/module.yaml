@@ -19,17 +19,37 @@ params:
         mode: "Integer, type of analysis. 0 for BAO-only. 1 for BAO + Full-shape"
 
 inputs: 
-        distances:
-                z: "1D real array, redshifts of samples"
-                rs_zdrag: "real, value of predicted drag redshift "
-                d_m: "1D real array, physical angular diameter distance in Mpc"
-                h:  "1D real array, hubble parameter with in units of Mpc"
-        growth:
-                z: "1D real array, redshifts of samples"
-                fsigma8: "1D real array, matter growth parameter (if mode = 1)"
-        data:
-                sdss_DR16_LRG_(BAO/FSBAO)_(DMDH/DMDHfs8).txt: "table, data vector with [zeff, (DMDH/DMDHfs8)] values"
-                sdss_DR16_LRG_(BAO/FSBAO)_(DMDH/DMDHfs8)_covtot.txt: "table, covariance matrix"
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Comoving distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rs_zdrag:
+            meaning: Value of predicted drag redshift
+            type: real
+            default:
+    growth_parameters:
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        fsigma8:
+            meaning: Structure amplitude
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
+
 
 outputs:
         likelihoods:

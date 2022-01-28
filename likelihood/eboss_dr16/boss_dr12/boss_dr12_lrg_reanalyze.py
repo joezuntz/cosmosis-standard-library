@@ -9,7 +9,7 @@ likes = section_names.likelihoods
 growthparams = section_names.growth_parameters
 dist = section_names.distances
 
-ROOT_dir = os.path.split(os.path.abspath(__file__))[0]
+ROOT_DIR = os.path.split(os.path.abspath(__file__))[0]
 
 c_km_per_s = 299792.458
 default_rd_fiducial = 147.78
@@ -35,14 +35,14 @@ class Boss12LRGLikelihood(GaussianLikelihood):
 			print("LRG data")
 			print("BAO only: Dm(z)/rs and Dh(z)/rs")
 			# Reading data file
-			DATA_file = os.path.join(ROOT_dir, "sdss_DR12_LRG_BAO_DMDH.txt")
+			data_file = os.path.join(ROOT_DIR, "sdss_DR12_LRG_BAO_DMDH.txt")
 		else:
 			print("LRG data")
 			print("BAO+FS: Dm(z)/rd, Dh(z)/rd and f(z)sigma8(z)")
 			# Reading data file
-			DATA_file = os.path.join(ROOT_dir, "sdss_DR12_LRG_FSBAO_DMDHfs8.txt")
+			data_file = os.path.join(ROOT_DIR, "sdss_DR12_LRG_FSBAO_DMDHfs8.txt")
 			
-		DATA = loadtxt(DATA_file, usecols=(0, 1))
+		DATA = loadtxt(data_file, usecols=(0, 1))
 		z_eff, data = DATA[:, 0], DATA[:, 1]
 		
 		return z_eff, data
@@ -51,12 +51,12 @@ class Boss12LRGLikelihood(GaussianLikelihood):
 		
 		if not self.mode:
 			# Reading covariance matrix file
-			COV_file = os.path.join(ROOT_dir, 'sdss_DR12_LRG_BAO_DMDH_covtot.txt')
+			cov_file = os.path.join(ROOT_DIR, 'sdss_DR12_LRG_BAO_DMDH_covtot.txt')
 		else:
 			# Reading covariance matrix file
-			COV_file = os.path.join(ROOT_dir, 'sdss_DR12_LRG_FSBAO_DMDHfs8_covtot.txt')
+			cov_file = os.path.join(ROOT_DIR, 'sdss_DR12_LRG_FSBAO_DMDHfs8_covtot.txt')
 			
-		cov = loadtxt(COV_file)
+		cov = loadtxt(cov_file)
 		self.inv_cov = linalg.inv(cov)
 		
 		return cov
