@@ -1,16 +1,14 @@
 #This is a template for module description files
 name: w0wa_sum_prior
-version: "1.0"
-purpose: "Skip parameter sample without failing if w0+wa>0."
-url: ""
+version: '1.0'
+purpose: Skip parameter sample without failing if w0+wa>0.
+url: ''
 interface: w0wa_sum_prior.py
 attribution: [Jessie Muir]
-rules:
-    "Please maintain attribution."
+rules: Please maintain attribution.
 cite: []
-
 assumptions:
-    - "Cosmological parameters include w and wa."
+-   Cosmological parameters include w and wa.
 
 explanation: |
     This module imposes a the requirement that  w_0+w_a<0, which
@@ -24,14 +22,21 @@ explanation: |
     fulfilled, the module does nothing. If w_0+w_a>=0, the module returns 1, 
     which will cause cosmosis samplers to throw out the point and skip the 
     rest of the pipeline for that sample.
-
-
 params:
-    verbose: "(bool) print an error message noting when points fail the w_0+w_a<0 requirement"
-
+    verbose:
+        meaning: Whether to print an error message noting when points fail the w_0+w_a<0
+            requirement
+        type: bool
+        default: False
 inputs:
     cosmological_parameters:
-        w: "(real scalar) dark energy equation of state at z=0 (w_0)"
-        wa: "(real scalar) linear coefficient of dark energy equation of state on scale factor"
-
+        w:
+            meaning: Dark energy equation of state at z=0 (w_0)
+            type: real
+            default:
+        wa:
+            meaning: Linear coefficient of dark energy equation of state
+                on scale factor
+            type: real
+            default:
 outputs: {}
