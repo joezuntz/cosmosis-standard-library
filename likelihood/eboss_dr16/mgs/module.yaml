@@ -16,11 +16,22 @@ explanation: >
     "This module computes the likelihood of MGS, using f*sigma8 and 
     D_v/r_s measurements. "
 params:
-    data_file: "string, path to file with measured D_v(zeff),fsig8(zeff) values in (default: included file)"
-    cov_file: "string, path to covariance matrix file (default: included file)"
-    rs_fiducial: "Real, Fiducial value of sound horizon at last scattering used in making data (default=148.6)"
-    verbose: "Bool, Print extra output (default = False)"
-    mode: "0 for BAO only, 1 for BAO+FS measurements"
+    data_file: 
+        meaning: "Path to file with measured D_v(zeff),fsig8(zeff) values"
+        type: str
+        default: sdss_MGS_FSBAO_DVfs8.txt
+    cov_file: 
+        meaning: Path to covariance matrix file
+        type: str
+        default: sdss_MGS_FSBAO_DVfs8_covtot.txt
+    rs_fiducial:
+        meaning: Fiducial value of sound horizon at last scattering used in making data
+        type: real
+        default: 147.8
+    verbose:
+        type: bool
+        meaning: Whether to print extra output
+        default: False
 inputs: 
     growth_parameters:
         d_z:
