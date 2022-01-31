@@ -14,7 +14,7 @@ except ImportError:
         import pyfits
     except ImportError:
         raise RuntimeError("You need astropy installed to use the module \
-        nz-hyperrank; try running: pip install astropy.")
+        nz-multirank; try running: pip install astropy.")
 
 def load_histogram_form(ext, bin, upsampling):
     # Load the various z columns.
