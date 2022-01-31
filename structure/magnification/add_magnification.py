@@ -2,8 +2,6 @@
 add the magnification terms to the shear-gal and gal-gal Cls
 based on the add_intrinsic module
 """
-from __future__ import print_function
-from builtins import range
 from cosmosis.datablock import option_section, names
 from scipy.interpolate import InterpolatedUnivariateSpline
 import numpy as np
@@ -100,6 +98,7 @@ def execute(block, config):
     #if include_intrinsic is True, we're replacing gG+gI with gG+gI+mG+mI       
     #else,                         we're replacing gG    with gG+mG 
     if do_galaxy_shear:
+        block["galaxy_shear_cl_gG", "ell"] = block["galaxy_shear_cl", "ell"]
         for i in range(nbin_pos):
             for j in range(nbin_shear):
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
