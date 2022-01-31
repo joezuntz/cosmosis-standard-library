@@ -1,26 +1,27 @@
 #This is a template for module description files
-name: ""
-version: ""
-purpose: ""
+name: "add_magnification"
+version: "1"
+purpose: "Add magnification terms to C_ell"
 url: ""
-interface: ""
-attribution: []
-rules:
-    ""
-cite:
-    - ""
-    - ""
+interface: "add_magnification.py"
+attribution: [Niall MacCrann, Jack Elvin-Poole]
+rules: []
+cite: []
 
 assumptions:
     - ""
 
 explanation: |
-        # for galaxy_galaxy, we're replacing 'galaxy_cl' (the gg term) with gg+gm+mg+mm
-        # so in case useful, save the gg term to galaxy_cl_gg.
-    if include_intrinsic is True, we replace gG+gI with gG+gI+mG+mI       
-    else,                         we replace gG    with gG+mG 
+    Magnification affects both the galaxy density and galaxy galaxy-lensing spectra,
+    adding extra terms to each.  The module finds and adds those terms.
 
-# List of parameters that can go in the params.ini file in the section for this module    
+    For density (g), we have gg -> gg + gm + mg + mm
+    For density shear (gG) we have gG -> gG + mG
+    where m is magnification.
+
+    We can also include intrinsic aligment (I) - magnification interactions, in which
+    case the module does: gG + gI -> gG + gI + mG + mI       
+
 params:
     galaxy-galaxy:
         meaning: Whether to add magnification terms to galaxy density spectra
