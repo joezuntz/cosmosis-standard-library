@@ -7,7 +7,7 @@ MODES = ["stretch"]
 
 
 def setup(options):
-    mode = options[option_section, "mode"]
+    mode = options.get_string(option_section, "mode", "stretch")
     sample = options.get_string(option_section, "sample", "")
     interpolation = options.get_string(
         option_section, "interpolation", "cubic")
