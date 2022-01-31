@@ -61,11 +61,11 @@ params:
         type: str
         default: ""
     bin_ranks:
-        meaning:
+        meaning: The choice of which tomographic bins to generate statistics for
         type: int 1d
         default:
     dimensions:
-        meaning: Dimensionality of map to generate
+        meaning: The number of tomographic bins, and thus the dimensionality of map to generate
         type: int
         default: 2
     resume:
@@ -76,8 +76,6 @@ params:
         meaning: Filename to load pre-computed map from
         type: str
         default: ""
-
-
 
 inputs:
     ranks:
