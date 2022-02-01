@@ -83,16 +83,10 @@ def execute(block, config):
 			print("dv_data = ", mean)
 
 		if bao_mode == 'dv':
-			if (d_v_predicted<(mean+2.*sigma)) & (d_v_predicted>(mean-2.*sigma)):
-				chi2 = (d_v_predicted-mean)**2/sigma**2
-			else:
-				chi2 = 4.
+			chi2 = (d_v_predicted - mean)**2 / sigma**2
 		if bao_mode == 'rs_dv':
-			rs_dv_predicted = rs_predicted/d_v_predicted
-			if (rs_dv_predicted<(mean+2.*sigma)) & (rs_dv_predicted>(mean-2.*sigma)):
-				chi2 = (rs_dv_predicted-mean)**2/sigma**2
-			else:
-				chi2 = 4.
+			rs_dv_predicted = rs_predicted / d_v_predicted
+			chi2 = (rs_dv_predicted - mean)**2 / sigma**2
 
 
 		like = -chi2/2.0 - norm
