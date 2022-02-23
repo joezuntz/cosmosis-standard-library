@@ -57,36 +57,6 @@ def compute_c1_baseline():
     return f
 
 
-def read_precomp_file(filename, sub_const=True):
-    # Read in terms from text file
-    Ps = np.loadtxt(filename).T
-    P_dict = {}
-    k_IA, Pk_lin_orig = Ps[0], Ps[1]
-    P_dict["P_lin_IA"] = Pk_lin_orig
-
-    P_dict["P_ta_dE1"] = Ps[4]
-    P_dict["P_ta_dE2"] = Ps[5]
-    P_dict["P_mix_A"] = Ps[16]
-    if sub_const:
-        P_dict["P_ta_EE"] = Ps[8]
-        P_dict["P_ta_BB"] = Ps[9]
-        P_dict["P_tt_EE"] = Ps[14]
-        P_dict["P_tt_BB"] = Ps[15]
-        P_dict["P_mix_B"] = Ps[18]
-        P_dict["P_mix_D_EE"] = Ps[21]
-        P_dict["P_mix_D_BB"] = Ps[22]
-    else:
-        P_dict["P_ta_EE"] = Ps[10]
-        P_dict["P_ta_BB"] = Ps[11]
-        P_dict["P_tt_EE"] = Ps[12]
-        P_dict["P_tt_BB"] = Ps[13]
-        P_dict["P_mix_B"] = Ps[18] * Pk_lin_orig
-        P_dict["P_mix_D_EE"] = Ps[19]
-        P_dict["P_mix_D_BB"] = Ps[20]
-
-    return k_IA, P_dict
-
-
 def grow(P, Dz, power):
     Pz = np.zeros((len(Dz), len(P)))
     for i, Dzi in enumerate(Dz):
@@ -96,7 +66,7 @@ def grow(P, Dz, power):
 
 def amp_3d(C, num_z, num_k):
     C = np.atleast_1d(C)
-    # print C.shape
+
     if C.shape == (1,):
         return C * np.ones((num_z, num_k))
     elif C.shape == (num_z,):
@@ -129,121 +99,62 @@ def get_IA_terms(
     alphadel,
     z_piv,
     Omega_m,
-    precomp_file=None,
-    s8_rescale_factor=None,
-    sub_const=True,
-    include_s2_terms=False,
-    sigma2_S=None,
     sub_lowk=False,
 ):
 
-    # This function reads in a text file of PT IA terms (computed at z=0), interpolates them onto k_out,
+    # This function reads in PT IA terms (computed at z=0), interpolates them onto k_out,
     # evolves them in z using the growth function Dz, and combines them into physically motivated terms
     # C1, C2 are amplitudes for TT and TA contributions and can be either scalars, 1d array with length Dz, or 2d array with shape (len(Dz), len(k_nl))
     # same for bias_red, bias_blue
-    #    assert P_lin.shape[1]==P_nl.shape[1]==len(k_out) #this is no longer necessary
-    if precomp_file:
-        k_IA, P_IA_dict_z0 = read_precomp_file(precomp_file, sub_const=sub_const)
-        try:
-            assert np.allclose(k_out, k_IA)
-            P_IA_dict_z0[key] = P_IA_dict_z0
-        except (AssertionError, ValueError):
-            for key in P_IA_dict_z0:
-                P_IA_dict_z0[key] = Pk_interp(k_IA, P_IA_dict_z0[key])(k_out)
 
-        if sub_lowk:
-            for key in P_IA_dict_z0:
-                P_IA_dict_z0[key] -= P_IA_dict_z0[key][-1]
-
-        # apply growth factor to get 3d P(k)s
-        P_IA_dict = {}
-        for key, val in P_IA_dict_z0.iteritems():
-            P_IA_dict[key] = grow(val, Dz, 4)
-
-        if True:
-            # also look in the block for these terms, and print ratio (for debugging!)
-            # get from the block
-            P_IA_dict_block = {}
-            for key in [
-                "P_tt_EE",
-                "P_tt_BB",
-                "P_ta_dE1",
-                "P_ta_dE2",
-                "P_ta_EE",
-                "P_ta_BB",
-                "P_mix_A",
-                "P_mix_B",
-                "P_mix_D_EE",
-                "P_mix_D_BB",
-            ]:
-                z, k_IA, p = block.get_grid("fastpt", "z", "k_h", key)
-                assert np.allclose(z, z_out)
-                try:
-                    assert np.allclose(k_out, k_IA)
-                    P_IA_dict_block[key] = p
-                except (AssertionError, ValueError):
-                    p0_orig = p[0]
-                    p0_out = Pk_interp(k_IA, p0_orig)(k_out)
-                    P_IA_dict_block[key] = grow(p0_out, Dz, 4)
-            for key in P_IA_dict:
-                if key == "P_lin_IA":
-                    continue
-
-    else:
-        # get from the block
-        k_use = k_nl  # this sets which k grid will be used. Changing this may break some things.
-        P_IA_dict = {}
-        for key in [
+    # get from the block
+    k_use = k_nl  # this sets which k grid will be used. Changing this may break some things.
+    P_IA_dict = {}
+    for key in [
+        "P_tt_EE",
+        "P_tt_BB",
+        "P_ta_dE1",
+        "P_ta_dE2",
+        "P_ta_EE",
+        "P_ta_BB",
+        "P_mix_A",
+        "P_mix_B",
+        "P_mix_D_EE",
+        "P_mix_D_BB",
+        "Plin",
+    ]:
+        z, k_IA, p = block.get_grid("fastpt", "z", "k_h", key)
+        if sub_lowk and key in [
             "P_tt_EE",
             "P_tt_BB",
-            "P_ta_dE1",
-            "P_ta_dE2",
             "P_ta_EE",
             "P_ta_BB",
-            "P_mix_A",
-            "P_mix_B",
             "P_mix_D_EE",
             "P_mix_D_BB",
-            "Plin",
         ]:
-            z, k_IA, p = block.get_grid("fastpt", "z", "k_h", key)
-            if sub_lowk and key in [
-                "P_tt_EE",
-                "P_tt_BB",
-                "P_ta_EE",
-                "P_ta_BB",
-                "P_mix_D_EE",
-                "P_mix_D_BB",
-            ]:
-                # print p.shape
-                to_sub = p[:, 0][:, np.newaxis]
-                # print p
-                p -= to_sub
-                # print p
-                p[:, 0] = p[:, 1]
-                # p = (p.T - p[:,0]).T  #subtract last column from all columns. #this is probably not the best way to do it. maybe add an epsilon to avoid zero values.
-            # why sub high k? Should be sub_lowk
-            assert np.allclose(z, z_out)
-            try:
-                # assert np.allclose(k_out, k_IA)
-                assert np.allclose(k_use, k_IA)
-                P_IA_dict[key] = p
-            except (AssertionError, ValueError):
-                # interpolate and re-apply correct growth factor if necessary
-                p0_orig = p[0]
-                p0_out = Pk_interp(k_IA, p0_orig)(k_use)
-                if key == "Plin":
-                    P_IA_dict[key] = grow(p0_out, Dz, 2)
-                else:
-                    P_IA_dict[key] = grow(p0_out, Dz, 4)
+            to_sub = p[:, 0][:, np.newaxis]
+            p -= to_sub
+            p[:, 0] = p[:, 1]
+
+        assert np.allclose(z, z_out)
+
+        try:
+            assert np.allclose(k_use, k_IA)
+            P_IA_dict[key] = p
+        except (AssertionError, ValueError):
+            # interpolate and re-apply correct growth factor if necessary
+            p0_orig = p[0]
+            p0_out = Pk_interp(k_IA, p0_orig)(k_use)
+            if key == "Plin":
+                P_IA_dict[key] = grow(p0_out, Dz, 2)
+            else:
+                P_IA_dict[key] = grow(p0_out, Dz, 4)
 
     # include power law evolution of amplitude. Right now, this step is always done, alpha = 0 means no evolution.
     # Note, this currently compatible with scalar A1 and A2 or with vector A1 and A2 with length = z_out
-    # print('(A1,A2,z_piv,alpha1,alpha2,bias_ta,bias_tt)=',A1,A2,z_piv,alpha1,alpha2,bias_ta,bias_tt)
 
     C1_RHOCRIT = compute_c1_baseline()
 
-    # F = - A * C1_RHOCRIT * Omega_m / growth #pre-factor used in the old IA function (tidal alignment only)
     C1 = (
         -1.0
         * A1
@@ -286,9 +197,6 @@ def get_IA_terms(
     )
     p_ta_ii_BB = Cdel ** 2 * P_IA_dict["P_ta_BB"]
     p_ta_gi = Cdel * (P_IA_dict["P_ta_dE1"] + P_IA_dict["P_ta_dE2"])
-    if include_s2_terms:
-        p_ta_gi += Cdel * (58.0 / 105) * sigma2_S * P_IA_dict["Plin"]
-        p_ta_ii_EE += 2 * C1 * Cdel * (58.0 / 105) * sigma2_S * P_IA_dict["Plin"]
 
     P_IA_out["lin_II_EE"] = C1 * C1 * P_IA_dict["Plin"]
     P_IA_out["nla_II_EE"] = C1 * C1 * P_IA_dict["P_nl"]
@@ -325,57 +233,35 @@ def get_IA_terms(
 
 
 def setup(options):
-
-    sub_const = options.get_bool(option_section, "sub_const", False)
     sub_lowk = options.get_bool(option_section, "sub_lowk", False)
-    include_s2_terms = options.get_bool(option_section, "include_s2_terms", True)
-    precomp_file = options.get_string(option_section, "precomp_file", "")
-    if not precomp_file:
-        precomp_file = None
     ia_model = options.get_string(option_section, "ia_model", "nla")
     name = options.get_string(option_section, "name", default="").lower()
-    gal_intrinsic_power = options.get_bool(option_section, "do_galaxy_intrinsic", False)
-    use_same_bias = options.get_bool(option_section, "use_same_bias", True)
+    do_galaxy_intrinsic = options.get_bool(option_section, "do_galaxy_intrinsic", False)
     no_IA_E = options.get_bool(option_section, "no_IA_E", False)
     no_IA_B = options.get_bool(option_section, "no_IA_B", False)
-    Asigma8 = options.get_bool(option_section, "Asigma8", False)
-    if Asigma8:
-        print(
-            "A1*sigma_8, A2*sigma_8^2, Adel*sigma_8^2 are the parameters being sampled"
-        )
+
     if name:
         suffix = "_" + name
     else:
         suffix = ""
     return (
-        sub_const,
         sub_lowk,
-        include_s2_terms,
-        precomp_file,
         ia_model,
         suffix,
-        gal_intrinsic_power,
-        use_same_bias,
+        do_galaxy_intrinsic,
         no_IA_E,
         no_IA_B,
-        Asigma8,
     )
 
 
 def execute(block, config):
-
     (
-        sub_const,
         sub_lowk,
-        include_s2_terms,
-        precomp_file,
         ia_model,
         suffix,
-        gal_intrinsic_power,
-        use_same_bias,
+        do_galaxy_intrinsic,
         no_IA_E,
         no_IA_B,
-        Asigma8,
     ) = config
 
     # Load linear and non-linear matter power spectra
@@ -428,17 +314,8 @@ def execute(block, config):
     else:
         bias_ta = block.get_double(ia_section, "bias_ta", 1.0)
         bias_tt = block.get_double(ia_section, "bias_tt", 1.0)
-        if use_same_bias:
-            bias_tt = bias_ta
         Adel = bias_ta * A1
 
-    if Asigma8:
-        # The parameters being sampled over are ACTUALLY:
-        # A1*sigma_8, A2*sigma_8^2, Adel*sigma_8^2
-        sigma_8 = block[names.cosmological_parameters, "sigma_8"]
-        A1 = A1 / sigma_8
-        A2 = A2 / sigma_8 ** 2
-        Adel = Adel / sigma_8 ** 2
 
 
     IA_terms, k_use = get_IA_terms(
@@ -459,9 +336,6 @@ def execute(block, config):
         alphadel,
         z_piv,
         omega_m,
-        precomp_file=precomp_file,
-        sub_const=sub_const,
-        include_s2_terms=include_s2_terms,
         sub_lowk=sub_lowk,
     )
 
@@ -471,16 +345,19 @@ def execute(block, config):
         ii_ee_total = E_factor * IA_terms["lin_II_EE"]
         ii_bb_total = 0.0 * IA_terms["ta_II_BB"]
         gi_e_total = E_factor * IA_terms["lin_GI"]
+
     # Non-linear linear alignment model
     elif ia_model == "nla":
         ii_ee_total = E_factor * IA_terms["nla_II_EE"]
         ii_bb_total = 0.0 * IA_terms["ta_II_BB"]
         gi_e_total = E_factor * IA_terms["nla_GI"]
+
     # Tidal alignment model
     elif ia_model == "ta":
         ii_ee_total = E_factor * (IA_terms["nla_II_EE"] + IA_terms["ta_II_EE"])
         ii_bb_total = B_factor * IA_terms["ta_II_BB"]
         gi_e_total = E_factor * (IA_terms["nla_GI"] + IA_terms["ta_GI"])
+
     # Tidal torquing model
     elif ia_model == "tt":
         # In a realistic scenario, this should probably include a tidal-alignment-like
@@ -488,6 +365,7 @@ def execute(block, config):
         ii_ee_total = E_factor * IA_terms["tt_II_EE"]
         ii_bb_total = B_factor * IA_terms["tt_II_BB"]
         gi_e_total = E_factor * IA_terms["tt_GI"]
+
     # Full Tidal Alignment + Tidal Torquing
     elif ia_model == "tatt":
         ii_ee_total = E_factor * (
@@ -502,6 +380,7 @@ def execute(block, config):
         gi_e_total = E_factor * (
             IA_terms["nla_GI"] + IA_terms["ta_GI"] + IA_terms["tt_GI"]
         )  # no mix contribution to GI
+
     elif ia_model == "mixed_only":
         # not a physically sensible option, but useful for showing the extra
         # contribution we get by considering the cross-terms....
@@ -539,7 +418,7 @@ def execute(block, config):
     # need to check if the galaxy bias has already been applied to
     # it or not. We'd prefer people not do that, apparently, so
     # we print out some stuff if it happens.
-    if gal_intrinsic_power:
+    if do_galaxy_intrinsic:
         gm = "matter_galaxy_power" + suffix
         z, k, p_gm = block.get_grid(gm, "z", "k_h", "p_k")
 
