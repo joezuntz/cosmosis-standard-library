@@ -256,34 +256,32 @@ def execute(block, config):
         P1Lkz= Pkz2 + one_loopkz
         
         ####
-        # output_nl_grid=True
         output_nl_grid=config['output_nl_grid']
         if output_nl_grid:
+
 		    # interpolate to nl k grid. Interpolation is different for terms that can have negative values.
             if verbose:
                 print('outputing all fast-pt results on NL k grid as well.')
                 print('klog bounds:',klog[0],klog[-1])
                 print('knl1log bounds:',knl1log[0],knl1log[-1])
-    #        temp=interp1d(klog,bias_fpt[2],bounds_error=False, fill_value=0.0,kind=cubic)#can have negative values
+
             temp=intspline(klog,bias_fpt[2])
             Pd1d2_o = np.outer(Growth2**2,temp(knl1log))
+
             temp=intspline(klog,np.log(bias_fpt[3]))
             Pd2d2_o = np.outer(Growth2**2,np.exp(temp(knl1log)))
+
             temp=intspline(klog,bias_fpt[4])
             Pd1s2_o = np.outer(Growth2**2,temp(knl1log))
+
             temp=intspline(klog,bias_fpt[5])
             Pd2s2_o = np.outer(Growth2**2,temp(knl1log))
+
             temp=intspline(klog,np.log(bias_fpt[6]))
             Ps2s2_o = np.outer(Growth2**2,np.exp(temp(knl1log)))
             sig4kz_o = np.outer(Growth2**2,bias_fpt[7]*np.ones_like(knl1))
         
         ####
-        #locally defined bias variables
-        # b1=1.
-        # b2=1.
-        # bs=1.
-        # read in from datablock - values specified in values file
-
         #Power law in z bias model (constant in z if b<i>_alpha not set in values file)
         bias_section=config['bias_section']
         b1_z0 = block[bias_section, "b_1"]
@@ -304,41 +302,25 @@ def execute(block, config):
         bs = bs_z0*((1+Z)/(1+z0_s))**bs_alpha
         
 
-###
-# BIAS CONVENTION. See, e.g. https://arxiv.org/pdf/1405.1447v4.pdf
-# delta_g = b1*delta_m + (1/2)*b2*(delta_m^2-<delta_m^2>) + (1/2)*b_s*(s^2-<s^2>)
-# fiducial quadratic bias values:
-# b2 = 0.9*(b1-1)^2-0.5 (this is a numerical fit to simulation data, but a relationship of this form is motivated in the spherical collapse picture
-# bs = (-4/7)(b1-1)
-#
-###
+        ###
+        # BIAS CONVENTION. See, e.g. https://arxiv.org/pdf/1405.1447v4.pdf
+        # delta_g = b1*delta_m + (1/2)*b2*(delta_m^2-<delta_m^2>) + (1/2)*b_s*(s^2-<s^2>)
+        # fiducial quadratic bias values:
+        # b2 = 0.9*(b1-1)^2-0.5 (this is a numerical fit to simulation data, but a relationship of this form is motivated in the spherical collapse picture
+        # bs = (-4/7)(b1-1)
+        #
+        ###
 
-#NOTE: With quadratic bias models, the 'shot noise' becomes a free parameter and can be non-zero for cross-correlations between two different samples.
+        #NOTE: With quadratic bias models, the 'shot noise' becomes a free parameter and can be non-zero for cross-correlations between two different samples.
 
-####
-
-# galaxy power spectrum (for bin AUTO correlations)
+        # galaxy power spectrum (for bin AUTO correlations)
         Pggsub = (b1**2*Pkz2 + b1*b2*Pd1d2 + (1./4)*b2*b2*(Pd2d2-2.*sig4kz) + b1*bs*Pd1s2 +
             (1./2)*b2*bs*(Pd2s2-4./3*sig4kz) + (1./4)*bs*bs*(Ps2s2-8./9*sig4kz))
         
         Pgg = (b1**2*Pkz2 + b1*b2*Pd1d2 + (1./4)*b2*b2*(Pd2d2) + b1*bs*Pd1s2 +
             (1./2)*b2*bs*(Pd2s2) + (1./4)*bs*bs*(Ps2s2))
-			
 
-######
-# galaxy power spectrum (for bin CROSS correlations)
-#        Pggsub_AB = (b1_A*b1_B*Pkz2 + (1./2)*(b1_A*b2_B+b1_B*b2_A)*Pd1d2 + (1./4)*b2_A*b2_B*(Pd2d2-2.*sig4kz) + (1./2)*(b1_A*bs_B+b1_B*bs_A)*Pd1s2 +
-#            (1./4)*(b2_A*bs_B+b2_B*bs_A)*(Pd2s2-4./3*sig4kz) + (1./4)*bs_A*bs_B*(Ps2s2-8./9*sig4kz))
-
-        
-#        Pgg_AB = (b1_A*b1_B*Pkz2 + (1./2)*(b1_A*b2_B+b1_B*b2_A)*Pd1d2 + (1./4)*b2_A*b2_B*(Pd2d2) + (1./2)*(b1_A*bs_B+b1_B*bs_A)*Pd1s2 +
-#            (1./4)*(b2_A*bs_B+b2_B*bs_A)*(Pd2s2) + (1./4)*bs_A*bs_B*(Ps2s2)
-
-
-        
-
-##
-# galaxy-matter cross power spectrum
+        # galaxy-matter cross power spectrum
         Pmg = b1*Pkz2 + (1./2)*b2*Pd1d2 + (1./2)*bs*Pd1s2
         
         # note that the fastpt block uses Plin for the linear
@@ -357,7 +339,6 @@ def execute(block, config):
         block.put_grid('fastpt',"z",z,"k_h",k,'one_loopkz',one_loopkz)
         block.put_grid('fastpt',"z",z,"k_h",k,'P1Lkz',P1Lkz)
         block.put_grid('fastpt',"z",z,"k_h",k,'Pkz2',Pkz2)
-        #block['fastpt', 'sig4kz'] = sig4kz
         
         # put galaxy-galaxy and galaxy-matter power spectra into the appropriate bits of the data block
         # First, must interpolate back to original k values (choose lin or nl)
@@ -368,7 +349,7 @@ def execute(block, config):
 
         if output_nl_grid:
 
-            K,Z = np.meshgrid(knl1,z) #do we want a meshgrid?
+            K,Z = np.meshgrid(knl1,z)
             b1 = b1_z0*((1+Z)/(1+z0_1))**b1_alpha
             b2 = b2_z0*((1+Z)/(1+z0_2))**b2_alpha
             bs = bs_z0*((1+Z)/(1+z0_s))**bs_alpha
@@ -391,9 +372,7 @@ def execute(block, config):
             block.put_grid('fastpt',"z",z,"k_h_nl",knl1,'Pggsub_o',Pggsub_o)
             block.put_grid('fastpt',"z",z,"k_h_nl",knl1,'Pmg_o',Pmg_o)
             block.put_grid('fastpt',"z",z,"k_h_nl",knl1,'sig4kz_o',sig4kz_o)
-#            block.put_grid('fastpt',"k_h",knl1,"z",z,'one_loopkz_o',one_loopkz_o)
-#            block.put_grid('fastpt',"k_h",knl1,"z",z,'P1Lkz_o',P1Lkz_o)
-#            block.put_grid('fastpt',"k_h",knl1,"z",z,'Pkz2_o',Pkz2_o)
+
         t8=time()
         if verbose: print('FAST-PT nonlinear bias steps took',t8-t7)    
 
@@ -413,7 +392,8 @@ def execute(block, config):
         mix_B=np.outer(Growth2**2,IA_mix[1])
         mix_D_EE=np.outer(Growth2**2,IA_mix[2])
         mix_D_BB=np.outer(Growth2**2,IA_mix[3])
-        if config['do_bias']==False:
+
+        if not config['do_bias']:
             margin=1.0-1e-6
             sig4=IA_tt[0][0]*margin
             #this is required to subtract off the k->0 limit. FAST-PT calculates the relevant value in the bias
@@ -435,11 +415,13 @@ def execute(block, config):
         block.put_grid('fastpt',"z",z,"k_h",k,'P_mix_D_EE',mix_D_EE)
         block.put_grid('fastpt',"z",z,"k_h",k,'P_mix_D_BB',mix_D_BB)
         t10=time()
-        if verbose: print('FAST-PT IA steps took',t10-t9)
+        if verbose:
+            print('FAST-PT IA steps took',t10-t9)
 
 ##########
 
-    if verbose: print('FAST-PT done')
+    if verbose:
+        print('FAST-PT done')
     return 0
 
 def cleanup(config):
