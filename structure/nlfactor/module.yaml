@@ -15,28 +15,71 @@ explanation: |
     This module multiplies the target_section by the nonlinear boost (matter_power_nl/matter_power_lin).
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
-    linear_section: "The name of linear matter power spectrum section (default names.matter_power_lin)"
-    nonlinear_section: "The name of nonlinear matter power spectrum section (default names.matter_power_nl)"
-    target_section: "The name of target linear power spectrum section (default 'weyl_curvature_spectrum')"
+    linear_section:
+        meaning: "The name of linear matter power spectrum section"
+        type: str
+        default: matter_power_lin
+    linear_section:
+        meaning: "The name of nonlinear matter power spectrum section"
+        type: str
+        default: matter_power_nl
+    target_section:
+        meaning: "The name of target matter power spectrum section"
+        type: str
+        default: weyl_curvature_spectrum
 
 #Inputs for a given choice of a parameter, from the values.ini or from other modules
 #If no such choices, just do one of these omitting mode=something part:
 inputs:
     matter_power_lin:
-        k_h: "real 1D array, sample values of linear spectrum in Mpc/h"
-        z: "real 1D array, redshift of linear spectrum samples"
-        P_k: "real 2D array, linear spectrum in (Mpc/h)^{-3}"
+        k_h:
+            type: real 1d
+            meaning: "sample values of linear spectrum in Mpc/h"
+            default: 
+        z:
+            type: real 1d
+            meaning: "redshift of linear spectrum samples"
+            default: 
+        p_k:
+            type: real 2d
+            meaning: "linear spectrum in (Mpc/h)^{-3}"
+            default: 
     matter_power_nl:
-        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
-        z: "real 1D array, redshift of nonlinear spectrum samples"
-        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+        k_h:
+            type: real 1d
+            meaning: "sample values of nonlinear spectrum in Mpc/h"
+            default: 
+        z:
+            type: real 1d
+            meaning: "redshift of nonlinear spectrum samples"
+            default: 
+        p_k:
+            type: real 2d
+            meaning: "Nonlinear spectrum in (Mpc/h)^{-3}"
+            default: 
     target_section:
-        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
-        z: "real 1D array, redshift of nonlinear spectrum samples"
-        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+        k_h:
+            type: real 1d
+            meaning: "sample values of target spectrum in Mpc/h"
+            default: 
+        z:
+            type: real 1d
+            meaning: "redshift of target spectrum samples"
+            default: 
+        p_k:
+            type: real 2d
+            meaning: "Target spectrum in (Mpc/h)^{-3}"
+            default: 
+
 
 outputs:
-    target_section_nl:
-        k_h: "real 1D array, sample values of nonlinear spectrum in Mpc/h"
-        z: "real 1D array, redshift of nonlinear spectrum samples"
-        P_k: "real 2D array, nonlinear spectrum in (Mpc/h)^{-3}"
+    target_section:
+        k_h:
+            type: real 1d
+            meaning: "sample values of target spectrum in Mpc/h"
+        z:
+            type: real 1d
+            meaning: "redshift of target spectrum samples"
+        p_k:
+            type: real 2d
+            meaning: "Target spectrum in (Mpc/h)^{-3}"

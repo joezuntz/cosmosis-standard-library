@@ -1,6 +1,6 @@
 #This is a template for module description files
 name: qso
-version: ""
+version: "1"
 purpose: Compute the likelihood of eBOSS DR14 D_v from QSO
 url: ""
 interface: eboss_dr14_qso.py
@@ -17,7 +17,10 @@ explanation: >
         This class inherits from the lrg likelihood class.
         We assume the likelihood on D_v is Gaussian."
 params:
-        feedback: "Integer,amount of output to print.  0 for no feedback.  1 for basic (default = 0)"
+    feedback: 
+        type: int
+        meaning: "Amount of output to print. 0 for no feedback. 1 for basic."
+        default: 0
 inputs: 
     distances:
         z:

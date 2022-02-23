@@ -58,5 +58,8 @@ inputs:
 
 
 outputs:
-        likelihoods:
-                eboss16_lrg_like: "real, likelihood"
+    likelihoods:
+        eboss16_lrg_like:
+            meaning: likelihood of BAO
+            type: real
+

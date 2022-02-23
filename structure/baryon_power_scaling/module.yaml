@@ -17,14 +17,29 @@ explanation: |
     the ratio between DM-only and hydro simulations"
 
 params:
-    ratiotable: "Path to one of the ratio files supplied with in the module's data directory"
+    ratiotable:
+        meaning: "Path to one of the ratio files supplied with in the module's data directory"
+        type: str
+        default: 
 
 inputs:
     matter_power_nl:
-        z: "1D real array, redshifts of samples"
-        k_h: "1D real array, inpu k wavenumbers of samples in Mpc/h."
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3."
+        k_h:
+            type: real 1d
+            meaning: "sample values of nonlinear spectrum in Mpc/h"
+            default: 
+        z:
+            type: real 1d
+            meaning: "redshift of nonlinear spectrum samples"
+            default: 
+        p_k:
+            type: real 2d
+            meaning: "Nonlinear spectrum in (Mpc/h)^{-3}"
+            default: 
 
 outputs:
     matter_power_nl:
-        p_k: "2D real array, matter power spectrum at samples in (Mpc/h)^-3, modified in-place"
+        p_k:
+            type: real 2d
+            meaning: "Nonlinear spectrum in (Mpc/h)^{-3}, modified in-place"
+            default: 

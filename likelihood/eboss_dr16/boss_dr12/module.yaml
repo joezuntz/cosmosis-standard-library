@@ -4,7 +4,7 @@ version: "1607.03155v1"
 purpose: Compute the likelihood of the supplied expansion and growth history against BOSS DR12 data as reanalyzed by eBOSS DR16
 url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
 interface: boss_dr12_lrg_reanalyze.py
-attribution: 
+attribution: ""
 rules: ""
 cite: 
     - ""
@@ -25,6 +25,7 @@ explanation: >
     It uses the sound horizon at last-scatter rs_zdrag.
 
     A correlated Gaussian likelihood is then returned."
+
 params:
     mode:
         meaning: 0 for BAO only, 1 for BAO+FS measurements
@@ -38,7 +39,7 @@ params:
         meaning: path to covariance matrix file
         type: str
         default: sdss_DR12_LRG_BAO_DMDH_covtot.txt or sdss_DR12_LRG_FSBAO_DMDHfs8_covtot.txt
-    rs_fiducial: "Real,  (default=148.6)"
+    rs_fiducial: 
         meaning: Fiducial value of sound horizon at last scattering used in making data
         type: real
         default: 147.78

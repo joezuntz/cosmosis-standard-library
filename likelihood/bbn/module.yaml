@@ -2,7 +2,7 @@ cite:
     - "J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)"
     - "Cooke, R et al.  ApJ, 830, 2 (2016)"
     - "Pitrou, C. et al, MNRAS, 502, 2, 2474–2481, (2021)"
-=======
+
 name: BBN
 version: PDG13
 purpose: Simple prior on Omega_b h^2 from light element abundances

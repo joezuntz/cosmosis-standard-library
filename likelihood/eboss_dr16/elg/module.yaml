@@ -57,5 +57,6 @@ inputs:
 
 outputs:
     likelihoods:
-        meaning: ELG BAO likelihood
-        type: real
+        eboss16_elg_like:
+            meaning: ELG BAO likelihood
+            type: real
