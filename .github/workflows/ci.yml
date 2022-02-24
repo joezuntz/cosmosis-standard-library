@@ -9,46 +9,60 @@ on:
   pull_request:
     branches: [ main ]
 
+
 jobs:
   conda_test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+    name: Conda Test
+    runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: cosmosis-env
+          python-version: 3.9
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+  # conda_test:
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@v2
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
+  #   - name: Set up Python 3.9
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.9
 
-    - name: Install dependencies with conda
-      run: |
-        $CONDA/bin/conda init bash
-        $CONDA/bin/conda create -p ./env -c conda-forge python==3.9 cosmosis cosmosis-build-standard-library
+  #   - name: Install dependencies with conda
+  #     run: |
+  #       $CONDA/bin/conda init bash
+  #       $CONDA/bin/conda create -p ./env -c conda-forge python==3.9 cosmosis cosmosis-build-standard-library
 
-    - name: Build standard library
-      run: |
-        $CONDA/bin/conda activate ./env
-        source cosmosis-configure
-        make
+  #   - name: Build standard library
+  #     run: |
+  #       $CONDA/bin/conda activate ./env
+  #       source cosmosis-configure
+  #       make
 
-    - name: Pantheon emcee
-      run: |
-        $CONDA/bin/conda activate ./env
-        source cosmosis-configure
-        cosmosis examples/pantheon.ini -p emcee.samples=20
-        cosmosis-postprocess examples/pantheon.ini -o output/pantheon
-        test -f output/pantheon/cosmological_parameters--omega_m.png
+  #   - name: Pantheon emcee
+  #     run: |
+  #       $CONDA/bin/conda activate ./env
+  #       source cosmosis-configure
+  #       cosmosis examples/pantheon.ini -p emcee.samples=20
+  #       cosmosis-postprocess examples/pantheon.ini -o output/pantheon
+  #       test -f output/pantheon/cosmological_parameters--omega_m.png
 
-    - name: DES Y1 likelihood
-      run: |
-        $CONDA/bin/conda activate ./env
-        source cosmosis-configure
-        cosmosis examples/des-y1.ini | tee output/des-y1.log
-        grep 'Likelihood =  5237.37' output/des-y1.log
+  #   - name: DES Y1 likelihood
+  #     run: |
+  #       $CONDA/bin/conda activate ./env
+  #       source cosmosis-configure
+  #       cosmosis examples/des-y1.ini | tee output/des-y1.log
+  #       grep 'Likelihood =  5237.37' output/des-y1.log
 
 
   apt-get-test:
