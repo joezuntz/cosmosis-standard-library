@@ -23,7 +23,7 @@ jobs:
 
     - name: Setup conda
       run: |
-        $CONDA/bin/conda env create -p ./conda-env -c conda-forge cosmosis cosmosis-build-standard-library
+        $CONDA/bin/conda create -p ./conda-env -c conda-forge cosmosis cosmosis-build-standard-library
 
     - name: Build standard library
       run: |
