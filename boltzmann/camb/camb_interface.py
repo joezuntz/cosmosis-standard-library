@@ -64,8 +64,14 @@ def setup(options):
     if not mode in MODES:
         raise ValueError("Unknown mode {}.  Must be one of: {}".format(mode, MODES))
 
+    # These are parameters for CAMB
     config = {}
-    config["mode"] = mode
+
+    # These are parameters that we do not pass directly to CAMBparams,
+    # but use ourselves in some other way
+    more_config = {}
+
+    more_config["mode"] = mode
     config['WantCls'] = mode in [MODE_CMB, MODE_ALL]
     config['WantTransfer'] = mode in [MODE_POWER, MODE_ALL]
     config['WantScalars'] = True
@@ -84,9 +90,6 @@ def setup(options):
     config['want_zdrag'] = mode != MODE_BG
     config['want_zstar'] = config['want_zdrag']
 
-    # These are parameters that we do not pass directly to CAMBparams,
-    # but use ourselves in some other way
-    more_config = {}
 
     more_config["lmax_params"] = get_optional_params(options, opt, ["max_eta_k", "lens_potential_accuracy",
                                                                     "lens_margin", "k_eta_fac", "lens_k_eta_reference",
@@ -283,8 +286,8 @@ def extract_nonlinear_params(block, config, more_config):
 
 
 def extract_camb_params(block, config, more_config):
-    want_perturbations = config['mode'] not in [MODE_BG, MODE_THERM]
-    want_thermal = config['mode'] != MODE_BG
+    want_perturbations = more_config['mode'] not in [MODE_BG, MODE_THERM]
+    want_thermal = more_config['mode'] != MODE_BG
 
     # if want_perturbations:
     init_power = extract_initial_power_params(block, config, more_config)
