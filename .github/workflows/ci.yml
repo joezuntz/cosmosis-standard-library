@@ -28,12 +28,13 @@ jobs:
 
     - name: Build standard library
       run: |
-        $CONDA/bin/activate ./env
+        $CONDA/bin/activate ./conda-env
         source cosmosis-configure
         make
 
     - name: Pantheon emcee
       run: |
+        $CONDA/bin/activate ./conda-env
         source cosmosis-configure
         cosmosis examples/pantheon.ini -p emcee.samples=20
         cosmosis-postprocess examples/pantheon.ini -o output/pantheon
@@ -41,6 +42,7 @@ jobs:
 
     - name: DES Y1 likelihood
       run: |
+        $CONDA/bin/activate ./conda-env
         source cosmosis-configure
         cosmosis examples/des-y1.ini | tee output/des-y1.log
         grep 'Likelihood =  5237.37' output/des-y1.log
