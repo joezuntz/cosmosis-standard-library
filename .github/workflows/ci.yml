@@ -17,13 +17,24 @@ jobs:
     strategy:
       fail-fast: false
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: cosmosis-env
           python-version: 3.9
-      - name: Conda info
+
+      - name: Install dependencies with conda
         shell: bash -l {0}
-        run: conda info
+        run: conda install cosmosis cosmosis-build-standard-library
+
+      - name: Build standard library
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          make
+
   # conda_test:
   #   runs-on: ubuntu-latest
   #   defaults:
