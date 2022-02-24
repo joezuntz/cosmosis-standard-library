@@ -23,12 +23,11 @@ jobs:
 
     - name: Install dependencies with conda
       run: |
-        $CONDA/bin/conda create -p ./conda-env -c conda-forge python==3.9 cosmosis cosmosis-build-standard-library
+        $CONDA/bin/conda install -c conda-forge python==3.9 cosmosis cosmosis-build-standard-library
         $CONDA/bin/conda info
 
     - name: Build standard library
       run: |
-        $CONDA/bin/activate ./conda-env
         source cosmosis-configure
         make
 
