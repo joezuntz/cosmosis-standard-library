@@ -22,12 +22,15 @@ jobs:
         python-version: 3.9
 
     - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+
+    - name: Install dependencies with conda
       run: |
-        $CONDA/bin/conda create -p ./conda-env -c conda-forge cosmosis cosmosis-build-standard-library
+        conda create -p ./conda-env -c conda-forge python==3.9 cosmosis cosmosis-build-standard-library
 
     - name: Build standard library
       run: |
-        $CONDA/bin/conda activate ./env
+        conda activate ./env
         source cosmosis-configure
         make
 
