@@ -1,1 +1,1 @@
-See https://bitbucket.org/joezuntz/cosmosis for a full readme and links to docs
+See https://cosmosis.readthedocs.io for a full readme and docs
