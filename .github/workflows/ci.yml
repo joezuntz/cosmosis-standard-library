@@ -82,7 +82,7 @@ jobs:
       id: cache-pip
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}-v2
 
     - uses: actions/cache@v2
       name: Planck Data Cache
@@ -93,10 +93,10 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip wheel setuptools
         pip install cosmosis
-        pip install --no-binary=mpi4py mpi4py
-        pip install camb fitsio astropy fast-pt
+        pip install --no-binary=mpi4py,camb mpi4py camb
+        pip install fitsio astropy fast-pt
 
     - name: Build
       run: |
@@ -108,6 +108,13 @@ jobs:
           cd likelihood/planck2018
           curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o COM_Likelihood_Data-baseline_R3.00.tar.gz
           tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
+
+    # I have seen some failures here
+    - name: Check camb installation
+      run: |
+        source .github/ci-setup.sh
+        python -c "import camb"
+
 
     - name: Demo 2 Planck 2018 Likelihood
       run: |
