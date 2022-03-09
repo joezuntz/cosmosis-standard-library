@@ -41,7 +41,7 @@ jobs:
       id: cache-pip
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}-v2
 
     - uses: actions/cache@v2
       name: Planck Data Cache
@@ -54,8 +54,8 @@ jobs:
       run: |
         python -m pip install --upgrade pip wheel setuptools
         pip install cosmosis
-        pip install --no-binary=mpi4py mpi4py
-        pip install camb fitsio astropy
+        pip install --no-binary=:all: mpi4py camb
+        pip install fitsio astropy
 
     # I have seen some failures here
     - name: Check camb installation
