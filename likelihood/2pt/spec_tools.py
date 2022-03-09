@@ -530,6 +530,7 @@ class ClCov( object ):
                 cov_blocks = {} #collect cov_blocks in this dictionary
                 for i_bp, bin_pair_i in enumerate(cl_spec_i.bin_pairs):
                     for j_bp, bin_pair_j in enumerate(cl_spec_j.bin_pairs):
+                        print(f"Computing covariance {i_cl},{j_cl} pairs <{bin_pair_i} {bin_pair_j}>")
                         #First check if we've already calculated this
                         if (i_cl == j_cl) and cl_spec_i.is_auto and ( j_bp < i_bp ):
                             cl_var_binned = cov_blocks[j_bp, i_bp]
