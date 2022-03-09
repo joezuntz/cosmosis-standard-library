@@ -57,6 +57,11 @@ jobs:
         pip install --no-binary=mpi4py mpi4py
         pip install camb fitsio astropy
 
+    # I have seen some failures here
+    - name: Check camb installation
+      run: |
+        python -c "import camb"
+
     - name: Build
       run: |
         source .github/ci-setup.sh && make
@@ -67,6 +72,13 @@ jobs:
           cd likelihood/planck2018
           curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o COM_Likelihood_Data-baseline_R3.00.tar.gz
           tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
+
+    # I have seen some failures here
+    - name: Check camb installation after ci-setup
+      run: |
+        source .github/ci-setup.sh
+        python -c "import camb"
+
 
     - name: Demo 2 Planck 2018 Likelihood
       run: |
