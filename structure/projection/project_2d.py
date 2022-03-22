@@ -1640,3 +1640,11 @@ def setup(options):
 def execute(block, config):
     return config.execute(block)
 
+def document_spectrum_types():
+    # for generating the module.yaml content
+    for x in project_2d.SpectrumType:
+        x = x.value
+        opt_name = x.option_name()
+        sec = x.power_3d_type.section
+        name = x.name
+        print(f"{opt_name:34}{sec:34}{name}")
