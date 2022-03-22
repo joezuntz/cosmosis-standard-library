@@ -51,6 +51,13 @@ jobs:
           cosmosis examples/des-y1.ini | tee output/des-y1.log
           grep 'Likelihood =  5237.37' output/des-y1.log
 
+      - name: DES Y3 likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y1.ini | tee output/des-y3.log
+          grep 'Likelihood =  6043.23' output/des-y3.log
+
 
   apt-get-test:
     runs-on: ubuntu-latest
