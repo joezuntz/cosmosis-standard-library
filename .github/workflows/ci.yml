@@ -55,7 +55,7 @@ jobs:
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/des-y1.ini | tee output/des-y3.log
+          cosmosis examples/des-y3.ini | tee output/des-y3.log
           grep 'Likelihood =  6043.23' output/des-y3.log
 
 
