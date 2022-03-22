@@ -72,25 +72,76 @@ params:
         meaning: Print more output.
         type: bool
         default: false
+    fatal_errors:
+        meaning: Raise an error instead of returning non-zero on error loading splines. Handy for debugging.
+        type: bool
+        default: false
     get_kernel_peaks:
         meaning: Save peak positions for the computed kernels
         type: bool
         default: false
-    ell_min:
-        meaning: Minimum ell value
+    do_exact:
+        meaning: Spectra for which to do exact (non-limber) calculation at low ell (space-separated)
+        type: str
+        default: ""
+    auto_only:
+        meaning: Spectra for which to only compute auto-correlations, not inter-bin correlations (space-separated)
+        type: str
+        default: ""
+    clip_chi_kernels:
+        meaning: Fraction of the integration kernel peaks below which to set the kernel to zero
+        type: float
+        default: 1.0e-6
+    sig_over_dchi:
+        meaning: Ratio of the kernel width to sampling. Sets the sampling of the kernels. Larger is more precise.
+        type: float
+        default: 50.0
+    shear_kernel_dchi:
+        meaning: Sample spacing for shear kernels
+        type: float
+        default: 5.0
+    limber_ell_start:
+        meaning: For spectra listed in do_exact, the minimum ell to switch to Limber
+        type: int
+        default: 300
+    ell_min_logspaced:
+        meaning: Minimum ell value for log-spaced values (usually higher than linear)
         type: real
-        default:
-    ell_max:
-        meaning: Maximum ell value
+        default: -1
+    ell_max_logspaced:
+        meaning: Maximum ell value for log-spaced values (usually higher than linear)
         type: real
-        default:
-    n_ell:
+        default: -1
+    n_ell_logspaced:
         meaning: Number of log-spaced C_ell values produced
         type: real
+        default: -1
+    ell_min_linspaced:
+        meaning: Minimum ell value for linearly-spaced values (usually lower than log-spaced)
+        type: real
+        default: -1
+    ell_max_linspaced:
+        meaning: Maximum ell value for linearly-spaced values (usually higher than log-spaced)
+        type: real
+        default: -1
+    n_ell_linspaced:
+        meaning: Number of linearly-spaced C_ell values produced
+        type: real
         default:
+    dlogchi:
+        meaning: spacing in log-chi for exact non-limber calculation (or -1 to auto-set)
+        type: int
+        default: -1
+    chi_pad_upper:
+        meaning: Upper padding fraction in chi for non-limber calculation
+        type: float
+        default: 2.0
+    chi_pad_upper:
+        meaning: Lower padding fraction in chi for non-limber calculation
+        type: float
+        default: 2.0
     shear-shear:
-        meaning: See note in the explanation above for this and related
-            parameters
+        meaning: See note in the explanation above for this and related parameters
         type: str or bool
         default:
     limber_abs_tol:
@@ -101,6 +152,14 @@ params:
         meaning: Relative tolerance for the Limber integral
         type: real
         default: 0.001
+    lin_bias_prefix:
+        meaning: Parameter name to use for linear bias values, e.g. b for b1, b2, b3, etc.
+        type: str
+        default: b
+    do_rsd:
+        meaning: Whether to compute RSD in non-limber calculations
+        type: bool
+        default: False
 inputs:
     matter_power_nl:
         k_h:
