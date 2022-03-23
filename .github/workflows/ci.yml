@@ -9,9 +9,57 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
-  build:
 
+jobs:
+  conda_test:
+    name: Conda Test
+    runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: cosmosis-env
+          channels: conda-forge
+          python-version: 3.9
+
+      - name: Install dependencies with conda
+        shell: bash -l {0}
+        run: conda install -c conda-forge cosmosis cosmosis-build-standard-library
+
+      - name: Build standard library
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          make
+
+      - name: Pantheon emcee
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/pantheon.ini -p emcee.samples=20
+          cosmosis-postprocess examples/pantheon.ini -o output/pantheon
+          test -f output/pantheon/cosmological_parameters--omega_m.png
+
+      - name: DES Y1 likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y1.ini | tee output/des-y1.log
+          grep 'Likelihood =  5237.37' output/des-y1.log
+
+      - name: DES Y3 likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3.ini | tee output/des-y3.log
+          grep 'Likelihood =  6043.23' output/des-y3.log
+
+
+  apt-get-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -55,12 +103,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install cosmosis
         pip install --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy
-
-    # I have seen some failures here
-    - name: Check camb installation
-      run: |
-        python -c "import camb"
+        pip install fitsio astropy fast-pt
 
     - name: Build
       run: |
@@ -74,7 +117,7 @@ jobs:
           tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
 
     # I have seen some failures here
-    - name: Check camb installation after ci-setup
+    - name: Check camb installation
       run: |
         source .github/ci-setup.sh
         python -c "import camb"
@@ -95,3 +138,8 @@ jobs:
         cosmosis demos/demo9.ini -p multinest.live_points=100
         cosmosis-postprocess output/demo9.txt -o output/demo9
         test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
+
+    # - name: DES Y3 likelihood
+    #   run: |
+    #     source .github/ci-setup.sh
+    #     #cosmosis examples/des-y3.ini

@@ -284,8 +284,6 @@ class SpectrumMeasurement(object):
         old_unit = ANGULAR_UNITS[self.angle_unit]
         new_unit = ANGULAR_UNITS[unit]
 
-        print("Converting angle units of {} from {} -> {} (factor {})".format(
-            self.name, old_unit, new_unit, old_unit.to(new_unit)))
         angle_with_units = self.angle * old_unit
         self.angle = angle_with_units.to(new_unit).value
         self.angle_unit = unit
@@ -380,6 +378,14 @@ class SpectrumMeasurement(object):
             varxi = data['VARXI']
         else:
             varxi = None
+        if "ANGLEMIN" in data.names:
+            angle_min = data['ANGLEMIN']
+        else:
+            angle_min = None
+        if "ANGLEMAX" in data.names:
+            angle_max = data['ANGLEMAX']
+        else:
+            angle_max = None
 
         # check for extra columns
         found_extra_cols = False
@@ -408,7 +414,8 @@ class SpectrumMeasurement(object):
 
         return SpectrumMeasurement(name, (bin1, bin2), (type1, type2), (kernel1, kernel2), windows,
                                    angular_bin, value, angle, error, angle_unit=angle_unit, npairs=npairs,
-                                   varxi=varxi, extra_cols=extra_cols, metadata=metadata)
+                                   varxi=varxi, angle_min=angle_min, angle_max=angle_max,
+                                   extra_cols=extra_cols, metadata=metadata)
 
     def to_fits(self):
         header = fits.Header()
@@ -435,6 +442,14 @@ class SpectrumMeasurement(object):
             fits.Column(name='ANGBIN', array=self.angular_bin, format='K'),
             fits.Column(name='VALUE', array=self.value, format='D'),
         ]
+
+        if self.angle_min is not None:
+            columns.append(fits.Column(
+                    name='ANGLEMIN', array=self.angle_min, format='D', unit=self.angle_unit))
+        if self.angle_max is not None:
+            columns.append(fits.Column(
+                    name='ANGLEMAX', array=self.angle_max, format='D', unit=self.angle_unit))
+
         if self.angle is not None:
             if self.windows == "SAMPLE":
                 columns.append(fits.Column(

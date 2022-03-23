@@ -1,0 +1,123 @@
+#This is a template for module description files
+name: "add_magnification"
+version: "1"
+purpose: "Add magnification terms to C_ell"
+url: ""
+interface: "add_magnification.py"
+attribution: [Niall MacCrann, Jack Elvin-Poole]
+rules: []
+cite: []
+
+assumptions:
+    - ""
+
+explanation: |
+    Magnification affects both the galaxy density and galaxy galaxy-lensing spectra,
+    adding extra terms to each.  The module finds and adds those terms.
+
+    For density (g), we have gg -> gg + gm + mg + mm
+    For density shear (gG) we have gG -> gG + mG
+    where m is magnification.
+
+    We can also include intrinsic aligment (I) - magnification interactions, in which
+    case the module does: gG + gI -> gG + gI + mG + mI       
+
+params:
+    galaxy-galaxy:
+        meaning: Whether to add magnification terms to galaxy density spectra
+        type: bool
+        default: True
+    galaxy-shear:
+        meaning: Whether to add magnification terms to galaxy density-lensing cross-spectra
+        type: bool
+        default: True
+    include_intrinsic:
+        meaning: Whether to add include intrinsic alignment magnification terms
+        type: bool
+        default: False
+
+
+inputs:
+    galaxy_cl:
+        nbin:
+            meaning: Number of bins in this spectrum
+            type: int
+            default:
+        ell:
+            meaning: Angular wavenumber values for the spectra
+            type: int 1d
+            default:
+        auto_only:
+            meaning: Whether this bin only contains auto spectra
+            type: bool
+            default: False
+        bin_i_j:
+            meaning: "C_ell values for the galaxy density spectra in bin pair i, j"
+            type: real 1d
+            default:
+    galaxy_shear_cl:
+        nbin_a:
+            meaning: Number of galaxy density bins in this spectrum
+            type: int
+            default:
+        nbin_b:
+            meaning: Number of shear bins in this spectrum
+            type: int
+            default:
+        ell:
+            meaning: Angular wavenumber values for the spectra
+            type: int 1d
+            default:
+        bin_i_j:
+            meaning: "C_ell values for the density-shear cross-spectra in bin pair i, j"
+            type: real 1d
+            default:
+    galaxy_magnification_cl:
+        ell:
+            meaning: Angular wavenumber values for the spectra. Can be different to the density/shear ones
+            type: int 1d
+            default:
+        bin_i_j:
+            meaning: "C_ell values for the density-magnification cross-spectra in bin pair i, j"
+            type: real 1d
+            default:
+    magnification_cl:
+        ell:
+            meaning: Angular wavenumber values for the spectra. Can be different to the density/shear ones
+            type: int 1d
+            default:
+        bin_i_j:
+            meaning: "C_ell values for the density-magnification cross-spectra in bin pair i, j"
+            type: real 1d
+            default:
+
+
+outputs:
+    galaxy_cl_gg:
+        ell:
+            meaning: Angular wavenumber values for the spectra.
+            type: int 1d
+            default:
+        bin_i_j:
+            meaning: "Copy of the density spectrum without any modifications made"
+            type: real 1d
+            default:
+    galaxy_cl_gg:
+        ell:
+            meaning: Angular wavenumber values for the spectra.
+            type: int 1d
+            default:
+        bin_i_j:
+            meaning: "Copy of the density-shear cross-spectrum without any modifications made"
+            type: real 1d
+            default:
+    galaxy_cl:
+        bin_i_j:
+            meaning: "Updated C_ell density values including magnification terms"
+            type: real 1d
+            default:
+    galaxy_shear_cl:
+        bin_i_j:
+            meaning: "Updated C_ell cross-spectra values including magnification terms"
+            type: real 1d
+            default:

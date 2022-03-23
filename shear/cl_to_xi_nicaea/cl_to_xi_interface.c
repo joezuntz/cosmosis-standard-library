@@ -25,7 +25,6 @@ typedef struct cl_to_xi_config {
 	char * output_section;
 	corr_type_t corr_type;
 	filter_type_t filter_type;
-	bool separate_xi;
 
 } cl_to_xi_config;
 
@@ -60,7 +59,6 @@ void * setup(c_datablock * options)
 
 	  sprintf(output_string,"shear_%s",filter_string);		
 	  status |= c_datablock_get_string_default(options, OPTION_SECTION, "output_section_name", output_string, &(config->output_section));
-	  status |= c_datablock_get_bool_default(options, OPTION_SECTION, "separate_xi", true, &(config->separate_xi));
 
 	}
 	else if (corr_type==ggl){
@@ -131,279 +129,300 @@ static double P_projected_logl(void *info, double ell, int bin_i, int bin_j, err
 	return cl;
 }
 
+int copy_metadata(int status, c_datablock * block, const char* output_section,
+                  const char* input_section){
+
+    //save useful metadata to the block
+    //all just copied over from the cl_section actually.
+    // check in each case if read successfully before trying to copy
+    //number of z bins
+
+    // keep track of the individual statuses as well as the overall one
+    int s;
+
+    int nbin_a;
+    s = c_datablock_get_int(block, input_section, "nbin_a", &nbin_a);
+    if (s == 0) s |= c_datablock_put_int(block, output_section, "nbin_a", nbin_a);
+    status |= s;
+
+    int nbin_b;
+    s = c_datablock_get_int(block, input_section, "nbin_b", &nbin_b);
+    if (s == 0) s |= c_datablock_put_int(block, output_section, "nbin_b", nbin_b);
+    status |= s;
+
+    //is_auto
+    bool is_auto;
+    s = c_datablock_get_bool(block, input_section, "is_auto", &is_auto);
+    if (s == 0) s |= c_datablock_put_bool(block, output_section, "is_auto", is_auto);
+    status |= s;
+
+    //sample names
+    char * sample_a;
+    s = c_datablock_get_string(block, input_section, "sample_a", &sample_a);
+    if (s == 0) s |= c_datablock_put_string(block, output_section, "sample_a", sample_a);
+    status |= s;
+
+    char * sample_b;
+    s = c_datablock_get_string(block, input_section, "sample_b", &sample_b);
+    if (s == 0) s |= c_datablock_put_string(block, output_section, "sample_b", sample_b);
+    status |= s;
+
+    //save name
+    char * save_name;
+    s = c_datablock_get_string(block, input_section, "save_name", &save_name);
+    if (s == 0) s |= c_datablock_put_string(block, output_section, "save_name", save_name);
+    status |= s;
+
+    return status;
+}
+
 
 int execute(c_datablock * block, void * config_in)
 {
-	DATABLOCK_STATUS status=0;
-	int num_z_bin_A;
-	int num_z_bin_B;
-	int count=2;
-	double ** xi = malloc(count*sizeof(double*));
-	for (int i=0; i<count; i++) xi[i] = malloc(sizeof(double)*N_thetaH);
+    DATABLOCK_STATUS status=0;
+    int num_z_bin_A;
+    int num_z_bin_B;
+    int count=2;
+    double ** xi = malloc(count*sizeof(double*));
+    for (int i=0; i<count; i++) xi[i] = malloc(sizeof(double)*N_thetaH);
 
-	const int slen = 128;
-	char output_section[slen];
+    const int slen = 128;
+    char output_section[slen];
 
-	cl_to_xi_config * config = (cl_to_xi_config*) config_in;
+    cl_to_xi_config * config = (cl_to_xi_config*) config_in;
 
-	// Load the number of redshift bins
-	if (c_datablock_has_value(block, config->input_section, "nbin_a")){
-		status |= c_datablock_get_int(block, config->input_section, "nbin_a", &num_z_bin_A);
-		status |= c_datablock_get_int(block, config->input_section, "nbin_b", &num_z_bin_B);
-	}
-	else{
-		status |= c_datablock_get_int(block, config->input_section, "nbin", &num_z_bin_A);
-		num_z_bin_B = num_z_bin_A;
-	}
+    // Load the number of redshift bins
+    if (c_datablock_has_value(block, config->input_section, "nbin_a")){
+        status |= c_datablock_get_int(block, config->input_section, "nbin_a", &num_z_bin_A);
+        status |= c_datablock_get_int(block, config->input_section, "nbin_b", &num_z_bin_B);
+    }
+    else{
+        status |= c_datablock_get_int(block, config->input_section, "nbin", &num_z_bin_A);
+        num_z_bin_B = num_z_bin_A;
+    }
 
+    if (status) {
+        fprintf(stderr, "Could not load nbin in C_ell -> xi\n");
+        return status;
+    }
+    //Also load ell array
+    double * ell;
 
-	if (status) {
-		fprintf(stderr, "Could not load nbin in C_ell -> xi\n");
-		return status;
-	}
-	//Also load ell array
-	double * ell;
+    int n_ell;
+    status |= c_datablock_get_double_array_1d(block, config->input_section, "ell", &ell, &n_ell);
+    if (status) {
+        fprintf(stderr, "Could not load ell in C_ell -> xi\n");
+        return status;
+    }
+    double log_ell_min = log(ell[0]);
+    double log_ell_max = log(ell[n_ell-1]);
+    double dlog_ell=(log_ell_max-log_ell_min)/(n_ell-1);
+    error * err = NULL;
+    interTable* cl_table; //= init_interTable(n_ell, log_ell_min, log_ell_max,
+    //  dlog_ell, 1.0, -3.0, &err);
 
-	int n_ell;
-	status |= c_datablock_get_double_array_1d(block, config->input_section, "ell", &ell, &n_ell);
-	if (status) {
-		fprintf(stderr, "Could not load ell in C_ell -> xi\n");
-		return status;
-	}
-	double log_ell_min = log(ell[0]);
-	double log_ell_max = log(ell[n_ell-1]);
-	double dlog_ell=(log_ell_max-log_ell_min)/(n_ell-1);
-	error * err = NULL;
-	interTable* cl_table; //= init_interTable(n_ell, log_ell_min, log_ell_max,
-	//	dlog_ell, 1.0, -3.0, &err);
+    char name_in[64], name_out[64];
+    char xi_section[64], xi_minus_section[64];
 
-	char name_in[64],name_xip[64],name_xim[64];
+    double log_theta_min, log_theta_max;
 
-	double log_theta_min, log_theta_max;
+    // Choose the type of Hankel transform
+    tpstat_t tpstat;
+    if (config->filter_type == map) {
+      switch(config->corr_type) {   
+        case shear_shear:
+          tpstat = tp_map2_poly;
+          snprintf(xi_section, 64, "%s_%s", config->output_section, "map2");
+          break;
+        case matter:
+          tpstat = tp_map2_poly;
+          snprintf(xi_section, 64, "%s_%s", config->output_section, "nap2");
+          break;
+        case ggl:
+          tpstat = tp_map2_poly;
+          snprintf(xi_section, 64, "%s_%s", config->output_section, "mapnap2");
+          break;
+        default:
+          printf("corr_type: %d\n", config->corr_type);
+          printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
+          return 10;
+      }
+    }
 
-	// Loop through bin combinations, loading ell,C_ell and computing xi+/-
-	int j_bin_start;
-	bool found_any = false;
+    else if (config->filter_type == corrfct) {
+      switch(config->corr_type) {
+        case shear_shear:
+          tpstat = tp_xipm;
+          snprintf(xi_section, 64, "%s_%s", config->output_section, "plus");
+          snprintf(xi_minus_section, 64, "%s_%s", config->output_section, "minus");
+          break;
+        case matter:
+          tpstat = tp_w;
+          strcpy(xi_section, config->output_section);
+          break;
+        case ggl:
+          tpstat = tp_gt;
+          strcpy(xi_section, config->output_section);
+          break;
+        default:
+          printf("corr_type: %d\n", config->corr_type);
+          printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
+          return 10;
+      }
+    }
+    else {
+      printf("ERROR: Invalid filter_type %d in cl_to_xi_interface\n",config->filter_type);
+      return 10;
+    }
 
-	// save bin counts
-	status |= c_datablock_put_int(block, config->output_section, "nbin_A", num_z_bin_A);
-	status |= c_datablock_put_int(block, config->output_section, "nbin_B", num_z_bin_B);
+    // Loop through bin combinations, loading ell,C_ell and computing xi+/-
+    int j_bin_start;
+    bool found_any = false;
+    for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
+        for (int j_bin=1; j_bin<=num_z_bin_B; j_bin++) {
+            // read in C(l)
+            double * C_ell;
+            snprintf(name_in, 64, "bin_%d_%d",i_bin,j_bin);
+            snprintf(name_out, 64, "bin_%d_%d",i_bin,j_bin);
+            if (!c_datablock_has_value(block, config->input_section, name_in)){
+                continue;
+            }
+            found_any=true;
+            status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
+            if (status) {
+                fprintf(stderr, "Could not load bin %d,%d in C_ell -> xi\n", i_bin, j_bin);
+                return status;
+            }
 
-	for (int i_bin=1; i_bin<=num_z_bin_A; i_bin++) {
-		for (int j_bin=1; j_bin<=num_z_bin_B; j_bin++) {
-			// read in C(l)
-			double * C_ell;
-			snprintf(name_in, 64, "bin_%d_%d",i_bin,j_bin);
-			if (!c_datablock_has_value(block, config->input_section, name_in)){
-				continue;
-			}
-			found_any=true;
-	    	status |= c_datablock_get_double_array_1d(block, config->input_section, name_in, &C_ell, &n_ell);
-			if (status) {
-				fprintf(stderr, "Could not load bin %d,%d in C_ell -> xi\n", i_bin, j_bin);
-				return status;
-			}
+            //fill cl_table for P_projected
+            //need to check for zero or negative values...if there are some, can't do loglog interpolation
+            int neg_vals=0;
+            for (int i=0; i<n_ell; i++){
+                if (C_ell[i]<=0) {
+                    neg_vals += 1;
+                }
+            }
+            //also check for zeros, and replace with v small number if all other C_ells are all +ve or -ve
+            for (int i=0; i<n_ell; i++){
+                if (fabs(C_ell[i])<=1.e-30) {
+                    if (neg_vals==n_ell){
+                        C_ell[i]=-1.e-30;
+                    }
+                    else if (neg_vals==0) {
+                        C_ell[i]=1.e-30;
+                    }
+                }
+            }       
 
-			// Choose the type of Hankel transform
-			tpstat_t tpstat;
-			if (config->filter_type == map) {
-			  switch(config->corr_type) {	
-			    case shear_shear:
-			      tpstat = tp_map2_poly;
-			      snprintf(name_xip, 64, "map2_%d_%d",i_bin,j_bin);
-			      break;
-			    case matter:
-			      tpstat = tp_map2_poly;
-			      snprintf(name_xip, 64, "nap2_%d_%d",i_bin,j_bin);
-			      break;
-			    case ggl:
-			      tpstat = tp_map2_poly;
-			      snprintf(name_xip, 64, "mapnap_%d_%d",i_bin,j_bin);
-			      break;
-			    default:
-			      printf("corr_type: %d\n", config->corr_type);
-			      printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
-			      return 10;
-			  }
-			}
-			else if (config->filter_type == corrfct) {
-			  switch(config->corr_type) {
-			    case shear_shear:
-			      tpstat = tp_xipm;
-			      if (config->separate_xi){
-				      snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
-				      snprintf(name_xim, 64, "bin_%d_%d",i_bin,j_bin);
-				  }
-				  else{
-				      snprintf(name_xip, 64, "xiplus_%d_%d",i_bin,j_bin);
-				      snprintf(name_xim, 64, "ximinus_%d_%d",i_bin,j_bin);
+            if (neg_vals == 0) {
+            cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
+                                   dlog_ell, 1.0, -3.0, &err);
+            for (int i=0; i<n_ell; i++){
+                cl_table->table[i] = log(C_ell[i]);
+            }
+          }
+            else if (neg_vals == n_ell){
+            //In this case all the C(l)s are negative, so interpolate in log(-C)
+            //just remember to flip sign again at the end
+            cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
+                            dlog_ell, 1.0, -3.0, &err);
+            for (int i=0; i<n_ell; i++){
+                cl_table->table[i] = log(-C_ell[i]);
+            }
+            }
+            else {
+                static int warned=0;
+            if (warned==0){
+                printf("Negative values in C(l). No interpolation in log(C(l)),\n");
+                printf("and no power law extrapolation. So make sure range of input ell\n");
+                printf("is sufficient for this not to matter. \n");
+                printf("This warning will only appear once per process. \n");
+                warned=1;
+            }
+            cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
+                             dlog_ell, 0., 0., &err);
+            for (int i=0; i<n_ell; i++){
+                cl_table->table[i] = C_ell[i];
+            }
+            }
 
-				  }
-			      break;
-			    case matter:
-			      tpstat = tp_w;
-			      snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
-			      break;
-			    case ggl:
-			      tpstat = tp_gt;
-			      snprintf(name_xip, 64, "bin_%d_%d",i_bin,j_bin);
-			      break;
-			    default:
-			      printf("corr_type: %d\n", config->corr_type);
-			      printf("ERROR: Invalid corr_type %d in cl_to_xi_interface\n",config->corr_type);
-			      return 10;
-			  }
-			}
-			else {
-			  printf("ERROR: Invalid filter_type %d in cl_to_xi_interface\n",config->filter_type);
-			  return 10;
-			}
+        p_projected_data d;
+        d.cl_table = cl_table;
+        //d.f = f;
+        if (neg_vals == 0) {
+          tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_loglog, i_bin, j_bin, &err);
+        }
+        else if (neg_vals == n_ell) {
+          tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_loglog, i_bin, j_bin, &err);
+          double xip_orig,xim_orig;
+          for (int i=0; i<N_thetaH; i++){
+            xip_orig = xi[0][i];
+            xi[0][i] =-1*xip_orig;
+            if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
+              xim_orig = xi[1][i];
+              xi[1][i] =-1*xim_orig;
+            }
+          }
+        }
+        else {
+          tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_logl, i_bin, j_bin, &err);
+        }
 
-			//check for zeros...
+        // Save to th block
+        if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
+            status |= c_datablock_put_double_array_1d(block, xi_section, name_out, xi[0], N_thetaH);
+            status |= c_datablock_put_double_array_1d(block, xi_minus_section, name_out, xi[1], N_thetaH);
+        }
+        else {
+            status |= c_datablock_put_double_array_1d(block, xi_section, name_out,
+                      xi[0], N_thetaH);
+        }
+        free(C_ell);
+        del_interTable(&d.cl_table);
+        }
+    }
+    if (!found_any){
+        fprintf(stderr, "WARNING: I COULD NOT FIND ANY SPECTRA OF THE FORM \n");
+        fprintf(stderr, "xiplus_i_j, ximinus_i_j, wmatter_i_j, or tanshear_i_j.\n");
+        fprintf(stderr, "THIS IS ALMOST CERTAINLY AN ERROR.\n");
+        status = 1;
+    }
+    // Save theta values...check these are being calculated correctly at some point
+    double dlog_theta= (log_theta_max-log_theta_min)/((double)N_thetaH-1.0);
+    double logtheta_center = 0.5*(log_theta_max+log_theta_min);
+    int nc = N_thetaH/2+1;
+    double *theta_vals = malloc(sizeof(double)*N_thetaH);
+    for (int i=0; i<N_thetaH; i++){
+        theta_vals[i] = exp(log_theta_min+i*dlog_theta);
+    }
+    status |= c_datablock_put_double_array_1d(block, xi_section, "theta",
+                  theta_vals, N_thetaH);
+    //Include units
+    status |= c_datablock_put_metadata(block, xi_section, "theta", "unit", "radians");
+    status |= c_datablock_put_string(block, xi_section, "sep_name", "theta");
 
+    //copy over metadata from cl_section
+    status |= copy_metadata(status, block, xi_section,
+                  config->input_section );
 
-			//fill cl_table for P_projected
-			//need to check for zero or negative values...if there are some, can't do loglog interpolation
-			int neg_vals=0;
-			for (int i=0; i<n_ell; i++){
-				if (C_ell[i]<=0) {
-					neg_vals += 1;
-				}
-			}
-			//also check for zeros, and replace with v small number if all other C_ells are all +ve or -ve
-			for (int i=0; i<n_ell; i++){
-				if (fabs(C_ell[i])<=1.e-30) {
-					if (neg_vals==n_ell){
-						C_ell[i]=-1.e-30;
-					}
-					else if (neg_vals==0) {
-						C_ell[i]=1.e-30;
-					}
-				}
-			}		
+    if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
+        status |= c_datablock_put_double_array_1d(block, xi_minus_section, "theta",
+                      theta_vals, N_thetaH);
+        //Include units
+        status |= c_datablock_put_metadata(block, xi_minus_section, "theta", "unit", "radians");
+        status |= copy_metadata(status, block, xi_minus_section,
+                  config->input_section );
+        status |= c_datablock_put_string(block, xi_minus_section, "sep_name", "theta");
+    }
 
-			if (neg_vals == 0) {
-		    cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
-							       dlog_ell, 1.0, -3.0, &err);
-		    for (int i=0; i<n_ell; i++){
-			    cl_table->table[i] = log(C_ell[i]);
-		    }
-		  }
-			else if (neg_vals == n_ell){
-		  	//In this case all the C(l)s are negative, so interpolate in log(-C)
-		  	//just remember to flip sign again at the end
-		  	cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
-					     	dlog_ell, 1.0, -3.0, &err);
-		  	for (int i=0; i<n_ell; i++){
-		    	cl_table->table[i] = log(-C_ell[i]);
-		  	}
-			}
-			else {
-				static int warned=0;
-		  	if (warned==0){
-			  	printf("Negative values in C(l). No interpolation in log(C(l)),\n");
-			  	printf("and no power law extrapolation. So make sure range of input ell\n");
-			  	printf("is sufficient for this not to matter. \n");
-			  	printf("This warning will only appear once per process. \n");
-			  	warned=1;
-		  	}
-		    cl_table = init_interTable(n_ell, log_ell_min, log_ell_max,
-							 dlog_ell, 0., 0., &err);
-		    for (int i=0; i<n_ell; i++){
-			    cl_table->table[i] = C_ell[i];
-		    }
-			}
+    //Clean up
 
-    	p_projected_data d;
-    	d.cl_table = cl_table;
-    	//d.f = f;
-		if (neg_vals == 0) {
-		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_loglog, i_bin, j_bin, &err);
-		}
-		else if (neg_vals == n_ell) {
-		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_loglog, i_bin, j_bin, &err);
-		  double xip_orig,xim_orig;
-		  for (int i=0; i<N_thetaH; i++){
-		    xip_orig = xi[0][i];
-		    xi[0][i] =-1*xip_orig;
-		    if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
-		      xim_orig = xi[1][i];
-		      xi[1][i] =-1*xim_orig;
-		    }
-		  }
-		}
-		else {
-		  tpstat_via_hankel(&d, xi, &log_theta_min, &log_theta_max, tpstat, &P_projected_logl, i_bin, j_bin, &err);
-		}
+    for (int i=0; i<count; i++) free(xi[i]);
+    free(xi);
+    free(ell);
+    free(theta_vals);
 
-
-		// Support the old naming scheme of shear_xi/xiplus_i_j and
-		// the new one shear_xi_plus/bin_i_j
-		if (config->separate_xi && config->corr_type == shear_shear){
-			snprintf(output_section, slen-1, "%s_plus", config->output_section);
-		}
-		else{
-			snprintf(output_section, slen-1, "%s", config->output_section);
-		}
-
-
-		//Now save to block
-		status |= c_datablock_put_double_array_1d(block, output_section, name_xip,
-		              xi[0], N_thetaH);
-		if ((config->filter_type == corrfct)&&(config->corr_type == shear_shear)) {
-
-		  if (config->separate_xi && config->corr_type == shear_shear){
-		  	snprintf(output_section, slen-1, "%s_minus", config->output_section);
-		  }
-
-		  status |= c_datablock_put_double_array_1d(block, output_section, name_xim, xi[1], N_thetaH);
-		}
-		free(C_ell);
-		del_interTable(&d.cl_table);
-	  }
-	} // ends the loop over bin pairs
-
-	if (!found_any){
-		fprintf(stderr, "WARNING: I COULD NOT FIND ANY SPECTRA OF THE FORM \n");
-		fprintf(stderr, "xiplus_i_j, ximinus_i_j, wmatter_i_j, or tanshear_i_j.\n");
-		fprintf(stderr, "THIS IS ALMOST CERTAINLY AN ERROR.\n");
-		status = 1;
-	}
-
-	// Save theta values...check these are being calculated correctly at some point
-	double dlog_theta= (log_theta_max-log_theta_min)/((double)N_thetaH-1.0);
-	double logtheta_center = 0.5*(log_theta_max+log_theta_min);
-	int nc = N_thetaH/2+1;
-	double *theta_vals = malloc(sizeof(double)*N_thetaH);
-	for (int i=0; i<N_thetaH; i++){
-		theta_vals[i] = exp(log_theta_min+i*dlog_theta);
-	}
-
-
-	if (config->separate_xi && config->corr_type == shear_shear){
-		// Save to both sections
-		snprintf(output_section, slen-1, "%s_plus", config->output_section);
-		status |= c_datablock_put_double_array_1d(block, output_section, "theta",
-	                  theta_vals, N_thetaH);
-		snprintf(output_section, slen-1, "%s_minus", config->output_section);
-		status |= c_datablock_put_double_array_1d(block, output_section, "theta",
-	                  theta_vals, N_thetaH);
-	}
-	else{
-		// otherwise just save to the one section
-		status |= c_datablock_put_double_array_1d(block, config->output_section, "theta",
-	                  theta_vals, N_thetaH);
-
-	}
-
-	//Clean up
-
-	for (int i=0; i<count; i++) free(xi[i]);
-	free(xi);
-	free(ell);
- 	free(theta_vals);
-
-	return status;
+    return status;
 }
 
 int cleanup(void * config_in)

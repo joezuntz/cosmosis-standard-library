@@ -1,0 +1,55 @@
+name: eboss_dr16_qso
+version: ""
+purpose: Compute the likelihood of eBOSS DR16 from QSO
+url: ""
+interface: eboss_dr16_qso.py
+attribution: ""
+rules: ""
+cite: 
+    - "Neveux et al, MNRAS 2020"
+    - "Hou et al, MNRAS 2020"
+assumptions:
+    - "Gaussian likelihood"
+
+explanation: >
+        "This module computes the likelihood of Dm_over_rd and Dh_over_rd for BAO-only analysis and Dm_over_rd, Dh_over_rd, and fsigma8 for BAO+FS analysis, both using eBOSS DR16 measurements from QSO. 
+        We assume likelihoods are Gaussian."
+params:
+    mode:
+        type: int
+        meaning: "0 for BAO-only. 1 for BAO + Full-shape"
+        default: 0
+
+inputs: 
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_m:
+            meaning: Physical angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+        rs_zdrag:
+            meaning: Value of predicted drag redshift
+            type: real
+            default:
+    growth_parameters:
+        fsigma8:
+            meaning: Structure amplitude f(z) * sigma8(z())
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
+
+outputs:
+    likelihoods:        
+        eboss16_qso_like:
+            type: real
+            meaning: QSO BAO likelihood

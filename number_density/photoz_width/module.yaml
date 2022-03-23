@@ -1,0 +1,70 @@
+#This is a template for module description files
+name: photoz_bias
+version: 1
+purpose: Modify a set of loaded n(z) distributions with a stretch
+url: ''
+interface: photoz_width.py
+attribution: [Jack Elvin-Poole]
+rules: ''
+cite: []
+assumptions:
+-   'Simple photo-z bias models: n(z) -> n(a(z-mu)+mu)'
+
+explanation: |
+    Photometric redshift distributions can contain biases - the actual distribution
+    of galaxies in a survey can be different to the estimated one.
+
+    This bias can remain even after calibration with a spectroscopic sample, or by other methods.
+
+    This module models an additional stretch around the mean to the n(z) distribution.
+
+    The mode is:
+    n(z) -> n(a(z-mu)+mu)
+params:
+    mode:
+        meaning: "The type of transformation to apply; currently only the default 'stretch' option is supported for this parameter"
+        type: str
+        default: stretch
+    sample:
+        meaning: If set, look for n(z) in the section called sample, and
+            error parameters in sample_errors
+        type: str
+        default: wl_number_density
+    bias_section:
+        meaning: If set, look for input parameters in this named section
+            instead of wl_photoz_errors. If not set but sample is set, look in sample_errors
+        type: str
+        default:
+    interpolation:
+        meaning: Type of interpolation to use in scipy.interpolate.interp1d
+        type: str
+        default: cubic
+    per_bin:
+        meaning: Whether to use one value per bin, If False, use one value for all bins.
+        type: bool
+        default: true
+inputs:
+    wl_number_density:
+        nbin:
+            meaning: Number of redshift bins
+            type: int
+            default:
+        z:
+            meaning: Redshift sample points of n(z) estimates
+            type: real 1d
+            default:
+        bin_i:
+            meaning: n(z)for i=1..nbin. n(z) estimates
+            type: real 1d
+            default:
+    wl_photoz_errors:
+        width_i:
+            meaning: For i=1..nbin if per_bin=T or i=0 otherwise. Bias delta-z for this
+                bin.
+            type: real
+            default:
+outputs:
+    wl_number_density:
+        bin_i:
+            meaning: n(z) for i=1..nbin. Modified n(z) estimates replaced old value
+            type: real 1d

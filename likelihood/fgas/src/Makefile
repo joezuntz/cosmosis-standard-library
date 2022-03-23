@@ -23,7 +23,7 @@ wrapper.o: clusters.hpp fgas.hpp lensing.hpp wrapper.hpp xray.hpp
 xray.o: clusters.hpp util.hpp xray.hpp
 
 %.o: %.cpp
-	$(CXX) -o $@ -c $(CXXFLAGS) -I$(GSL_INC)  $*.cpp
+	$(CXX) -o $@ -c $(CXXFLAGS) -I$(GSL_INC) $*.cpp
 
 clean:
 	rm -f $(OBJECTS) $(SEPOBJ) $(MYLIB)

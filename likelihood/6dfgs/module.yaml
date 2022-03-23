@@ -16,13 +16,21 @@ explanation: >
     ""
 params:
     feedback:
-        meaning: Amount of output to print.  0 for no feedback.  1 for basic
-        type: int
-        default: 0
-    mode:
-        meaning: 0 for BAO and 1 for fsigma8
-        type: int
-        default: 0
+        meaning: Whether to print feedback
+        type: bool
+        default: False
+    bao_like:
+        meaning: Whether to use BAO likelihood
+        type: bool
+        default: True
+    rsd_like:
+        meaning: Whether to use RSD likelihood
+        type: bool
+        default: False
+    bao_mode:
+        meaning: Set to "dv" to use the measurement of D_v or to "rs_dv" to use the ratio r_s/D_v
+        type: str
+        default: rs_dv
     mean:
         meaning: Dv for mode 0 or fsigma8 for mode 1
         type: real

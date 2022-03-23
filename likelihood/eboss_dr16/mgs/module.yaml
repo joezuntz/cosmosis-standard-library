@@ -1,0 +1,79 @@
+#This is a template for module description files
+name: mgs
+version: ""
+url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
+purpose: Compute the likelihood of MGS BAO and FS as distributed by eBOSS DR16
+interface: mgs.py
+attribution: MGS team, eBOSS DR16 team
+rules: ""
+cite: 
+    - "C. Howlett et al, MNRAS 2015"
+
+assumptions:
+    - "Gaussian likelihood"
+
+explanation: >
+    "This module computes the likelihood of MGS, using f*sigma8 and 
+    D_v/r_s measurements. "
+params:
+    data_file: 
+        meaning: "Path to file with measured D_v(zeff),fsig8(zeff) values"
+        type: str
+        default: sdss_MGS_FSBAO_DVfs8.txt
+    cov_file: 
+        meaning: Path to covariance matrix file
+        type: str
+        default: sdss_MGS_FSBAO_DVfs8_covtot.txt
+    rs_fiducial:
+        meaning: Fiducial value of sound horizon at last scattering used in making data
+        type: real
+        default: 147.8
+    verbose:
+        type: bool
+        meaning: Whether to print extra output
+        default: False
+inputs: 
+    growth_parameters:
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+        f_z:
+            meaning: Linear growth rate f(z)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift of samples
+            type: real 1d
+            default:
+    cosmological_parameters:
+        omega_m:
+            meaning: Matter density fraction of critical
+            type: real
+            default:
+        sigma_8:
+            meaning: "Amplitude of linear matter power at 8/h Mpc at z=0"
+            type: real
+            default:
+        h0:
+            meaning: "Hubble parameter H0 / (100 km/s/Mpc)"
+            type: real
+            default:
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+outputs:
+    likelihoods:
+        mgs_like:
+            meaning: "Likelihood of Dv and fsigma8 at z=0.15"
+            type: real

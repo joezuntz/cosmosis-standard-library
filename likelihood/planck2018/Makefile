@@ -15,6 +15,14 @@ USER_CFLAGS=-I$(PLANCK_DIR)/include  -D_GNU_SOURCE $(DEFINES)
 
 all: planck_interface.so
 
+data/hi_l:
+	mkdir -p data
+	curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o data/COM_Likelihood_Data-baseline_R3.00.tar.gz
+	cd data && tar -zxf COM_Likelihood_Data-baseline_R3.00.tar.gz
+	mv data/baseline/plc_3.0/* data/
+	rm -r data/baseline data/COM_Likelihood_Data-baseline_R3.00.tar.gz
+
+data: data/hi_l
 
 $(PLANCK_DIR)/$(PLANCK_LIB): 
 	cd $(PLANCK_DIR) && $(MAKE) install
@@ -32,3 +40,5 @@ clean:
 
 test:
 	@echo Alas, planck has no tests
+
+.PHONY: data all clean test

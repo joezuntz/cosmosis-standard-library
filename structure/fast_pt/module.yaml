@@ -1,0 +1,306 @@
+#This is a template for module description files
+name: "fast_pt"
+version: "1"
+purpose: "Compute various 1-loop perturbation theory quantities"
+url: "https://github.com/JoeMcEwen/FAST-PT"
+interface: "fast_pt_interface.py"
+attribution: ["Niall Maccrann", "Jonathan Blazek"]
+rules:
+    ""
+cite:
+    - "https://iopscience.iop.org/article/10.1088/1475-7516/2016/09/015"
+
+assumptions:
+    - "1-loop perturbation theory"
+
+explanation: |
+    "The FAST-PT library computes a selection of quantities which are 
+    integrals over the 3D matter power spectrum, coupled with itself by a
+    mode-coupling kernel.
+
+    This module runs that library to compute various terms that are useful
+    for either intrinsic alignment calculations for the TATT model, and/or
+    galaxy bias terms.
+
+    This module is not fully documented yet
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    do_dd_spt:
+        meaning: Compute matter power spectrum terms
+        type: bool
+        default: False
+    do_ia:
+        meaning: Compute intrinsic alignment TATT terms
+        type: bool
+        default: False
+    do_bias:
+        meaning: Compute galaxy bias terms
+        type: bool
+        default: False
+    do_rsd:
+        meaning: Compute redshift space distortion terms
+        type: bool
+        default: False
+    do_ia_tt:
+        meaning: Compute intrinsic alignment tidal torqing terms
+        type: bool
+        default: False
+    do_ia_ta:
+        meaning: Compute intrinsic alignment tidal alignment terms
+        type: bool
+        default: False
+    do_ia_mix:
+        meaning: Compute intrinsic alignment mixed terms
+        type: bool
+        default: False
+    bias_section: 
+        meaning: Name of block section to load bias parameter from
+        type: str
+        default: bias
+    output_nl_grid:
+        meaning: Whether to save a grid of nonlinear matter power
+        type: bool
+        default: False
+    only_terms: 
+        meaning: Whether to save only PT terms not actual spectra
+        type: bool
+        default: False
+    always_init:
+        meaning: Re-initialize FAST-PT at every parameter space point
+        type: bool
+        default: False
+    k_res_fac:
+        meaning: Factor to increase k-space resolution
+        type: real
+        default: 4.0
+    low_extrap:
+        meaning: Log10 value of k down to which to extrapolate
+        type: real
+        default: -5.0
+    high_extrap:
+        meaning: Log10 value of k up to which to extrapolate
+        type: real
+        default: 3.0
+    C_window:
+        meaning: Taper fourier coefficients at |m| > C_window * N/2
+        type: real
+        default: 0.75
+    n_pad_fac:
+        meaning: Number of zeros to pad the FT with
+        type: real
+        default: 1.0
+    verbose:
+        meaning: Print extra output
+        type: bool
+        default: False
+
+
+
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    matter_power_lin:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default: 
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+            default: 
+        p_k:
+            meaning: Linear power spectrum at samples in (Mpc/h)^-3.
+            type: real 2d
+            default: 
+    matter_power_nl:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default: 
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+            default: 
+        p_k:
+            meaning: Non-linear power spectrum at samples in (Mpc/h)^-3.
+            type: real 2d
+            default: 
+    bias_section:
+        b_1:
+            meaning: Linear bias term
+            type: real
+            default:
+        b_2: 
+            meaning: Quadratic bias term
+            type: real
+            default:
+        b_s: 
+            meaning: s bias term
+            type: real
+            default:
+        b1_alpha:
+            meaning: Power law index for b1
+            type: real
+            default: 0.0
+        b2_alpha:
+            meaning: Power law index for b2
+            type: real
+            default: 0.0
+        bs_alpha:
+            meaning: Power law index for bs
+            type: real
+            default: 0.0
+        b1_z0:
+            meaning: Power law baseline for b1
+            type: real
+            default: 0.0
+        b2_z0:
+            meaning: Power law baseline for b2
+            type: real
+            default: 0.0
+        bs_z0:
+            meaning: Power law baseline for bs
+            type: real
+            default: 0.0
+
+outputs:
+    fastpt:
+        z:
+            meaning: Redshift values at which terms are calculated
+            type: real 1d
+        k_h:
+            meaning: Wavenumber values at which linear terms are calculated
+            type: real 1d
+        k_h_nl:
+            meaning: Wavenumber values at which non-linear terms are calculated
+            type: real 1d
+        Plin:
+            meaning: Linear matter power from FAST-PT
+            type: real 2d
+        Pd1d2:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd2d2:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd1s2:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd2s2:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Ps2s2:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pgg: 
+            meaning: Galaxy density power spectrum
+            type: real 2d
+        Pggsub: 
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pmg: 
+            meaning: Matter-galaxy cross-power from 
+            type: real 2d
+        sig4kz:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        one_loopkz:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P1Lkz:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pkz2        :
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd1d2_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd2d2_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd1s2_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pd2s2_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Ps2s2_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pgg_o: 
+            meaning: Galaxy density power spectrum on the nonlinear grid
+            type: real 2d
+        Pggsub_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        Pmg_o:
+            meaning: Matter-Galaxy power spectrum on the nonlinear grid
+            type: real 2d
+        sig4kz_o:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P_tt_EE: 
+            meaning: Tidal torquing E-mode power spectrum 
+            type: real 2d
+        P_tt_BB: 
+            meaning: Tidal torquing B-mode power spectrum 
+            type: real 2d
+        P_ta_dE1:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P_ta_dE2:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P_ta_EE: 
+            meaning: Tidal-alignment E-mode power spectrum 
+            type: real 2d
+        P_ta_BB:
+            meaning: Tidal-alignment B-mode power spectrum 
+            type: real 2d
+        P_mix_A:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P_mix_B:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P_mix_D_EE:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+        P_mix_D_BB:
+            meaning: Perturbative quantity not yet documented
+            type: real 2d
+
+    galaxy_power:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+        p_k:
+            meaning: Galaxy density power spectrum
+            type: real 2d
+    galaxy_power_sublowk:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+        p_k:
+            meaning: Perturbative quantity not yet documented 
+            type: real 2d
+    galaxy_power:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+        p_k:
+            meaning: Matter density - Galaxy density cross power spectrum
+            type: real 2d

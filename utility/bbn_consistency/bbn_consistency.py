@@ -12,6 +12,10 @@ def setup(options):
     # File name for BBN data
     datafile = options.get_string(
         option_section, "data", default=default_datafile)
+
+    # verbosity setting
+    verbose = options.get_bool(option_section, "verbose", default=False)
+
     # Load and spline data
     dat = np.genfromtxt(datafile, names=True, comments='#')
     spline = interpolate.bisplrep(dat['ombh2'], dat['DeltaN'], dat['Yp'])
@@ -22,7 +26,7 @@ def setup(options):
 
     # Saved data will be returned later
     return {'spline': spline, 'ombh2_min': np.min(dat['ombh2']), 'ombh2_max': np.max(dat['ombh2']), 'DeltaN_min': np.min(dat['DeltaN']), 'DeltaN_max': np.max(dat['DeltaN']), 
-        'input_name':input_name}
+        'input_name':input_name, 'verbose':verbose}
 
 
 def execute(block, t):
@@ -40,6 +44,12 @@ def execute(block, t):
 
     # Check for out-of-range parameters
     if ombh2 < t['ombh2_min'] or ombh2 > t['ombh2_max'] or DeltaN < t['DeltaN_min'] or DeltaN > t['DeltaN_max']:
+        if t['verbose']:
+            print("Parameter(s) out of range for BBN Consistency:")
+            if ombh2 < t['ombh2_min'] or ombh2 > t['ombh2_max']:
+                print("ombh2 = {}  which is outside ({}, {})".format(ombh2, t['ombh2_min'], t['ombh2_max']))
+            if DeltaN < t['DeltaN_min'] or DeltaN > t['DeltaN_max']:
+                print("DeltaN = {}  which is outside ({}, {})".format(DeltaN, t['DeltaN_min'], t['DeltaN_max']))
         return 1
 
     # save the helium fraction back to the block

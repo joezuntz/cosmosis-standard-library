@@ -37,9 +37,12 @@ from builtins import object
 from numpy import nan, isnan, allclose
 import re
 from math import sqrt, log, exp, pow, log10
+from theta_h0 import theta_to_H0_interface, H0_to_theta_interface
+
+functions = {'theta_to_H0': theta_to_H0_interface, 'H0_to_theta': H0_to_theta_interface}
 
 
-def cosmology_consistency(verbose=False, relations_file=""):
+def cosmology_consistency(verbose=False, relations_file="", theta=False):
     if relations_file:
         relation_lines = open(relations_file).readlines()
         relations = [line.strip().split('=')
@@ -49,6 +52,8 @@ def cosmology_consistency(verbose=False, relations_file=""):
             relation[1] = re.sub(r'\.([^0-9])', r'___\1', relation[1])
     else:
         relations = COSMOLOGY_CONSISTENCY_RELATIONS
+        if theta:
+            relations = relations + THETA_RELATIONS
     return Consistency(relations, COSMOLOGY_POSSIBLE_DEFAULTS, verbose)
 
 
@@ -82,6 +87,8 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
     # ("h0", "(omnuh2/omega_nu)**0.5"),
     ("h0", "hubble/100"),
     ("hubble", "h0*100"),
+    ("omlamh2", "omega_lambda*h0*h0"),
+    ("omega_lambda", "omlamh2/h0/h0"),
     ("omega_lambda", "1-omega_m-omega_k"),
     ("omega_m", "1-omega_lambda-omega_k"),
     ("omega_k", "1-omega_m-omega_lambda"),
@@ -89,6 +96,12 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
     ("omnuh2", "mnu/93.14"),
     ("mnu", "omnuh2*93.14"),
 ]
+
+THETA_RELATIONS = [
+    ("cosmomc_theta", "H0_to_theta(locals())"),
+    ("hubble", "theta_to_H0(locals())"),
+]
+
 
 # We want K in megaparsec units.  Hubble is in km/s/mpc.
 # So putting c in km/s should do it.
@@ -131,6 +144,7 @@ class Consistency(object):
         # without using any of the default values.
         # Then we gradually start using more of the defaults
         # until (hopefully) we have a fully-specified model.
+        first_error = None
         for i in range(len(self.possible_defaults)):
             try:
                 defaults = self.possible_defaults[:i]
@@ -150,9 +164,11 @@ class Consistency(object):
                 if self.verbose:
                     unspecified = self.find_unspecified()
                     print("Model still unspecified: %s" % (", ".join(unspecified)))
+                first_error = "under"
             except OverSpecifiedModel:
                 if self.verbose:
                     print("Model overspecified - clashing assumptions.  Trying more.")
+                first_error = "over"
 
         # Our final run uses all the defaults we know about.
         # If this still doesn't work we'll throw the error.
@@ -160,7 +176,12 @@ class Consistency(object):
             text = ", ".join(["%s=%g" % d for d in self.possible_defaults])
             print()
             print("Trying assumptions: ", text)
-        q = self.run_with_defaults(parameters, self.possible_defaults)
+
+        try:
+            q = self.run_with_defaults(parameters, self.possible_defaults)
+        except PoorlySpecifiedModel as err:
+            err.first_error = first_error
+            raise err
         self.cached_defaults = self.possible_defaults[:]
         if self.verbose:
             print("Model okay.")
@@ -178,7 +199,7 @@ class Consistency(object):
         for name, value in self.cached_defaults:
             p[name] = value
         for (name, function) in self.cached_relations:
-            value = eval(function, None, p)
+            value = eval(function, functions, p)
             p[name] = value
         return p
 
@@ -230,7 +251,7 @@ class Consistency(object):
         # Try computing this parameter from the relation.
         # If any of its inputs are unspecified then
         # it will also be unspecified.
-        value = eval(function, None, self.parameters)
+        value = eval(function, functions, self.parameters)
         if isnan(value):
             # We do not yet have enough information to determine this
             # parameter
@@ -255,7 +276,7 @@ class Consistency(object):
                 if self.verbose:
                     print("Calculated %s = %g from %s" % (name, value, function))
                     print("But also value was already found as %s" % current_value)
-                raise OverSpecifiedModel("Model over-specified and consistency relations failed"
+                raise OverSpecifiedModel("Model over-specified and consistency relations failed "
                                          "for parameter %s (values %g and %g)" % (name, current_value, value))
 
     def find_unspecified(self):

@@ -6,9 +6,10 @@ import numpy as np
 
 def setup(options):
     verbose = options.get_bool(option_section, "verbose", default=False)
+    cosmomc_theta = options.get_bool(option_section, "cosmomc_theta", default=False)
     relations_file = options.get_string(
         option_section, "relations_file", default="")
-    cons = consistency.cosmology_consistency(verbose, relations_file)
+    cons = consistency.cosmology_consistency(verbose, relations_file, cosmomc_theta)
     return cons
 
 
@@ -36,13 +37,24 @@ def execute(block, config):
     # There are two possible simpler errors:
     # too many/inconsistent parameters, or not enough.
     except consistency.UnderSpecifiedModel as error:
-        print("You did not set enough cosmological parameters")
+        print("\nYou did not set enough cosmological parameters")
         print("to be able to deduce the rest of them:")
         print(error)
         return 1
     except consistency.OverSpecifiedModel as error:
-        print("You set inconsistent cosmological parameters:")
-        print(error)
+        if error.first_error == "over":
+            print("\nYou set inconsistent cosmological parameters.")
+        else:
+            print("\nYou either did not set enough cosmological parameters, or")
+            print("set inconsistent ones.  We tried adding omega_nu=0 and/or")
+            print("omega_K=0 but that made it inconsistent.")
+        if cons.verbose:
+            print("See above for more information.")
+        else:
+            print("Run with verbose=T in the section for the consistency module")
+            print("for more information.")
+        print("Final error (may or may not be useful) was:")
+        print("    ", error, "\n")
         return 2
 
     # Annoyingly this does not fit elsewhere

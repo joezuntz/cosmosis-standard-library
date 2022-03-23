@@ -1,3 +1,8 @@
+cite:
+    - "J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)"
+    - "Cooke, R et al.  ApJ, 830, 2 (2016)"
+    - "Pitrou, C. et al, MNRAS, 502, 2, 2474–2481, (2021)"
+
 name: BBN
 version: PDG13
 purpose: Simple prior on Omega_b h^2 from light element abundances
@@ -6,7 +11,9 @@ interface: bbn_ombh2.py
 attribution: [B.D Fields, P. Molaro, S. Sarkar]
 rules: None.
 cite:
--   J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)
+- J. Beringer et al. (Particle Data Group), Phys. Rev. D86, 010001 (2012)
+- Cooke, R et al.  ApJ, 830, 2 (2016)
+- Pitrou, C. et al, MNRAS, 502, 2, 2474–2481, (2021)
 
 assumptions:
 -   Standard model of Big-Bang nucleosynthesis
@@ -17,8 +24,15 @@ explanation: |
     Measurements of the abundances of light elements D, 3He, 4He, and 7Li
     constrain the density budget at the epoch of nucleosynthesis in the first
     three minutes after the big bang.
+
+    There are various measurements of the light element abundance, and this
+    module can select between different papers.
     "
 params:
+    paper:
+        meaning: Choice of which paper to use, beringer_2012, cooke_2016_i, cooke_2016_ii, cooke_2016_combined, pitrou_cooke_combined
+        type: str
+        default: beringer_2012
     mean:
         meaning: Replace the standard value measurement omega_b h^2 = 0.023 with a
             custom one

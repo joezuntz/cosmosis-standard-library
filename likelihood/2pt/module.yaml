@@ -65,11 +65,6 @@ params:
             data sets used for the ABC sampler.
         type: bool
         default: false
-    save_plot_to:
-        meaning: If set, save various plots to the named directory. May not work on
-            all systems.
-        type: str
-        default:
     like_name:
         meaning: The name of the likelihood to save.
         type: str
