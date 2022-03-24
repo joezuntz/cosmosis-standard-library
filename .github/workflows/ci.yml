@@ -41,14 +41,9 @@ jobs:
         run: |
           source cosmosis-configure
           mkdir output
-          # check that the message is right if the data is not found.
-          # GH actions fail if any pipeline steps fail, so we have to
-          # add the ; true to change the exit status to 0
-          cosmosis examples/planck.ini 2>&1; true | tee output/planck-fail.log
-          # Check the correct error message is generated
-          grep  "You can run the script examples/get-planck-data.sh to download Planck 2018 data" output/planck-fail.log
-          # Now check the downloader works
+          # Check the downloader works
           ./examples/get-planck-data.sh
+          # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
           grep 'Likelihood =  -6288.61' output/planck.log
 
