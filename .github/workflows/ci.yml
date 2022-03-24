@@ -63,7 +63,8 @@ jobs:
         run: |
           source cosmosis-configure
           # check that the message is right if the data is not found
-          cosmosis examples/planck.ini 2>&1 | grep -q "You can run the script examples/get-planck-data.sh to download Planck 2018 data"
+          cosmosis examples/planck.ini 2>&1 | tee output/planck-fail.log
+          grep  "You can run the script examples/get-planck-data.sh to download Planck 2018 data" output/planck-fail.log
           # Now check the downloader works
           ./examples/get-planck-data.sh
           cosmosis examples/planck.ini | tee output/planck.log
