@@ -40,8 +40,10 @@ jobs:
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          # check that the message is right if the data is not found
-          cosmosis examples/planck.ini 2>&1 | tee output/planck-fail.log
+          # check that the message is right if the data is not found.
+          # GH actions fail if any pipeline steps fail, so we have to
+          # add the ; true to change the exit status to 0
+          cosmosis examples/planck.ini 2>&1; true | tee output/planck-fail.log
           grep  "You can run the script examples/get-planck-data.sh to download Planck 2018 data" output/planck-fail.log
           # Now check the downloader works
           ./examples/get-planck-data.sh
