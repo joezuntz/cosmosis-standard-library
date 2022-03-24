@@ -30,6 +30,12 @@ jobs:
         shell: bash -l {0}
         run: conda install -c conda-forge cosmosis cosmosis-build-standard-library
 
+      - name: Build standard library
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          make
+
       - name: Planck test
         shell: bash -l {0}
         run: |
@@ -41,12 +47,6 @@ jobs:
           ./examples/get-planck-data.sh
           cosmosis examples/planck.ini | tee output/planck.log
           grep 'Likelihood =  -6288.61' output/planck.log
-
-      - name: Build standard library
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          make
 
       - name: Pantheon emcee
         shell: bash -l {0}
@@ -149,8 +149,3 @@ jobs:
         cosmosis demos/demo9.ini -p multinest.live_points=100
         cosmosis-postprocess output/demo9.txt -o output/demo9
         test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
-
-    # - name: DES Y3 likelihood
-    #   run: |
-    #     source .github/ci-setup.sh
-    #     #cosmosis examples/des-y3.ini
