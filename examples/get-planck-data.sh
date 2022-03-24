@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 pushd likelihood/planck2018
 URL="http://pla.esac.esa.int/pla-sl/data-action?COSMOLOGY.COSMOLOGY_OID=151902"
