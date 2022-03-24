@@ -58,6 +58,17 @@ jobs:
           cosmosis examples/des-y3.ini | tee output/des-y3.log
           grep 'Likelihood =  6043.23' output/des-y3.log
 
+      - name: Planck test
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          # check that the message is right if the data is not found
+          cosmosis examples/planck.ini 2>&1 | grep -q "You can run the script examples/get-planck-data.sh to download Planck 2018 data"
+          # Now check the downloader works
+          ./examples/get-planck-data.sh
+          cosmosis examples/planck.ini | tee output/planck.log
+          grep 'Likelihood =  -6288.61' output/planck.log
+
 
   apt-get-test:
     runs-on: ubuntu-latest
