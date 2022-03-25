@@ -78,11 +78,7 @@ int read_requested_files(configuration_data * config, c_datablock * options, cli
 			fprintf(stderr,"Here is the error message:\n");
 			printError(stderr,err);
 			fprintf(stderr,"\nIf it mentions \"stat\" then this probably means that a likelihood file was not found.\n\n");
-			fprintf(stderr,"If you are running demo two or demo four then it just means that you\n");
-			fprintf(stderr,"did not download the Planck likelihood when installing.\n");
-			fprintf(stderr,"You can either get it manually from:\n");
-			fprintf(stderr,"     http://pla.esac.esa.int/pla/aio/planckProducts.html\n");
-			fprintf(stderr,"and edit demos/demo2.ini, or just skip demos two and four for now.\n\n");
+			fprintf(stderr,"You can run the script examples/get-planck-data.sh to download Planck 2018 data.\n\n");
 			exit(1);
 		}
 	}
