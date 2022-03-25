@@ -1162,18 +1162,6 @@ class SpectrumCalculator(object):
         self.sig_over_dchi = options.get_double(option_section, "sig_over_dchi", 50.)
         self.shear_kernel_dchi = options.get_double(option_section, "shear_kernel_dchi", 5.)
 
-        self.limber_transition_end = options.get_double(option_section,
-            "limber_transition_end", -1.)
-        self.smooth_limber_transition = options.get_bool(option_section,
-            "smooth_limber_transition", True)
-        if self.limber_transition_end<0:
-            self.limber_transition_end = 1.2*self.limber_ell_start
-        try:
-            assert self.limber_transition_end > self.limber_ell_start
-        except AssertionError as e:
-            print("limber_transition_end must be larger than limber_ell_start")
-            raise(e)
-
         # And the req ell ranges.
         # We have some different options for this.
         # - The simplest is log-spaced floats
@@ -1218,13 +1206,12 @@ class SpectrumCalculator(object):
         # Do integer and (approximately) log-spaced ells between 0 and
         # limber_ell_start, and always to 1 also.
         # accuracy settings for exact integral
-        self.n_ell_exact = options.get_int(option_section, "n_ell_exact", 50)
+        self.n_ell_exact = 0
         self.dlogchi = options.get_int(option_section, "dlogchi", -1)
         if self.dlogchi < 0:
             self.dlogchi = None
         self.chi_pad_upper = options.get_double(option_section, "chi_pad_upper", 2.)
         self.chi_pad_lower = options.get_double(option_section, "chi_pad_lower", 2.)
-        self.save_limber = options.get_bool(option_section, "save_limber", True)
 
         if len(self.do_exact_option_names)>0:
             sig_over_dchi_exact = options.get_double(option_section, "sig_over_dchi_exact", 20.)
@@ -1653,3 +1640,11 @@ def setup(options):
 def execute(block, config):
     return config.execute(block)
 
+def document_spectrum_types():
+    # for generating the module.yaml content
+    for x in project_2d.SpectrumType:
+        x = x.value
+        opt_name = x.option_name()
+        sec = x.power_3d_type.section
+        name = x.name
+        print(f"{opt_name:34}{sec:34}{name}")
