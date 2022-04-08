@@ -26,7 +26,11 @@ def load_gsl(libfile=None):
             libfile, _ = find_gsl()
         except ValueError:
             libfile = "libgsl.so"
-    gsl = ct.CDLL(libfile, mode=ct.RTLD_GLOBAL)
+    try:
+        gsl = ct.CDLL(libfile, mode=ct.RTLD_GLOBAL)
+    except OSError as err:
+        msg = str(err) + " ** If you are using conda you might need to source cosmosis-configure **"
+        raise OSError(msg) from err
     return gsl
 
 #global gsl library
