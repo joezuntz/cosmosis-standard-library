@@ -1,7 +1,7 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_FFLAGS=-I.
-USER_LDFLAGS=-lcosmosis -Wl,-rpath,$(PWD)/$(camb_Jan12_isitgr)/lib
+USER_LDFLAGS=-lcosmosis -Wl,-rpath,$(PWD)/camb_Jan12_isitgr
 
 export EQUATIONS ?= equations
 export RECOMBINATION ?= recfast
