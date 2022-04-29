@@ -457,19 +457,23 @@ module camb_interface_tools
 	end function
 	
 	function camb_interface_save_transfer(block) result(status)
+		use nonlinear
 		integer (cosmosis_block) :: block
 		integer (cosmosis_status) :: status
-		Type(MatterPowerData) :: PK
+		Type(MatterPowerData) :: PK, PK_nl
 		integer nz, nk, iz, ik
 		external dtauda
 		real(8) dtauda
 		real(8), allocatable, dimension(:) :: k, z
-		real(8), allocatable, dimension(:,:) :: P, T
+		real(8), allocatable, dimension(:,:) :: P, P_nl, T
 		real(8), allocatable, dimension(:,:) :: ModifiedGravity_D, ModifiedGravity_D_dot
 		real(8), allocatable, dimension(:,:) :: ModifiedGravity_Q, ModifiedGravity_Q_dot
 		real(8) a, adotoa, TGR_D_T, TGR_D_T_dot, TGR_Q_T, TGR_Q_T_dot
 
 		call Transfer_GetMatterPowerData(MT, PK, 1)
+		call Transfer_GetMatterPowerData(MT, PK_nl, 1)
+		call NonLinear_GetNonLinRatios(PK_nl)
+		call MatterPowerdata_MakeNonlinear(PK_nl)
 
 		nz = CP%Transfer%num_redshifts
 		nk = MT%num_q_trans
@@ -477,6 +481,7 @@ module camb_interface_tools
 		allocate(k(nk))
 		allocate(z(nz))
 		allocate(P(nk,nz))
+		allocate(P_nl(nk,nz))
 		allocate(ModifiedGravity_D(nk,nz))
 		allocate(ModifiedGravity_Q(nk,nz))
 		allocate(ModifiedGravity_D_dot(nk,nz))
@@ -494,6 +499,7 @@ module camb_interface_tools
 		do ik=1,nk
 			do iz=1,nz
 				P(ik,iz) = MatterPowerData_k(PK, k(ik), nz-iz+1)
+				P_nl(ik,iz) = MatterPowerData_k(PK_nl, k(ik), nz-iz+1)
 				T(ik,iz) = MT%TransferData(Transfer_cdm,ik,nz-iz+1)
 				!Modifications for IsItGR
 				a = 1.0/(1+z(iz))
@@ -506,8 +512,15 @@ module camb_interface_tools
 			enddo
 		enddo
 
+		call MatterPowerdata_Free(PK)
+		call MatterPowerdata_Free(PK_nl)
+
 		status = datablock_put_double_grid(block, matter_power_lin_section, &
         	"k_h", k, "z", z, "P_k", P)
+
+
+		status = datablock_put_double_grid(block, matter_power_nl_section, &
+        	"k_h", k, "z", z, "P_k", P_NL)
 
 		if (status .ne. 0) then
 			write(*,*) "Failed to save matter power in CAMB."
@@ -531,7 +544,7 @@ module camb_interface_tools
 		endif
 
 
-		deallocate(k, z, P, T)
+		deallocate(k, z, P, P_NL, T)
 	end function
 
 	
