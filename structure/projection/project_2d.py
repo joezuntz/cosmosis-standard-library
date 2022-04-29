@@ -194,8 +194,23 @@ class GalaxyIntrinsicPower3D(Power3D):
     source_specific = True
 
 class WeylPower3D(Power3D):
-    section = "weyl_curvature_spectrum_nl"
+    section = "weyl_curvature_power_nl"
     source_specific = False
+
+class MatterPower3DPPF(Power3D):
+    section = "matter_power_nl"
+    lin_section = "matter_power_lin"
+    source_specific = False
+
+    def load_from_block(self, block, chi_of_z):
+        super().load_from_block(block, chi_of_z)
+        # Rescale the P(k) by the D(k, z) function
+        z, k, D = block.get_grid("post_friedmann_parameters", "z", "k_h", "D" )
+        self.pk_vals *= D
+
+        # Rebuild the spline
+        self.set_chi_logk_spline()
+
 
 def get_lensing_prefactor(block):
     c_kms = 299792.4580
@@ -929,6 +944,15 @@ class SpectrumType(Enum):
         name = "shear_cl"
         prefactor_type = ("lensing_weyl","lensing_weyl")
         has_rsd = False
+
+    class PpfshearPpfshear(Spectrum):
+        power_3d_type = MatterPower3DPPF
+        kernel_types = ("W", "W")
+        autocorrelation = True
+        name = names.shear_cl
+        prefactor_type = ("lensing", "lensing")
+        has_rsd = False
+
 
     class ShearIntrinsic(Spectrum):
         power_3d_type = MatterIntrinsicPower3D
