@@ -5,7 +5,7 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 USER_CXXFLAGS += -I${GSL_INC}
-USER_LDFLAGS += -lcosmosis -L${GSL_LIB}  -lgsl -lgslcblas
+USER_LDFLAGS += -lcosmosis -L${GSL_LIB}  -lgsl -lgslcblas -Wl,-rpath,$(PWD)/src
 
 #For python, leave this as is.  For C/C++/Fortran, 
 #comment the first line and uncomment the second:
@@ -18,7 +18,7 @@ src/libclusters.so:
 	$(MAKE) -C src
 
 fgas.so: fgas_cosmosis.cpp src/libclusters.so
-	$(CXX) $(CXXFLAGS) fgas_cosmosis.cpp -shared -o fgas.so $(LDFLAGS) -Lsrc -lclusters
+	$(CXX) $(CXXFLAGS) fgas_cosmosis.cpp -shared -o fgas.so  -Lsrc -lclusters $(LDFLAGS)
 
 #Replace this to put in some kind of test command for
 #your module, if you have one.
