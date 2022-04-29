@@ -451,7 +451,7 @@ def compute_growth_rates(r, block, P_tot, k, z, more_config):
     kmin = k.min()
     P_kmin = P_tot(z, kmin)
 
-    D = np.sqrt(P_kmin / P_kmin[0])
+    D = np.sqrt(P_kmin / P_kmin[0]).squeeze()
     a = 1/(1+z)
 
     loga = np.log(a[::-1])
@@ -461,7 +461,7 @@ def compute_growth_rates(r, block, P_tot, k, z, more_config):
     # since z is increasing so a is decreasing.
     logD_spline = InterpolatedUnivariateSpline(loga, np.log(D[::-1]) )
     f_spline = logD_spline.derivative()
-    f = f_spline(loga)[::-1]
+    f = f_spline(loga)[::-1].squeeze()
 
     return f, D, a
 
