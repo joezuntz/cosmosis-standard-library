@@ -9,9 +9,7 @@ function DoSource() { source cosmosis-configure ; } ; DoSource
 
 
 # for demo 11 first run
-export HALOFIT_VERSION=takahashi
-export OMP_NUM_THREADS=1
-
+export HALOFIT=takahashi
 
 if [ "$1" == "" ]; then
     demos=$(seq 1 19)
@@ -57,8 +55,9 @@ do
     echo "Postprocessing demo $i" 
     if [ "$i" == "10" ]; then
         # Run the second part of demo 10
+        export HALOFIT=mead2020
         echo "Running demo 10 (part 2):  cosmosis demos/demo${i}.ini $args"
-        HALOFIT_VERSION=mead2020 time cosmosis demos/demo${i}.ini $args
+        time cosmosis demos/demo${i}.ini $args
 
         # Postprocess demo10
         cosmosis-postprocess output/demo10_mead2020.txt output/demo10_takahashi.txt -o output/plots/demo10
