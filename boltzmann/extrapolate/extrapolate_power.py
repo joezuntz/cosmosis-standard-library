@@ -31,14 +31,14 @@ def linear_extend(x, y, xmin, xmax, nmin, nmax, nfit):
     return x, y
 
 
-def extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint):
+def extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint, key):
     # load current values
     k = block[section, "k_h"]
     z = block[section, "z"]
     nk = len(k)
     nz = len(z)
     # load other current values
-    k, z, P = block.get_grid(section, "k_h", "z", "p_k")
+    k, z, P = block.get_grid(section, "k_h", "z", key)
     # extrapolate
     P_out = []
     for i in range(nz):
@@ -50,7 +50,7 @@ def extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint):
     k = exp(logk)
     P_out = np.dstack(P_out).squeeze()
 
-    block.replace_grid(section, "z", z, "k_h", k, "P_k", P_out.T)
+    block.replace_grid(section, "z", z, "k_h", k, key, P_out.T)
 
 
 def setup(options):
@@ -76,6 +76,10 @@ def execute(block, config):
 
     # extrapolate non-linear power
     for section in [names.matter_power_nl, names.matter_power_lin]+extrapk:
+        if '.' in section:
+            section, key = section.split('.')
+        else:
+            key = 'p_k'
         if block.has_section(section):
-            extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint)
+            extrapolate_section(block, section, kmin, kmax, nmin, nmax, npoint, key)
     return 0

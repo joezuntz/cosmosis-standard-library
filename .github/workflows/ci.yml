@@ -69,6 +69,14 @@ jobs:
           cosmosis examples/des-y3.ini | tee output/des-y3.log
           grep 'Likelihood =  6043.23' output/des-y3.log
 
+      - name: Run Demos
+        shell: bash -l {0}
+        run: |
+          .github/run-demos.sh
+
+
+
+
   apt-get-test:
     runs-on: ubuntu-latest
     strategy:

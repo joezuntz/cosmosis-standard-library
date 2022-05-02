@@ -12,22 +12,16 @@ def setup(options):
     #		'be either "JB" (Joachimi and Bridle 2010) or')
     method = "jb"
 
-    try:
-        mag_lim = options[option_section, "magnitude_limit"]
-    except:
-        mag_lim = 24
-    try:
-        binned_alpha = options[option_section, "binned_alpha"]
-    except:
-        binned_alpha = True
-    try:
-        sample = options[option_section, "sample"]
-    except:
-        sample = 'wl_number_density'
+    mag_lim = options.get_double(option_section, "magnitude_limit", 24)
+    binned_alpha = options.get_bool(option_section, "use_binned_alpha", True)
+    sample = options.get_string(option_section, "sample", "wl_number_density")
+    output_section = options.get_string(option_section, "output_section", names.galaxy_luminosity_function)
+
 
     config = {'method': method, 'mag_lim': mag_lim,
               'use_binned_alpha': binned_alpha,
-              'sample':sample
+              'sample':sample,
+              'output_section': output_section,
               }
     return config
 
@@ -35,7 +29,7 @@ def setup(options):
 def execute(block, config):
     ia = names.intrinsic_alignment_parameters
     cos = names.cosmological_parameters
-    lum = names.galaxy_luminosity_function
+    lum = config['output_section']
 
     method = config['method']
     mag_lim = config['mag_lim']
@@ -66,6 +60,8 @@ def execute(block, config):
         # Then write these to the datablock
         block.put_double_array_1d(lum, 'alpha_binned', alpha_bin)
         block.put_double_array_1d(lum, 'z_binned', z_bar)
+        for i, a in enumerate(alpha_bin):
+            block[lum, f"alpha_{i+1}"] = a
 
     return 0
 
