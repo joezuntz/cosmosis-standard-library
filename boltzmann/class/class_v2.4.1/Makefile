@@ -33,12 +33,7 @@ OPTFLAG = -fPIC -O4 -ffast-math -fno-tree-vectorize
 #OPTFLAG = -Ofast -ffast-math #-march=native
 #OPTFLAG = -fast
 
-# your openmp flag (comment for compiling without openmp)
-ifeq (${COSMOSIS_OMP},1)
-OMPFLAG   = -fopenmp
-endif
-#OMPFLAG   = -mp -mp=nonuma -mp=allcores -g
-#OMPFLAG   = -openmp
+# OpenMP flags are already handled by ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 # all other compilation flags
 #CCFLAG = -g -fPIC

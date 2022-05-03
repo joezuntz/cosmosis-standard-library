@@ -77,15 +77,7 @@ COLORS = 1
 #set echo to echo -e to have colourized output on some shell
 ECHO = echo 
 
-
-#COPENMP =
-ifeq (${COSMOSIS_OMP},1)
-# what is the openmp option for your C compiler (leave empty to compile without openmp)
-COPENMP = -fopenmp
-# what is the openmp option for your F90 compiler (leave empty to cmpile without openmp)
-FOPENMP = -fopenmp
-LDOMP = -fopenmp
-endif
+# OpenMP flags are already handled by ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 # what is the 32/64 bit option for your C compiler (leave empty if you don't want to know)
 CM64 =
