@@ -36,7 +36,7 @@ jobs:
           source cosmosis-configure
           make
 
-      - name: Planck test
+      - name: CAMB Planck
         shell: bash -l {0}
         run: |
           source cosmosis-configure
@@ -46,6 +46,15 @@ jobs:
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
           grep 'Likelihood =  -6288.61' output/planck.log
+
+      - name: Class Planck
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/planck_class.ini | tee output/class.log
+          # This may need updating as we modify the class interface
+          # The settings are not optimized
+          grep 'Likelihood =  -5968.93' output/class.log
 
       - name: Pantheon emcee
         shell: bash -l {0}

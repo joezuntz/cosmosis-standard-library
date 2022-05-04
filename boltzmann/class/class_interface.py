@@ -9,10 +9,7 @@ dirname = os.path.split(__file__)[0]
 # enable debugging from the same directory
 if not dirname.strip():
     dirname = '.'
-install_dir = dirname + "/class_v2.4.1/classy_install/lib/python2.7/site-packages/"
-sys.path.insert(0, install_dir)
 
-import classy
 import numpy as np
 
 # These are pre-defined strings we use as datablock
@@ -23,11 +20,23 @@ cmb_cl = names.cmb_cl
 
 
 def setup(options):
+    class_version = options.get_string(option_section, "version", "3.2.0")
+    pyversion = f"{sys.version_info.major}.{sys.version_info.minor}"
+    install_dir = dirname + f"/class_v{class_version}/classy_install/lib/python{pyversion}/site-packages/"
+    with open(f"{install_dir}/easy-install.pth") as f:
+        pth = f.read().strip()
+        install_dir = install_dir + pth
+
+    sys.path.insert(0, install_dir)
+
+    import classy
+    print(f"Loaded classy from {classy.__file__}")
+
     # Read options from the ini file which are fixed across
     # the length of the chain
     config = {
         'lmax': options.get_int(option_section, 'lmax', default=2000),
-        'zmax': options.get_double(option_section, 'zmax', default=4.0),
+        'zmax': options.get_double(option_section, 'zmax', default=3.0),
         'kmax': options.get_double(option_section, 'kmax', default=50.0),
         'debug': options.get_bool(option_section, 'debug', default=False),
         'lensing': options.get_bool(option_section, 'lensing', default=True),
@@ -35,7 +44,7 @@ def setup(options):
 
     for _, key in options.keys(option_section):
         if key.startswith('class_'):
-            config[key] = block[option_section, key]
+            config[key] = options[option_section, key]
 
 
     # Create the object that connects to Class
@@ -49,11 +58,14 @@ def get_class_inputs(block, config):
 
     # Get parameters from block and give them the
     # names and form that class expects
+    nnu = block.get_double(cosmo, 'nnu', 3.046)
+    nmassive = block.get_int(cosmo, 'num_massive_neutrinos', default=0)
     params = {
         'output': 'tCl pCl mPk lCl' if config['lensing'] else 'tCl pCl mPk',
         'l_max_scalars': config["lmax"],
         'P_k_max_h/Mpc':  config["kmax"],
         'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
+        'z_max_pk': config['zmax'],
         'lensing':   'yes' if config['lensing'] else 'no',
         'A_s':       block[cosmo, 'A_s'],
         'n_s':       block[cosmo, 'n_s'],
@@ -61,9 +73,20 @@ def get_class_inputs(block, config):
         'omega_b':   block[cosmo, 'ombh2'],
         'omega_cdm': block[cosmo, 'omch2'],
         'tau_reio':  block[cosmo, 'tau'],
-        'T_cmb':     block.get_double(cosmo, 't_cmb', default=2.726),
-        'N_eff':     block.get_double(cosmo, 'massless_nu', default=3.046),
+        'T_cmb':     block.get_double(cosmo, 'TCMB', default=2.726),
+        'N_ur':      nnu - nmassive,
+        'N_ncdm':    nmassive,
+        'm_ncdm':    block.get_double(cosmo, 'mnu', default=0.06)
     }
+
+
+
+    if block.has_value(cosmo, "massless_nu"):
+        warnings.warn("Parameter massless_nu is being ignored. Set nnu, the effective number of relativistic species in the early Universe.")
+
+    if (block.has_value(cosmo, "omega_nu") or block.has_value(cosmo, "omnuh2")) and not (block.has_value(cosmo, "mnu")):
+        warnings.warn("Parameter omega_nu and omnuh2 are being ignored. Set mnu and num_massive_neutrinos instead.")
+
 
     for key,val in config.items():
         if key.startswith('class_'):
@@ -73,12 +96,13 @@ def get_class_inputs(block, config):
     return params
 
 
+
+
 def get_class_outputs(block, c, config):
     ##
     # Derived cosmological parameters
     ##
 
-    block[cosmo, 'sigma_8'] = c.sigma8()
     h0 = block[cosmo, 'h0']
 
     ##
@@ -98,13 +122,37 @@ def get_class_outputs(block, c, config):
 
     # Extract (interpolate) P(k,z) at the requested
     # sample points.
-    P = np.zeros((nk, nz))
-    for i, ki in enumerate(k):
-        for j, zj in enumerate(z):
-            P[i, j] = c.pk(ki, zj)
+    if 'mPk' in c.pars['output']:
+        block[cosmo, 'sigma_8'] = c.sigma8()
 
-    # Save matter power as a grid
-    block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+        P = np.zeros((k.size, z.size))
+        for i, ki in enumerate(k):
+            for j, zi in enumerate(z):
+                P[i, j] = c.pk_lin(ki, zi)
+
+        # Save matter power as a grid
+        block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+
+
+        # Get growth rates and sigma_8
+        D = [c.scale_independent_growth_factor(zi) for zi in z]
+        f = [c.scale_independent_growth_factor_f(zi) for zi in z]
+        fsigma = [c.effective_f_sigma8(zi) for zi in z]
+        sigma_8_z = [c.sigma(8.0, zi, h_units=True) for zi in z]
+        block[names.growth_parameters, "z"] = z
+        block[names.growth_parameters, "sigma_8"] = np.array(sigma_8_z)
+        block[names.growth_parameters, "fsigma_8"] = np.array(sigma_8_z)
+        block[names.growth_parameters, "d_z"] = np.array(D)
+        block[names.growth_parameters, "f_z"] = np.array(f)
+        block[names.growth_parameters, "a"] = 1/(1+z)
+
+        if c.nonlinear_method != 0:
+            for i, ki in enumerate(k):
+                for j, zi in enumerate(z):
+                    P[i, j] = c.pk(ki, zi)
+
+            block.put_grid("matter_power_nl", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+
 
     ##
     # Distances and related quantities
@@ -135,7 +183,7 @@ def get_class_outputs(block, c, config):
     block[cmb_cl, "ell"] = ell
 
     # t_cmb is in K, convert to mu_K, and add ell(ell+1) factor
-    tcmb_muk = block[cosmo, 't_cmb'] * 1e6
+    tcmb_muk = block[cosmo, 'tcmb'] * 1e6
     f = ell * (ell + 1.0) / 2 / np.pi * tcmb_muk**2
 
     # Save each of the four spectra
@@ -144,6 +192,7 @@ def get_class_outputs(block, c, config):
 
 
 def execute(block, config):
+    import classy
     c = config['cosmo']
 
     try:
