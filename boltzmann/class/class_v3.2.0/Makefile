@@ -47,7 +47,7 @@ OPTFLAG = -O3
 #OMPFLAG   = -openmp
 
 # all other compilation flags
-CCFLAG = -g -fPIC $(CFLAGS)
+CCFLAG = -g -fPIC $(CFLAGS) -std=gnu99
 LDFLAG = -g -fPIC $(CFLAGS)
 
 # leave blank to compile without HyRec, or put path to HyRec directory
