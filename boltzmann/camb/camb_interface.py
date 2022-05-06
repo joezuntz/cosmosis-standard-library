@@ -27,7 +27,7 @@ matter_power_section_names = {
     'delta_nu': 'massive_neutrino_power',
     'delta_tot': 'matter_power',
     'delta_nonu': 'cdm_baryon_power',
-    'delta_nonu': 'matter_de_power',
+    'delta_tot_de': 'matter_de_power',
     'weyl': 'weyl_curvature_power',
     'v_newtonian_cdm': 'cdm_velocity_power',
     'v_newtonian_baryon': 'baryon_velocity_power',

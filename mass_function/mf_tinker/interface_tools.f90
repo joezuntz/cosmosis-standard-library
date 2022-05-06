@@ -46,7 +46,7 @@ MODULE interface_tools
                     status = status + datablock_get_double_grid(block, matter_power_lin_section, &
                     "K_H", k, "Z", z, "P_K", P)
                 else if (settings%matter_power_lin_version .eq. 2) then
-                    status = status + datablock_get_double_grid(block, matter_power_lin_cdm_baryon_section, &
+                    status = status + datablock_get_double_grid(block, cdm_baryon_power_lin_section, &
                     "K_H", k, "Z", z, "P_K", P)
                 else
                     print*,"Invalid matter_power_lin_version passed - only 1 or 2 are valid. (Passed value of ", &
