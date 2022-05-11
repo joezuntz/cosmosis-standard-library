@@ -36,7 +36,7 @@ jobs:
           source cosmosis-configure
           make
 
-      - name: Planck test
+      - name: CAMB Planck
         shell: bash -l {0}
         run: |
           source cosmosis-configure
@@ -46,6 +46,16 @@ jobs:
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
           grep 'Likelihood =  -6288.61' output/planck.log
+
+      - name: Class Planck
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/planck_class.ini | tee output/class.log
+          # This may need updating as we modify the class interface
+          # The settings are not optimized
+          # grep 'Likelihood =  -5968.93' output/class.log
+          # This seems to give different results on different systems
 
       - name: Pantheon emcee
         shell: bash -l {0}
@@ -121,7 +131,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install cosmosis
         pip install --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt
+        pip install fitsio astropy fast-pt Cython
 
     - name: Build
       run: |
