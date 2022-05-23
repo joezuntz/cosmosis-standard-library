@@ -51,6 +51,22 @@ params:
         meaning: Max redshift to save P(k,z) and distances
         type: real
         default: 4.0
+    cmb:
+        meaning: Whether to compute CMB spectra
+        type: bool
+        default: True
+    mpk:
+        meaning: Whether to compute matter power spectra
+        type: bool
+        default: True
+    cmb:
+        meaning: Whether to lens the output CMB power spectra
+        type: bool
+        default: True
+    debug:
+        meaning: Whether to give a fuller traceback on errors
+        type: bool
+        default: False
 inputs:
     cosmological_parameters:
         ombh2:

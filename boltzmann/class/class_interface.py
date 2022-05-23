@@ -40,7 +40,10 @@ def setup(options):
         'kmax': options.get_double(option_section, 'kmax', default=50.0),
         'debug': options.get_bool(option_section, 'debug', default=False),
         'lensing': options.get_bool(option_section, 'lensing', default=True),
+        'cmb': options.get_bool(option_section, 'cmb', default=True),
+        'mpk': options.get_bool(option_section, 'mpk', default=True),
     }
+
 
     for _, key in options.keys(option_section):
         if key.startswith('class_'):
@@ -53,6 +56,15 @@ def setup(options):
     # Return all this config information
     return config
 
+def choose_outputs(config):
+    outputs = []
+    if config['cmb']:
+        outputs.append("tCl pCl")
+    if config['lensing']:
+        outputs.append("lCl")
+    if config["mpk"]:
+        outputs.append("mPk")
+    return " ".join(outputs)
 
 def get_class_inputs(block, config):
 
@@ -61,11 +73,7 @@ def get_class_inputs(block, config):
     nnu = block.get_double(cosmo, 'nnu', 3.046)
     nmassive = block.get_int(cosmo, 'num_massive_neutrinos', default=0)
     params = {
-        'output': 'tCl pCl mPk lCl' if config['lensing'] else 'tCl pCl mPk',
-        'l_max_scalars': config["lmax"],
-        'P_k_max_h/Mpc':  config["kmax"],
-        'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
-        'z_max_pk': config['zmax'],
+        'output': choose_outputs(config),
         'lensing':   'yes' if config['lensing'] else 'no',
         'A_s':       block[cosmo, 'A_s'],
         'n_s':       block[cosmo, 'n_s'],
@@ -78,6 +86,19 @@ def get_class_inputs(block, config):
         'N_ncdm':    nmassive,
         'm_ncdm':    block.get_double(cosmo, 'mnu', default=0.06)
     }
+
+    if config["cmb"] or config["lensing"]:
+        params.update({
+          'l_max_scalars': config["lmax"],
+        })
+  
+
+    if config["mpk"]:
+        params.update({
+            'P_k_max_h/Mpc':  config["kmax"],
+            'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
+            'z_max_pk': config['zmax'],
+        })
 
 
 
@@ -175,20 +196,21 @@ def get_class_outputs(block, c, config):
     ##
     # Now the CMB C_ell
     ##
-    c_ell_data = c.lensed_cl() if config['lensing'] else c.raw_cl()
-    ell = c_ell_data['ell']
-    ell = ell[2:]
+    if config["cmb"]:
+        c_ell_data = c.lensed_cl() if config['lensing'] else c.raw_cl()
+        ell = c_ell_data['ell']
+        ell = ell[2:]
 
-    # Save the ell range
-    block[cmb_cl, "ell"] = ell
+        # Save the ell range
+        block[cmb_cl, "ell"] = ell
 
-    # t_cmb is in K, convert to mu_K, and add ell(ell+1) factor
-    tcmb_muk = block[cosmo, 'tcmb'] * 1e6
-    f = ell * (ell + 1.0) / 2 / np.pi * tcmb_muk**2
+        # t_cmb is in K, convert to mu_K, and add ell(ell+1) factor
+        tcmb_muk = block[cosmo, 'tcmb'] * 1e6
+        f = ell * (ell + 1.0) / 2 / np.pi * tcmb_muk**2
 
-    # Save each of the four spectra
-    for s in ['tt', 'ee', 'te', 'bb']:
-        block[cmb_cl, s] = c_ell_data[s][2:] * f
+        # Save each of the four spectra
+        for s in ['tt', 'ee', 'te', 'bb']:
+            block[cmb_cl, s] = c_ell_data[s][2:] * f
 
 
 def execute(block, config):
