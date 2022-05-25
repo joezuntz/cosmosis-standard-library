@@ -13,9 +13,11 @@ on:
 jobs:
   conda_test:
     name: Conda Test
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -39,7 +41,10 @@ jobs:
       - name: CAMB Planck
         shell: bash -l {0}
         run: |
+          # print out the configuration
+          python -m cosmosis.configure
           source cosmosis-configure
+          export
           mkdir output
           # Check the downloader works
           ./examples/get-planck-data.sh
