@@ -41,7 +41,10 @@ jobs:
       - name: CAMB Planck
         shell: bash -l {0}
         run: |
+          # print out the configuration
+          python -m cosmosis.configure
           source cosmosis-configure
+          export
           mkdir output
           # Check the downloader works
           ./examples/get-planck-data.sh
