@@ -15,7 +15,7 @@ def dsound_da(a, cosmo):
     c_s = 1.0 / np.sqrt(3*(1+R))
     return dtauda(a, cosmo) * c_s
 
-def H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2):
+def H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k):
     h = hubble / 100.
     if np.isnan(omnuh2):
         omnuh2 = omega_nu * h**2
@@ -31,6 +31,8 @@ def H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_
         omega_m = omega_c + omega_b + omega_nu
     if np.isnan(omega_m):
         omega_m = (omch2 + ombh2 + omnuh2) / h**2
+    if np.isnan(omega_lambda):
+        omega_lambda = 1 - omega_k - omega_m
 
     if np.isnan([omnuh2, hubble, omega_m, omega_lambda, omega_b]).any():
         return np.nan
@@ -43,7 +45,7 @@ def H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_
 
     zstar = 1048*(1+0.00124*ombh2**(-0.738))*(1+ (0.0783*ombh2**(-0.238)/(1+39.5*ombh2**0.763)) * (omdmh2+ombh2)**(0.560/(1+21.1*ombh2**1.81)))
     astar = 1 / (1+zstar)
-    rs = scipy.integrate.romberg(dsound_da, 1e-8, astar, rtol=5e-5, args=(cosmo,), divmax=10) # in Mpc
+    rs = scipy.integrate.romberg(dsound_da, 1e-8, astar, rtol=5e-5, args=(cosmo,), divmax=10, vec_func=True) # in Mpc
     DA = cosmo.angular_diameter_distance(zstar).to("Mpc").value / astar
     return rs / DA
 
@@ -60,13 +62,14 @@ def H0_to_theta_interface(params):
     ombh2 = params.get('ombh2', np.nan)
     omega_lambda = params.get('omega_lambda', np.nan)
     omlamh2 = params.get('omlamh2', np.nan)
+    omega_k = params.get('omega_k', np.nan)
 
-    return H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2)
+    return H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k)
 
 
-def theta_to_H0(theta, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2):
+def theta_to_H0(theta, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k):
 
-    get_theta = lambda H0: H0_to_theta(H0, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2)
+    get_theta = lambda H0: H0_to_theta(H0, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k)
     t = get_theta(70.0)
 
     if np.isnan(t):
@@ -86,7 +89,7 @@ def theta_to_H0(theta, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b
         H0_max = 100.0
 
     f = lambda H0: get_theta(H0) - theta
-    H0 = scipy.optimize.bisect(f, H0_min, H0_max, rtol=5e-5)
+    H0 = scipy.optimize.brentq(f, H0_min, H0_max, rtol=5e-5)
     return H0
 
 
@@ -102,5 +105,6 @@ def theta_to_H0_interface(params):
     ombh2 = params.get('ombh2', np.nan)
     omega_lambda = params.get('omega_lambda', np.nan)
     omlamh2 = params.get('omlamh2', np.nan)
+    omegak = params.get('omega_k', np.nan)
 
-    return theta_to_H0(theta, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2)
+    return theta_to_H0(theta, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omegak)
