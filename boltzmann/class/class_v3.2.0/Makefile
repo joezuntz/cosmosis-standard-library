@@ -157,7 +157,7 @@ PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_
 all: external/distortions/Greens_data.dat  class libclass.a classy
 
 external/distortions/Greens_data.dat:
-	cd external/distortions && gunzip --keep --force Greens_data.dat.gz
+	cd external/distortions && gunzip --force -c Greens_data.dat.gz > Greens_data.dat
 
 libclass.a: $(TOOLS) $(SOURCE) $(EXTERNAL)
 	$(AR)  $@ $(addprefix build/, $(TOOLS) $(SOURCE) $(EXTERNAL))
