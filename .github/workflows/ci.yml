@@ -71,13 +71,14 @@ jobs:
           path: likelihood/wmap9/data/
           key: wmap-9-data
 
-      - if: ${{ steps.cache-wmap.outputs.cache-hit == 'false' }}
+      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
         name: Download WMAP data
-        continue-on-error: false
         run:  |
           ./examples/get-wmap-data.sh
 
       - name: WMAP likelihood
+        shell: bash -l {0}
+        run: |
           source cosmosis-configure
           cosmosis examples/wmap.ini | tee output/wmap.log
 
