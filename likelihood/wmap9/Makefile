@@ -11,16 +11,13 @@ endif
 F90    = ${FC}
 INCS = -I$(CFITSIO_INC) 
 LIBS = ${LAPACK_LINK} -L ${CFITSIO_LIB} -lcfitsio
+USER_FFLAGS+=-Wl,-rpath,${PWD}
+USER_LDFLAGS+=-Wl,-rpath,${PWD} -lcosmosis
+
+WMAP_DATA_DIR=${PWD}/data
 
 FFLAGS+=-DWMAP9_DATA_DIR='"$(WMAP_DATA_DIR)/"'
 
-ifeq ($(WMAP_DATA_DIR),)
-ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(MAKECMDGOALS),distclean)
-$(error To compile the WMAP 9-year likelihood you must specify WMAP_DATA_DIR=/path/to/wmap/data in your Makefile.mine or likelihood/wmap9/Makefile.mine)
-endif
-endif
-endif
 
 #Makefile --- WMAP Likelihood code...
 

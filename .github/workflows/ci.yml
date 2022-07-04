@@ -62,6 +62,27 @@ jobs:
           # grep 'Likelihood =  -5968.93' output/class.log
           # This seems to give different results on different systems
 
+      - name: Cache WMAP data
+        id: cache-wmap
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-wmap-data
+        with:
+          path: likelihood/wmap9/data/
+          key: wmap-9-data
+
+      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
+        name: Download WMAP data
+        run:  |
+          ./examples/get-wmap-data.sh
+
+      - name: WMAP likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/wmap.ini | tee output/wmap.log
+
+
       - name: Pantheon emcee
         shell: bash -l {0}
         run: |
