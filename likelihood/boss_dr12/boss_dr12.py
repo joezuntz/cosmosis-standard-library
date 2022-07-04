@@ -109,7 +109,7 @@ def execute(block, config):
 	n_z = len(redshift)
 	if not mode:
 		#reordering the parameters
-		params = concatenate([array([d, h, f]) for d, h in zip(dm_z_rs, h_z_rs)])
+		params = concatenate([array([d, h]) for d, h in zip(dm_z_rs, h_z_rs)])
 	else:
 		#reordering the parameters
 		params = concatenate([array([d, h, f]) for d, h, f in zip(dm_z_rs, h_z_rs, fsig)])
