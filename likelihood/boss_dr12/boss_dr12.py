@@ -1,6 +1,6 @@
 """
 
-Aapted from boss_rsd 
+Adapted from boss_rsd 
 BOSS DR12 data are presented in Alam et al 2016, 1607.03155
 
 """
