@@ -4,8 +4,7 @@ set -x
 
 pushd likelihood/wmap9/data
 
-echo Downloading WMAP data. This usually takes about 10 minutes.
-echo The bandwidth from the NASA archive is the limiting factor.
+echo Downloading WMAP data. This can take up to 10 minutes from some locations.
 
 wget https://lambda.gsfc.nasa.gov/data/map/dr5/dcp/likelihood/wmap_likelihood_full_v5.tar.gz
 tar -zxvf wmap_likelihood_full_v5.tar.gz
