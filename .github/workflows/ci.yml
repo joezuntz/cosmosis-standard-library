@@ -73,9 +73,14 @@ jobs:
 
       - if: ${{ steps.cache-wmap.outputs.cache-hit == 'false' }}
         name: Download WMAP data
-        continue-on-error: true
+        continue-on-error: false
         run:  |
           ./examples/get-wmap-data.sh
+
+      - name: WMAP likelihood
+          source cosmosis-configure
+          cosmosis examples/wmap.ini | tee output/wmap.log
+
 
       - name: Pantheon emcee
         shell: bash -l {0}
