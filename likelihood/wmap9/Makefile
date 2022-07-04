@@ -11,6 +11,8 @@ endif
 F90    = ${FC}
 INCS = -I$(CFITSIO_INC) 
 LIBS = ${LAPACK_LINK} -L ${CFITSIO_LIB} -lcfitsio
+USER_FFLAGS+=-Wl,-rpath,${PWD}
+USER_LDFLAGS+=-Wl,-rpath,${PWD} -lcosmosis
 
 FFLAGS+=-DWMAP9_DATA_DIR='"$(WMAP_DATA_DIR)/"'
 
