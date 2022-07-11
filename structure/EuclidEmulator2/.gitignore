@@ -1,0 +1,16 @@
+ee2_data
+misc/*
+**/*.exe
+my_nlc*.dat
+.DS_Store
+validation/*
+*.swp
+*/CAMBpath
+*/CLASSpath
+results/*
+*.pxd
+*.bu
+ee_install
+dist
+euclidemu2.egg-info
+build
