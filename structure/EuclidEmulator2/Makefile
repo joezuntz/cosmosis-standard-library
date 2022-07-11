@@ -8,10 +8,11 @@ DATA = ee2_bindata.dat
 HEADERS = src/cosmo.h src/emulator.h src/units_and_constants.h
 SRC = src/euclidemu2.pyx src/cosmo.cxx src/emulator.cxx
 
-install: $(SRC) $(HEADERS) $(DATA)
+ee_install/done: $(SRC) $(HEADERS) $(DATA)
 	export CC=$(CC) CXX=$(CXX); export PYTHONPATH=${PYTHONPATH}:$(PYTHONINSTALL);  $(PYTHON) setup.py install   --prefix=$(PWD)/ee_install;  $(PYTHON)  setup.py install   --prefix=$(PWD)/ee_install
+	touch ee_install/done
 
 clean:
-	rm -rf build ee_install
+	rm -rf build dist ee_install
 
-.PHONY: install
+.PHONY: clean
