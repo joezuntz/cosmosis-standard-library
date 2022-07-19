@@ -35,7 +35,6 @@ matter_power_section_names = {
     'v_baryon_cdm': 'baryon_cdm_relative_velocity_power',
 }
 
-ERROR_COUNT = 0
 
 def get_optional_params(block, section, names):
     params = {}

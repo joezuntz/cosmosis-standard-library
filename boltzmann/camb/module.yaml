@@ -45,6 +45,10 @@ params:
             extended, maybe higher?
         type: int
         default: 0
+    max_printed_errors:
+        meaning: Max number of full tracebacks to print when camb fails
+        type: int
+        default: 10
     do_lensing:
         meaning: Include lensing of CMB, and save C_ell phi-phi.
         type: bool
