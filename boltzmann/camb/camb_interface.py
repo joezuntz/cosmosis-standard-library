@@ -3,6 +3,7 @@ from cosmosis.datablock.cosmosis_py import errors
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 import warnings
+import traceback
 
 # Finally we can now import camb
 import camb
@@ -34,6 +35,7 @@ matter_power_section_names = {
     'v_baryon_cdm': 'baryon_cdm_relative_velocity_power',
 }
 
+ERROR_COUNT = 0
 
 def get_optional_params(block, section, names):
     params = {}
@@ -72,6 +74,8 @@ def setup(options):
     more_config = {}
 
     more_config["mode"] = mode
+    more_config["max_printed_errors"] = options.get_int(opt, 'max_printed_errors', default=20)
+    more_config["n_printed_errors"] = 0
     config['WantCls'] = mode in [MODE_CMB, MODE_ALL]
     config['WantTransfer'] = mode in [MODE_POWER, MODE_ALL]
     config['WantScalars'] = True
@@ -561,12 +565,23 @@ def execute(block, config):
     config, more_config = config
     p = extract_camb_params(block, config, more_config)
     
-    if (not p.WantCls) and (not p.WantTransfer):
-        # Background only mode
-        r = camb.get_background(p)
-    else:
-        # other modes
-        r = camb.get_results(p)
+
+    try:
+        if (not p.WantCls) and (not p.WantTransfer):
+            # Background only mode
+            r = camb.get_background(p)
+        else:
+            # other modes
+            r = camb.get_results(p)
+    except camb.CAMBError:
+        if more_config["n_printed_errors"] <= more_config["max_printed_errors"]:
+            print("CAMB error caught: for these parameters")
+            print(p)
+            print(traceback.format_exc())
+            if more_config["n_printed_errors"] == more_config["max_printed_errors"]:
+                print("\nFurther errors will not be printed.")
+            more_config["n_printed_errors"] += 1
+        return 1
 
     save_derived_parameters(r, p, block)
     save_distances(r, p, block, more_config)
