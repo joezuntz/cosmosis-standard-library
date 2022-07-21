@@ -105,6 +105,12 @@ jobs:
           cosmosis examples/des-y3.ini | tee output/des-y3.log
           grep 'Likelihood =  6043.23' output/des-y3.log
 
+      - name: Log w example
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/w_model.ini | tee output/w_model.log
+
       - name: Run Demos
         shell: bash -l {0}
         run: |

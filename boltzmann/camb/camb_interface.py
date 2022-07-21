@@ -235,8 +235,8 @@ def extract_dark_energy_params(block, config, more_config):
 
     dark_energy = de_class()
     if more_config['use_tabulated_w']:
-        a = block[name.de_equation_of_state, 'a']
-        w = block[name.de_equation_of_state, 'w']
+        a = block[names.de_equation_of_state, 'a']
+        w = block[names.de_equation_of_state, 'w']
         dark_energy.set_w_a_table(a, w)
     else:
         w0 = block.get_double(cosmo, 'w', default=-1.0)
