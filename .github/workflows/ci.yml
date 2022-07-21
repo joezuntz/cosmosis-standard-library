@@ -110,7 +110,6 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/w_model.ini | tee output/w_model.log
-          grep 'WARNING:root:Posterior:' output/des-y3.log
 
       - name: Run Demos
         shell: bash -l {0}
