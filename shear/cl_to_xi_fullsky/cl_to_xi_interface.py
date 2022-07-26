@@ -6,7 +6,6 @@ import numpy as np
 from cosmosis.datablock import option_section, names as section_names
 from cl_to_xi import save_xi_00_02, save_xi_22, arcmin_to_radians, SpectrumInterp, cl_to_xi_to_block, cl_to_xi_to_block_eb
 from legendre import get_legfactors_00, get_legfactors_02, get_legfactors_22, precomp_GpGm, apply_filter, get_legfactors_02_binav, get_legfactors_00_binav, get_legfactors_22_binav
-from past.builtins import basestring
 import sys
 import os
 dirname = os.path.split(__file__)[0]
@@ -326,7 +325,7 @@ def execute(block, config):
                 cl_to_xi_to_block(block, output_section, name,
                               cl_interp, thetas, legfacs)
 
-    if isinstance(output_section, basestring):
+    if isinstance(output_section, str):
         output_section = (output_section,)
     for o in output_section:
         block[o, "nbin_a"] = nbina
