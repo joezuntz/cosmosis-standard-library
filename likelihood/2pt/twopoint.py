@@ -1,11 +1,7 @@
-from __future__ import print_function
-from builtins import zip
-from builtins import range
-from builtins import object
 from astropy.io import fits
 import astropy.units
 from astropy.table import Table
-from enum34 import Enum
+from enum import Enum
 import numpy as np
 import copy
 import os

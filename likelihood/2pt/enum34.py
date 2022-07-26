@@ -9,9 +9,6 @@ type akin to C or C++ enums.
 
 """
 
-from builtins import str
-from past.builtins import basestring
-from builtins import object
 import sys as _sys
 
 __all__ = ['Enum', 'IntEnum', 'unique']
