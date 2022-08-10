@@ -112,6 +112,12 @@ jobs:
           cosmosis examples/euclid-emulator.ini
           test -f output/euclid-emulator/matter_power_nl/p_k.txt
 
+      - name: Log w example
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/w_model.ini | tee output/w_model.log
+
       - name: Run Demos
         shell: bash -l {0}
         run: |

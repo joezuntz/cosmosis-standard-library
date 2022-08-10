@@ -3,6 +3,7 @@ import os
 from cosmosis.datablock import names, option_section
 import sys
 import traceback
+import warnings
 
 # add class directory to the path
 dirname = os.path.split(__file__)[0]
