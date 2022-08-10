@@ -48,8 +48,6 @@ jobs:
           mkdir output
           # Check the downloader works
           ./examples/get-planck-data.sh
-          which python
-          python -c "import sys;print('PATH IS', sys.path)"
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
           grep 'Likelihood =  -6288.61' output/planck.log
