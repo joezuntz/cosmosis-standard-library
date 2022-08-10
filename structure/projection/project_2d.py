@@ -375,7 +375,7 @@ class Spectrum(object):
 
         # Run the main Limber integral
         c_ell, c_ell_err = limber_integral(ell, K1, K2, P_chi_logk_spline, chimin,
-            chimax, dchi)
+            chimax, dchi, interpolation_cache=self.source.interpolation_cache)
 
         # Rescale by the h, Omega_m, etc factor, which depends which spectrum
         # us being computed
@@ -464,7 +464,7 @@ class Spectrum(object):
             dchi_limber = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
 
         c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline,
-            chimin, chimax, dchi_limber)
+            chimin, chimax, dchi_limber, interpolation_cache=self.source.interpolation_cache)
 
         # Add the Limber on the non-linear part to the total
         c_ell += c_ell_sublin
@@ -613,7 +613,7 @@ class LingalLingalSpectrum(Spectrum):
             dchi_limber = min( K1.sigma/sig_over_dchi, K2.sigma/sig_over_dchi )
 
         c_ell_sublin,_ = limber_integral(ell, K1, K2, P_sublin_spline, chimin,
-            chimax, dchi_limber)
+            chimax, dchi_limber, interpolation_cache=self.source.interpolation_cache)
 
         # We apply the linear bias here to the NL-only (sublin) part.  The
         # linear bias is already applied in the exact_integral above to the
@@ -1587,6 +1587,8 @@ class SpectrumCalculator(object):
         self.outputs.clear()
         self.lensing_prefactor = None
 
+        self.interpolation_cache.clear()
+
     def execute(self, block):
         """
         Execute the pipeline step by loading the relevant data from the block
@@ -1594,6 +1596,7 @@ class SpectrumCalculator(object):
         """
         try:
             # Load input information from the block
+            self.interpolation_cache = {}
             self.load_distance_splines(block)
             self.load_lensing_prefactor(block)
             self.load_lensing_weyl_prefactor(block)

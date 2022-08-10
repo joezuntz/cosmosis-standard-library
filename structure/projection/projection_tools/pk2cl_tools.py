@@ -396,7 +396,7 @@ def exact_integral_fftlogxiao(ells, kernel1_interp, kernel2_interp,
     return cell
 
 def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi,
-    method="trapz", verbose=False):
+    method="trapz", verbose=False, interpolation_cache=None):
     """
     Do the Limber integral 
     C(l) = \int dchi K_1(chi) K_2(chi) P((ell+0.5)/chi, chi) / chi^2
@@ -419,6 +419,8 @@ def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi
         maximum chi for integral over chi
     dchi: float
         chi spacing for integral over chi
+    interpolation_cache:
+        optional dict for caching interpolation
 
     Returns
     -------
@@ -445,6 +447,7 @@ def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi
     kernel2_vals = kernel2(chi_vals)
     k1k2 = kernel1_vals * kernel2_vals
 
+
     #Go ahead and do integral
     if method == "trapz":
         #Trapz method uses the trapezium rule to do all
@@ -452,7 +455,21 @@ def limber_integral(ells, kernel1, kernel2, pk_interp_logk, chimin, chimax, dchi
         K_VALS = (ells[:, np.newaxis]+0.5) / chi_vals
         CHI_VALS = (chi_vals[:, np.newaxis]).T * np.ones((ells.shape[0], chi_vals.shape[0]))
         K1K2 = (k1k2[:, np.newaxis]).T * np.ones_like(CHI_VALS)
-        PK_VALS = pk_interp_logk(CHI_VALS, np.log(K_VALS), grid=False)
+
+        # This bit takes up the majority of the time in the project_2d module.
+        # It's a call to rectbivariatespline, so we cache it where possible.
+        # Only some combinations of spectra actually re-use the same everything
+        # here, so its time saving will vary depending what you're doing.
+        if interpolation_cache is None:
+            PK_VALS = pk_interp_logk(CHI_VALS, np.log(K_VALS), grid=False)
+        else:
+            key = (float(chimin), float(chimax), float(dchi), hash(ells.tobytes()), id(pk_interp_logk))
+            PK_VALS = interpolation_cache.get(key)
+            if PK_VALS is None:
+                PK_VALS = pk_interp_logk(CHI_VALS, np.log(K_VALS), grid=False)
+                interpolation_cache[key] = PK_VALS
+
+
         #compute integral via trapezium rule
         integrands = K1K2 * PK_VALS / CHI_VALS / CHI_VALS
         DCHI = CHI_VALS[:,1:] - CHI_VALS[:,:-1]
