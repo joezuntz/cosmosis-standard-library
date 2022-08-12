@@ -261,7 +261,8 @@ def extract_initial_power_params(block, config, more_config):
 
 def extract_nonlinear_params(block, config, more_config):
     version = more_config["nonlinear_params"].get('halofit_version', '')
-    if version == "mead2015" or version == "mead2016":
+
+    if version == "mead2015" or version == "mead2016" or version == "mead":
         A = block[names.halo_model_parameters, 'A']
         eta0 = block[names.halo_model_parameters, "eta"]
         hmcode_params = {"HMCode_A_baryon": A, "HMCode_eta_baryon":eta0}
