@@ -141,7 +141,7 @@ def setup(options):
     more_config['zmax_background'] = options.get_double(opt, 'zmax_background', default=more_config['zmax'])
     more_config['nz_background'] = options.get_int(opt, 'nz_background', default=more_config['nz'])
 
-    more_config["transfer_params"] = get_optional_params(options, opt, ["k_per_logint", "accurate_massive_neutrinos"])
+    more_config["transfer_params"] = get_optional_params(options, opt, ["k_per_logint", "accurate_massive_neutrino_transfers"])
     # Adjust CAMB defaults
     more_config["transfer_params"]["kmax"] = options.get_double(opt, "kmax", default=10.0)
     # more_config["transfer_params"]["high_precision"] = options.get_bool(opt, "high_precision", default=True)
