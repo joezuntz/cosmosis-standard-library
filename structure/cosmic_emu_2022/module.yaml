@@ -1,0 +1,99 @@
+name: CosmicEmu
+version: '3.0'
+purpose: Emulate N-body simulations to compute nonlinear matter power
+url: http://www.hep.anl.gov/cosmology/CosmicEmu/emu.html
+interface: interface.so
+attribution: [Katrin Heitmann, Derek Bingham, Earl Lawrence, Steven Bergner, Salman
+        Habib, David Higdon, Adrian Pope, Rahul Biswas, Hal Finkel, Nicholas Frontiere,
+    Suman Bhattacharya, Kelly R. Moran, Amol Upadhye,  Juliana Kwan, Richard Payne]
+rules: ''
+cite:
+-   'The Mira-Titan Universe: Precision Predictions for Dark Energy Surveys, ApJ,
+    820, 2 (2016), arXiv:1508.02654'
+- 'https://arxiv.org/abs/2207.12345'
+
+assumptions:
+-   w0waCDM and the Mira-Titan simulation assumptions
+
+explanation: |
+    "
+    CosmicEmu is an emulator designed to interpolate among a collection
+    of numerical N-body simulations called Mira-Titan.
+
+    It uses a Gaussian Process interpolation between a set of simulations
+    arranged in a lattice in parameter space.
+
+    Each simulation yields a non-linear matter power spectrum P(k,z), and
+    the interpolation is between these spectra, so the output should be a
+    reasonable (1% accuracy) value of P(k,z) for the given parameters.
+
+    The simulations and the whole process are explained in detail in the paper
+    above.
+
+    This version uses the updated 2022 version of the library.
+    "
+params:
+    zmax:
+        meaning: Maximum output redshift
+        type: real
+        default: 2.0
+    nz:
+        meaning: Number of redshift samples.  Note that the code will be interpolating
+            between sample values
+        type: int
+        default: 50
+    mode:
+        meaning: "'total' for cdm+baryon+nu spectrum. 'cb' for cdm+baryon"
+        type: str
+        deftault: total
+inputs:
+    cosmological_parameters:
+        ombh2:
+            meaning: Physical baryon content
+            type: real
+            default:
+        ommh2:
+            meaning: Physical matter content
+            type: real
+            default:
+        w:
+            meaning: Dark energy equation of state
+            type: real
+            default: -1.0
+        wa:
+            meaning: Dark energy equation of state derivative
+            type: real
+            default: 0.0
+        h0:
+            meaning: Hubble/100km/s/Mpc
+            type: real
+            default:
+        n_s:
+            meaning: Scalar spectral index
+            type: real
+            default:
+        sigma_8:
+            meaning: Power spectrum normalization
+            type: real
+            default:
+outputs:
+    matter_power_nl:
+        z:
+            meaning: Redshifts of samples. Only if mode=total.
+            type: real 1d
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h. Only if mode=total.
+            type: real 1d
+        p_k:
+            meaning: Matter power spectrum at samples in (Mpc/h)^-3. Only if mode=total.
+            type: real 2d
+    cdm_baryon_power_nl:
+        z:
+            meaning: Redshifts of samples. Only if mode=cb.
+            type: real 1d
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h. Only if mode=cb.
+            type: real 1d
+        p_k:
+            meaning: CDM + Baryon Matter power spectrum at samples in (Mpc/h)^-3.  Only if mode=cb.
+            type: real 2d

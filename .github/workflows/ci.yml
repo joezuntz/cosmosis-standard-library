@@ -105,6 +105,20 @@ jobs:
           cosmosis examples/des-y3.ini | tee output/des-y3.log
           grep 'Likelihood =  6043.23' output/des-y3.log
 
+      - name: DES Y3 likelihood with Mira Titan
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3-mira-titan.ini | tee output/des-y3-mt.log
+          grep 'Likelihood =  6048.0' output/des-y3-mt.log
+
+      - name: DES Y3 likelihood with Mead nonlinear
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3.log
+          grep 'Likelihood =  6043.23' output/des-y3.log
+
       - name: Euclid emulator
         shell: bash -l {0}
         run: |
