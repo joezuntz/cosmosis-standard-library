@@ -1,4 +1,3 @@
-#include "params.h"
 #include "stdio.h"
 #include "string.h"
 #include "emu.h"
