@@ -117,7 +117,7 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3.log
-          grep 'Likelihood =  6043.23' output/des-y3.log
+          grep 'Likelihood =  6049.94' output/des-y3.log
 
       - name: Euclid emulator
         shell: bash -l {0}
