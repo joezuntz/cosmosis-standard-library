@@ -1166,7 +1166,7 @@ class SpectrumCalculator(object):
         self.verbose = options.get_bool(option_section, "verbose", False)
         self.fatal_errors = options.get_bool(option_section, "fatal_errors", False)
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
-        self.save_kernel_zmax = options.get_double(option_section, "save_kernel_zmax", -1.0)
+        self.save_kernels = options.get_bool(option_section, "save_kernels", False)
 
         self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 300)
         do_exact_string = options.get_string(option_section, "do_exact", "")
@@ -1502,6 +1502,11 @@ class SpectrumCalculator(object):
             else:
                 raise ValueError(f"Invalid kernel type: {kernel_type}. Should be 'N' or 'W'")
 
+    def save_kernels_to_block(self, block):
+        for name, kernel in self.kernels.items():
+            section = f"kernels_{name}"
+            kernel.to_block(block, section)
+
     def load_power(self, block):
         # Loop through keys in self.req_power_keys, initializing the Power3d
         # instances and adding to the self.power dictionary.
@@ -1628,8 +1633,8 @@ class SpectrumCalculator(object):
             # We can optionally save the kernels that go into the
             # integration as well.  This is useful for e.g. plotting
             # things.  Thi
-            if self.save_kernel_zmax > 0:
-                self.save_kernels(block, self.save_kernel_zmax)
+            if self.save_kernels:
+                self.save_kernels_to_block(block)
 
             # Load the P(k)s
             t0 = timer()

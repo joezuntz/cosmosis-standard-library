@@ -126,6 +126,18 @@ class TomoNzKernel(object):
             nzs.append(nz)
         return cls(z, nzs, norm=norm)
 
+    def to_block(self, block, section):
+        for b, spline in self.nchi_splines.items():
+            block[section, f"n_of_chi_chi_{b}"] = spline.x
+            block[section, f"n_of_chi_n_{b}"] = spline.y
+        for b, spline in self.wchi_splines.items():
+            block[section, f"w_of_chi_chi_{b}"] = spline.x
+            block[section, f"w_of_chi_n_{b}"] = spline.y
+        for b, spline in self.wwchi_splines.items():
+            block[section, f"ww_of_chi_chi_{b}"] = spline.x
+            block[section, f"ww_of_chi_n_{b}"] = spline.y
+
+
     def set_nofchi_splines(self, chi_of_z, dchidz, clip=1.e-6):
         chi = chi_of_z(self.z)
         dchidz = dchidz(self.z)
