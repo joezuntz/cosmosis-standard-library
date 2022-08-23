@@ -147,14 +147,20 @@ def get_class_outputs(block, c, config):
     if 'mPk' in c.pars['output']:
         block[cosmo, 'sigma_8'] = c.sigma8()
 
+        # Total matter power spectrum
         P = np.zeros((k.size, z.size))
         for i, ki in enumerate(k):
             for j, zi in enumerate(z):
                 P[i, j] = c.pk_lin(ki, zi)
-
         # Save matter power as a grid
         block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
 
+        # CDM+baryons power spectrum
+        P = np.zeros((k.size, z.size))
+        for i, ki in enumerate(k):
+            for j, zi in enumerate(z):
+                P[i, j] = c.pk_cb_lin(ki, zi)
+        block.put_grid('cdm_baryon_power_lin', 'k_h', k/h0, 'z', z, 'p_k', P*h0**3)
 
         # Get growth rates and sigma_8
         D = [c.scale_independent_growth_factor(zi) for zi in z]
