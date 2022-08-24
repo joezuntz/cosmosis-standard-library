@@ -89,8 +89,8 @@ params:
         meaning: Raise an error instead of returning non-zero on error loading splines. Handy for debugging.
         type: bool
         default: false
-    get_kernel_peaks:
-        meaning: Save peak positions for the computed kernels
+    save_kernels:
+        meaning: Save the kernels n(chi) and w(chi) to the block
         type: bool
         default: false
     do_exact:
@@ -225,6 +225,25 @@ inputs:
             type: real 1d
             default:
 outputs:
+    kernel_{sample}:
+        n_of_chi_chi_{i}:
+            meaning: The chi values for the n(chi) calculation. Only if save_kernels=T.
+            type: real 1d
+        n_of_chi_n_{i}:
+            meaning: The n values for the n(chi) calculation. Only if save_kernels=T.
+            type: real 1d
+        w_of_chi_chi_{i}:
+            meaning: The chi values for the w(chi) calculation. Only if save_kernels=T and shear spectrum calculated.
+            type: real 1d
+        w_of_chi_n_{i}:
+            meaning: The n values for the w(chi) calculation. Only if save_kernels=T and shear spectrum calculated.
+            type: real 1d
+        ww_of_chi_chi_{i}:
+            meaning: The chi values for the ww(chi) calculation. Only if save_kernels=T and Weyl spectrum calculated.
+            type: real 1d
+        ww_of_chi_n_{i}:
+            meaning: The n values for the ww(chi) calculation. Only if save_kernels=T and Weyl spectrum calculated.
+            type: real 1d
     shear_cl:
         nbin_a:
             meaning: Number of tomographic bins for first of the two quantities correlated.
