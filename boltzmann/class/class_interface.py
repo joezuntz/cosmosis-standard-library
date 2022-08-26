@@ -43,6 +43,8 @@ def setup(options):
         'lensing': options.get_bool(option_section, 'lensing', default=True),
         'cmb': options.get_bool(option_section, 'cmb', default=True),
         'mpk': options.get_bool(option_section, 'mpk', default=True),
+        'save_matter_power_lin': options.get_bool(option_section, 'save_matter_power_lin', default=True),
+        'save_cdm_baryon_power_lin': options.get_bool(option_section, 'save_cdm_baryon_power_lin', default=False),
     }
 
 
@@ -147,14 +149,21 @@ def get_class_outputs(block, c, config):
     if 'mPk' in c.pars['output']:
         block[cosmo, 'sigma_8'] = c.sigma8()
 
-        P = np.zeros((k.size, z.size))
-        for i, ki in enumerate(k):
-            for j, zi in enumerate(z):
-                P[i, j] = c.pk_lin(ki, zi)
+        # Total matter power spectrum (saved as grid)
+        if config['save_matter_power_lin']:
+            P = np.zeros((k.size, z.size))
+            for i, ki in enumerate(k):
+                for j, zi in enumerate(z):
+                    P[i, j] = c.pk_lin(ki, zi)
+            block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
 
-        # Save matter power as a grid
-        block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
-
+        # CDM+baryons power spectrum
+        if config['save_cdm_baryon_power_lin']:
+            P = np.zeros((k.size, z.size))
+            for i, ki in enumerate(k):
+                for j, zi in enumerate(z):
+                    P[i, j] = c.pk_cb_lin(ki, zi)
+            block.put_grid('cdm_baryon_power_lin', 'k_h', k/h0, 'z', z, 'p_k', P*h0**3)
 
         # Get growth rates and sigma_8
         D = [c.scale_independent_growth_factor(zi) for zi in z]
