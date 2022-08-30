@@ -25,8 +25,8 @@ TRANSFORMS = [TRANSFORM_W, TRANSFORM_GAMMAT, TRANSFORM_XI]
 
 DEFAULT_SECTIONS = {
     TRANSFORM_XI:     ("shear_cl",        "shear_xi"),
-    TRANSFORM_XIP:     ("shear_cl",        "shear_xi"),
-    TRANSFORM_XIM:     ("shear_cl",        "shear_xi"),
+    TRANSFORM_XIP:     ("shear_cl",        "shear_xi_plus"),
+    TRANSFORM_XIM:     ("shear_cl",        "shear_xi_minus"),
     TRANSFORM_GAMMAT: ("galaxy_shear_cl", "galaxy_shear_xi"),
     TRANSFORM_W:      ("galaxy_cl",       "galaxy_xi"),
 }
@@ -34,8 +34,8 @@ DEFAULT_SECTIONS = {
 OUTPUT_NAMES = {
     TRANSFORM_W:  "bin_{}_{}",
     TRANSFORM_GAMMAT:  "bin_{}_{}",
-    TRANSFORM_XIP:  "xiplus_{}_{}",
-    TRANSFORM_XIM:  "ximinus_{}_{}",
+    TRANSFORM_XIP:  "bin_{}_{}",
+    TRANSFORM_XIM:  "bin_{}_{}",
 }
 
 
@@ -181,9 +181,16 @@ class CosmosisTransformer(Transformer):
         # Where to get/put the input/outputs
         default_input, default_output = DEFAULT_SECTIONS[corr_type]
         self.input_section = options.get_string(
-            option_section, "input_section_name", default_input)
+            option_section, "input_section_name", "")
         self.output_section = options.get_string(
-            option_section, "output_section_name", default_output)
+            option_section, "output_section_name", "")
+
+        # We don't use the default= keyword above because it breaks
+        # for the xip / xim
+        if self.input_section == "":
+            self.input_section = default_input
+        if self.output_section == "":
+            self.output_section = default_output
 
         # Parameters of the transform
         n = options.get_int(option_section, "n_transform", DEFAULT_N_TRANSFORM)
@@ -215,6 +222,12 @@ class CosmosisTransformer(Transformer):
         # Read the input ell.
         ell = block[self.input_section, "ell"]
 
+        # Some optional metadata
+        save_name = block.get_string(self.input_section, "save_name", default="")
+        sample_a = block.get_string(self.input_section, "sample_a", default="")
+        sample_b = block.get_string(self.input_section, "sample_b", default="")
+        is_auto = block.get_bool(self.input_section, "is_auto", default=False)
+
         # Loop through bin pairs and see if C_ell exists for all of them
         for i in range(nbin_a):
             for j in range(nbin_b):
@@ -240,8 +253,16 @@ class CosmosisTransformer(Transformer):
                 theta = np.radians(theta / 60.)
 
                 # Save results back to cosmosis
-                block[self.output_section, "theta"] = theta
                 block[self.output_section, output_name] = xi
+        block[self.output_section, "nbin_a"] = nbin_a
+        block[self.output_section, "nbin_b"] = nbin_b
+        block[self.output_section, "sample_a"] = sample_a
+        block[self.output_section, "sample_b"] = sample_b
+        block[self.output_section, "theta"] = theta
+        block[self.output_section, "sep_name"] = "theta"
+        block[self.output_section, "save_name"] = save_name
+        block[self.output_section, "is_auto"] = is_auto
+        print('here!', self.output_section, save_name)
 
 
 class XiTransformer(object):
