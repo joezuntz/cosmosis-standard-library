@@ -103,7 +103,7 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/des-y1.ini -p 2pt_shear.file=./shear/cl_to_corr/cl_to_corr.py 2pt_shear.corr_type=xi | tee output/des-y1.log
-          grep 'Likelihood =  5237.37' output/des-y1.log
+          grep 'Likelihood =  5237.3' output/des-y1.log
 
       - name: DES Y3 likelihood
         shell: bash -l {0}
