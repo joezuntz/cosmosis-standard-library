@@ -25,8 +25,8 @@ TRANSFORMS = [TRANSFORM_W, TRANSFORM_GAMMAT, TRANSFORM_XI]
 
 DEFAULT_SECTIONS = {
     TRANSFORM_XI:     ("shear_cl",        "shear_xi"),
-    TRANSFORM_XIP:     ("shear_cl",        "shear_xi_plus"),
-    TRANSFORM_XIM:     ("shear_cl",        "shear_xi_minus"),
+    TRANSFORM_XIP:     ("shear_cl",        "shear_xi"),
+    TRANSFORM_XIM:     ("shear_cl",        "shear_xi"),
     TRANSFORM_GAMMAT: ("galaxy_shear_cl", "galaxy_shear_xi"),
     TRANSFORM_W:      ("galaxy_cl",       "galaxy_xi"),
 }
@@ -180,10 +180,20 @@ class CosmosisTransformer(Transformer):
 
         # Where to get/put the input/outputs
         default_input, default_output = DEFAULT_SECTIONS[corr_type]
+
         self.input_section = options.get_string(
-            option_section, "input_section_name", "")
-        self.output_section = options.get_string(
-            option_section, "output_section_name", "")
+            option_section, "input_section_name", default_input)
+
+        if (corr_type == TRANSFORM_XIP) or (corr_type == TRANSFORM_XIM):
+            output_base = options.get_string(
+                option_section, "output_section_name", default_output)
+            if corr_type == TRANSFORM_XIP:
+                self.output_section = output_base + "_plus"
+            else:
+                self.output_section = output_base + "_minus"
+        else:
+            self.output_section = options.get_string(
+                option_section, "output_section_name", default_output)
 
         # We don't use the default= keyword above because it breaks
         # for the xip / xim
@@ -262,7 +272,6 @@ class CosmosisTransformer(Transformer):
         block[self.output_section, "sep_name"] = "theta"
         block[self.output_section, "save_name"] = save_name
         block[self.output_section, "is_auto"] = is_auto
-        print('here!', self.output_section, save_name)
 
 
 class XiTransformer(object):
