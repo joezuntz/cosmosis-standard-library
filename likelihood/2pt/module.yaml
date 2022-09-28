@@ -69,6 +69,10 @@ params:
         meaning: The name of the likelihood to save.
         type: str
         default: 2pt
+    likelihood_only:
+        meaning: Skip saving the covariance, inverse, simulation, etc. Saves some time.
+        type: bool
+        default: false
     kind:
         meaning: The interpolation to do into the theory splines.
             See scipy.interpolate.interp1d.
