@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import twopoint
 from cosmosis.datablock import BlockError
 from twopoint_cosmosis import type_table
@@ -289,6 +290,8 @@ class BinAveragedTheorySpectrum(TheorySpectrum):
             noise_var_per_mode=noise_var_per_mode, auto_only = auto_only,  bin_pairs=bin_pairs)
 
         self.angle_edges = angle_edges
+        self.angle_mins = self.angle_edges[:-1]
+        self.angle_maxs = self.angle_edges[1:]
 
     def get_noise_spec_values( self, bin1, bin2, angle ):
         raise NotImplementedError("get_noise_spec_values is not implemented for bin-averaged theory")
@@ -311,12 +314,10 @@ class BinAveragedTheorySpectrum(TheorySpectrum):
         i, j = self.bin_pair_from_bin1_bin2(bin1, bin2)
 
         # Find correct index
-        n = len(self.angle_edges) - 1
-        for bin_index in range(n):
-            if np.allclose([angle_min, angle_max], self.angle_edges[bin_index:bin_index+2]):
-                break
-        else:
-            # this only happens if we never break above
+
+        bin_index = np.argmin(abs(angle_min - self.angle_mins))
+        if not (math.isclose(self.angle_mins[bin_index], angle_min)
+                and math.isclose(self.angle_maxs[bin_index], angle_max)):
             raise ValueError("Desired angle bin {} - {} not computed".format(angle_min,angle_max))
 
         # Get corresponding spectra and angular mean value from block for this angular scale
