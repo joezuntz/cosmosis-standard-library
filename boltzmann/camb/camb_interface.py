@@ -115,6 +115,7 @@ def setup(options):
     
     more_config['use_tabulated_w'] = options.get_bool(opt, 'use_tabulated_w', default=False)
     more_config['use_ppf_w'] = options.get_bool(opt, 'use_ppf_w', default=False)
+    more_config['do_bao'] = options.get_bool(opt, 'do_bao', default=True)
     
     more_config["nonlinear_params"] = get_optional_params(options, opt, ["halofit_version", "Min_kh_nonlinear"])
 
@@ -445,9 +446,10 @@ def save_distances(r, p, block, more_config):
     block[names.distances, "MU"] = mu
     block[names.distances, "H"] = r.h_of_z(z_background)
 
-    rs_DV, _, _, F_AP = r.get_BAO(z_background, p).T
-    block[names.distances, "rs_DV"] = rs_DV
-    block[names.distances, "F_AP"] = F_AP
+    if more_config['do_bao']:
+        rs_DV, _, _, F_AP = r.get_BAO(z_background, p).T
+        block[names.distances, "rs_DV"] = rs_DV
+        block[names.distances, "F_AP"] = F_AP
 
 def compute_growth_rates(r, block, P_tot, k, z, more_config):
     if P_tot is None:
