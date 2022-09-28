@@ -159,6 +159,10 @@ params:
         meaning: Number of z values to save distance measures
         type: int
         default: nz
+    do_bao:
+        meaning: Whether to save BAO quantities rs_DV and F_AP. Switch off to save time in SN-only runs.
+        type: bool
+        default: true
     theta_H0_range:
         meaning: Two space-separated values with the min and max H0 values to use
             when sampling in cosmomc_theta instead of H0.
