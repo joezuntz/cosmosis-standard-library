@@ -60,6 +60,7 @@ def execute(block, config):
 
     As = fid_As*(sigma8/fid_sigma8)**2
 
+    print("fid_As",fid_As,'As',As,'sigma8',sigma8,'fid_sigma8',fid_sigma8)
     block[names.cosmological_parameters, "A_s"] = As
 
     return 0
