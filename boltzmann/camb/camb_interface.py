@@ -569,10 +569,10 @@ def save_cls(r, p, block):
 
 def execute(block, config):
     config, more_config = config
-    p = extract_camb_params(block, config, more_config)
-    
 
     try:
+        p = extract_camb_params(block, config, more_config)
+
         if (not p.WantCls) and (not p.WantTransfer):
             # Background only mode
             r = camb.get_background(p)
