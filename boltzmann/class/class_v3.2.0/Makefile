@@ -47,7 +47,10 @@ OPTFLAG = -O3
 #OMPFLAG   = -openmp
 
 # all other compilation flags
-CCFLAG = -g -fPIC $(CFLAGS) -std=gnu99
+# JAZ - added GSL here not because it actually needs GSL but
+# with conda it forces the compiler to find omp.h. I don't
+# understand why this only recently stopped working.
+CCFLAG = -g -fPIC $(CFLAGS) -std=gnu99  -I ${GSL_INC}
 LDFLAG = -g -fPIC $(CFLAGS)
 
 # leave blank to compile without HyRec, or put path to HyRec directory
