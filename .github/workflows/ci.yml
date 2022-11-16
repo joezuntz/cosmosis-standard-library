@@ -20,6 +20,8 @@ jobs:
 
       - name: Install dependencies with brew
         run: |
+          export HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew update
           brew install gcc fftw cfitsio gsl openblas python mpi4py open-mpi libomp numpy scipy
           # add python to the default path for subsequent stages
           which gfortran
