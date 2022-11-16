@@ -31,6 +31,7 @@ jobs:
           echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
 
       - name: Install CosmoSIS with pip
+        shell: bash -l {0}
         run: |
 
           GCCV=$(brew list gcc --versions | awk '{print $2}' | awk -F . '{print $1}')
@@ -52,6 +53,8 @@ jobs:
       - name: Build standard library
         shell: bash -l {0}
         run: |
+          python --version
+          which -a python
           source cosmosis-configure --brew-gcc
           make
 
