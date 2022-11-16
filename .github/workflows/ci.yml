@@ -32,9 +32,21 @@ jobs:
 
       - name: Install CosmoSIS with pip
         run: |
+
           GCCV=$(brew list gcc --versions | awk '{print $2}' | awk -F . '{print $1}')
+
+          # link gfortran to gfortran-12 or equiv
+          GFORTRAN_PATH=$(which gfortran-${GCCV})
+          GFORTRAN_DIR=$(dirname "$GFORTRAN_PATH")
+          ln -s ${GFORTRAN_PATH} ${GFORTRAN_DIR}/gfortran
+
+          # might not be needed 
           export OMPI_FC=gfortran-${GCCV}
+
+          # Compile cosmosis at last
           FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
+
+          # dependencies
           pip install -r requirements.txt
 
       - name: Build standard library
