@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies with brew
         run: |
           brew update
-          brew install -v gcc fftw cfitsio gsl openblas python mpi4py open-mpi libomp numpy scipy
+          brew install --overwrite -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy
           # add python to the default path for subsequent stages
           echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
 
