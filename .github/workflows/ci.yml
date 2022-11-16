@@ -22,9 +22,7 @@ jobs:
         run: |
           brew install gcc fftw cfitsio gsl openblas python mpi4py open-mpi libomp numpy scipy
           # add python to the default path for subsequent stages
-          brew link gcc
           which gfortran
-
           echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
 
       - name: Install CosmoSIS with pip
