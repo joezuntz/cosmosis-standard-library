@@ -21,7 +21,8 @@ jobs:
       - name: Install dependencies with brew
         run: |
           brew update
-          brew install --overwrite --force -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy
+          # homebrew seems to ignore the --overwrite flag here.
+          brew install --overwrite  -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy ; true
           # add python to the default path for subsequent stages
           echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
 
