@@ -172,7 +172,7 @@ def get_class_outputs(block, c, config):
         sigma_8_z = [c.sigma(8.0, zi, h_units=True) for zi in z]
         block[names.growth_parameters, "z"] = z
         block[names.growth_parameters, "sigma_8"] = np.array(sigma_8_z)
-        block[names.growth_parameters, "fsigma_8"] = np.array(sigma_8_z)
+        block[names.growth_parameters, "fsigma_8"] = np.array(fsigma)
         block[names.growth_parameters, "d_z"] = np.array(D)
         block[names.growth_parameters, "f_z"] = np.array(f)
         block[names.growth_parameters, "a"] = 1/(1+z)

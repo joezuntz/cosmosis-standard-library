@@ -57,7 +57,7 @@ jobs:
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/planck_class.ini | tee output/class.log
+          cosmosis examples/planck_class.ini -p class.mpk=T | tee output/class.log
           # This may need updating as we modify the class interface
           # The settings are not optimized
           # grep 'Likelihood =  -5968.93' output/class.log
