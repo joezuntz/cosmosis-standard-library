@@ -45,6 +45,7 @@ OPTFLAG = -O3
 # OMPFLAG   = -fopenmp
 #OMPFLAG   = -mp -mp=nonuma -mp=allcores -g
 #OMPFLAG   = -openmp
+OMPFLAG=$(COSMOSIS_OMP_FLAGS) $(COSMOSIS_OMP_LDFLAGS)
 
 # all other compilation flags
 # JAZ - added GSL here not because it actually needs GSL but
@@ -207,7 +208,7 @@ else
 endif
 	# Have to run this install twice because otherwise it doesn't find its own install the first time
 	# Odd I know. It's because of how we're hacking the installation path.
-	cd python; export CC=$(CC); export PYTHONPATH=${PYTHONPATH}:$(PYTHONINSTALL);  $(PYTHON)  autosetup.py install   --prefix=$(MDIR)/classy_install;  $(PYTHON)  autosetup.py install   --prefix=$(MDIR)/classy_install
+	cd python; export CC=$(CC); export OMPFLAG="$(OMPFLAG)" export PYTHONPATH=${PYTHONPATH}:$(PYTHONINSTALL);  $(PYTHON)  autosetup.py install   --prefix=$(MDIR)/classy_install;  $(PYTHON)  autosetup.py install   --prefix=$(MDIR)/classy_install
 	rm python/autosetup.py
 
 clean: .base
