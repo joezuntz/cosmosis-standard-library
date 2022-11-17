@@ -26,7 +26,11 @@ jobs:
           
           # homebrew seems to ignore the --overwrite flag here.
           brew install --overwrite  -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy || true
-          brew link --overwrite python@3.11
+          brew link  -v --overwrite python@3.11
+          rm -v /usr/local/bin/python
+          rm -v /usr/local/bin/pip
+          ln -s /usr/local/bin/python3 /usr/local/bin/python
+          ln -s /usr/local/bin/pip3 /usr/local/bin/pip
           # add python to the default path for subsequent stages
           echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
 
@@ -50,16 +54,16 @@ jobs:
           which python3
 
           # Compile cosmosis at last
-          FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
+          FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip3 install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
 
           # dependencies
-          pip install -r requirements.txt
+          pip3 install -r requirements.txt
 
       - name: Build standard library
         shell: bash -l {0}
         run: |
-          python --version
-          which -a python
+          python3 --version
+          which -a python3
           source cosmosis-configure --brew-gcc
           make
 
