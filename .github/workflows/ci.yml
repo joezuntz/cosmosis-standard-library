@@ -23,16 +23,14 @@ jobs:
         run: |
           brew update
           brew list
+
+          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           
           # homebrew seems to ignore the --overwrite flag here.
-          brew install --overwrite  -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy || true
-          brew link  -v --overwrite python@3.11
-          rm -v /usr/local/bin/python
-          rm -v /usr/local/bin/pip
-          ln -s /usr/local/bin/python3 /usr/local/bin/python
-          ln -s /usr/local/bin/pip3 /usr/local/bin/pip
+          brew install  python@3.10 python@3.11  -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy || brew link --overwrite python@3.10
+          brew --prefix
           # add python to the default path for subsequent stages
-          echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
+          # echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
 
       - name: Install CosmoSIS with pip
         shell: bash -l {0}
