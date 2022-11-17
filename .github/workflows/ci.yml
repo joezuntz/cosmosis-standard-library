@@ -44,6 +44,11 @@ jobs:
           # might not be needed 
           export OMPI_FC=gfortran-${GCCV}
 
+          echo "Whiches!"
+          which pip
+          which python
+          which python3
+
           # Compile cosmosis at last
           FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
 
