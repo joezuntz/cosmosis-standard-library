@@ -52,10 +52,15 @@ jobs:
           which pip
           which python
           which python3
+          echo XXX COMPILING COSMOSIS
 
           # Compile cosmosis at last
           FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip3 install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
-
+          echo XXX SHOWING
+          pip3 show cosmosis
+          pip3 list
+          pip3 --version
+          echo XXX LS 
           ls /usr/local/opt/python/libexec/bin
 
           # dependencies
