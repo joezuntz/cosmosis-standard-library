@@ -56,12 +56,15 @@ jobs:
           # Compile cosmosis at last
           FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip3 install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
 
+          ls /usr/local/opt/python/libexec/bin
+
           # dependencies
           pip3 install -r requirements.txt
 
       - name: Build standard library
         shell: bash -l {0}
         run: |
+          export PATH=$PATH:/usr/local/opt/python/libexec/bin
           python3 --version
           which -a python3
           source cosmosis-configure --brew-gcc
