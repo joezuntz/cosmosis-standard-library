@@ -2,7 +2,7 @@
 
 set -e
 
-mkdir output
+mkdir -p output
 
 # Check the downloader works
 ./examples/get-planck-data.sh
