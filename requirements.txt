@@ -1,0 +1,8 @@
+# This is not a proper requirements file
+# It lists extra things that need installing assuming you have already installed cosmosis itself
+camb
+astropy
+fitsio
+cython
+scikit-learn
+fast-pt

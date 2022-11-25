@@ -11,6 +11,90 @@ on:
 
 
 jobs:
+  brew_test:
+    name: Brew Test
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies with brew
+        shell: bash -l {0}
+        run: |
+          brew update
+          brew list
+
+          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
+          
+          # homebrew seems to ignore the --overwrite flag here.
+          brew install  python@3.10 python@3.11  -v gcc fftw cfitsio gsl openblas mpi4py open-mpi libomp numpy scipy || brew link --overwrite python@3.10
+          brew --prefix
+          # add python to the default path for subsequent stages
+          # echo "/usr/local/opt/python/libexec/bin" >> $GITHUB_PATH
+
+      - name: Install CosmoSIS with pip
+        shell: bash -l {0}
+        run: |
+
+          GCCV=$(brew list gcc --versions | awk '{print $2}' | awk -F . '{print $1}')
+
+          # link gfortran to gfortran-12 or equiv
+          GFORTRAN_PATH=$(which gfortran-${GCCV})
+          GFORTRAN_DIR=$(dirname "$GFORTRAN_PATH")
+          ln -s ${GFORTRAN_PATH} ${GFORTRAN_DIR}/gfortran
+
+          # might not be needed 
+          export OMPI_FC=gfortran-${GCCV}
+
+          echo "Whiches!"
+          which pip
+          which python
+          which python3
+          echo XXX COMPILING COSMOSIS
+
+          # Compile cosmosis at last
+          FC=gfortran-${GCCV} CC=gcc-${GCCV} CXX=g++-${GCCV} MPIFC=mpif90 pip3 install -v --no-cache-dir --no-binary=cosmosis git+https://github.com/joezuntz/cosmosis@brew-fixes
+          echo XXX SHOWING
+          pip3 show cosmosis
+          pip3 list
+          pip3 --version
+          echo XXX LS 
+          ls /usr/local/opt/python/libexec/bin
+
+          # dependencies
+          pip3 install -r requirements.txt
+
+      - name: Build standard library
+        shell: bash -l {0}
+        run: |
+          export PATH=$PATH:/usr/local/opt/python/libexec/bin
+          python3 --version
+          which -a python3
+          source cosmosis-configure --brew-gcc
+          make
+
+      - name: Cache WMAP data
+        id: cache-wmap
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-wmap-data
+        with:
+          path: likelihood/wmap9/data/
+          key: wmap-9-data
+
+      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
+        name: Download WMAP data
+        run:  |
+          ./examples/get-wmap-data.sh
+
+      - name: Run Demos
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure --brew-gcc
+          .github/run-demos.sh
+
+
+
   conda_test:
     name: Conda Test
     runs-on: ${{ matrix.os }}
@@ -39,30 +123,6 @@ jobs:
           source cosmosis-configure
           make
 
-      - name: CAMB Planck
-        shell: bash -l {0}
-        run: |
-          # print out the configuration
-          python -m cosmosis.configure
-          source cosmosis-configure
-          export
-          mkdir output
-          # Check the downloader works
-          ./examples/get-planck-data.sh
-          # And that the pipeline runs afterwards
-          cosmosis examples/planck.ini | tee output/planck.log
-          grep 'Likelihood =  -6288.61' output/planck.log
-
-      - name: Class Planck
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/planck_class.ini | tee output/class.log
-          # This may need updating as we modify the class interface
-          # The settings are not optimized
-          # grep 'Likelihood =  -5968.93' output/class.log
-          # This seems to give different results on different systems
-
       - name: Cache WMAP data
         id: cache-wmap
         uses: actions/cache@v3
@@ -77,72 +137,10 @@ jobs:
         run:  |
           ./examples/get-wmap-data.sh
 
-      - name: WMAP likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/wmap.ini | tee output/wmap.log
-
-
-      - name: Pantheon emcee
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/pantheon.ini -p emcee.samples=20
-          cosmosis-postprocess examples/pantheon.ini -o output/pantheon
-          test -f output/pantheon/cosmological_parameters--omega_m.png
-
-      - name: DES Y1 likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y1.ini | tee output/des-y1.log
-          grep 'Likelihood =  5237.37' output/des-y1.log
-
-      - name: DES Y1 likelihood with cl_to_corr
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y1.ini -p 2pt_shear.file=./shear/cl_to_corr/cl_to_corr.py 2pt_shear.corr_type=xi | tee output/des-y1.log
-          grep 'Likelihood =  5237.3' output/des-y1.log
-
-      - name: DES Y3 likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3.ini -p pk_to_cl_gg.save_kernels=T pk_to_cl.save_kernels=T | tee output/des-y3.log
-          grep 'Likelihood =  6043.23' output/des-y3.log
-
-      - name: DES Y3 likelihood with Mira Titan
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3-mira-titan.ini | tee output/des-y3-mt.log
-          grep 'Likelihood =  6048.0' output/des-y3-mt.log
-
-      - name: DES Y3 likelihood with Mead nonlinear
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3.log
-          grep 'Likelihood =  6049.94' output/des-y3.log
-
-      - name: Euclid emulator
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/euclid-emulator.ini
-          test -f output/euclid-emulator/matter_power_nl/p_k.txt
-
-      - name: Log w example
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/w_model.ini | tee output/w_model.log
-
       - name: Run Demos
         shell: bash -l {0}
         run: |
+          source cosmosis-configure
           .github/run-demos.sh
 
 
