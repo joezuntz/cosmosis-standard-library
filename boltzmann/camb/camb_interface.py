@@ -462,7 +462,7 @@ def save_distances(r, p, block, more_config):
         block[names.distances, "rs_DV"] = rs_DV
         block[names.distances, "F_AP"] = F_AP
 
-def compute_growth_rates(r, block, P_tot, k, z, more_config):
+def compute_growth_factor(r, block, P_tot, k, z, more_config):
     if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
         # which we use for the growth.
@@ -473,18 +473,7 @@ def compute_growth_rates(r, block, P_tot, k, z, more_config):
     P_kmin = P_tot(z, kmin)
 
     D = np.sqrt(P_kmin / P_kmin[0]).squeeze()
-    a = 1/(1+z)
-
-    loga = np.log(a[::-1])
-
-    # Get the growth rate f = dlogD/dloga.
-    # Have to reverse the arrays to get everything going in the right order,
-    # since z is increasing so a is decreasing.
-    logD_spline = InterpolatedUnivariateSpline(loga, np.log(D[::-1]) )
-    f_spline = logD_spline.derivative()
-    f = f_spline(loga)[::-1].squeeze()
-
-    return f, D, a
+    return D
 
 
 
@@ -535,7 +524,8 @@ def save_matter_power(r, p, block, more_config):
     fsigma_8 = r.get_fsigma8()[::-1]
     rs_DV, H, DA, F_AP = r.get_BAO(z, p).T
 
-    f, D, a = compute_growth_rates(r, block, P_tot, k, z, more_config)
+    D = compute_growth_factor(r, block, P_tot, k, z, more_config)
+    f = fsigma_8 / sigma_8
 
     # Save growth rates and sigma_8
     block[names.growth_parameters, "z"] = z
