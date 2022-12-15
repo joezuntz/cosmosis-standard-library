@@ -298,8 +298,12 @@ def extract_camb_params(block, config, more_config):
     want_perturbations = more_config['mode'] not in [MODE_BG, MODE_THERM]
     want_thermal = more_config['mode'] != MODE_BG
 
+    # JMedit - check for input sigma8
+    samplesig8 = block.has_value(cosmo, 'sigma_8_input')
+    
     # if want_perturbations:
-    init_power = extract_initial_power_params(block, config, more_config)
+    if not samplesig8: #JMedit; if we're sampling sigma8, wait til we have A_s
+        init_power = extract_initial_power_params(block, config, more_config)
     nonlinear = extract_nonlinear_params(block, config, more_config)
 # else:
     #     init_power = None
@@ -323,7 +327,7 @@ def extract_camb_params(block, config, more_config):
     # Get optional parameters from datablock.
     cosmology_params = get_optional_params(block, cosmo, 
         ["TCMB", "YHe", "mnu", "nnu", "standard_neutrino_neff", "num_massive_neutrinos",
-        ("A_lens", "Alens")])
+         ("A_lens", "Alens")])
 
     if block.has_value(cosmo, "massless_nu"):
         warnings.warn("Parameter massless_nu is being ignored. Set nnu, the effective number of relativistic species in the early Universe.")
@@ -340,7 +344,14 @@ def extract_camb_params(block, config, more_config):
         cosmology_params["H0"] = block[cosmo, "h0"]*100
     else:
         cosmology_params["cosmomc_theta"] = block[cosmo, "cosmomc_theta"]/100
-    
+
+    #JMedit
+    if samplesig8:
+        # compute linear matter power spec to figure out what A_s should be
+        #  for desired input sigma8, add it to the datblock
+        sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reion)
+        init_power = extract_initial_power_params(block, config, more_config)
+        
     p = camb.CAMBparams(
         InitPower = init_power,
         Recomb = recomb,
@@ -451,7 +462,7 @@ def save_distances(r, p, block, more_config):
         block[names.distances, "rs_DV"] = rs_DV
         block[names.distances, "F_AP"] = F_AP
 
-def compute_growth_rates(r, block, P_tot, k, z, more_config):
+def compute_growth_factor(r, block, P_tot, k, z, more_config):
     if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
         # which we use for the growth.
@@ -462,18 +473,7 @@ def compute_growth_rates(r, block, P_tot, k, z, more_config):
     P_kmin = P_tot(z, kmin)
 
     D = np.sqrt(P_kmin / P_kmin[0]).squeeze()
-    a = 1/(1+z)
-
-    loga = np.log(a[::-1])
-
-    # Get the growth rate f = dlogD/dloga.
-    # Have to reverse the arrays to get everything going in the right order,
-    # since z is increasing so a is decreasing.
-    logD_spline = InterpolatedUnivariateSpline(loga, np.log(D[::-1]) )
-    f_spline = logD_spline.derivative()
-    f = f_spline(loga)[::-1].squeeze()
-
-    return f, D, a
+    return D
 
 
 
@@ -524,7 +524,8 @@ def save_matter_power(r, p, block, more_config):
     fsigma_8 = r.get_fsigma8()[::-1]
     rs_DV, H, DA, F_AP = r.get_BAO(z, p).T
 
-    f, D, a = compute_growth_rates(r, block, P_tot, k, z, more_config)
+    D = compute_growth_factor(r, block, P_tot, k, z, more_config)
+    f = fsigma_8 / sigma_8
 
     # Save growth rates and sigma_8
     block[names.growth_parameters, "z"] = z
@@ -566,6 +567,47 @@ def save_cls(r, p, block):
         block[names.cmb_cl, "PT"] = cl[2:,1]*(ell*(ell+1))/(2*np.pi)
         block[names.cmb_cl, "PE"] = cl[2:,2]*(ell*(ell+1))/(2*np.pi)
 
+
+# JMedit: new function here
+def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reion):
+    """
+    If input parameters include sigma_8_input, convert that to A_s.
+
+    This function will run CAMB once to compute the linear  matter power spectrum 
+
+    This function is adapted from the sigma8toAs module in the
+    KIDS KCAP repoistory written by by Tilman Troester.
+    """
+    sigma_8_input = block[cosmo,'sigma_8_input']
+    temp_As = 2.1e-9
+    block[cosmo,'A_s'] = temp_As
+    init_power_temp = extract_initial_power_params(block, config, more_config)
+
+    # do nothing except get linear power spectrum
+    p_temp = camb.CAMBparams(WantTransfer=True,
+                             Want_CMB=False, Want_CMB_lensing=False, DoLensing=False,
+                             NonLinear="NonLinear_none",
+                             WantTensors=False, WantVectors=False, WantCls=False,
+                             WantDerivedParameters=False,
+                             want_zdrag=False, want_zstar=False,\
+                             DarkEnergy=dark_energy,
+                             InitPower = init_power_temp,\
+                             )
+    # making these choices match main setup
+    p_temp.set_accuracy(**more_config["accuracy_params"])
+    p_temp.set_cosmology(ombh2 = block[cosmo, 'ombh2'],
+                         omch2 = block[cosmo, 'omch2'],
+                         omk = block[cosmo, 'omega_k'],
+                         **more_config["cosmology_params"],
+                         **cosmology_params)
+    p_temp.set_matter_power(redshifts=[0.], nonlinear=False, **more_config["transfer_params"])
+    p_temp.Reion = reion
+    r_temp = camb.get_results(p_temp)
+    temp_sig8 = r_temp.get_sigma8()[-1] #what sigma8 comes out from using temp_As?
+    As = temp_As*(sigma_8_input/temp_sig8)**2
+    block[cosmo,'A_s'] = As
+    #print(">>>>> temp_As",temp_As,'As',As,'sigma_8_input',sigma_8_input,'temp_sig8',temp_sig8)
+    
 
 def execute(block, config):
     config, more_config = config
