@@ -27,11 +27,12 @@ jobs:
         with:
           activate-environment: cosmosis-env
           channels: conda-forge
+          mamba-version: "*"
           python-version: ${{ matrix.pyversion }}
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: conda install -c conda-forge cosmosis cosmosis-build-standard-library
+        run: mamba install -c conda-forge cosmosis cosmosis-build-standard-library
 
       - name: Build standard library
         shell: bash -l {0}
