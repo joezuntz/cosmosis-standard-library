@@ -114,6 +114,14 @@ jobs:
           cosmosis examples/des-y3.ini -p pk_to_cl_gg.save_kernels=T pk_to_cl.save_kernels=T | tee output/des-y3.log
           grep 'Likelihood =  6043.23' output/des-y3.log
 
+      - name: DES Y3 cosmic shear likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3-shear.ini | tee output/des-y3.log
+          grep 'Likelihood =  2957.03' output/des-y3.log
+
+
       - name: DES Y3 likelihood with Mira Titan
         shell: bash -l {0}
         run: |
