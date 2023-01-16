@@ -250,11 +250,14 @@ def extract_dark_energy_params(block, config, more_config):
 def extract_initial_power_params(block, config, more_config):
     optional_param_names = ["nrun", "nrunrun", "nt", "ntrun", "r"]
     optional_params = get_optional_params(block, cosmo, optional_param_names)
-
+    if block.has_value(cosmo, "A_s"):                                                                                                                                        
+        A_s = block[cosmo, 'A_s']                                                                                                                                            
+    else:                                                                                                                                                                    
+        A_s = np.exp(block[cosmo, 'logA'])/1e10
     init_power = camb.InitialPowerLaw()
     init_power.set_params(
         ns = block[cosmo, 'n_s'],
-        As = block[cosmo, 'A_s'],
+        As = A_s,
         **optional_params,
         **more_config["initial_power_params"]
     )
