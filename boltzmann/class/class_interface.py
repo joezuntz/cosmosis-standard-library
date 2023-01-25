@@ -155,7 +155,8 @@ def get_class_outputs(block, c, config):
             for i, ki in enumerate(k):
                 for j, zi in enumerate(z):
                     P[i, j] = c.pk_lin(ki, zi)
-            block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+            # We transpose P here to match the camb convention
+            block.put_grid("matter_power_lin", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
 
         # CDM+baryons power spectrum
         if config['save_cdm_baryon_power_lin']:
@@ -163,7 +164,7 @@ def get_class_outputs(block, c, config):
             for i, ki in enumerate(k):
                 for j, zi in enumerate(z):
                     P[i, j] = c.pk_cb_lin(ki, zi)
-            block.put_grid('cdm_baryon_power_lin', 'k_h', k/h0, 'z', z, 'p_k', P*h0**3)
+            block.put_grid('cdm_baryon_power_lin', 'z', z, 'k_h', k/h0, 'p_k', P.T * h0 **3)
 
         # Get growth rates and sigma_8
         D = [c.scale_independent_growth_factor(zi) for zi in z]
@@ -182,7 +183,7 @@ def get_class_outputs(block, c, config):
                 for j, zi in enumerate(z):
                     P[i, j] = c.pk(ki, zi)
 
-            block.put_grid("matter_power_nl", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+            block.put_grid("matter_power_nl", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
 
 
     ##
@@ -191,6 +192,7 @@ def get_class_outputs(block, c, config):
 
     # save redshifts of samples
     block[distances, 'z'] = z
+    block[distances, 'a'] = 1 / (1 + z)
     block[distances, 'nz'] = nz
 
     # Save distance samples
