@@ -216,6 +216,10 @@ def get_class_outputs(block, c, config):
     block[distances, 'age'] = c.age()
     block[distances, 'rs_zdrag'] = c.rs_drag()
 
+    # Save H(z), which is also in Mpc^-1 units, like in camb
+    h_z = np.array([c.Hubble(zi) for zi in z])
+    block[distances, 'H'] = h_z
+
     ##
     # Now the CMB C_ell
     ##
