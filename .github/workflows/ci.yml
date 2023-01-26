@@ -27,7 +27,8 @@ jobs:
         with:
           activate-environment: cosmosis-env
           channels: conda-forge
-          mamba-version: "*"
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
           python-version: ${{ matrix.pyversion }}
 
       - name: Install dependencies with conda
