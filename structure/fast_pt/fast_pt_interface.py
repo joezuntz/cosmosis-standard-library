@@ -93,8 +93,11 @@ def execute(block, config):
     need_reinit = False
     lin = names.matter_power_lin
     nl = names.matter_power_nl
-    k0 = block[lin, "k_h"]
-    knl1 = block[nl, "k_h"]
+
+    z, k0, Pkz = block.get_grid(lin, "z", "k_h", "P_k")
+    znl, knl1, Pkznl = block.get_grid(nl, "z", "k_h", "P_k")
+
+
     # note that extension, if needed, must be done on Plin at every step.
     if config['always_init']:
         need_reinit = True
@@ -116,17 +119,12 @@ def execute(block, config):
     
     k0log=np.log(k0)
     knl1log=np.log(knl1)
-    Pkz = block[lin, "P_k"]
-    Pkznl = block[nl, "P_k"]
     P0 = Pkz[0,:]
     ind=np.where(k0>0.03)[0][0]
     #note minor scale-dependence in growth factor.
     ##use z values from linear CAMB
-    z = block[lin, "z"]
     Growth2 = Pkz[:,ind]/Pkz[0,ind]
 
-    ##use z values from halofit (typically the same as lin)
-    znl = block[nl, "z"]
     #Growth2 = Pkznl[:,ind]/Pkz[0,ind]
     #test that nl and lin have same z values
     msg='lin and nl power spectra are calculated at different z values.'
