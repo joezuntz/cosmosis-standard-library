@@ -25,6 +25,7 @@ class ShearRatioLikelihood(GaussianLikelihood):
 
         nbin_source = self.ratio_data['nbin_source']  # 4, we use all the source bins
         nbin_lens = self.ratio_data['nbin_lens'] # 3, because we don't use all the lens bins
+        nratios_per_lens = self.ratio_data['nratios_per_lens'] # 3, because there are 3 independent ratios we can construct given 4 source bins, per each lens bin.
 
         self.theta = self.ratio_data['theta_data']
         # Options on masking the different parts
@@ -32,19 +33,17 @@ class ShearRatioLikelihood(GaussianLikelihood):
         theta_min = [
             options.get_double_array_1d(f"theta_min_{i+1}")
             for i in range(nbin_lens)
-        ]
+        ] # theta_min is defined per each lens-source bin ratio. 
 
 
         # Generate scale masks for each bin pair.
         # These are used in the calculation of each ratio from the range of points
         self.masks = {}
-        for s in range(1, nbin_lens + 1):
-            # we omit the final source bin because we are getting ratios
-            # of bins
-            for l in range(1, nbin_source):
-                t_min = theta_min[s - 1][l - 1]
+        for sc in range(1, nratios_per_lens + 1):
+            for l in range(1, nbin_lens):
+                t_min = theta_min[sc - 1][l - 1]
                 t_max = theta_max[l - 1]
-                self.masks[(s, l)] = (self.theta > t_min) & (self.theta <= t_max)
+                self.masks[(sc, l)] = (self.theta > t_min) & (self.theta <= t_max)
 
         self.inv_cov_individual_ratios = {}
 
@@ -92,6 +91,7 @@ class ShearRatioLikelihood(GaussianLikelihood):
         def get_gamma_t(s, l):
             gamma_t = block[self.y_section, f'bin_{l}_{s}']
             if not bin_avg:
+                # self.x here is the self.theta, returned above in build_data.
                 gamma_t = interp1d(theta, gamma_t)(self.x) 
             return gamma_t
 
