@@ -21,19 +21,20 @@ class ShearRatioLikelihood(GaussianLikelihood):
         filename = options["data_file"]
         with open(filename, "rb") as f:
             self.ratio_data = pickle.load(f)
-        #self.ratio_data = np.load(filename, allow_pickle=True, encoding='latin1').item()
 
         nbin_source = self.ratio_data['nbin_source']  # 4, we use all the source bins
         nbin_lens = self.ratio_data['nbin_lens'] # 3, because we don't use all the lens bins
         nratios_per_lens = self.ratio_data['nratios_per_lens'] # 3, because there are 3 independent ratios we can construct given 4 source bins, per each lens bin.
 
         self.theta = self.ratio_data['theta_data']
+
         # Options on masking the different parts
+        # theta_min is defined per each lens-source bin ratio. 
         theta_max = options.get_double_array_1d(f"theta_max")
         theta_min = [
             options.get_double_array_1d(f"theta_min_{i+1}")
             for i in range(nbin_lens)
-        ] # theta_min is defined per each lens-source bin ratio. 
+        ] 
 
 
         # Generate scale masks for each bin pair.
@@ -74,7 +75,9 @@ class ShearRatioLikelihood(GaussianLikelihood):
 
         bin_avg = block[self.y_section, 'bin_avg']
 
-        # The reference source bin we compare to is the final bin, and we do three ratios using the four source bins: 1/4, 2/4, 3/4  (Note this could be different for other analyses)
+        # The reference source bin we compare to is the final bin, and we do three
+        # ratios using the four source bins: 1/4, 2/4, 3/4
+        # (Note this could be different for other analyses)
         s_ref = self.nbin_source
 
         theory_ratios = []
