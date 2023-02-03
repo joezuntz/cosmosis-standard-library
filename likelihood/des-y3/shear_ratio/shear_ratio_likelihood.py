@@ -40,7 +40,7 @@ class ShearRatioLikelihood(GaussianLikelihood):
         # These are used in the calculation of each ratio from the range of points
         self.masks = {}
         for sc in range(1, nratios_per_lens + 1):
-            for l in range(1, nbin_lens):
+            for l in range(1, nbin_lens + 1):
                 t_min = theta_min[sc - 1][l - 1]
                 t_max = theta_max[l - 1]
                 self.masks[(sc, l)] = (self.theta > t_min) & (self.theta <= t_max)
@@ -52,10 +52,10 @@ class ShearRatioLikelihood(GaussianLikelihood):
         print(len(ind_cov_data), nbin_source, nbin_lens)
         n = 0
         for l in range(1, nbin_lens + 1):
-            for s in range(1, nbin_source):
-                mask = self.masks[s, l]
+            for sc in range(1, nratios_per_lens + 1):
+                mask = self.masks[sc, l]
                 P = ind_cov_data[n][mask][:, mask]
-                self.inv_cov_individual_ratios[s, l] = P
+                self.inv_cov_individual_ratios[sc, l] = P
                 n += 1
 
         self.nbin_lens = nbin_lens
@@ -74,7 +74,7 @@ class ShearRatioLikelihood(GaussianLikelihood):
 
         bin_avg = block[self.y_section, 'bin_avg']
 
-        # The reference source bin we compare to is the final bin
+        # The reference source bin we compare to is the final bin, and we do three ratios using the four source bins: 1/4, 2/4, 3/4  (Note this could be different for other analyses)
         s_ref = self.nbin_source
 
         theory_ratios = []
