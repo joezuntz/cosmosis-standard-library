@@ -1058,6 +1058,22 @@ class SpectrumType(Enum):
         prefactor_type = (None, "lensing")
         has_rsd = False
 
+    class LingalCmbkappa(LingalLensingSpectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("N", "K")
+        autocorrelation = False
+        name = "galaxy_cmbkappa_cl"
+        prefactor_type = (None, "lensing")
+        has_rsd = False
+
+    class MagnificationCmbkappa(Spectrum):
+        power_3d_type = MatterPower3D
+        kernel_types = ("W", "K")
+        autocorrelation = False
+        name = "magnification_cmbkappa_cl"
+        prefactor_type = ("mag", "lensing")
+        has_rsd = False
+
     class DensityCmbkappa(Spectrum):
         power_3d_type = MatterPower3D
         kernel_types = ("N", "K")
@@ -1453,10 +1469,16 @@ class SpectrumCalculator(object):
             kernel_type, sample_name = key
 
             # For all the sources we need the n(z)
-            if sample_name not in self.kernels:
+            if ((sample_name not in self.kernels) and (sample_name != 'cmb')):
                 section_name = "nz_"+sample_name
                 self.kernels[sample_name] = TomoNzKernel.from_block(block, section_name, norm=True)
-
+            if ((sample_name not in self.kernels) and (sample_name == 'cmb')):
+                zmin = 0.001
+                zmax = block['distances','zstar']
+                #EB added - very hacky
+                z_arr_for_cmb = np.exp(np.linspace(np.log(zmin), np.log(zmax), num = 1000))
+                self.kernels[sample_name] =  TomoNzKernel(z_arr_for_cmb, 0, is_cmb_lensing = True)
+                
             if kernel_type == "N":
                 self.kernels[sample_name].set_nofchi_splines(self.chi_of_z, self.dchidz,
                     clip=self.clip_chi_kernels)
@@ -1465,6 +1487,11 @@ class SpectrumCalculator(object):
                 self.kernels[sample_name].set_wofchi_splines(self.chi_of_z,
                     self.dchidz, self.a_of_chi, clip=self.clip_chi_kernels,
                     dchi=self.shear_kernel_dchi)
+
+            elif kernel_type == 'K' and sample_name == 'cmb':
+                chi_star = block['distances','chistar']
+                h0 = block[names.cosmological_parameters, "h0"]
+                self.kernels[sample_name].set_cmblensing_splines(self.chi_of_z, self.a_of_chi, chi_star*h0, clip = self.clip_chi_kernels)            
 
             elif kernel_type == "W_W":
                 self.kernels[sample_name].set_wwofchi_splines(self.chi_of_z,

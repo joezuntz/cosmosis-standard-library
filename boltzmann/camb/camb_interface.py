@@ -93,7 +93,8 @@ def setup(options):
     config['want_zdrag'] = mode != MODE_BG
     config['want_zstar'] = config['want_zdrag']
 
-
+    more_config['want_chistar'] = options.get_bool(opt, 'want_chistar', default=False)
+    
     more_config["lmax_params"] = get_optional_params(options, opt, ["max_eta_k", "lens_potential_accuracy",
                                                                     "lens_margin", "k_eta_fac", "lens_k_eta_reference",
                                                                     #"min_l", "max_l_tensor", "Log_lvalues", , "max_eta_k_tensor"
@@ -462,6 +463,10 @@ def save_distances(r, p, block, more_config):
         block[names.distances, "rs_DV"] = rs_DV
         block[names.distances, "F_AP"] = F_AP
 
+    if more_config['want_chistar']:
+        chistar = (r.conformal_time(0)- r.tau_maxvis)
+        block[names.distances, "CHISTAR"] = chistar
+
 def compute_growth_rates(r, block, P_tot, k, z, more_config):
     if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
@@ -622,8 +627,7 @@ def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reio
 def execute(block, config):
     config, more_config = config
     p = extract_camb_params(block, config, more_config)
-    
-
+        
     try:
         if (not p.WantCls) and (not p.WantTransfer):
             # Background only mode
