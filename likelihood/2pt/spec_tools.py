@@ -72,7 +72,7 @@ class TheorySpectrum(object):
     noise_var is a the noise variance per mode for each redshift bin
     """
     def __init__(self, name, types, nbin_a, nbin_b, angles, spectra, is_auto,
-        noise_var_per_mode=None, auto_only = False,  bin_pairs=None):
+                 noise_var_per_mode=None, auto_only = False,  bin_pairs=None, save_name = ''):
 
         self.name = name
         self.types = types
@@ -94,9 +94,29 @@ class TheorySpectrum(object):
             if bin_pair not in spectra:
                 raise ValueError("Missing spectrum pairs {}".format(bin_pair))
 
+        #Useful when we have multiple two point functions that we want to label separately
+        self.save_name = save_name
+        #WEIRD
+        if (save_name):
+            self.type_name = name.replace("_%s"%save_name, "")
+        else:
+            self.type_name = name
+
+        #Some fields (e.g. CMB lensing) have ell-dependent noise
+        #self.noise_func = noise_func
+        #if (noise_func is None):
+        #    self.has_elldependent_noise = False
+        #else:
+        #    self.has_elldependent_noise = True        
+
     def set_noise(self, noise):
         self.noise_var_per_mode = noise
 
+    #CMB kappa added - kappa map has ell-dependent noise                                                  
+    #def set_elldependent_noise(self, noise_func):
+    #    self.noise_func = noise_func
+    #    self.has_elldependent_noise = True
+        
     def _set_bin_pairs(self, bin_pairs):
         if bin_pairs is not None:
             self.bin_pairs = bin_pairs
@@ -141,6 +161,7 @@ class TheorySpectrum(object):
         if save_name:
             spectrum_name = section_name.replace("_%s"%save_name, "")
 
+            
         #Get types from spectrum_name
         type_table_items = list(type_table.items())
         type_names_list, type_info_list = [t[0] for t in type_table_items], [t[1] for t in type_table_items]

@@ -94,6 +94,8 @@ def setup(options):
     config['want_zstar'] = config['want_zdrag']
 
     more_config['want_chistar'] = options.get_bool(opt, 'want_chistar', default=False)
+    more_config['n_logz'] = options.get_int(opt, 'n_logz', default=0)
+    more_config['zmax_logz'] = options.get_double(opt, 'zmax_logz', default = 1100.)
     
     more_config["lmax_params"] = get_optional_params(options, opt, ["max_eta_k", "lens_potential_accuracy",
                                                                     "lens_margin", "k_eta_fac", "lens_k_eta_reference",
@@ -441,6 +443,10 @@ def save_distances(r, p, block, more_config):
     z_background = np.linspace(
         more_config["zmin_background"], more_config["zmax_background"], more_config["nz_background"])
 
+    #If desired, append logarithmically distributed redshifts
+    log_z = np.logspace(np.log10(more_config["zmax_background"]), np.log10(more_config['zmax_logz']), num = more_config['n_logz'])
+    z_background = np.append(z_background, log_z[1:])
+    
     # Write basic distances and related quantities to datablock
     block[names.distances, "nz"] = len(z_background)
     block[names.distances, "z"] = z_background

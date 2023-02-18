@@ -70,7 +70,8 @@ class Types(Enum):
     galaxy_shear_plus_real = "G+R"
     galaxy_shear_minus_real = "G-R"
     cmb_kappa_real = "CKR"
-
+    cmb_kappa_fourier = "CKF"
+    
     @classmethod
     def lookup(cls, value):
         for T in cls:

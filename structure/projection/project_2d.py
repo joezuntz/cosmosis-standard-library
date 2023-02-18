@@ -356,7 +356,7 @@ class Spectrum(object):
         """
         # Get the required 2d power spline P(chi, logk)
         P_chi_logk_spline = self.get_power_spline(block, bin1, bin2)
-
+        
         # Get the kernels
         K1 = self.source.kernels[self.sample_a].get_kernel_spline(self.kernel_types[0], bin1)
         K2 = self.source.kernels[self.sample_b].get_kernel_spline(self.kernel_types[1], bin2)
@@ -380,6 +380,7 @@ class Spectrum(object):
         # Rescale by the h, Omega_m, etc factor, which depends which spectrum
         # us being computed
         c_ell *= self.get_prefactor(block, bin1, bin2)
+
         return c_ell
 
     def compute_exact(self, block, ell, bin1, bin2, dlogchi=None,
@@ -1475,7 +1476,6 @@ class SpectrumCalculator(object):
             if ((sample_name not in self.kernels) and (sample_name == 'cmb')):
                 zmin = 0.001
                 zmax = block['distances','zstar']
-                #EB added - very hacky
                 z_arr_for_cmb = np.exp(np.linspace(np.log(zmin), np.log(zmax), num = 1000))
                 self.kernels[sample_name] =  TomoNzKernel(z_arr_for_cmb, 0, is_cmb_lensing = True)
                 
@@ -1491,7 +1491,7 @@ class SpectrumCalculator(object):
             elif kernel_type == 'K' and sample_name == 'cmb':
                 chi_star = block['distances','chistar']
                 h0 = block[names.cosmological_parameters, "h0"]
-                self.kernels[sample_name].set_cmblensing_splines(self.chi_of_z, self.a_of_chi, chi_star*h0, clip = self.clip_chi_kernels)            
+                self.kernels[sample_name].set_cmblensing_splines(self.chi_of_z, self.a_of_chi, chi_star*h0, clip = self.clip_chi_kernels)
 
             elif kernel_type == "W_W":
                 self.kernels[sample_name].set_wwofchi_splines(self.chi_of_z,
@@ -1659,7 +1659,7 @@ class SpectrumCalculator(object):
 
             # We can optionally save the kernels that go into the
             # integration as well.  This is useful for e.g. plotting
-            # things.  Thi
+            # things.  
             if self.save_kernels:
                 self.save_kernels_to_block(block)
 
