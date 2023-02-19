@@ -96,7 +96,7 @@ def get_Pk_basis_funcs(block, pt_type,
     log_knl = np.log(knl)
 
     n_pad = len(klin_fpt)
-    fastpt = FASTPT.FASTPT(klin_fpt, to_do=['one_loop_dd'],
+    fastpt = FASTPT(klin_fpt, to_do=['one_loop_dd'],
         low_extrap=-5, high_extrap=3, n_pad=n_pad)
 
     if pt_type in ['oneloop_lag_bk']:
