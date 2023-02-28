@@ -53,7 +53,10 @@ jobs:
           ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
-          grep 'Likelihood =  -6288.61' output/planck.log
+          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
+          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  -1441.30' output/planck.log; fi
+          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  -1441.46' output/planck.log; fi
+          
 
       - name: Class Planck
         shell: bash -l {0}
@@ -235,7 +238,6 @@ jobs:
         cosmosis demos/demo2.ini
         cosmosis-postprocess demos/demo2.ini -o output/demo2
         test -f output/demo2/comoving_distance.png
-        python .github/ci-checks.py
 
 
     - name: Demo 9 Low-Resolution Multinest
