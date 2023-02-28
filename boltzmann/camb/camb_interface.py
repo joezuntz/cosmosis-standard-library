@@ -611,7 +611,7 @@ def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reio
 
 def execute(block, config):
     config, more_config = config
-
+    p = "<Error occurred during parameter setup>"
     try:
         p = extract_camb_params(block, config, more_config)
 
