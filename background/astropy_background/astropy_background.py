@@ -87,7 +87,9 @@ def execute(block, config):
 	#Calculate distances
 	z = np.linspace(0.0, zmax, nz)
 	a = 1/(1.+z)
-	mu = model.distmod(z)
+	mu = np.zeros(z.size)
+	mu[0] = -np.inf
+	mu[1:] = model.distmod(z[1:])
 	D_L = model.luminosity_distance(z).to_value(astropy.units.Mpc)
 	D_A = model.angular_diameter_distance(z).to_value(astropy.units.Mpc)
 	D_M = model.comoving_distance(z).to_value(astropy.units.Mpc)
