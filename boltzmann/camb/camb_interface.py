@@ -444,18 +444,37 @@ def save_distances(r, p, block, more_config):
     block[names.distances, "nz"] = len(z_background)
     block[names.distances, "z"] = z_background
     block[names.distances, "a"] = 1/(z_background+1)
-    block[names.distances, "D_A"] = r.angular_diameter_distance(z_background)
-    block[names.distances, "D_M"] = r.comoving_radial_distance(z_background)
-    d_L = r.luminosity_distance(z_background)
-    block[names.distances, "D_L"] = d_L
+
+    D_C = r.comoving_radial_distance(z_background)
+    H = r.h_of_z(z_background)
+    D_H = 1 / H[0]
+
+    if p.omk == 0:
+        D_M = D_C
+    elif p.omk < 0:
+        s = np.sqrt(-p.omk)
+        D_M = (D_H / s)  * np.sin(s * D_C / D_H)
+    else:
+        s = np.sqrt(p.omk)
+        D_M = (D_H / s) * np.sinh(s * D_C / D_H)
+
+    D_L = D_M * (1 + z_background)
+    D_A = D_M / (1 + z_background)
+    D_V = ((1 + z_background)**2 * z_background * D_A**2 / H)**(1./3.)
 
     # Deal with mu(0), which is -np.inf
-    mu = np.zeros_like(d_L)
-    pos = d_L > 0
-    mu[pos] = 5*np.log10(d_L[pos])+25
+    mu = np.zeros_like(D_L)
+    pos = D_L > 0
+    mu[pos] = 5*np.log10(D_L[pos])+25
     mu[~pos] = -np.inf
+
+    block[names.distances, "D_C"] = D_C
+    block[names.distances, "D_M"] = D_M
+    block[names.distances, "D_L"] = D_L
+    block[names.distances, "D_A"] = D_A
+    block[names.distances, "D_V"] = D_V
+    block[names.distances, "H"] = H
     block[names.distances, "MU"] = mu
-    block[names.distances, "H"] = r.h_of_z(z_background)
 
     if more_config['do_bao']:
         rs_DV, _, _, F_AP = r.get_BAO(z_background, p).T
@@ -606,7 +625,6 @@ def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reio
     temp_sig8 = r_temp.get_sigma8()[-1] #what sigma8 comes out from using temp_As?
     As = temp_As*(sigma_8_input/temp_sig8)**2
     block[cosmo,'A_s'] = As
-    #print(">>>>> temp_As",temp_As,'As',As,'sigma_8_input',sigma_8_input,'temp_sig8',temp_sig8)
     
 
 def execute(block, config):
