@@ -97,6 +97,13 @@ jobs:
           cosmosis-postprocess examples/pantheon.ini -o output/pantheon
           test -f output/pantheon/cosmological_parameters--omega_m.png
 
+      - name: PantheonPlusAndShoes
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/pantheon_plus_shoes.ini -p runtime.sampler=test | tee output/pantheon_plus_shoes_log.txt
+          grep 'Likelihood =  -738.23' output/pantheon_plus_shoes_log.txt
+
       - name: DES Y1 likelihood
         shell: bash -l {0}
         run: |
