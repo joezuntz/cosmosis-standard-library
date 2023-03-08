@@ -34,6 +34,18 @@ params:
         meaning: Spacing of samples to compute n(z) at.
         type: real
         default:
+    enforce_equal_numbers:
+	meaning: No matter how n(z) gets divided, specify that each bin has equal number density
+        type: bool
+        default: F
+    z_edges:
+	meaning: Manually specified redshift bin edges. If nbin - 1 values passed,
+	   these are the bounds of photometric selection for those nbin bins.
+	   If 2 values are passed, they specify a minimum and maximum redshift between
+	   which galaxies are divided into equal number samples. 
+        type: real 1d
+        default: None
+    
 inputs:
     number_density_params:
         alpha:
@@ -78,3 +90,6 @@ outputs:
             meaning: The nominal edges of the redshift bins (i.e. edges if no photometric
                 errors)
             type: real 1d
+	NGAL_{}:
+	    meaning: number density of redshift bin i
+	    type: real
