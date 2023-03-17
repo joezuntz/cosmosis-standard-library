@@ -67,13 +67,12 @@ def find_bins(z, nz_true, nbin, zmin=None, zmax=None):
     """
     if zmax is None:
         zmax = z.max()
+
     if zmin is not None:
-        zmin = z.min()
-    w =(z>zmin)*(z<zmax) # only sum counts in specified range
+        w =(z>zmin)*(z<zmax) # only sum counts in specified range
     else:
         zmin=0.
         w=1.
-
 
 
     nz_true = nz_true*w
