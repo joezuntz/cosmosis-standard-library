@@ -54,7 +54,7 @@ jobs:
           python -m cosmosis.configure
           source cosmosis-configure
           export
-          mkdir output
+          mkdir -p output
           # Check the downloader works
           ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
