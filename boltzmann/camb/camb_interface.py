@@ -106,7 +106,7 @@ def setup(options):
     more_config["cosmology_params"] = get_optional_params(options, opt, ["neutrino_hierarchy" ,"theta_H0_range"])
 
     if 'theta_H0_range' in more_config['cosmology_params']:
-        more_config['cosmology_params'] = [float(x) for x in more_config['cosmology_params']['theta_H0_range'].split()]
+        more_config['cosmology_params']['theta_H0_range'] = [float(x) for x in more_config['cosmology_params']['theta_H0_range'].split()]
 
     more_config['do_reionization'] = options.get_bool(opt, 'do_reionization', default=True)
     more_config['use_optical_depth'] = options.get_bool(opt, 'use_optical_depth', default=True)
