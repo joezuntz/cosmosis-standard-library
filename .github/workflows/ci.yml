@@ -41,6 +41,12 @@ jobs:
           source cosmosis-configure
           make
 
+      - name: Smail example
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/various-spectra.ini
+
       - name: CAMB Planck
         shell: bash -l {0}
         run: |
@@ -48,7 +54,7 @@ jobs:
           python -m cosmosis.configure
           source cosmosis-configure
           export
-          mkdir output
+          mkdir -p output
           # Check the downloader works
           ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
