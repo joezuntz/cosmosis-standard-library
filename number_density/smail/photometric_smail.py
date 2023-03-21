@@ -178,10 +178,13 @@ def setup(options):
     dz = options.get_double(option_section, "dz", default=0.01)
     zmax = options.get_double(option_section, "zmax", default=4.0)
     zmin = options.get_double(option_section, "zmin", default=0.)
+
     # how many redshift bins are we dividing distribution into?
     nbin = options.get_int(option_section, "nbin")
+
     # specify that number densities for bins are equal
     force_equal = options.get_bool(option_section,"enforce_equal_numbers",default=False)
+
     # where to find input parameters and how to store in datablock
     in_section = options.get_string(option_section, "input_section", default=section_names.number_density_params)
     out_section = options.get_string(option_section, "output_section", default=section_names.wl_number_density)
@@ -190,11 +193,10 @@ def setup(options):
     if options.has_value(option_section, 'z_edges'):
         val = options[option_section,'z_edges']
         input_z_edges= np.atleast_1d(np.array(val, dtype=float))
-        if ((input_z_edges.size!=2) and (input_z_edges.size -1) !=nbin):
+        if (input_z_edges.size != 2) and (input_z_edges.size - 1 != nbin):
             raise ValueError("Incompatible nbin and zedges in smail module: nbin={} and z_edges.size={}".format(nbin,input_z_edges.size))
     else:
         input_z_edges = None
-            
                             
     return (dz, zmin, zmax, nbin, in_section, out_section, input_z_edges,force_equal)
 
