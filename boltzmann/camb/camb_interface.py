@@ -493,7 +493,7 @@ def save_distances(r, p, block, more_config):
         block[names.distances, "CHISTAR"] = chistar
 
 def compute_growth_factor(r, block, P_tot, k, z, more_config):
-]    if P_tot is None:
+    if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
         # which we use for the growth.
         P_tot = r.get_matter_power_interpolator(nonlinear=False, extrap_kmax=more_config['kmax_extrapolate'])
