@@ -33,24 +33,23 @@ class TwoPointGammatMargLikelihood(twopt_like.TwoPointLikelihood):
     def build_data(self):
         filename = self.options.get_string('data_file')
 
-        #IS THIS USED???
-        self.suffix = self.options.get_string('suffix', default="")
-        if self.suffix:
-            self.suffix = "_" + self.suffix
-
         covmat_name = self.options.get_string("covmat_name", "COVMAT")
-
-        #Useful to be able to label two-oint functions with different suffixes
+        
+        # Suffixes to added on to two point data from e.g. different experiments
         suffix_string = self.options.get_string('suffixes', default="")
-        suffixes_temp = suffix_string.split()
-        suffixes = []
-        for suffix in suffixes_temp:
-            if (suffix.lower() == 'none'):
-                suffixes.append('')
-            else:
-                suffixes.append("_" + suffix)
-        self.suffixes = suffixes        
-
+        if suffix_string == "":
+            # If there are no suffixes provided, then we create a list of a single empty suffix                               
+            suffixes = [""]
+        else:
+            suffixes_temp = suffix_string.split()
+            suffixes = []
+            for suffix in suffixes_temp:
+                if (suffix.lower() == 'none'):
+                    suffixes.append('')
+                else:
+                    suffixes.append("_" + suffix)
+        self.suffixes = suffixes
+        
         #Prior width for analytically marginalized parameters
         #If <1. assume infinite prior
         self.sigma_a = self.options.get_double( "sigma_a", -1. )

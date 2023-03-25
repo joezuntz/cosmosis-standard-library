@@ -12,17 +12,15 @@ def setup(options):
     do_galaxy_cmbkappa = options.get_bool(option_section, "galaxy-cmbkappa", False)
     include_intrinsic = options.get_bool(option_section, "include_intrinsic", False)
     print()
-    print("The add_magnification module will try to combine magnification terms into")
-    if do_galaxy_galaxy and do_galaxy_shear:
-        print("both the galaxy-galaxy and galaxy-shear spectra.")
-    elif do_galaxy_galaxy:
-        print("only the galaxy-galaxy spectra.")
-    elif do_galaxy_shear:
-        print("only the galaxy-shear.")
-    elif do_galaxy_cmbkappa:
-        print("only the galaxy-cmbkappa.")
-    else:
-        print("... actually not into anything. You set galaxy-galaxy=F and galaxy-shear=F")
+    print("The add_magnification module will try to combine magnification terms into the following spectra:")
+    if do_galaxy_shear:
+        print("galaxy-shear")        
+    if do_galaxy_galaxy:
+        print("galaxy-galaxy")
+    if do_galaxy_cmbkappa:
+        print("galaxy-cmbkappa")
+    if (not do_galaxy_shear*do_galaxy_galaxy*do_galaxy_cmbkappa):
+        print("... actually not into anything. You set galaxy-galaxy=F and galaxy-shear=F (and possibly galaxy-cmbkappa = False)")
         print("Ths module will not do anything in this configuration")
     print()
     return do_galaxy_galaxy, do_galaxy_shear, do_galaxy_cmbkappa, include_intrinsic

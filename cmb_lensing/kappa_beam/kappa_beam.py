@@ -19,15 +19,14 @@ def apply_beam(block, section, beam_sigma, is_auto=False, output_section = None,
     B_ell = np.exp(-0.5*ell*(ell+1.)*beam_sigma**2.)
     for bini in range(0,n_other):
         C_ell_orig = block[section, 'bin_{}_1'.format(bini+1)]
-        if (not is_auto):
-            beamed_C_ell = C_ell_orig*B_ell
         if (is_auto):
             beamed_C_ell = C_ell_orig*(B_ell**2.)
-        if (not output_section is None):
-            block[output_section, 'bin_{}_1'.format(bini+1)] = beamed_C_ell
+        else:
+            beamed_C_ell = C_ell_orig*B_ell
         if (output_section is None):
             block[section, 'bin_{}_1'.format(bini+1)] = beamed_C_ell
-
+        else:
+            block[output_section, 'bin_{}_1'.format(bini+1)] = beamed_C_ell
 
     if  (section != output_section and (not output_section is None)):
         if (block.has_value(section,"nbin")):

@@ -242,9 +242,9 @@ def setup(options):
     # For instance, if we have measurements with two different samples
     if save_name != "":
         add = "_" + save_name
-        try:
+        if isinstance(output_section, str):
             output_section += add
-        except TypeError:
+        else:
             output_section = ( output_section[0]+add, output_section[1]+add )
 
     print("Computing coefficients to transform {} -> {}".format(cl_section, output_section))
