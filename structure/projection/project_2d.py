@@ -1470,10 +1470,10 @@ class SpectrumCalculator(object):
             kernel_type, sample_name = key
 
             # For all the sources we need the n(z)
-            if ((sample_name not in self.kernels) and (sample_name != 'cmb')):
+            if (sample_name not in self.kernels) and (sample_name != 'cmb'):
                 section_name = "nz_"+sample_name
                 self.kernels[sample_name] = TomoNzKernel.from_block(block, section_name, norm=True)
-            if ((sample_name not in self.kernels) and (sample_name == 'cmb')):
+            if (sample_name not in self.kernels) and (sample_name == 'cmb'):
                 zmin = 0.001
                 zmax = block['distances','zstar']
                 z_arr_for_cmb = np.exp(np.linspace(np.log(zmin), np.log(zmax), num = 1000))

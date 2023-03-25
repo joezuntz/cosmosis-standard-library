@@ -49,15 +49,19 @@ class TwoPointLikelihood(GaussianLikelihood):
     def build_data(self):
         filename = self.options.get_string('data_file')
 
-        #Same input data can have multiple suffixes
+        # Suffixes to added on to two point data from e.g. different experiments
         suffix_string = self.options.get_string('suffixes', default="")
-        suffixes_temp = suffix_string.split()
-        suffixes = []
-        for suffix in suffixes_temp:
-            if (suffix.lower() == 'none'):
-                suffixes.append('')
-            else:
-                suffixes.append("_" + suffix)
+        if suffix_string == "":
+            # If there are no suffixes provided, then we create a list of a single empty suffix
+            suffixes = [""]
+        else:
+            suffixes_temp = suffix_string.split()
+            suffixes = []
+            for suffix in suffixes_temp:
+                if (suffix.lower() == 'none'):
+                    suffixes.append('')
+                else:
+                    suffixes.append("_" + suffix)
         self.suffixes = suffixes
 
         if self.gaussian_covariance:
@@ -269,10 +273,19 @@ class TwoPointLikelihood(GaussianLikelihood):
         bin2 = []
         dataset_name = []
 
-        # Now we actually loop through our data sets
+        # Get appropriate suffixes
+        # If only a single suffix is provided, assume this applies to all data sets
+        if len(self.suffixes) == 1:
+            suffixes = np.tile(self.suffixes[0], len(self.two_point_data.spectra))
+        elif len(self.suffixes) > 1 and len(self.suffixes) == len(self.two_point_data.spectra):
+            suffixes = self.suffixes
+        else:
+            raise ValueError("The number of suffixes supplied does not match the number of two point spectra.")
+        
+        # Now we actually loop through our data sets    
         for ii, spectrum in enumerate(self.two_point_data.spectra):
             theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum, self.suffixes[ii])
+                block, spectrum, suffixes[ii])
             theory.append(theory_vector)
             angle.append(angle_vector)
             bin1.append(bin1_vector)

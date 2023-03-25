@@ -1,6 +1,5 @@
 from cosmosis.datablock import option_section, names
 import numpy as np
-import pdb
 
 def get_nbins(block, section):
     if block.has_value(section, "nbin_a"):

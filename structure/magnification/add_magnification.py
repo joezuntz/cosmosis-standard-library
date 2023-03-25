@@ -9,7 +9,7 @@ import numpy as np
 def setup(options):
     do_galaxy_galaxy = options.get_bool(option_section, "galaxy-galaxy", True)
     do_galaxy_shear = options.get_bool(option_section, "galaxy-shear", True)
-    do_galaxy_cmbkappa = options.get_bool(option_section, "galaxy-cmbkappa", True)
+    do_galaxy_cmbkappa = options.get_bool(option_section, "galaxy-cmbkappa", False)
     include_intrinsic = options.get_bool(option_section, "include_intrinsic", False)
     print()
     print("The add_magnification module will try to combine magnification terms into")

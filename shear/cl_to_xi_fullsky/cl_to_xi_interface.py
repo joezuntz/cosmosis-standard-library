@@ -241,7 +241,7 @@ def setup(options):
     # Useful for assigning different names to same type of correlation function
     # For instance, if we have measurements with two different samples
     if save_name != "":
-        add = "_%s"%save_name
+        add = "_" + save_name
         try:
             output_section += add
         except TypeError:
