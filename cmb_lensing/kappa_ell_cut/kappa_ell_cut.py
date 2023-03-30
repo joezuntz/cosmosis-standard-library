@@ -12,7 +12,7 @@ def get_nbins(block, section):
     return n_a, n_b
 
 
-def apply_lcut(block, section, Lmin, Lmax, output_section = None, save_name = None):
+def apply_lcut(block, section, Lmin, Lmax, output_section = "", save_name = ""):
     n_other, n_cmb = get_nbins(block, section)
     if (n_cmb != 1):
         raise ValueError("Found more than 1 CMB bin - there is definitely only 1 CMB.")
@@ -25,12 +25,14 @@ def apply_lcut(block, section, Lmin, Lmax, output_section = None, save_name = No
     for bini in range(0,n_other):
         C_ell_orig = block[section, 'bin_{}_1'.format(bini+1)]
         filtered_C_ell = C_ell_orig*w
-        if (not output_section is None):
-            block[output_section, 'bin_{}_1'.format(bini+1)] = filtered_C_ell
-        if (output_section is None):
+        if (output_section == ""):
             block[section, 'bin_{}_1'.format(bini+1)] = filtered_C_ell
+        else:
+            block[output_section, 'bin_{}_1'.format(bini+1)] = filtered_C_ell
 
-    if  (section != output_section and (not output_section is None)):
+    # If output_section is specified and different from section we need
+    # to copy over info from section into output_section
+    if  (section != output_section and output_section != ""):
         if (block.has_value(section,"nbin")):
             block[output_section, "nbin"] = block[section, "nbin"]
         if (block.has_value(section,"nbin_a")):
@@ -43,20 +45,20 @@ def apply_lcut(block, section, Lmin, Lmax, output_section = None, save_name = No
         block[output_section, "sample_a"] = block[section, "sample_a"]
         block[output_section, "sample_b"] = block[section, "sample_b"]
         block[output_section, "is_auto"] = block[section, "is_auto"]
-        if (save_name is not None):
+        if (save_name != ""):
             block[output_section, "save_name"] = save_name
 
 def setup(options):
     shearkappa_section = options.get_string(option_section, "shearkappa_section", default="shear_cmbkappa_cl")
     galkappa_section = options.get_string(option_section, "galkappa_section", default="galaxy_cmbkappa_cl")
     kappakappa_section = options.get_string(option_section, "kappakappa_section", default="cmbkappa_cl")
-    shearkappa_output_section = options.get_string(option_section, "shearkappa_output_section", default=None)
-    galkappa_output_section = options.get_string(option_section, "galkappa_output_section", default=None)
-    kappakappa_output_section = options.get_string(option_section, "kappakappa_output_section", default=None)
+    shearkappa_output_section = options.get_string(option_section, "shearkappa_output_section", default="")
+    galkappa_output_section = options.get_string(option_section, "galkappa_output_section", default="")
+    kappakappa_output_section = options.get_string(option_section, "kappakappa_output_section", default="")
     try:
-        save_name = options.get_string(option_section, "save_name", default=None)
+        save_name = options.get_string(option_section, "save_name", default="")
     except:
-        save_name = None
+        save_name = ""
 
     if options.has_value(option_section,'Lmin'):
         Lmin = options[option_section, 'Lmin']
