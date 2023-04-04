@@ -26,6 +26,7 @@ def load_gsl(libfile=None):
             libfile, cblas_libfile = find_gsl()
         except ValueError:
             libfile = "libgsl.so"
+            cblas_libfile = "libgslcblas.so"
     # This isn't always necessary, but it is on NERSC
     # To help debug I'll leave this lib1 variable here.
     try:

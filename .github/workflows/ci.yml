@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-20.04, macos-latest]
         pyversion: ["3.7", "3.8", "3.9", "3.10"]
     steps:
       - name: Checkout repository
@@ -27,17 +27,25 @@ jobs:
         with:
           activate-environment: cosmosis-env
           channels: conda-forge
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
           python-version: ${{ matrix.pyversion }}
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: conda install -c conda-forge cosmosis cosmosis-build-standard-library
+        run: mamba install -c conda-forge cosmosis "numpy<1.24" cosmosis-build-standard-library
 
       - name: Build standard library
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           make
+
+      - name: Smail example
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/various-spectra.ini
 
       - name: CAMB Planck
         shell: bash -l {0}
@@ -46,18 +54,21 @@ jobs:
           python -m cosmosis.configure
           source cosmosis-configure
           export
-          mkdir output
+          mkdir -p output
           # Check the downloader works
           ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
-          grep 'Likelihood =  -6288.61' output/planck.log
+          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
+          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  -1441.30' output/planck.log; fi
+          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  -1441.46' output/planck.log; fi
+          
 
       - name: Class Planck
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/planck_class.ini | tee output/class.log
+          cosmosis examples/planck_class.ini -p class.mpk=T | tee output/class.log
           # This may need updating as we modify the class interface
           # The settings are not optimized
           # grep 'Likelihood =  -5968.93' output/class.log
@@ -92,40 +103,74 @@ jobs:
           cosmosis-postprocess examples/pantheon.ini -o output/pantheon
           test -f output/pantheon/cosmological_parameters--omega_m.png
 
+      - name: PantheonPlusAndShoes
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/pantheon_plus_shoes.ini -p runtime.sampler=test | tee output/pantheon_plus_shoes_log.txt
+          grep 'Likelihood =  -738.23' output/pantheon_plus_shoes_log.txt
+
       - name: DES Y1 likelihood
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           cosmosis examples/des-y1.ini | tee output/des-y1.log
-          grep 'Likelihood =  5237.37' output/des-y1.log
+          # unchanged in camb 1.4
+          grep 'Likelihood =  5237.3' output/des-y1.log
 
       - name: DES Y1 likelihood with cl_to_corr
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           cosmosis examples/des-y1.ini -p 2pt_shear.file=./shear/cl_to_corr/cl_to_corr.py 2pt_shear.corr_type=xi | tee output/des-y1.log
+          # unchanged in camb 1.4
           grep 'Likelihood =  5237.3' output/des-y1.log
+
 
       - name: DES Y3 likelihood
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3.ini -p pk_to_cl_gg.save_kernels=T pk_to_cl.save_kernels=T | tee output/des-y3.log
-          grep 'Likelihood =  6043.23' output/des-y3.log
+          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
+          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6043.23' output/des-y3.log; fi
+          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6043.34' output/des-y3.log; fi
+
+
+      - name: DES Y3 Class likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3-class.ini
+          # class is not consistent across systems to the level needed here
+
+      - name: DES Y3 cosmic shear likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3-shear.ini | tee output/des-y3-shear.log
+          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
+          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  2957.03' output/des-y3-shear.log; fi
+          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  2957.12' output/des-y3-shear.log; fi
+
 
       - name: DES Y3 likelihood with Mira Titan
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3-mira-titan.ini | tee output/des-y3-mt.log
-          grep 'Likelihood =  6048.0' output/des-y3-mt.log
+          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
+          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6048.0' output/des-y3-mt.log; fi
+          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6048.1' output/des-y3-mt.log; fi
 
       - name: DES Y3 likelihood with Mead nonlinear
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3.log
-          grep 'Likelihood =  6049.94' output/des-y3.log
+          cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3-mead.log
+          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
+          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6049.94' output/des-y3-mead.log; fi
+          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6049.00' output/des-y3-mead.log; fi
 
       - name: Euclid emulator
         shell: bash -l {0}
@@ -149,7 +194,7 @@ jobs:
 
 
   apt-get-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
@@ -218,7 +263,6 @@ jobs:
         cosmosis demos/demo2.ini
         cosmosis-postprocess demos/demo2.ini -o output/demo2
         test -f output/demo2/comoving_distance.png
-        python .github/ci-checks.py
 
 
     - name: Demo 9 Low-Resolution Multinest

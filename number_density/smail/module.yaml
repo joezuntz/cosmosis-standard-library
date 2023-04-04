@@ -4,7 +4,7 @@ version: 1
 purpose: Compute window functions for photometric n(z)
 url: ''
 interface: photometric_smail.py
-attribution: [CosmoSIS Team]
+attribution: [Donnacha Kirk, Simon Samuroff, Jessica Muir]
 rules: You can do what you want with this file
 cite: []
 assumptions:
@@ -19,21 +19,38 @@ explanation: |
     error sigma(z) = sigma_0 (1+z) and optionally biases it.  It computes bin edges in the
     survey assuming equal numbers in each.
 
-    We might wish to add an option to specify fixed bin edges instead?
+    You can also specify fixed bin edges.
     "
 params:
     nbin:
-        meaning: Number of redshift bins with equal number of gals in eachq
+        meaning: Number of redshift bins with equal number of gals in each
         type: int
         default:
-    zmax:
-        meaning: Maximum redshift to compute; min is zero
+    zmin:
+        meaning: Minimum redshift to compute
         type: real
-        default:
+        default: 0.0
+    zmax:
+        meaning: Maximum redshift to compute
+        type: real
+        default: 4.0
     dz:
         meaning: Spacing of samples to compute n(z) at.
         type: real
-        default:
+        default: 0.01
+    enforce_equal_numbers:
+        meaning: No matter how n(z) gets divided, specify that each bin has equal number density
+        type: bool
+        default: F
+    z_edges:
+        meaning: |
+             "Manually specified redshift bin edges. If nbin - 1 values passed,
+             these are the bounds of photometric selection for those nbin bins.
+             If 2 values are passed, they specify a minimum and maximum redshift between
+             which galaxies are divided into equal number samples. "
+        type: real 1d
+        default: None
+    
 inputs:
     number_density_params:
         alpha:
@@ -75,6 +92,8 @@ outputs:
             meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
             type: real 1d
         edge_{i}:
-            meaning: The nominal edges of the redshift bins (i.e. edges if no photometric
-                errors)
+            meaning: The nominal edges of the redshift bins (i.e. edges if no photometric errors)
             type: real 1d
+    NGAL_{}:
+        meaning: number density of redshift bin i
+        type: real

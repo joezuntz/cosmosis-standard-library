@@ -39,6 +39,7 @@ def setup(options):
         'lmax': options.get_int(option_section, 'lmax', default=2000),
         'zmax': options.get_double(option_section, 'zmax', default=3.0),
         'kmax': options.get_double(option_section, 'kmax', default=50.0),
+        'nk': options.get_int(option_section, 'nk', default=100),
         'debug': options.get_bool(option_section, 'debug', default=False),
         'lensing': options.get_bool(option_section, 'lensing', default=True),
         'cmb': options.get_bool(option_section, 'cmb', default=True),
@@ -87,8 +88,19 @@ def get_class_inputs(block, config):
         'T_cmb':     block.get_double(cosmo, 'TCMB', default=2.726),
         'N_ur':      nnu - nmassive,
         'N_ncdm':    nmassive,
-        'm_ncdm':    block.get_double(cosmo, 'mnu', default=0.06)
     }
+
+
+    neutrino_mass_total = block.get_double(cosmo, 'mnu', default=0.06)
+    if nmassive == 0:
+        if neutrino_mass_total == 0.06:
+            assert neutrino_mass_total == 0, f"mnu must equal 0 when num_massive_neutrinos=0, but you had {neutrino_mass_total} - you may have left it at the default value"
+        else:
+            assert neutrino_mass_total == 0, f"mnu must equal 0 when num_massive_neutrinos=0, but you had {neutrino_mass_total}"
+    else:
+        neutrino_masses = np.repeat(neutrino_mass_total / nmassive, nmassive).astype(str)
+        params['m_ncdm'] = ", ".join(neutrino_masses)
+
 
     if config["cmb"] or config["lensing"]:
         params.update({
@@ -116,7 +128,6 @@ def get_class_inputs(block, config):
         if key.startswith('class_'):
             params[key[6:]] = val
 
-
     return params
 
 
@@ -137,7 +148,7 @@ def get_class_outputs(block, c, config):
     dz = 0.01
     kmin = 1e-4
     kmax = config['kmax'] * h0
-    nk = 100
+    nk = config["nk"]
 
     # Define k,z we want to sample
     z = np.arange(0.0, config["zmax"] + dz, dz)
@@ -155,7 +166,8 @@ def get_class_outputs(block, c, config):
             for i, ki in enumerate(k):
                 for j, zi in enumerate(z):
                     P[i, j] = c.pk_lin(ki, zi)
-            block.put_grid("matter_power_lin", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+            # We transpose P here to match the camb convention
+            block.put_grid("matter_power_lin", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
 
         # CDM+baryons power spectrum
         if config['save_cdm_baryon_power_lin']:
@@ -163,7 +175,7 @@ def get_class_outputs(block, c, config):
             for i, ki in enumerate(k):
                 for j, zi in enumerate(z):
                     P[i, j] = c.pk_cb_lin(ki, zi)
-            block.put_grid('cdm_baryon_power_lin', 'k_h', k/h0, 'z', z, 'p_k', P*h0**3)
+            block.put_grid('cdm_baryon_power_lin', 'z', z, 'k_h', k/h0, 'p_k', P.T * h0 **3)
 
         # Get growth rates and sigma_8
         D = [c.scale_independent_growth_factor(zi) for zi in z]
@@ -172,7 +184,7 @@ def get_class_outputs(block, c, config):
         sigma_8_z = [c.sigma(8.0, zi, h_units=True) for zi in z]
         block[names.growth_parameters, "z"] = z
         block[names.growth_parameters, "sigma_8"] = np.array(sigma_8_z)
-        block[names.growth_parameters, "fsigma_8"] = np.array(sigma_8_z)
+        block[names.growth_parameters, "fsigma_8"] = np.array(fsigma)
         block[names.growth_parameters, "d_z"] = np.array(D)
         block[names.growth_parameters, "f_z"] = np.array(f)
         block[names.growth_parameters, "a"] = 1/(1+z)
@@ -182,7 +194,7 @@ def get_class_outputs(block, c, config):
                 for j, zi in enumerate(z):
                     P[i, j] = c.pk(ki, zi)
 
-            block.put_grid("matter_power_nl", "k_h", k / h0, "z", z, "p_k", P * h0**3)
+            block.put_grid("matter_power_nl", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
 
 
     ##
@@ -191,6 +203,7 @@ def get_class_outputs(block, c, config):
 
     # save redshifts of samples
     block[distances, 'z'] = z
+    block[distances, 'a'] = 1 / (1 + z)
     block[distances, 'nz'] = nz
 
     # Save distance samples
@@ -202,6 +215,10 @@ def get_class_outputs(block, c, config):
     # Save some auxiliary related parameters
     block[distances, 'age'] = c.age()
     block[distances, 'rs_zdrag'] = c.rs_drag()
+
+    # Save H(z), which is also in Mpc^-1 units, like in camb
+    h_z = np.array([c.Hubble(zi) for zi in z])
+    block[distances, 'H'] = h_z
 
     ##
     # Now the CMB C_ell

@@ -93,7 +93,10 @@ def setup(options):
     config['want_zdrag'] = mode != MODE_BG
     config['want_zstar'] = config['want_zdrag']
 
-
+    more_config['want_chistar'] = options.get_bool(opt, 'want_chistar', default=True)
+    more_config['n_logz'] = options.get_int(opt, 'n_logz', default=0)
+    more_config['zmax_logz'] = options.get_double(opt, 'zmax_logz', default = 1100.)
+    
     more_config["lmax_params"] = get_optional_params(options, opt, ["max_eta_k", "lens_potential_accuracy",
                                                                     "lens_margin", "k_eta_fac", "lens_k_eta_reference",
                                                                     #"min_l", "max_l_tensor", "Log_lvalues", , "max_eta_k_tensor"
@@ -106,7 +109,7 @@ def setup(options):
     more_config["cosmology_params"] = get_optional_params(options, opt, ["neutrino_hierarchy" ,"theta_H0_range"])
 
     if 'theta_H0_range' in more_config['cosmology_params']:
-        more_config['cosmology_params'] = [float(x) for x in more_config['cosmology_params']['theta_H0_range'].split()]
+        more_config['cosmology_params']['theta_H0_range'] = [float(x) for x in more_config['cosmology_params']['theta_H0_range'].split()]
 
     more_config['do_reionization'] = options.get_bool(opt, 'do_reionization', default=True)
     more_config['use_optical_depth'] = options.get_bool(opt, 'use_optical_depth', default=True)
@@ -440,29 +443,56 @@ def save_distances(r, p, block, more_config):
     z_background = np.linspace(
         more_config["zmin_background"], more_config["zmax_background"], more_config["nz_background"])
 
+    #If desired, append logarithmically distributed redshifts
+    log_z = np.geomspace(more_config["zmax_background"], more_config['zmax_logz'], num = more_config['n_logz'])
+    z_background = np.append(z_background, log_z[1:])
+    
     # Write basic distances and related quantities to datablock
     block[names.distances, "nz"] = len(z_background)
     block[names.distances, "z"] = z_background
     block[names.distances, "a"] = 1/(z_background+1)
-    block[names.distances, "D_A"] = r.angular_diameter_distance(z_background)
-    block[names.distances, "D_M"] = r.comoving_radial_distance(z_background)
-    d_L = r.luminosity_distance(z_background)
-    block[names.distances, "D_L"] = d_L
+
+    D_C = r.comoving_radial_distance(z_background)
+    H = r.h_of_z(z_background)
+    D_H = 1 / H[0]
+
+    if p.omk == 0:
+        D_M = D_C
+    elif p.omk < 0:
+        s = np.sqrt(-p.omk)
+        D_M = (D_H / s)  * np.sin(s * D_C / D_H)
+    else:
+        s = np.sqrt(p.omk)
+        D_M = (D_H / s) * np.sinh(s * D_C / D_H)
+
+    D_L = D_M * (1 + z_background)
+    D_A = D_M / (1 + z_background)
+    D_V = ((1 + z_background)**2 * z_background * D_A**2 / H)**(1./3.)
 
     # Deal with mu(0), which is -np.inf
-    mu = np.zeros_like(d_L)
-    pos = d_L > 0
-    mu[pos] = 5*np.log10(d_L[pos])+25
+    mu = np.zeros_like(D_L)
+    pos = D_L > 0
+    mu[pos] = 5*np.log10(D_L[pos])+25
     mu[~pos] = -np.inf
+
+    block[names.distances, "D_C"] = D_C
+    block[names.distances, "D_M"] = D_M
+    block[names.distances, "D_L"] = D_L
+    block[names.distances, "D_A"] = D_A
+    block[names.distances, "D_V"] = D_V
+    block[names.distances, "H"] = H
     block[names.distances, "MU"] = mu
-    block[names.distances, "H"] = r.h_of_z(z_background)
 
     if more_config['do_bao']:
         rs_DV, _, _, F_AP = r.get_BAO(z_background, p).T
         block[names.distances, "rs_DV"] = rs_DV
         block[names.distances, "F_AP"] = F_AP
 
-def compute_growth_rates(r, block, P_tot, k, z, more_config):
+    if more_config['want_chistar']:
+        chistar = (r.conformal_time(0)- r.tau_maxvis)
+        block[names.distances, "CHISTAR"] = chistar
+
+def compute_growth_factor(r, block, P_tot, k, z, more_config):
     if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
         # which we use for the growth.
@@ -470,21 +500,10 @@ def compute_growth_rates(r, block, P_tot, k, z, more_config):
 
     # Evaluate it at the smallest k, for the 
     kmin = k.min()
-    P_kmin = P_tot(z, kmin)
+    P_kmin = P_tot.P(z, kmin)
 
     D = np.sqrt(P_kmin / P_kmin[0]).squeeze()
-    a = 1/(1+z)
-
-    loga = np.log(a[::-1])
-
-    # Get the growth rate f = dlogD/dloga.
-    # Have to reverse the arrays to get everything going in the right order,
-    # since z is increasing so a is decreasing.
-    logD_spline = InterpolatedUnivariateSpline(loga, np.log(D[::-1]) )
-    f_spline = logD_spline.derivative()
-    f = f_spline(loga)[::-1].squeeze()
-
-    return f, D, a
+    return D
 
 
 
@@ -535,7 +554,8 @@ def save_matter_power(r, p, block, more_config):
     fsigma_8 = r.get_fsigma8()[::-1]
     rs_DV, H, DA, F_AP = r.get_BAO(z, p).T
 
-    f, D, a = compute_growth_rates(r, block, P_tot, k, z, more_config)
+    D = compute_growth_factor(r, block, P_tot, k, z, more_config)
+    f = fsigma_8 / sigma_8
 
     # Save growth rates and sigma_8
     block[names.growth_parameters, "z"] = z
@@ -615,16 +635,14 @@ def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reio
     r_temp = camb.get_results(p_temp)
     temp_sig8 = r_temp.get_sigma8()[-1] #what sigma8 comes out from using temp_As?
     As = temp_As*(sigma_8_input/temp_sig8)**2
-    block[cosmo,'A_s'] = As
-    #print(">>>>> temp_As",temp_As,'As',As,'sigma_8_input',sigma_8_input,'temp_sig8',temp_sig8)
-    
+    block[cosmo,'A_s'] = As    
 
 def execute(block, config):
     config, more_config = config
-    p = extract_camb_params(block, config, more_config)
-    
-
+    p = "<Error occurred during parameter setup>"
     try:
+        p = extract_camb_params(block, config, more_config)
+
         if (not p.WantCls) and (not p.WantTransfer):
             # Background only mode
             r = camb.get_background(p)
