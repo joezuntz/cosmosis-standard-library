@@ -93,7 +93,10 @@ def setup(options):
     config['want_zdrag'] = mode != MODE_BG
     config['want_zstar'] = config['want_zdrag']
 
-
+    more_config['want_chistar'] = options.get_bool(opt, 'want_chistar', default=True)
+    more_config['n_logz'] = options.get_int(opt, 'n_logz', default=0)
+    more_config['zmax_logz'] = options.get_double(opt, 'zmax_logz', default = 1100.)
+    
     more_config["lmax_params"] = get_optional_params(options, opt, ["max_eta_k", "lens_potential_accuracy",
                                                                     "lens_margin", "k_eta_fac", "lens_k_eta_reference",
                                                                     #"min_l", "max_l_tensor", "Log_lvalues", , "max_eta_k_tensor"
@@ -440,6 +443,10 @@ def save_distances(r, p, block, more_config):
     z_background = np.linspace(
         more_config["zmin_background"], more_config["zmax_background"], more_config["nz_background"])
 
+    #If desired, append logarithmically distributed redshifts
+    log_z = np.geomspace(more_config["zmax_background"], more_config['zmax_logz'], num = more_config['n_logz'])
+    z_background = np.append(z_background, log_z[1:])
+    
     # Write basic distances and related quantities to datablock
     block[names.distances, "nz"] = len(z_background)
     block[names.distances, "z"] = z_background
@@ -480,6 +487,10 @@ def save_distances(r, p, block, more_config):
         rs_DV, _, _, F_AP = r.get_BAO(z_background, p).T
         block[names.distances, "rs_DV"] = rs_DV
         block[names.distances, "F_AP"] = F_AP
+
+    if more_config['want_chistar']:
+        chistar = (r.conformal_time(0)- r.tau_maxvis)
+        block[names.distances, "CHISTAR"] = chistar
 
 def compute_growth_factor(r, block, P_tot, k, z, more_config):
     if P_tot is None:
@@ -624,8 +635,7 @@ def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reio
     r_temp = camb.get_results(p_temp)
     temp_sig8 = r_temp.get_sigma8()[-1] #what sigma8 comes out from using temp_As?
     As = temp_As*(sigma_8_input/temp_sig8)**2
-    block[cosmo,'A_s'] = As
-    
+    block[cosmo,'A_s'] = As    
 
 def execute(block, config):
     config, more_config = config

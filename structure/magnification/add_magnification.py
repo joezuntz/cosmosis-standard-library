@@ -9,23 +9,24 @@ import numpy as np
 def setup(options):
     do_galaxy_galaxy = options.get_bool(option_section, "galaxy-galaxy", True)
     do_galaxy_shear = options.get_bool(option_section, "galaxy-shear", True)
+    do_galaxy_cmbkappa = options.get_bool(option_section, "galaxy-cmbkappa", False)
     include_intrinsic = options.get_bool(option_section, "include_intrinsic", False)
     print()
-    print("The add_magnification module will try to combine magnification terms into")
-    if do_galaxy_galaxy and do_galaxy_shear:
-        print("both the galaxy-galaxy and galaxy-shear spectra.")
-    elif do_galaxy_galaxy:
-        print("only the galaxy-galaxy spectra.")
-    elif do_galaxy_shear:
-        print("only the galaxy-shear.")
-    else:
-        print("... actually not into anything. You set galaxy-galaxy=F and galaxy-shear=F")
+    print("The add_magnification module will try to combine magnification terms into the following spectra:")
+    if do_galaxy_shear:
+        print("galaxy-shear")        
+    if do_galaxy_galaxy:
+        print("galaxy-galaxy")
+    if do_galaxy_cmbkappa:
+        print("galaxy-cmbkappa")
+    if (not do_galaxy_shear*do_galaxy_galaxy*do_galaxy_cmbkappa):
+        print("... actually not into anything. You set galaxy-galaxy=F and galaxy-shear=F (and possibly galaxy-cmbkappa = False)")
         print("Ths module will not do anything in this configuration")
     print()
-    return do_galaxy_galaxy, do_galaxy_shear, include_intrinsic
+    return do_galaxy_galaxy, do_galaxy_shear, do_galaxy_cmbkappa, include_intrinsic
 
 def execute(block, config):
-    do_galaxy_galaxy, do_galaxy_shear, include_intrinsic = config
+    do_galaxy_galaxy, do_galaxy_shear, do_galaxy_cmbkappa, include_intrinsic = config
 
     # Get the number of bins for the different spectra.
     if do_galaxy_galaxy:
@@ -34,7 +35,7 @@ def execute(block, config):
         nbin_pos = block["galaxy_shear_cl", 'nbin_a']
     if do_galaxy_shear:
         nbin_shear = block["galaxy_shear_cl", 'nbin_b']
-
+        
     if do_galaxy_galaxy:
         # for galaxy_galaxy, we're replacing 'galaxy_cl' (the gg term) with gg+gm+mg+mm
         # so in case useful, save the gg term to galaxy_cl_gg.
@@ -110,4 +111,13 @@ def execute(block, config):
                     block["galaxy_shear_cl", bin_ij] += (
                         block["magnification_intrinsic_cl", bin_ij]
                         )
+
+    if do_galaxy_cmbkappa:
+        for i in range(nbin_pos):
+            bin_i = 'bin_{0}_1'.format(i + 1)
+            block["galaxy_cmbkappa_cl_gK", bin_i] = block["galaxy_cmbkappa_cl", bin_i]
+            block["galaxy_cmbkappa_cl", bin_i] += (
+                block["magnification_cmbkappa_cl", bin_i]
+                )
+                    
     return 0
