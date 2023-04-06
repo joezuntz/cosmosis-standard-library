@@ -94,6 +94,7 @@ jobs:
           source cosmosis-configure
           cosmosis examples/wmap.ini | tee output/wmap.log
 
+
       - name: Pantheon emcee
         shell: bash -l {0}
         run: |
@@ -175,7 +176,7 @@ jobs:
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/des-y3-6x2pt.ini
+          cosmosis examples/des-y3-6x2.ini
 
       - name: Euclid emulator
         shell: bash -l {0}
