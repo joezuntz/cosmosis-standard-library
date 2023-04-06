@@ -172,6 +172,12 @@ jobs:
           if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6049.94' output/des-y3-mead.log; fi
           if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6049.00' output/des-y3-mead.log; fi
 
+      - name: DES Y3 6x2pt
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3-6x2.ini
+
       - name: Euclid emulator
         shell: bash -l {0}
         run: |
