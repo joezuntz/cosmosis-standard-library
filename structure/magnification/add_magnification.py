@@ -19,7 +19,7 @@ def setup(options):
         print("galaxy-galaxy")
     if do_galaxy_cmbkappa:
         print("galaxy-cmbkappa")
-    if (not do_galaxy_shear*do_galaxy_galaxy*do_galaxy_cmbkappa):
+    if (do_galaxy_shear == do_galaxy_galaxy == do_galaxy_cmbkappa == False):
         print("... actually not into anything. You set galaxy-galaxy=F and galaxy-shear=F (and possibly galaxy-cmbkappa = False)")
         print("Ths module will not do anything in this configuration")
     print()
