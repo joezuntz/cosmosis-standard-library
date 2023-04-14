@@ -95,7 +95,7 @@ class Eboss16LRGLikelihood(GaussianLikelihood):
         # Add fsigma8 when mode == 1 (BAO+FS)
         if self.mode:
             z = block['growth_parameters', 'z']
-            fsigma8 = block['growth_parameters', 'fsigma8_z']
+            fsigma8 = block['growth_parameters', 'fsigma_8']
             # Find theory fsigma8 at fiducial redshift
             fsigma8_z = interp(z_eff[2], z, fsigma8)
             params.append(fsigma8_z)

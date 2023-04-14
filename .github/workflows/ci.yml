@@ -47,6 +47,12 @@ jobs:
           source cosmosis-configure
           cosmosis examples/various-spectra.ini
 
+      - name: BAO
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/bao.ini
+
       - name: CAMB Planck
         shell: bash -l {0}
         run: |

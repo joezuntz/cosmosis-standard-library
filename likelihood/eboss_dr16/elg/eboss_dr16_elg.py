@@ -96,7 +96,7 @@ def execute(block, config):
     # BAO+FS
     else:
         z = block['growth_parameters', 'z']
-        fsigma8 = block['growth_parameters', 'fsigma8_z']
+        fsigma8 = block['growth_parameters', 'fsigma_8']
         # Find theory fsigma8 at fiducial redshift
         fsigma8_z = interp(zeff, z, fsigma8)
         
