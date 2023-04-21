@@ -17,9 +17,10 @@ likes = section_names.likelihoods
 ROOT_DIR = os.path.split(os.path.abspath(__file__))[0]
 
 
-# combined measurement:
+# combined measurement. Not actually used here.
 MEAN = 0.941
 SIGMA = 0.026
+
 REDSHIFT = 0.835
 
 # alpha likelihood file:
