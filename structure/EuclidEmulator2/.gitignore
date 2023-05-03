@@ -14,3 +14,4 @@ ee_install
 dist
 euclidemu2.egg-info
 build
+src/euclidemu2.cpp

@@ -99,22 +99,28 @@ class KernelSpline(object):
             return self.spline(x)
 
 class TomoNzKernel(object):
-    def __init__(self, z, nzs, norm=True):
-        self.z = z
-        self.nzs = {}
-        self.nbin = 0
-        for i,nz in enumerate(nzs):
-            self.nbin += 1
-            if norm:
-                nz_spline = interp.InterpolatedUnivariateSpline(self.z, nz)
-                norm = nz_spline.integral(self.z[0], self.z[-1])
-                nz = nz/norm
-            self.nzs[i+1] = nz
+    def __init__(self, z, nzs, norm=True, is_cmb_lensing = False):
+        # We need to handle CMB lensing separately
+        if (not is_cmb_lensing):
+            self.z = z
+            self.nzs = {}
+            self.nbin = 0
+            for i,nz in enumerate(nzs):
+                self.nbin += 1
+                if norm:
+                    nz_spline = interp.InterpolatedUnivariateSpline(self.z, nz)
+                    norm = nz_spline.integral(self.z[0], self.z[-1])
+                    nz = nz/norm
+                    self.nzs[i+1] = nz
 
-        #These get set later
-        self.nchi_splines = {} #n(chi) splines
-        self.wchi_splines = {} #W(chi) splines
-        self.wwchi_splines = {} #W_weyl(chi) splines
+            # These get set later
+            self.nchi_splines = {} #n(chi) splines
+            self.wchi_splines = {} #W(chi) splines
+            self.wwchi_splines = {} #W_weyl(chi) splines
+        else:
+            self.z = z
+            self.nbin = 1
+            self.cmblensing_spline = {} #W_cmb(chi) spline
 
     @classmethod
     def from_block(cls, block, section_name, norm=True):
@@ -156,6 +162,12 @@ class TomoNzKernel(object):
             w_of_chi_vals = self.get_wofchi_vals(chi_vals, a_vals, nchi_spline)
             self.wchi_splines[i] = KernelSpline(chi_vals, w_of_chi_vals, 
                 norm=False)
+
+    def set_cmblensing_splines(self, chi_of_z, a_of_chi, chi_star, clip=1.e-6):
+        chi = chi_of_z(self.z)
+        a_vals = 1./(1.+self.z)
+        w_of_chi_vals = (chi/a_vals)*(chi_star - chi)/chi_star
+        self.cmblensing_spline = KernelSpline(chi, w_of_chi_vals, norm=False)    
 
     def get_wofchi_vals(self, chi_vals, a_vals, nchi_spline):
         w_of_chi = np.zeros_like(chi_vals)
@@ -222,10 +234,12 @@ class TomoNzKernel(object):
             return self.nchi_splines[bin_number]
         elif kernel_type == "W":
             return self.wchi_splines[bin_number]
+        elif kernel_type == "K":
+            return self.cmblensing_spline
         elif kernel_type == "W_W":
             return self.wwchi_splines[bin_number]
         elif kernel_type == "F":
             return self.shear_ia_splines[bin_number]
         else:
             raise ValueError("""Invalid kernel_type: %s, 
-                should be one of N, W, W_W or F"""%(kernel_type))
+                should be one of N, W, K, W_W or F"""%(kernel_type))

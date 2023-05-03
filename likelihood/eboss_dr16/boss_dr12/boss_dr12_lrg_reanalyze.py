@@ -91,7 +91,7 @@ class Boss12LRGLikelihood(GaussianLikelihood):
 			Dm_z_rd = interp(z_eff[0::3], z, Dm)/rd
 			Dh_z_rd = interp(z_eff[1::3], z, Dh)/rd
 			z = block['growth_parameters', 'z']
-			fsigma8 = block['growth_parameters', 'fsigma8_z']
+			fsigma8 = block['growth_parameters', 'fsigma_8']
 			# Find theory fsigma8 at fiducial redshift
 			fsigma8_z = interp(z_eff[2::3], z, fsigma8)
 			params = [Dm_z_rd[0],Dh_z_rd[0],fsigma8_z[0],Dm_z_rd[1],Dh_z_rd[1],fsigma8_z[1]]

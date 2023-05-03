@@ -238,6 +238,14 @@ def setup(options):
         if output_section == "":
             output_section = cl_section.replace("cl", "xi")
 
+    # Useful for assigning different names to same type of correlation function
+    # For instance, if we have measurements with two different samples
+    if save_name != "":
+        add = "_" + save_name
+        if isinstance(output_section, str):
+            output_section += add
+        else:
+            output_section = ( output_section[0]+add, output_section[1]+add )
 
     print("Computing coefficients to transform {} -> {}".format(cl_section, output_section))
 
@@ -327,6 +335,7 @@ def execute(block, config):
 
     if isinstance(output_section, str):
         output_section = (output_section,)
+        
     for o in output_section:
         block[o, "nbin_a"] = nbina
         block[o, "nbin_b"] = nbinb

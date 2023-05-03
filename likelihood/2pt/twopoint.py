@@ -70,7 +70,8 @@ class Types(Enum):
     galaxy_shear_plus_real = "G+R"
     galaxy_shear_minus_real = "G-R"
     cmb_kappa_real = "CKR"
-
+    cmb_kappa_fourier = "CKF"
+    
     @classmethod
     def lookup(cls, value):
         for T in cls:
@@ -424,7 +425,7 @@ class SpectrumMeasurement(object):
         header['WINDOWS'] = self.windows  # NOT YET CODED ANYTHING ELSE
         header['N_ZBIN_1'] = len(np.unique(self.bin1))
         header['N_ZBIN_2'] = len(np.unique(self.bin2))
-        if self.metadata is not None:
+        if (self.metadata is not None) and self.metadata:
             # Check metadata doesn't share any keys with the stuff that's already in the header
             assert set(self.metadata.keys()).isdisjoint(set(header.keys()))
             for key, val in self.metadata.iteritems():
@@ -490,6 +491,7 @@ class CovarianceMatrixInfo(object):
 
     def to_fits(self):
         header = fits.Header()
+        
         header[COV_SENTINEL] = True
         header['EXTNAME'] = self.name
         for i, (start_index, name) in enumerate(zip(self.starts, self.names)):
