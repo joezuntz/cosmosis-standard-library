@@ -10,5 +10,5 @@ else
     wget https://lambda.gsfc.nasa.gov/data/suborbital/ACT/ACT_dr6/likelihood/data/ACT_dr6_likelihood_v1.1.tgz
     tar -zxvf ACT_dr6_likelihood_v1.1.tgz
     rm ACT_dr6_likelihood_v1.1.tgz
-    popd data
+    popd
 fi
