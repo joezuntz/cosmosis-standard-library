@@ -30,6 +30,7 @@ def execute(block, config):
     cl_te = block[names.cmb_cl, 'te'] / f1
     cl_bb = block[names.cmb_cl, 'bb'] / f1
 
+    # Slightly different normalization here
     f2 = ell * (ell + 1)
     cl_pp = block[names.cmb_cl, 'pp'] / f2
 
