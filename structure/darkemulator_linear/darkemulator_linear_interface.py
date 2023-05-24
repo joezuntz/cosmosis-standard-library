@@ -17,19 +17,32 @@ def setup(options):
     
     more_config = {}
     # redshift: linear matter power spectrum grids
-    more_config['zmin']   = options.get_double(option_section, 'zmin', default=1e-2)
-    more_config['zmid']   = options.get_double(option_section, 'zmid', default=0.1)
-    more_config['zmax']   = options.get_double(option_section, 'zmax', default=10.0)
-    more_config['nztot']  = options.get_int(option_section, 'nztot', default=350)
-    more_config['nzmid']  = options.get_int(option_section, 'nzmid', default=50)
+    z_spacings = options.get_string(option_section, 'z_space').split()
+    z_edges    = options.get_double_array_1d(option_section, 'z_edge')
+    z_mins     = z_edges[:-1]
+    z_maxs     = z_edges[1:] - 1e-4 # to avoid overlapping 
+    z_nbins    = options.get_int_array_1d(option_section, 'z_nbin')
+    z = []
+    for z_spacing, z_min, z_max, z_nbin in zip(z_spacings, z_mins, z_maxs, z_nbins):
+        if z_spacing == 'log':
+            zsub = np.logspace(np.log10(z_min), np.log10(z_max), z_nbin)
+        elif z_spacing == 'lin':
+            zsub = np.linspace(z_min, z_max, z_nbin)
+        z.append(zsub)
+    more_config['z'] = np.hstack(z)
+    # more_config['zmin']   = options.get_double(option_section, 'zmin', default=1e-2)
+    # more_config['zmid']   = options.get_double(option_section, 'zmid', default=0.1)
+    # more_config['zmax']   = options.get_double(option_section, 'zmax', default=10.0)
+    # more_config['nztot']  = options.get_int(option_section, 'nztot', default=350)
+    # more_config['nzmid']  = options.get_int(option_section, 'nzmid', default=50)
     # fourier mode: linear matter power spectrum grids 
     more_config['kmin'] = options.get_double(option_section, "kmin", default=1e-4)
     more_config['kmax'] = options.get_double(option_section, "kmax", default=1e3)
     more_config['nk']   = options.get_int(option_section, "nk", default=500)
     
     # background
-    more_config['zmin_background'] = options.get_double(option_section, 'zmin_background', default=more_config['zmin'])
-    more_config['zmax_background'] = options.get_double(option_section, 'zmax_background', default=more_config['zmax'])
+    more_config['zmin_background'] = options.get_double(option_section, 'zmin_background', default=z_mins[0])
+    more_config['zmax_background'] = options.get_double(option_section, 'zmax_background', default=z_maxs[-1])
     more_config['nz_background'] = options.get_int(option_section, 'nz_background', default=300)
     
     return [pklin_emulator, more_config]
@@ -74,12 +87,7 @@ def execute(block, config):
     # Compute
     # Dark-emulator computes the linear matter power spectrum in the factorized form:
     #   P_lin(k, z) = D_growth(z) P(k, z=0)
-    z = np.hstack([np.logspace(np.log10(more_config['zmin']), 
-                               np.log10(more_config['zmid'])-0.0001, 
-                               more_config['nzmid']), 
-                   np.linspace(more_config['zmid'],
-                               more_config['zmax'], 
-                               more_config['nztot']-more_config['nzmid'])])
+    z = more_config['z']
     k = np.logspace(np.log10(more_config['kmin']), np.log10(more_config['kmax']), more_config['nk'])
     Dg = get_Dgrowth_from_z(cosmo, z)
     P0 = pklin_emulator.get(k)

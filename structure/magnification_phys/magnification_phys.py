@@ -68,11 +68,12 @@ class magnification_class:
         prefactor = (2.0/3.0*rhocrit/H0**2)*(3.0/2.0*H0**2*Om)**2 # [h^4Msun/Mpc^5]
         
         l = np.logspace(0, 5, 1000)
-        pltable = self._kzpktable2pltable(self.pk_nlin_data[0], 
+        sel = self.pk_nlin_data[0] > 0
+        pltable = self._kzpktable2pltable(self.pk_nlin_data[0][sel], 
                                           self.pk_nlin_data[1], 
-                                          self.pk_nlin_data[2], l)
+                                          self.pk_nlin_data[2][sel, :], l)
         
-        chi= self.z2chi(self.pk_nlin_data[0]) # [Mpc/h]
+        chi= self.z2chi(self.pk_nlin_data[0][sel]) # [Mpc/h]
         integrand   = window(chi)*pltable
         clSigmacrit = integrate.simps(integrand.T, chi, axis=0)
         clSigmacrit*= prefactor/1e12 # hMsun/pc^2
