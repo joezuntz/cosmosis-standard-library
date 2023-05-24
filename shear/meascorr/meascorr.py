@@ -51,7 +51,8 @@ class dSigma_meascorr_class:
     
     def _get_dSigma_corr_numerator(self, dpz, Omm, w0):
         zl = self.zl
-        zs = self.zs - dpz
+        #zs = self.zs - dpz # This is the definition in HSC Y1 2x2pt and HSC Y3 3x2pt analyses.
+        zs = self.zs + dpz # This is the definition of CosmoSIS
         sumwlssigcritinvPz = self.sumwlssigcritinvPz
         
         cosmo = self._get_cosmo(Omm, w0)

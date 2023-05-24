@@ -15,14 +15,12 @@ sys.path.insert(0, twopoint_path)
 import twopoint
 import time
 
-def read_rp(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'Mpc/h'):
+def read_rp(filename, xi_type_2pt, theta_type = 'centers'):
     """
     Read the projected radial bins from data file.
     """
     T = twopoint.TwoPointFile.from_fits(filename)
     xi = T.get_spectrum(xi_type_2pt)
-    # make sure the units are in arcmin (or whatever else you want)
-    xi.convert_angular_units(desired_units)
     # get the theta values for a single bin pair.
     # This method currently assumes that the same binning is used for all bin pairs (in a given corr funct).
     # scale cuts are applied later and can be different for each bin pair. 
@@ -41,8 +39,7 @@ def read_rp(filename, xi_type_2pt, theta_type = 'centers', desired_units = 'Mpc/
         return theta_bins
     else:
         raise ValueError("Unknown theta_type in read_theta")
-        
-        
+
 def setup(options):
     """
     Defines the setups to calcurate the magnification bias term, and 
@@ -60,39 +57,52 @@ def setup(options):
     # Choice whether we average the signal within finite radial bin.
     bin_avg = options.get_bool(option_section, "bin_avg", False)
     
-    # radial bins in reference cosmology for dSigma and wp
+    # radial bins in reference cosmology for dSigma (ds) and wp
+    # In reality these radial bins are defined in unit of Mpc/h in the file,
+    # but for the compatibility with CosmoSIS, we need to rename these observables
+    # gammat and wtheta in unit of arcmin.
     theta_file = options.get_string(option_section, "theta_file", "")
-    rp_ds = read_rp(theta_file, 'dsigma', theta_type = 'edges' if bin_avg else 'centers')
-    rp_wp = read_rp(theta_file, 'wp'    , theta_type = 'edges' if bin_avg else 'centers')
+    rp, rp_edges = dict(), dict()
+    if bin_avg:
+        rp['ds'] = read_rp(theta_file, 'ds', theta_type = 'centers')
+        rp['wp'] = read_rp(theta_file, 'wp'    , theta_type = 'centers')
+        rp_edges['ds'] = read_rp(theta_file, 'ds', theta_type = 'edges')
+        rp_edges['wp'] = read_rp(theta_file, 'wp'    , theta_type = 'edges')
+    else:
+        rp['ds'] = read_rp(theta_file, 'ds', theta_type = 'centers')
+        rp['wp'] = read_rp(theta_file, 'wp'    , theta_type = 'centers')
+        rp_edges['ds'] = None
+        rp_edges['wp'] = None
     
-    # Logrithmic bin width
-    dlnrp_ds = np.log(rp_ds[1]/rp_ds[0])
-    dlnrp_wp = np.log(rp_wp[1]/rp_wp[0])
-    
-    # Name of samples used for lens and source: this shoud be read by one of the number_density modules
-    name = options.get_string(option_section, "lens_sample", "")
-    section_lens = "NZ_" + name.upper()
-    name = options.get_string(option_section, "source_sample", "")
-    section_srce = "NZ_" + name.upper()
+    # projection length
+    pimax = options.get_double(option_section, 'pimax', default=100.0)
     
     # initialize magnification bias module
     config = {'verbose': options.get_bool(option_section, "verbose", True)}
     mag = magnification_class(config)
     
-    # projection length
-    pimax = options.get_double(option_section, 'pimax', default=100.0)
     
-    # output section name
-    output_section_wp = options.get_string(option_section, "output_section_name_wp", "")
-    output_section_ds = options.get_string(option_section, "output_section_name_ds", "")
+    # Section names
+    # These names are used to extract/incept the results from/to the block.
+    # These names must be consistently defined in ini file among different modules.
+    section_names = {}
+    # inputs
+    # Name of samples used for lens and source
+    name = options.get_string(option_section, "lens_sample", "")
+    section_names['nz_lens']   = "NZ_" + name.upper()
+    name = options.get_string(option_section, "source_sample", "")
+    section_names['nz_source'] = "NZ_" + name.upper()
+    # galaxy bias
+    section_names['magnification_bias'] = options.get_string(option_section, "magnification_bias", "magnification_bias_parameters")
+    # measurement correction
+    section_names['f_wp'] = options.get_string(option_section, "f_wp", "f_wp")
+    section_names['f_rp'] = options.get_string(option_section, "f_rp", "f_rp")
+    section_names['f_ds'] = options.get_string(option_section, "f_ds", "f_ds")
+    # outputs
+    section_names['wp_out'] = options.get_string(option_section, "wp_out", "galaxy_xi")
+    section_names['ds_out'] = options.get_string(option_section, "ds_out", "galaxy_shear_xi")
     
-    if output_section_wp == "":
-        output_section_wp = 'galaxy_wp'
-    if output_section_ds == "":
-        output_section_ds = 'galaxy_shear_dsigma'
-    
-    return redshifts, rp_ds, rp_wp, dlnrp_ds, dlnrp_wp, mag, section_lens, section_srce, pimax, output_section_wp, output_section_ds
-    
+    return redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names
     
 def execute(block, config):
     """
@@ -102,11 +112,12 @@ def execute(block, config):
     time_start = time.time()
     
     # Get configuration
-    redshifts, rp_ds, rp_wp, dlnrp_ds, dlnrp_wp, mag, section_lens, section_srce, pimax, output_section_wp, output_section_ds = config
+    # Get configuration
+    redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names = config
     
     # number of redshift bins for lens and source.
-    nbin_lens = block[section_lens, 'nbin']
-    nbin_srce = block[section_srce, 'nbin']
+    nbin_lens = block[section_names['nz_lens'], 'nbin']
+    nbin_srce = block[section_names['nz_source'], 'nbin']
     
     # power spectra
     z_nlin, k_nlin, P_nlin = block.get_grid(names.matter_power_nl, "z", "k_h", "P_k")
@@ -118,36 +129,46 @@ def execute(block, config):
     chi = block[names.distances, "D_C"] * h0
     mag.set_z2chi(z, chi)
     
+    # unpack radial bin
+    if bin_avg:
+        # We input the lower edge of each radial bin
+        rp_wp = rp_edges['wp']
+        rp_ds = rp_edges['ds']
+        dlnrp_wp = np.log(rp_wp[1]/rp_wp[0])
+        dlnrp_ds = np.log(rp_ds[1]/rp_ds[0])
+    else:
+        # We input the center each radial bin
+        rp_wp = rp['wp']
+        rp_ds = rp['ds']
+        dlnrp_wp = 0.0
+        dlnrp_ds = 0.0
+    
     # iterate over all lens-source bin pair
     for i in range(nbin_lens):
         # Get representative redshift of i-th lens bin
         zl = redshifts[i]
         
-        # Linear galayx bias
-        alpha  = block['magnification_bias_parameters', 'alpha_{0}'.format(i+1)]
+        # magnification bias parameter
+        alpha  = block[section_names['magnification_bias'], 'alpha_{0}'.format(i+1)]
         Omm = block[names.cosmological_parameters, "Omega_m"]
         mag.set_param(alpha, Omm)
         
         # lens redshift distribution
-        mag.set_nz_lens(block[section_lens, "z"], block[section_lens, "bin_{0}".format(i+1)])
+        mag.set_nz_lens(block[section_names['nz_lens'], "z"], block[section_names['nz_lens'], "bin_{0}".format(i+1)])
         
         # correction factors 
-        f_rp = block.get_double('meascorr_rp', 'bin_{0}'.format(i+1), 1.0)
-        f_wp = block.get_double('meascorr_wp', 'bin_{0}'.format(i+1), 1.0) # multiplied to pimax
+        f_rp = block.get_double(section_names['f_rp'], 'bin_{0}'.format(i+1), 1.0)
+        f_wp = block.get_double(section_names['f_wp'], 'bin_{0}'.format(i+1), 1.0) # multiplied to pimax
         
         # update wp
-        block[output_section_wp+'_gg', 'bin_{0}'.format(i+1)] = block[output_section_wp, 'bin_{0}'.format(i+1)]
-        block[output_section_wp, 'bin_{0}'.format(i+1)] += 0.0 #mag.get_wp_mag(z, rp ,dlnrp,f_wp*pimax)
+        block[section_names['wp_out']+'_gg', 'bin_{0}_{0}'.format(i+1)]  = block[section_names['wp_out'], 'bin_{0}_{0}'.format(i+1)]
+        block[section_names['wp_out']      , 'bin_{0}_{0}'.format(i+1)] += 0.0 #mag.get_wp_mag(z, rp ,dlnrp,f_wp*pimax)
         
-        # apply correction to dSigma overall amplitude
+        # compute magnification bias and apply correction to dSigma overall amplitude
         for j in range(nbin_srce):
-            mag.set_nz_source(block[section_srce, "z"], block[section_srce, "bin_{0}".format(j+1)])
-            f_ds = block.get_double('meascorr_ds', 'bin_{0}_{1}'.format(i+1,j+1), 1.0)
-            block[output_section_ds+'_gG', 'bin_{0}_{1}'.format(i+1,j+1)] = block[output_section_ds, 'bin_{0}_{1}'.format(i+1,j+1)]
-            block[output_section_ds, 'bin_{0}_{1}'.format(i+1,j+1)] += f_ds * mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
-    
-    # record elapsed time.
-    block['elapsed_time', 'magnification'] = time.time() - time_start
-    block.put_metadata('elapsed_time', "magnification", "unit", "seconds")
+            mag.set_nz_source(block[section_names['nz_source'], "z"], block[section_names['nz_source'], "bin_{0}".format(j+1)])
+            f_ds = block.get_double(section_names['f_ds'], 'bin_{0}_{1}'.format(i+1,j+1), 1.0)
+            block[section_names['ds_out']+'_gG', 'bin_{0}_{1}'.format(i+1,j+1)]  = block[section_names['ds_out'], 'bin_{0}_{1}'.format(i+1,j+1)]
+            block[section_names['ds_out']      , 'bin_{0}_{1}'.format(i+1,j+1)] += f_ds * mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
     
     return 0

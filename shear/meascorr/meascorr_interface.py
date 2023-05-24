@@ -1,10 +1,9 @@
 from cosmosis.datablock import names, option_section
 from astropy.io import fits
-from meascorr import dSigma_meascorr_class, wp_meascorr_class, R_meascorr_class
+from meascorr import dSigma_meascorr_class, wp_meascorr_class, rp_meascorr_class
 
 
 class dSigma_meascorr_interface:
-    section_name = 'meascorr_ds' # output section name
     def __init__(self, options):
         # See ${COSMOSIS_DIR}/number_density/photoz_bias/photoz_bias.py 
         # for the consistency of this section refenrece
@@ -17,6 +16,7 @@ class dSigma_meascorr_interface:
             bias_section = sample + "_errors"
         self.bias_section = bias_section
         self.per_bin = per_bin
+        self.section_name = options.get_string(option_section, "output_section", "f_ds")
             
         # Instantiate the dSigma measurement correction handler
         fname_fits = options.get_string(option_section, 'sumwlssigcritinvPz_file', "")
@@ -47,13 +47,9 @@ class dSigma_meascorr_interface:
             # where bin0 is the lens bin id, 
             # and bin1 is the source bin id.
             bin0, bin1 = mc.get_bin_pair()
-            dz = block[biases, 'bias_{0}'%bin1]
+            dz = block[biases, 'bias_{0}'.format(bin1+1)]
             f = mc.get_corr_factor(dz, Omm, w0)
-            block[self.section_name, 'bin_{0}_{1}'%(bin0, bin1)] = f
-        
-    @classmethod
-    def from_fits(cls, fname_fits):
-        return cls(fname_fits)
+            block[self.section_name, 'bin_{0}_{1}'.format(bin0+1, bin1+1)] = f
     
     @classmethod
     def to_fits(cls, fname_fits, overwrite=False, clobber=False):
@@ -80,60 +76,54 @@ class dSigma_meascorr_interface:
 
 
 class wp_meascorr_interface:
-    section_name = 'meascorr_wp' # output section name
     def __init__(self, options):
         """
         
         """
-        # id of lens bin
-        lens_id_list = options.get_double_array_1d(option_section, 'lens_id')
         # representative redshift
-        lens_z_list  = options.get_double_array_1d(option_section, 'lens_z')
-        self.id_zl_map = dict(zip(lens_id_list, lens_z_list))
+        self.redshifts  = options.get_double_array_1d(option_section, 'redshifts')
         config = {'Omm': options[option_section, 'Omm'], 'w0': options[option_section, 'w0']}
         self.wp_meascorr = wp_meascorr_class(config)
+        self.section_name = options.get_string(option_section, "output_section", "f_wp")
     
     def execute(self, block):
         Omm = block[names.cosmological_parameters, 'omega_m']
         w0  = block[names.cosmological_parameters, 'w']
-        for i, zl_rep in self.id_zl_map.items():
-            f = self.wp_meascorr(zl_rep, Omm, w0)
-            block[self.section_name, 'bin_{0}'%binid] = f
+        for binid, redshift in enumerate(self.redshifts):
+            f = self.wp_meascorr.get_corr_factor(redshift, Omm, w0)
+            block[self.section_name, 'bin_{0}'.format(binid+1)] = f
         
         
 class rp_meascorr_interface:
-    section_name = 'meascorr_rp' # output section name
     def __init__(self, options):
-        # id of lens bin
-        lens_id_list = options.get_double_array_1d(option_section, 'lens_id')
-        # representative redshift
-        lens_z_list  = options.get_double_array_1d(option_section, 'lens_z')
-        self.id_zl_map = dict(zip(lens_id_list, lens_z_list))
+        self.redshifts  = options.get_double_array_1d(option_section, 'redshifts')
         config = {'Omm': options[option_section, 'Omm'], 'w0': options[option_section, 'w0']}
         self.rp_meascorr = rp_meascorr_class(config)
+        self.section_name = options.get_string(option_section, "output_section", "f_rp")
     
     def execute(self, block):
         Omm = block[names.cosmological_parameters, 'omega_m']
         w0  = block[names.cosmological_parameters, 'w']
-        for i, zl_rep in self.id_zl_map.items():
-            f = self.rp_meascorr(zl_rep, Omm, w0)
-            block[self.section_name, 'bin_{0}'%binid] = f
+        for binid, redshift in enumerate(self.redshifts):
+            f = self.rp_meascorr.get_corr_factor(redshift, Omm, w0)
+            block[self.section_name, 'bin_{0}'.format(binid+1)] = f
     
         
 def setup(options):
     # extract the type of correction
     # type must be one of 
-    #  - dsigma
+    #  - ds
     #  - wp
     #  - rp
-    corr_type = options.get_bool(option_section, "type")
+    corr_type = options.get_string(option_section, "type")
     
-    if corr_type == 'dsigma':
+    if corr_type == 'ds':
         return dSigma_meascorr_interface(options)
     elif corr_type == 'wp':
         return wp_meascorr_interface(options)
     elif corr_type == 'rp':
         return rp_meascorr_interface(options)
-    
+
 def execute(block, config):
     config.execute(block)
+    return 0

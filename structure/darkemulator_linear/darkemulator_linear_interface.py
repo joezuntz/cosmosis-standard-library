@@ -48,9 +48,9 @@ def execute(block, config):
     mnu   = block[pars, "mnu"]
     omnuh2     = 0.00064 * (mnu/0.06)
     Omm        = (ombh2 + omch2 + ombh2)/h**2
-    Omde       = 1.0-Omm
-    wa    = block[pars, "wa"]
     Omk   = block[pars, "omega_k"]
+    Omde       = 1.0-Omm-Omk
+    wa    = block[pars, "wa"]
     
     # test compatibility
     if wa != 0.0:
@@ -120,14 +120,31 @@ def execute(block, config):
     block[names.distances, "a"] = 1/(z_background+1)
     
     c = astropy.cosmology.w0waCDM(h*100, Omm, Omde, Ob0=ombh2/h**2, w0=w0, wa=wa)
-    D_C = c.comoving_distance(z_background) # Mpc
+    D_C = c.comoving_distance(z_background).value # Mpc
+    H = c.H(z_background).value * 1e3 / 299792458.0
+    D_H = 1 / H
+    
+    if Omk == 0:
+        D_M = D_C
+    elif Omk < 0:
+        s = np.sqrt(-Omk)
+        D_M = (D_H / s)  * np.sin(s * D_C / D_H)
+    else:
+        s = np.sqrt(Omk)
+        D_M = (D_H / s) * np.sinh(s * D_C / D_H)
+
+    D_L = D_M * (1 + z_background)
+    D_A = D_M / (1 + z_background)
+    D_V = ((1 + z_background)**2 * z_background * D_A**2 / H)**(1./3.)
+    
     block[names.distances, "D_C"] = D_C # Note that this is in unit of Mpc, not in Mpc/h which is usually used in weak lensing analysis
-    # block[names.distances, "D_M"] = D_M
-    # block[names.distances, "D_L"] = D_L
-    # block[names.distances, "D_A"] = D_A
-    # block[names.distances, "D_V"] = D_V
-    # block[names.distances, "H"] = H
+    block[names.distances, "D_M"] = D_M
+    block[names.distances, "D_L"] = D_L
+    block[names.distances, "D_A"] = D_A
+    block[names.distances, "D_V"] = D_V
+    block[names.distances, "H"] = H
     # block[names.distances, "MU"] = mu
+    
     
     return 0
 

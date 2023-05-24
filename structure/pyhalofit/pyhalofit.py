@@ -74,7 +74,7 @@ def pklintable2pkhalotable(k_in, z_in, pklintable_in, Omm0, Omde0, w0, wa, h, mn
         coeffs  = _get_coeffs(neff, C, Omdez[i], w0, fnu0)
         # append
         R_sigma_sub[j] = R_sigma
-        coeffs_sub[j]  = coeffs
+        coeffs_sub[j]  = np.array(coeffs)
     R_sigma_interp = interp1d(z[i_sub], R_sigma_sub, kind='linear', bounds_error=False, fill_value=(R_sigma_sub[0], R_sigma_sub[-1]))
     coeffs_interp  = [ius(z[i_sub], coeff_sub) for coeff_sub in coeffs_sub.T]
     
@@ -166,7 +166,7 @@ def _get_neff_C(k, Delta_L, R_sigma, ep=1e-2):
     neff = -3 - np.mean(dlnsigma_dlnR)
     C    = - d2lnsigma_d2lnR
 
-    return neff, C
+    return neff, C[0]
 
 def _get_coeffs(neff, C, Omdez, w0, fnu0):
     an = 10.**( 1.5222 + 2.8553*neff + 2.3706*neff**2 + 0.9903*neff**3 + 0.2250*neff**4 - 0.6038*C + 0.1749*Omdez*(1.+w0) )
