@@ -33,32 +33,35 @@ explanation: |4
 
         Option name                       Input-3d-spectrum                 Default output name
         
-        shear-shear                       matter_power_nl                   shear_cl
-        weyl-weyl                         weyl_curvature_spectrum_nl        shear_cl
-        shear-intrinsic                   matter_intrinsic_power            shear_cl_gi
-        intrinsic-intrinsic               intrinsic_power                   shear_cl_ii
-        intrinsicb-intrinsicb             intrinsic_power_bb                shear_cl_bb
-        position-position                 matter_power_nl                   galaxy_cl
-        magnification-density             matter_power_nl                   magnification_density_cl
-        magnification-magnification       matter_power_nl                   magnification_cl
-        position-shear                    matter_power_nl                   galaxy_shear_cl
-        density-intrinsic                 matter_intrinsic_power            galaxy_intrinsic_cl
-        magnification-intrinsic           matter_intrinsic_power            magnification_intrinsic_cl
-        magnification-shear               matter_power_nl                   magnification_shear_cl
-        shear-cmbkappa                    matter_power_nl                   shear_cmbkappa_cl
-        cmbkappa-cmbkappa                 matter_power_nl                   cmbkappa_cl
-        intrinsic-cmbkappa                matter_intrinsic_power            intrinsic_cmbkappa_cl
-        density-cmbkappa                  matter_power_nl                   galaxy_cmbkappa_cl
-        fast-shear-shear-ia               matter_power_nl                   shear_cl
-        fast-lingal-shear-ia              matter_power_nl                   galaxy_shear_cl
-        fast-position-shear-ia            matter_power_nl                   galaxy_shear_cl
-        lingal-lingal                     matter_power_nl                   galaxy_cl
-        lingal-shear                      matter_power_nl                   galaxy_shear_cl
-        lingal-magnification              matter_power_nl                   galaxy_magnification_cl
-        lingal-intrinsic                  matter_intrinsic_power            galaxy_intrinsic_cl
-        nlgal-nlgal                       matter_power_nl                   galaxy_cl
-        nlgal-shear                       matter_power_nl                   galaxy_shear_cl
-        nlgal-magnification               matter_power_nl                   galaxy_magnification_cl
+        shear-shear                          matter_power_nl                   shear_cl
+        weyl-weyl                            weyl_curvature_spectrum_nl        shear_cl
+        shear-intrinsic                      matter_intrinsic_power            shear_cl_gi
+        intrinsic-intrinsic                  intrinsic_power                   shear_cl_ii
+        intrinsicb-intrinsicb                intrinsic_power_bb                shear_cl_bb
+        position-position                    matter_power_nl                   galaxy_cl
+        magnification-density                matter_power_nl                   magnification_density_cl
+        magnification-magnification          matter_power_nl                   magnification_cl
+        position-shear                       matter_power_nl                   galaxy_shear_cl
+        density-intrinsic                    matter_intrinsic_power            galaxy_intrinsic_cl
+        magnification-intrinsic              matter_intrinsic_power            magnification_intrinsic_cl
+        magnification-shear                  matter_power_nl                   magnification_shear_cl
+        shear-cmbkappa                       matter_power_nl                   shear_cmbkappa_cl
+        cmbkappa-cmbkappa                    matter_power_nl                   cmbkappa_cl
+        intrinsic-cmbkappa                   matter_intrinsic_power            intrinsic_cmbkappa_cl
+        density-cmbkappa                     matter_power_nl                   galaxy_cmbkappa_cl
+        fast-shear-shear-ia                  matter_power_nl                   shear_cl
+        fast-lingal-shear-ia                 matter_power_nl                   galaxy_shear_cl
+        fast-position-shear-ia               matter_power_nl                   galaxy_shear_cl
+        lingal-lingal                        matter_power_nl                   galaxy_cl
+        lingal-shear                         matter_power_nl                   galaxy_shear_cl
+        lingal-magnification                 matter_power_nl                   galaxy_magnification_cl
+        lingal-intrinsic                     matter_intrinsic_power            galaxy_intrinsic_cl
+        nlgal-nlgal                          matter_power_nl                   galaxy_cl
+        nlgal-shear                          matter_power_nl                   galaxy_shear_cl
+        nlgal-magnification                  matter_power_nl                   galaxy_magnification_cl
+        GenericClustering-GenericClustering  galaxy_power                      galaxy_cl
+        GenericClustering-shear              matter_galaxy_power               galaxy_shear_cl
+        Genericclustering-intrinsic          galaxy_intrinsic_power            galaxy_intrinsic_cl
 
 
     For each of the spectra listed above you can set a parameter in the parameter file 
@@ -66,11 +69,13 @@ explanation: |4
     names should be used for it.
 
     You can set either:
-    shear-shear = T   ; to use the default wl_number_density n(z) section and save to default shear_cl
-    shear-shear = euclid-ska  ; to cross-correlate n(z) from nz_euclid and nz_ska sections, and save to shear_cl
-    shear-shear = red-red:shear_cl_red  ; to auto-correlate n(z) from the nz_red section and then save to shear_cl_red
-
-    If no spectra are chosen at all then only "shear-shear=T" is assumed.
+    shear-shear = euclid-ska   ; to cross-correlate n(z) from nz_euclid and nz_ska sections, and save to shear_cl
+    shear-shear = red-red:red  ; to auto-correlate n(z) from the nz_red section and then save to shear_cl_red
+    shear-shear = sample1-sample2:xxx:yyy    ; to correlate nz_sample1 and nz_sample2, reading the matter power spectrum 
+                                             ; from matter_power_nl_xxx and saving to shear_cl_yyy
+    shear-shear = sample1-sample2:{1-3}:zzz  ; to correlate nz_sample11 and nz_sample2, reading the matter power spectrum 
+                                             ; from matter_power_nl_1, matter_power_nl_2, and matter_power_nl_3
+                                             ; for each tomographic bin, and saving to shear_cl_zzz. Auto-correlations only.
 
     The same forms can be used for all the other spectra, though note that the magnification spectra
     also require information on the luminosity function.
