@@ -55,24 +55,30 @@ class Power3D(object):
             append this suffix to self.section to form section_name
             from which to read in P(k) data.
         """
-        if self.source_specific:
-            self.section_name = self.section + suffix
-            try:
-                self.lin_section_name = self.lin_section + suffix
-            except AttributeError:
-                self.lin_section_name = None
-        else:
-            self.section_name = self.section
-            try:
-                self.lin_section_name = self.lin_section
-            except AttributeError:
-                self.lin_section_name = None
+        self.section_name = self.get_section_name(suffix)
+        self.lin_section_name = self.get_section_name(suffix, lin=True)
 
         # These splines get set later, since they are cosmology dependent
         self.chi_logk_spline = None
         self.lin_z0_logk_spline = None
         self.lin_growth_spline = None
         self.sublin_spline = None
+
+    @classmethod
+    def get_section_name(cls, suffix="", lin=False):
+        if lin:
+            if not hasattr(cls, 'lin_section'):
+                name = None
+            elif cls.source_specific:
+                name = cls.lin_section + suffix
+            else:
+                name = cls.lin_section
+        else:
+            if cls.source_specific:
+                name = cls.section + suffix
+            else:
+                name = cls.section
+        return name
 
     def __hash__(self):
         return hash(self.section_name)
@@ -1173,6 +1179,31 @@ class SpectrumType(Enum):
         prefactor_type = (None, "mag")
         has_rsd = False
 
+    class GenericclusteringGenericclustering(Spectrum):
+        autocorrelation = True
+        power_3d_type = GalaxyPower3D
+        kernel_types = ("N", "N")
+        name = "galaxy_cl"
+        prefactor_type = (None, None)
+        has_rsd = True
+
+    class GenericclusteringShear(Spectrum):
+        power_3d_type = MatterGalaxyPower3D
+        kernel_types = ("N", "W")
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_type = (None, "lensing")
+        has_rsd = False
+
+    class GenericclusteringIntrinsic(Spectrum):
+        power_3d_type = GalaxyIntrinsicPower3D
+        kernel_types = ("N", "N")
+        autocorrelation = False
+        name = "galaxy_intrinsic_cl"
+        prefactor_type = (None, None)
+        has_rsd = False
+
+
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
     # types, for example ones done with modified gravity changes.
@@ -1417,7 +1448,8 @@ class SpectrumCalculator(object):
                     print("Calculating Limber: "
                         f"Kernel 1 = {kernel_key_a}, "
                         f"Kernel 2 = {kernel_key_b}, "
-                        f"P_3D = {power_key[0].__name__} {power_key[1]} "
+                        f"P_3D = {power_key[0].__name__}, "
+                        f"section = {power_key[0].get_section_name(power_key[1])} "
                         f"--> Output: {s.section_name}")
                 except:
                     raise ValueError("To specify a P(k)->C_ell projection with one or "
@@ -1540,6 +1572,8 @@ class SpectrumCalculator(object):
         for power_options in self.req_power_options:
             powertype, suffix, do_exact = power_options
             power = powertype(suffix)
+            if self.verbose:
+                print(f"Loading {power.section_name} 3D power spectrum")
             power.load_from_block(block, self.chi_of_z)
             if do_exact:
                 power.set_nonlimber_splines(block, self.chi_of_z)
@@ -1580,7 +1614,7 @@ class SpectrumCalculator(object):
         spectrum.prepare(block, lin_bias_prefix=self.lin_bias_prefix)
 
         if self.verbose:
-            print(f"computing spectrum {spectrum.__class__.__name__} for samples"
+            print(f"Computing spectrum {spectrum.__class__.__name__} ({spectrum.section_name}) for samples"
                   f" ({spectrum.sample_a}, {spectrum.sample_b})")
 
         for i in range(na):
