@@ -8,6 +8,19 @@ import numpy as np
 import astropy.cosmology
 import warnings
 import sys
+from scipy.interpolate import LinearNDInterpolator
+
+
+def my_ceil(a, precision=0):
+    return np.true_divide(np.ceil(a * 10**precision), 10**precision)
+
+
+def my_floor(a, precision=0):
+    return np.true_divide(np.floor(a * 10**precision), 10**precision)
+
+
+round_up = np.vectorize(my_ceil)
+round_down = np.vectorize(my_floor)
 
 
 def set_params(block, model_class):
@@ -56,15 +69,24 @@ def set_params(block, model_class):
 
 
 def setup(options):
+
     verbose = options.get_bool(option_section, 'verbose', default=False)
     SO = options.get_int(option_section, 'SO', default=500)
     model = options.get_string(option_section, "astropy_model", default='None')
 
+    try:
+        fb_table = options[option_section, 'fb_table']
+    except:
+        fb_table = None
+
+    extrapolate = options.get_bool(option_section, 'extrapolate', default=False)
+
     # These are parameters for spk
     config = {}
-
     config["verbose"] = verbose
     config["SO"] = SO
+    config["fb_table"] = fb_table
+    config["extrapolate"] = extrapolate
 
 
     # Models available in astropy.cosmology
@@ -85,7 +107,7 @@ def setup(options):
     if 'None' not in model:
         model_class = astropy_models.get(model.lower())
         if model_class is None:
-            raise ValueError("Unknown astropy model {}".format(model))        
+            raise ValueError(f"[SPK]: Unknown astropy model: {model}")        
 
     config["model_class"] = model_class
 
@@ -94,11 +116,14 @@ def setup(options):
 def execute(block, config):
     verbose = config['verbose']
     SO = config['SO']
+    fb_table = config['fb_table']
+    extrapolate = config['extrapolate']
 
-    #Create our cosmological model
-    
+    # Create our cosmological model
     model_class = config["model_class"]
 
+    M_halo = None
+    fb = None
     cosmo = None
     if model_class:
             cosmo = set_params(block, model_class)
@@ -106,28 +131,56 @@ def execute(block, config):
     if not verbose:
         warnings.filterwarnings("ignore", category=UserWarning)
 
-    # Load the current unmodulated matter power spectrum
+    # Load the current non-linear matter power spectrum
     section = section_names.matter_power_nl
     k, z_array, P = (block.get_grid(section, "k_h", "z", "P_k"))
 
-    params = ['fb_a', 'fb_pow', 'fb_pivot', 'extrapolate', 'alpha', 'beta', 'gamma', 'M_halo', 'fb']
+    params = ['fb_a', 'fb_pow', 'fb_pivot', 'alpha', 'beta', 'gamma']
 
     spk_params = {}
-    for param in params:
+    for param_i in params:
         try:
-            spk_params[param] = block.get('spk', param)
+            spk_params[param_i] = block.get('spk', param_i)
         except:
-            spk_params[param] = None
+            spk_params[param_i] = None
 
+    modes = [
+        ('Power law', ['fb_a', 'fb_pow', 'fb_pivot'], spk_params['fb_a'], spk_params['fb_pow'], spk_params['fb_pivot']),
+        ('Non-parametric fb table', ['fb_table'], fb_table),
+        ('Redshift dependent power law', ['alpha', 'beta', 'gamma', 'astropy_model'], spk_params['alpha'], spk_params['beta'], spk_params['gamma'], cosmo)
+    ]
+    provided_modes = sum(any(param is not None for param in mode[2:]) for mode in modes)
+
+    if provided_modes != 1:
+        provided_params = [param for mode in modes for param in mode[1] if mode[2:].count(None) != len(mode[2:])]
+        raise ValueError(f"[SPK]: Only one mode to specify the baryon fraction should be provided. You provided: {provided_params}")
+
+    for mode in modes:
+        if any(param is not None for param in mode[2:]):
+            missing_params = [param_name for param_name, param_value in zip(mode[1], mode[2:]) if param_value is None]
+            if len(missing_params) != 0:
+                raise ValueError(f"[SPK]: The following parameter(s) is(are) missing in mode '{mode[0]}': {', '.join(missing_params)}.")
+
+    if fb_table:
+        tab = np.loadtxt(fb_table, skiprows=1, delimiter=',')
+        inter = LinearNDInterpolator(tab[:, [0, 1]], tab[:, 2], rescale=True)
 
     sup_array = np.empty_like(P)
-    # print(np.shape(sup_array))
+
     for i in range(len(z_array)):
         z = z_array[i]
 
+        if fb_table:
+            min_mass = round_down(np.log10(spk.optimal_mass(SO, z, np.max(k))), 1)
+            max_mass = round_up(np.log10(spk.optimal_mass(SO, z,  np.min(k))), 1)
+            M_halo = np.logspace(min_mass, max_mass, 100)
+            fb = inter(z, M_halo) 
+            if np.isnan(np.sum(fb)):
+                raise ValueError(f"[SPK]: Requested values (z and/or M_halo) outside of the convex hull of the input points in fb_table. Hint: Check your fb_table and the requested redshifts.")
+
         k, sup = spk.sup_model(SO=SO, z=z, fb_a=spk_params['fb_a'], fb_pow=spk_params['fb_pow'], 
-                               fb_pivot=spk_params['fb_pivot'], M_halo=spk_params['M_halo'], 
-                               fb=spk_params['fb'], extrapolate=spk_params['extrapolate'], 
+                               fb_pivot=spk_params['fb_pivot'], M_halo=M_halo, 
+                               fb=fb, extrapolate=extrapolate, 
                                alpha=spk_params['alpha'], beta=spk_params['beta'], 
                                gamma=spk_params['gamma'], cosmo=cosmo, k_array=k, verbose=verbose)
         sup_array[:, i] = sup
