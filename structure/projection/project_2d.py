@@ -1634,7 +1634,6 @@ class SpectrumCalculator(object):
                   f" ({spectrum.sample_a}, {spectrum.sample_b}) from P(k) {spectrum.input_section_name}")
 
         for i in range(na):
-            print(spectrum.len_only_bins)
             if not spectrum.should_do_bin(i+1) and spectrum.len_only_bins == na:
                 continue
             # for auto-correlations C_ij = C_ji so we calculate only one of them,
