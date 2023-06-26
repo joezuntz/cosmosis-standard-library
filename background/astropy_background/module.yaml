@@ -1,0 +1,127 @@
+#This is a template for module description files
+name: "astropy_background"
+version: "2.0"
+purpose: "Calculate background cosmology using astropy"
+url: "https://docs.astropy.org/en/stable/cosmology/index.html"
+interface: "astropy_background.py"
+attribution: ["CosmoSIS Team (interface)", "Astropy Team (library)"]
+rules:
+    ""
+cite:
+    - "The Astropy Collaboration et al 2022 ApJ 935 167"
+
+assumptions:
+    - "Various depending on model choice"
+
+explanation: |
+    "The astropy cosmology library can compute background evolution distances as a function
+    of redshift for a range of different cosmologies:
+		FlatLambdaCDM
+		FlatwCDM
+		Flatw0waCDM
+		LambdaCDM
+		wCDM
+		w0waCDM
+		w0wzCDM
+		w0wzCDM
+		wpwaCDM
+
+    This module requires the user to choose one of these models and then will read
+    the appropriate parameters for that model and compute a range of distance measures."
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    zmax:
+        meaning: "Maximum redshift to compute distances to"
+        type: real
+        default:
+    nz:
+        meaning: "Number of redshift sample points to compute distances to"
+        type: real
+        default:
+    model:
+        meaning: "Name of the astropy model to use"
+        type: str
+        default:
+
+		[('H0', 'hubble'), ('Om0', 'omega_m'), ('Ode0', 'omega_lambda'),
+										  ('w0', 'w'), ('wz', 'wz')],
+
+		[('H0', 'hubble'), ('Om0', 'omega_m'), ('Ode0', 'omega_lambda'), 
+										  ('wp', 'wp'),('wa', 'wa'), ('zp', 'zp')],
+
+
+
+
+
+wp
+
+
+
+
+inputs:
+    cosmological_parameters:
+        hubble:
+            meaning: "Hubble parameter today in km/s/Mpc"
+            type: real
+            default:
+        omega_m:
+            meaning: "Dark matter density fraction today"
+            type: real
+            default:
+        omega_lambda:
+            meaning: "Dark energy density fraction today. Only for some models."
+            type: real
+            default:
+        w:
+            meaning: "Dark energy equation of state today. Only for some models."
+            type: real
+            default:
+        wa:
+            meaning: "Dark energy equation of state scale factor derivative. Only for some models."
+            type: real
+            default:
+        wz:
+            meaning: "Dark energy equation of state redshift derivative today. Only for some models."
+            type: real
+            default:
+        zp:
+            meaning: "Redshift pivot for wpwaCDM model"
+            type: real
+            default:
+        wp:
+            meaning: "Dark energy equation of state at zp for wpwaCDM model"
+            type: real
+            default:
+
+outputs:
+    distnaces:
+    distances:
+        z:
+            meaning: Redshifts of distance samples
+            type: real 1d
+        a:
+            meaning: Scale factor of distance samples
+            type: real 1d
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+        d_m:
+            meaning: Co-moving transverse distance in Mpc
+            type: real 1d
+        d_l:
+            meaning: Luminosity distance in Mpc
+            type: real 1d
+        mu:
+            meaning: Distance modulus
+            type: real 1d
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+        d_v:
+            meaning: Comoving volume in Mpc^3
+            type: real 1d
+        d_c:
+            meaning: Comoving line-of-sight distance in Mpc
+            type: real 1d
+        

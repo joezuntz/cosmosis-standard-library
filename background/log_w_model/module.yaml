@@ -1,0 +1,58 @@
+#This is a template for module description files
+name: "log_w_module"
+version: "1.0"
+purpose: "Implement Tripathi, Sangwan, Jassal (2017) w(z) model"
+url: ""
+interface: "log_w_model.py"
+attribution: [CosmoSIS Team]
+rules:
+    "None"
+cite:
+    - "Tripathi, Sangwan, Jassal (2017)"
+
+
+assumptions:
+    - "w(z) = w_0 + w_1 log(1 + z)"
+
+explanation: |
+    "This w(z) model is several of the example scripts; it uses
+    w(z) = w_0 + w_1 log(1 + z)
+
+    Nothing else is calculated here."
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    zmax:
+        meaning: "Maximum redshift to tabulate w(z) to"
+        type: real
+        default: 3.0
+    nz:
+        meaning: "Number of redshifts to tabulate w(z) at"
+        type: int
+        default: 301
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    cosmological_parameters:
+        w:
+            meaning: "w0 dark energy equation of state parameter today"
+            type: real
+            default:
+        w1:
+            meaning: "w1 dark energy equation of state change with log(1+z)"
+            type: real
+            default:
+
+
+outputs:
+    de_equation_of_state:
+        a:
+            meaning: "Scale factor at tabulated points"
+            type: real 1d
+        z:
+            meaning: "Redshift at tabulated points"
+            type: real 1d
+        w:
+            meaning: "Equation of state at tabulated points"
+            type: real 1d

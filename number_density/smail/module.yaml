@@ -94,6 +94,6 @@ outputs:
         edge_{i}:
             meaning: The nominal edges of the redshift bins (i.e. edges if no photometric errors)
             type: real 1d
-    NGAL_{}:
-        meaning: number density of redshift bin i
-        type: real
+        ngal_{i}:
+            meaning: number density of redshift bin i
+            type: real
