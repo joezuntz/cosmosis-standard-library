@@ -44,20 +44,6 @@ params:
         type: str
         default:
 
-		[('H0', 'hubble'), ('Om0', 'omega_m'), ('Ode0', 'omega_lambda'),
-										  ('w0', 'w'), ('wz', 'wz')],
-
-		[('H0', 'hubble'), ('Om0', 'omega_m'), ('Ode0', 'omega_lambda'), 
-										  ('wp', 'wp'),('wa', 'wa'), ('zp', 'zp')],
-
-
-
-
-
-wp
-
-
-
 
 inputs:
     cosmological_parameters:
