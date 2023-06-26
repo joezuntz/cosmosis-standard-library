@@ -252,7 +252,7 @@ class Spectrum(object):
     name = "?"
     prefactor_type = ("", "")
 
-    def __init__(self, source, sample_a, sample_b, power_key, save_name="", only_bins=None):
+    def __init__(self, source, sample_a, sample_b, power_key, save_name="", only_bins=None, len_only_bins=None):
         # caches of n(z), w(z), P(k,z), etc.
         self.source = source
         self.sample_a, self.sample_b = sample_a, sample_b
@@ -263,6 +263,7 @@ class Spectrum(object):
         else:
             self.section_name = self.name
         self.only_bins = only_bins
+        self.len_only_bins = len_only_bins
         self.input_section_name = power_key[0].section + power_key[1]
 
     def should_do_bin(self, i):
@@ -1418,10 +1419,10 @@ class SpectrumCalculator(object):
                     if power_suffix.startswith("_{") and power_suffix.endswith("}"):
                         suffix_range = power_suffix[2:-1].split("-")
                         suffices = [f"_{x}" for x in range(int(suffix_range[0]), int(suffix_range[1])+1)]
-                        self.only_bins_list = [[i] for i in range(int(suffix_range[0]), int(suffix_range[1])+1)]
+                        only_bins_list = [[i] for i in range(int(suffix_range[0]), int(suffix_range[1])+1)]
                     else:
                         suffices = [power_suffix]
-                        self.only_bins_list = [None]
+                        only_bins_list = [None]
 
                     sample_name_a = sample_name_a.strip()
                     sample_name_b = sample_name_b.strip()
@@ -1430,14 +1431,14 @@ class SpectrumCalculator(object):
                     self.req_kernel_keys.add(kernel_key_a)
                     self.req_kernel_keys.add(kernel_key_b)
 
-                    for power_suffix, only_bins in zip(suffices, self.only_bins_list):
+                    for power_suffix, only_bins in zip(suffices, only_bins_list):
 
                         # power_key is the power_3d class and suffix
                         power_key = (spectrum.power_3d_type, power_suffix)
 
                         # The self in the line below is not a mistake - the source objects
                         # for the spectrum class is the SpectrumCalculator itself
-                        s = spectrum(self, sample_name_a, sample_name_b, power_key, save_name, only_bins=only_bins)
+                        s = spectrum(self, sample_name_a, sample_name_b, power_key, save_name, only_bins=only_bins, len_only_bins=len(only_bins_list))
                         self.req_spectra.append(s)
 
                         if option_name in self.do_exact_option_names:
@@ -1633,7 +1634,8 @@ class SpectrumCalculator(object):
                   f" ({spectrum.sample_a}, {spectrum.sample_b}) from P(k) {spectrum.input_section_name}")
 
         for i in range(na):
-            if not spectrum.should_do_bin(i+1) and len(self.only_bins_list) == na:
+            print(spectrum.len_only_bins)
+            if not spectrum.should_do_bin(i+1) and spectrum.len_only_bins == na:
                 continue
             # for auto-correlations C_ij = C_ji so we calculate only one of them,
             # but save both orderings to the block to account for different ordering
