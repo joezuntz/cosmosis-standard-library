@@ -1,15 +1,14 @@
 #This is a template for module description files
-name: "log_w_module"
+name: "log_w_model"
 version: "1.0"
 purpose: "Implement Tripathi, Sangwan, Jassal (2017) w(z) model"
 url: ""
 interface: "log_w_model.py"
 attribution: [CosmoSIS Team]
 rules:
-    "None"
+    ""
 cite:
     - "Tripathi, Sangwan, Jassal (2017)"
-
 
 assumptions:
     - "w(z) = w_0 + w_1 log(1 + z)"

@@ -1,0 +1,106 @@
+name: pantheon_plus
+version: '2022'
+purpose: Likelihood of the Pantheon+ supernova analysis optionally combined with the SH0ES H0 measurement
+url: "https://pantheonplussh0es.github.io/"
+interface: pantheon_plus_shoes.py
+attribution: [Dillon Brout]
+rules: None.
+cite:
+- "ApJ 938 110 (2022)"
+- "Adam G. Riess et al 2022 ApJL 934 L7"
+
+assumptions:
+-   Pantheon+ statistical and systematic analysis
+
+explanation: |
+    " Supernova IA can be used as standardisable candles,
+    letting us estimate a redshift-distance relation.
+
+    The Pantheon+ sample collected together 1701 light curves of 1550 distinct Type Ia supernovae
+
+    This module uses that data set to constrain the distance modulus
+    vs redshift relation.
+
+    This version can optionally also include SH0ES HST measurements of H0 from Cepheid variables
+    over 40 years of data.
+    "
+params:
+    include_shoes:
+        meaning: Whether to include SH0ES H0 measurements. Note that the parameter name has an o not a zero.
+        type: bool
+        default:
+    data_file:
+        meaning: Optional. File containing supernova measurements
+        type: str
+        default: module_dir/Pantheon+SH0ES.dat
+    covmat_file:
+        meaning: Optional. File containing supernova measurements
+        type: str
+        default: Pantheon+SH0ES_STAT+SYS.cov_compressed.gz
+
+    x_name:
+        meaning: Datablock name for input theory redshift
+        type: str
+        default: z
+    y_section:
+        meaning: Datablock section for input theory distance modulus
+        type: str
+        default: distances
+    y_name:
+        meaning: Datablock name for input theory distance modulus
+        type: str
+        default: mu
+    like_name:
+        meaning: Named for the saved output likelihood
+        type: str
+        default: pantheon
+    likelihood_only:
+        meaning: Skip saving everything except the likelihood.  This prevents
+            you from using e.g. the Fisher matrix sampler but can be faster for quick
+            likelihoods
+        type: bool
+        default: false
+    include_norm:
+        meaning: Include the normalizing constant at the start of the likelihood.  May
+            be needed when comparing models.
+        type: bool
+        default: false
+inputs:
+    distances:
+        z:
+            meaning: Redshifts z of calculated theory D_A(z)
+            type: real 1d
+            default:
+        D_A:
+            meaning: Angular diameter distance D_A(z)
+            type: real 1d
+            default:
+    supernova_params:
+        M:
+            meaning: SN IA absolute magnitude
+            type: real
+            default:
+outputs:
+    likelihoods:
+        pantheon_like:
+            meaning: Gaussian likelihood value of supplied theory mu(z) and
+                M
+            type: real
+    data_vector:
+        pantheon_covariance:
+            meaning: Fixed covariance matrix, only if likelihood_only=F
+            type: real 2d
+        pantheon_data:
+            meaning: Fixed data vector mu_obs, only if likelihood_only=F
+            type: real 1d
+        pantheon_simulation:
+            meaning: Simulated data vector including simulated noise
+                for e.g. ABC, only if likelihood_only=F
+            type: real 1d
+        pantheon_theory:
+            meaning: Predicted theory values mu_theory(z_obs) only
+                if likelihood_only=F
+            type: real 1d
+        pantheon_chi2:
+            meaning: chi^2 value, only if likelihood_only=F
+            type: real
