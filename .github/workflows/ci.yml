@@ -248,7 +248,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip wheel setuptools
         pip install cosmosis
-        pip install --no-binary=mpi4py,camb mpi4py camb
+        pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
         pip install fitsio astropy fast-pt Cython
 
     - name: Build
