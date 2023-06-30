@@ -13,14 +13,14 @@ assumptions:
 -   Bias fixed with redshift (if included)
 -   Galaxies evenly divided between bins
 
-explanation: |
-    "This module takes inputs that specify the underlying spectroscopic (true) redshift
+explanation: >
+    This module takes inputs that specify the underlying spectroscopic (true) redshift
     distribution of the galaxies in the survey.  It then convolves this with a photometric
     error sigma(z) = sigma_0 (1+z) and optionally biases it.  It computes bin edges in the
     survey assuming equal numbers in each.
-
+    
     You can also specify fixed bin edges.
-    "
+
 params:
     nbin:
         meaning: Number of redshift bins with equal number of gals in each
@@ -43,11 +43,11 @@ params:
         type: bool
         default: F
     z_edges:
-        meaning: |
-             "Manually specified redshift bin edges. If nbin - 1 values passed,
-             these are the bounds of photometric selection for those nbin bins.
-             If 2 values are passed, they specify a minimum and maximum redshift between
-             which galaxies are divided into equal number samples. "
+        meaning: >
+            Manually specified redshift bin edges. If nbin - 1 values passed,
+            these are the bounds of photometric selection for those nbin bins.
+            If 2 values are passed, they specify a minimum and maximum redshift between
+            which galaxies are divided into equal number samples.
         type: real 1d
         default: None
     

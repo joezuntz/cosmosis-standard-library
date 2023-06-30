@@ -8,7 +8,7 @@ attribution: Juan P. Cordero, Ian Harrison
 rules: If you use a file from a particular survey you should cite that survey
 cite: []
 assumptions:
-    - "Realisations are provided in FITS extensions NZ_{NAME}_realisation_{NUMBER} starting with NUMBER=0, in correlated order and without skips"
+    - "Realisations are provided in FITS extensions NZ\_{NAME}_realisation_{NUMBER} starting with NUMBER=0, in correlated order and without skips"
 
 explanation: |
     "This module is designed to work with the number density part of the FITS
@@ -29,7 +29,7 @@ explanation: |
     full effect of the shapes of the redshift distributions, as well as their internal
     correlation.
 
-    This module extends the load_nz_fits module to read multiple realisations, one per
+    This module extends the load\_nz\_fits module to read multiple realisations, one per
     extension.
     It then ranks the realisations depending on the selected mode and maps it to a continuous
     hyper-parameter which can be sampled in the pipeline.
@@ -95,6 +95,6 @@ outputs:
         z:
             meaning: Redshift sample values
             type: real 1d
-        bin_:
+        bin\_:
             meaning: n(z) at redshift sample values.  bin_1, bin_2, ...
             type: real 1d

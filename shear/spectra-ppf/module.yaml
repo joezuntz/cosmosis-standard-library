@@ -10,10 +10,8 @@ cite: []
 assumptions:
 -   The Limber integral is valid on the scales in question
 
-explanation: |
-    "
+explanation: >
     DEPRECATED: You should use the module cosmosis-standard-library/structure/projection_ppf/project_2d_ppf.py instead.
-
 
     This variant of the wl_spectra module includes modified gravity
     via the phenomenological D(k,z) which modifies the lensing kernel.
@@ -27,8 +25,8 @@ explanation: |
     direction to get a 2D angular power spectrum.  It is an approximation 
     which is only valid on smaller scales.
 
+    :math:`C_\ell =  A \int_0^{\chi_1} W_1(\chi) W_2(\chi) P(k=l/\chi, z(\chi)) / \chi^2 d\chi`
 
-    C_\ell =  A \int_0^{\chi_1} W_1(\chi) W_2(\chi) P(k=l/\chi, z(\chi)) / chi^2 d\chi
 
     The full integral must integrate over k(\ell) also.
 
@@ -37,7 +35,7 @@ explanation: |
 
     Parts of this code and the underlying implementation of limber are based on cosmocalc:
     https://bitbucket.org/beckermr/cosmocalc-public
-    "
+
 params:
     n_ell:
         meaning: Number of log-spaced ell values to compute

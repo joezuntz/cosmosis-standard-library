@@ -16,15 +16,15 @@ assumptions:
 explanation: |
     "The astropy cosmology library can compute background evolution distances as a function
     of redshift for a range of different cosmologies:
-        FlatLambdaCDM
-        FlatwCDM
-        Flatw0waCDM
-        LambdaCDM
-        wCDM
-        w0waCDM
-        w0wzCDM
-        w0wzCDM
-        wpwaCDM
+    - FlatLambdaCDM
+    - FlatwCDM
+    - Flatw0waCDM
+    - LambdaCDM
+    - wCDM
+    - w0waCDM
+    - w0wzCDM
+    - w0wzCDM
+    - wpwaCDM
 
     This module requires the user to choose one of these models and then will read
     the appropriate parameters for that model and compute a range of distance measures."

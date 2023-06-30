@@ -26,7 +26,7 @@ explanation: |
     and the functional form ansatz in equation 11:
 
     For X as Q, D, or R we use:
-        X(k,a) = [X_0 exp(-k/k_c) + X_inf (1-exp(-k/k_c)) - 1] a^s + 1
+    :math:`X(k,a) = [X_0 \exp{-k/k_c} + X_inf (1-\exp{-k/k_c}) - 1] a^s + 1`
 
     Most of the parameters in this code are the same as those in camb; see
     the camb module information for more details.
@@ -38,6 +38,7 @@ explanation: |
 
     The CosmoSIS team packaged this module into cosmosis form so any issues
     running it here please ask us first.
+
 params:
     scale_dependent:
         meaning: Use scale dependent parameterized functions.  If False, k_c is ignored.
@@ -48,11 +49,12 @@ params:
         type: bool
         default:
     mode:
-        meaning: "Choose from Background, thermal, cmb, or all.\nIn background mode\
-            \ only the expansion history is calculated. In thermal mode the recombination\
-            \ history is computed and rs_zdrag and related quantities also. In cmb\
-            \ mode the CMB power spectra are also calculated. In all mode the matter\
-            \ power spectrum at low redshift and sigma8 are also calculated."
+        meaning: >
+              Choose from Background, thermal, cmb, or all. In background mode
+              only the expansion history is calculated. In thermal mode the recombination
+              history is computed and rs_zdrag and related quantities also. In cmb
+              mode the CMB power spectra are also calculated. In all mode the matter
+              power spectrum at low redshift and sigma8 are also calculated.
         type: str
         default:
     lmax:
