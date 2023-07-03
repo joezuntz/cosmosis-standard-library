@@ -26,13 +26,14 @@ explanation: |
     It implements several different parameterizations, which are described on this page:
     http://www.sfu.ca/~aha25/Models.html
     and referred to here as:
-    model 0 : default GR
-    model 1 : BZ(mu,gamma) ( introduced in arXiv:0801.2431)
-    model 2 : (Q,R) ( introduced in arXiv:1002.4197 )
-    model 3 : (Q0,R0,s)( introduced in arXiv:1002.4197 )
-    model 4 : f(R) ( introduced in arXiv:0909.2045 )
-    model 5 : Chameleon ( introduced in arXiv:0909.2045 )
-    model 6 : Linder's gamma (introduced in arXiv:0507263 )
+    
+    - model 0 : default GR
+    - model 1 : BZ(mu,gamma) ( introduced in arXiv:0801.2431)
+    - model 2 : (Q,R) ( introduced in arXiv:1002.4197 )
+    - model 3 : (Q0,R0,s)( introduced in arXiv:1002.4197 )
+    - model 4 : f(R) ( introduced in arXiv:0909.2045 )
+    - model 5 : Chameleon ( introduced in arXiv:0909.2045 )
+    - model 6 : Linder's gamma (introduced in arXiv:0507263 )
 params:
     mode:
         meaning: Choose from Background, thermal, cmb, or all. In background mode

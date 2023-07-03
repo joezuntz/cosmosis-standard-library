@@ -77,33 +77,33 @@ params:
         default:
     do_tensors:
         meaning: Include tensor modes
-        type: ???
+        type: bool
         default: false
     zmin:
         meaning: Min value to save P(k,z)
-        type: ???
+        type: real
         default: 0
     zmax:
         meaning: Max value to save P(k,z)
-        type: ???
+        type: real
         default: 4
     nz:
         meaning: Number of z values to save P(k,z) (default 401, so that dz=0.01)
-        type: ???
+        type: int
         default:
     do_nonlinear:
         meaning: Apply non-linear halofit corrections to matter-power.  Relevant only
             for lensing right now
-        type: ???
+        type: bool
         default: false
     do_lensing:
         meaning: Include lensing of CMB, and save C_ell phi-phi
-        type: ???
+        type: bool
         default: false
     high_ell_template:
         meaning: Required for lensing - set to the file included in the camb dir (no
             default)
-        type: ???
+        type: str
         default:
 inputs:
     modified_gravity:

@@ -4,7 +4,7 @@ version: 1
 purpose: Load, rank, and sample a set of density n(z) realisations from a FITS file
 url: ''
 interface: nz_multirank.py
-attribution: Juan P. Cordero, Ian Harrison
+attribution: ["Juan P. Cordero", "Ian Harrison"]
 rules: If you use a file from a particular survey you should cite that survey
 cite: []
 assumptions:
