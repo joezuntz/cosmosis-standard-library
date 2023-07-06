@@ -207,7 +207,8 @@ else
 endif
 	# Have to run this install twice because otherwise it doesn't find its own install the first time
 	# Odd I know. It's because of how we're hacking the installation path.
-	cd python; export CC=$(CC); export PYTHONPATH=${PYTHONPATH}:$(PYTHONINSTALL);  $(PYTHON)  autosetup.py install   --prefix=$(MDIR)/classy_install;  $(PYTHON)  autosetup.py install   --prefix=$(MDIR)/classy_install
+	# cd python; export CC=$(CC); export PYTHONPATH=${PYTHONPATH}:$(PYTHONINSTALL);  $(PYTHON)  autosetup.py install  --prefix=$(MDIR)/classy_install;  $(PYTHON)  autosetup.py install  --prefix=$(MDIR)/classy_install
+	cd python; pip install . --target=$(MDIR)/classy_install
 	rm python/autosetup.py
 
 clean: .base
