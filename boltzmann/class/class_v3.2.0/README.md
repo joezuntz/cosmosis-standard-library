@@ -118,3 +118,4 @@ To get support, please open a new issue on the
 https://github.com/lesgourg/class_public
 
 webpage!
+
