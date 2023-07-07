@@ -17,22 +17,19 @@ def setup(options):
 
     # Set up the path to let us import the emulator
     install_dir = f"{dirname}/ee_install/"
-    print(install_dir)
     sys.path.insert(0, install_dir)
 
     # check everything imports
     import euclidemu2
-
-    emulator = None
-
-    return [input_section, output_section, emulator]
+    print("Loaded Euclid Emulator 2 installation at", euclidemu2.__file__)
+    return [input_section, output_section]
 
 
 def execute(block, config):
     import euclidemu2 as ee2
 
     # Recover config information
-    input_section, output_section, emulator = config
+    input_section, output_section = config
 
     # Get cosmo params from block
     pars = names.cosmological_parameters

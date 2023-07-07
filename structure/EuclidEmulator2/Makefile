@@ -10,7 +10,6 @@ SRC = src/euclidemu2.pyx src/cosmo.cxx src/emulator.cxx
 all: ee_install/done
 
 ee_install/done: $(SRC) $(HEADERS) $(DATA)
-	python --version
 	export CC=$(CC) CXX=$(CXX); export PYTHONPATH=${PYTHONPATH}:$(PYTHONINSTALL);  $(PYTHON) -m pip install --no-deps   --target=${PYTHONINSTALL} .
 	touch ee_install/done
 
