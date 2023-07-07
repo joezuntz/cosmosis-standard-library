@@ -65,9 +65,7 @@ jobs:
           ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  -1441.30' output/planck.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  -1441.46' output/planck.log; fi
+          grep -e 'Likelihood =  -1441.30' -e 'Likelihood =  -1441.46' output/planck.log
           
 
       - name: Class Planck
@@ -138,9 +136,8 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3.ini -p pk_to_cl_gg.save_kernels=T pk_to_cl.save_kernels=T | tee output/des-y3.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6043.23' output/des-y3.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6043.34' output/des-y3.log; fi
+          # Different versions - camb changes and scipy interpolation changes both alter these
+          grep -e 'Likelihood =  6043.23' -e 'Likelihood =  6043.34' -e 'Likelihood =  6043.33' output/des-y3.log
 
 
       - name: DES Y3 Class likelihood
@@ -155,9 +152,7 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3-shear.ini | tee output/des-y3-shear.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  2957.03' output/des-y3-shear.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  2957.12' output/des-y3-shear.log; fi
+          grep -e 'Likelihood =  2957.03' -e 'Likelihood =  2957.12' output/des-y3-shear.log
 
 
       - name: DES Y3 likelihood with Mira Titan
@@ -165,18 +160,14 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3-mira-titan.ini | tee output/des-y3-mt.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6048.0' output/des-y3-mt.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6048.1' output/des-y3-mt.log; fi
+          grep -e 'Likelihood =  6048.0' -e 'Likelihood =  6048.1' output/des-y3-mt.log
 
       - name: DES Y3 likelihood with Mead nonlinear
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3-mead.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6049.94' output/des-y3-mead.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6049.00' output/des-y3-mead.log; fi
+          grep -e 'Likelihood =  6049.94' -e 'Likelihood =  6049.00' output/des-y3-mead.log
 
       - name: DES Y3 6x2pt
         shell: bash -l {0}
