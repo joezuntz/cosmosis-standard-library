@@ -394,9 +394,8 @@ def extract_camb_params(block, config, more_config):
     return p
 
 
-
-
-def save_derived_parameters(r, p, block):
+def save_derived_parameters(r, block):
+    p = r.Params
     # Write the default derived parameters to distance section
     derived = r.get_derived_params()
     for k, v in derived.items():
@@ -431,7 +430,8 @@ def save_derived_parameters(r, p, block):
         block[names.cosmological_parameters, cosmosis_name] = CAMB_value
 
 
-def save_distances(r, p, block, more_config):
+def save_distances(r, block, more_config):
+    p = r.Params
 
     # Evaluate z on a different grid than the spectra, so we can easily extend it further
     z_background = np.linspace(
@@ -486,6 +486,7 @@ def save_distances(r, p, block, more_config):
         chistar = (r.conformal_time(0)- r.tau_maxvis)
         block[names.distances, "CHISTAR"] = chistar
 
+
 def compute_growth_factor(r, block, P_tot, k, z, more_config):
     if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
@@ -500,9 +501,8 @@ def compute_growth_factor(r, block, P_tot, k, z, more_config):
     return D
 
 
-
-def save_matter_power(r, p, block, more_config):
-
+def save_matter_power(r, block, more_config):
+    p = r.Params
     # Grids in k, z on which to save matter power.
     # There are two kmax values - the max one calculated directly,
     # and the max one extrapolated out too.  We output to the larger
@@ -520,8 +520,10 @@ def save_matter_power(r, p, block, more_config):
         # Get an interpolator.  By default bicubic if size is large enough,
         # otherwise it drops down to linear.
         # First we do the linear version of the spectrum
-        P, zcalc, kcalc = r.get_matter_power_interpolator(nonlinear=False, var1=tt, var2=tt, return_z_k=True,
-                                        extrap_kmax=more_config['kmax_extrapolate'])
+        P, zcalc, kcalc = r.get_matter_power_interpolator(
+            nonlinear=False, var1=tt, var2=tt, return_z_k=True,
+            extrap_kmax=more_config['kmax_extrapolate']
+        )
         assert P.islog
         # P.P evaluates at k instead of logk
         p_k = P.P(z, k, grid=True)
@@ -537,8 +539,10 @@ def save_matter_power(r, p, block, more_config):
         # Now if requested we also save the linear version
         if p.NonLinear is not camb.model.NonLinear_none:
             # Exact same process as before
-            P = r.get_matter_power_interpolator(nonlinear=True, var1=tt, var2=tt,
-                                            extrap_kmax=more_config['kmax_extrapolate'])
+            P = r.get_matter_power_interpolator(
+                nonlinear=True, var1=tt, var2=tt,
+                extrap_kmax=more_config['kmax_extrapolate']
+            )
             p_k = P.P(z, k, grid=True)
             section_name = matter_power_section_names[transfer_type] + "_nl"
             block.put_grid(section_name, "z", z, "k_h", k, "p_k", p_k)
@@ -571,7 +575,7 @@ def save_matter_power(r, p, block, more_config):
     block[names.cosmological_parameters, "S_8"] = sigma_8[0]*np.sqrt(p.omegam/0.3)
 
 
-def save_cls(r, p, block):
+def save_cls(r, block):
     # Get total (scalar + tensor) lensed CMB Cls
     cl = r.get_total_cls(raw_cl=False, CMB_unit="muK")
     ell = np.arange(2,cl.shape[0])
@@ -581,7 +585,7 @@ def save_cls(r, p, block):
     block[names.cmb_cl, "BB"] = cl[2:,2]
     block[names.cmb_cl, "TE"] = cl[2:,3]
 
-    if p.DoLensing:
+    if r.Params.DoLensing:
         # Get CMB lensing potential
         # The cosmosis-standard-library clik interface expects ell(ell+1)/2 pi Cl
         # for all angular power spectra, including the lensing potential.
@@ -631,14 +635,14 @@ def execute(block, config):
             more_config["n_printed_errors"] += 1
         return 1
 
-    save_derived_parameters(r, p, block)
-    save_distances(r, p, block, more_config)
+    save_derived_parameters(r, block)
+    save_distances(r, block, more_config)
 
     if p.WantTransfer:
-        save_matter_power(r, p, block, more_config)
+        save_matter_power(r, block, more_config)
 
     if p.WantCls:
-        save_cls(r, p, block)
+        save_cls(r, block)
     
     return 0
 
