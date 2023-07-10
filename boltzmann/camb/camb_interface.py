@@ -18,6 +18,9 @@ MODE_POWER = "power"
 MODE_ALL = "all"
 MODES = [MODE_BG, MODE_THERM, MODE_CMB, MODE_POWER, MODE_ALL]
 
+DEFAULT_A_S = 2.1e-9
+
+
 # See this table for description:
 #https://camb.readthedocs.io/en/latest/transfer_variables.html#transfer-variables
 matter_power_section_names = {
@@ -301,14 +304,14 @@ def extract_camb_params(block, config, more_config):
     want_perturbations = more_config['mode'] not in [MODE_BG, MODE_THERM]
     want_thermal = more_config['mode'] != MODE_BG
 
-    # JMedit - check for input sigma8
-    samplesig8 = block.has_value(cosmo, 'sigma_8_input')
+    if block.has_value(cosmo, 'sigma_8_input'):
+        if not block.has_value(cosmo, 'A_s'):
+            block[cosmo, 'A_s'] = DEFAULT_A_S
     
     # if want_perturbations:
-    if not samplesig8: #JMedit; if we're sampling sigma8, wait til we have A_s
-        init_power = extract_initial_power_params(block, config, more_config)
+    init_power = extract_initial_power_params(block, config, more_config)
     nonlinear = extract_nonlinear_params(block, config, more_config)
-# else:
+    # else:
     #     init_power = None
     #     nonlinear = None
 
@@ -338,8 +341,6 @@ def extract_camb_params(block, config, more_config):
     if (block.has_value(cosmo, "omega_nu") or block.has_value(cosmo, "omnuh2")) and not (block.has_value(cosmo, "mnu")):
         warnings.warn("Parameter omega_nu and omnuh2 are being ignored. Set mnu and num_massive_neutrinos instead.")
 
-
-
     # Set h if provided, otherwise look for theta_mc
     if block.has_value(cosmo, "hubble"):
         cosmology_params["H0"] = block[cosmo, "hubble"]
@@ -348,13 +349,6 @@ def extract_camb_params(block, config, more_config):
     else:
         cosmology_params["cosmomc_theta"] = block[cosmo, "cosmomc_theta"]/100
 
-    #JMedit
-    if samplesig8:
-        # compute linear matter power spec to figure out what A_s should be
-        #  for desired input sigma8, add it to the datblock
-        sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reion)
-        init_power = extract_initial_power_params(block, config, more_config)
-        
     p = camb.CAMBparams(
         InitPower = init_power,
         Recomb = recomb,
@@ -598,44 +592,19 @@ def save_cls(r, p, block):
         block[names.cmb_cl, "PE"] = cl[2:,2]*(ell*(ell+1))/(2*np.pi)
 
 
-# JMedit: new function here
-def sigma8_to_As(block, config, more_config, cosmology_params, dark_energy, reion):
-    """
-    If input parameters include sigma_8_input, convert that to A_s.
+def recompute_for_sigma8(camb_results, block, config, more_config):
+    # Recompute the power spectra using a new initial power spectrum
+    # This reuses the transfer function, which is what takes time to compute
+    sigma8 = camb_results.get_sigma8_0()
 
-    This function will run CAMB once to compute the linear  matter power spectrum 
+    sigma_8_target = block[cosmo,'sigma_8_input']
+    block[cosmo,'A_s'] = block[cosmo,'A_s'] * sigma_8_target**2/sigma8**2
+    init_power_scaled = extract_initial_power_params(block, config, more_config)
 
-    This function is adapted from the sigma8toAs module in the
-    KIDS KCAP repoistory written by by Tilman Troester.
-    """
-    sigma_8_input = block[cosmo,'sigma_8_input']
-    temp_As = 2.1e-9
-    block[cosmo,'A_s'] = temp_As
-    init_power_temp = extract_initial_power_params(block, config, more_config)
+    camb_results.Params.set_initial_power(init_power_scaled)
+    camb_results.calc_power_spectra()
+    return camb_results
 
-    # do nothing except get linear power spectrum
-    p_temp = camb.CAMBparams(WantTransfer=True,
-                             Want_CMB=False, Want_CMB_lensing=False, DoLensing=False,
-                             NonLinear="NonLinear_none",
-                             WantTensors=False, WantVectors=False, WantCls=False,
-                             WantDerivedParameters=False,
-                             want_zdrag=False, want_zstar=False,\
-                             DarkEnergy=dark_energy,
-                             InitPower = init_power_temp,\
-                             )
-    # making these choices match main setup
-    p_temp.set_accuracy(**more_config["accuracy_params"])
-    p_temp.set_cosmology(ombh2 = block[cosmo, 'ombh2'],
-                         omch2 = block[cosmo, 'omch2'],
-                         omk = block[cosmo, 'omega_k'],
-                         **more_config["cosmology_params"],
-                         **cosmology_params)
-    p_temp.set_matter_power(redshifts=[0.], nonlinear=False, **more_config["transfer_params"])
-    p_temp.Reion = reion
-    r_temp = camb.get_results(p_temp)
-    temp_sig8 = r_temp.get_sigma8()[-1] #what sigma8 comes out from using temp_As?
-    As = temp_As*(sigma_8_input/temp_sig8)**2
-    block[cosmo,'A_s'] = As    
 
 def execute(block, config):
     config, more_config = config
@@ -649,6 +618,9 @@ def execute(block, config):
         else:
             # other modes
             r = camb.get_results(p)
+            if block.has_value(cosmo, 'sigma_8_input'):
+                r = recompute_for_sigma8(r, block, config, more_config)
+
     except camb.CAMBError:
         if more_config["n_printed_errors"] <= more_config["max_printed_errors"]:
             print("CAMB error caught: for these parameters")
