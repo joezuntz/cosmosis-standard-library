@@ -12,9 +12,9 @@ def setup(options):
         option_section, "interpolation", "cubic")
     bias_section = options.get_string(option_section, "bias_section", "")
     per_bin = options.get_bool(option_section, "per_bin", True)
-    output_deltaz = options.get_bool(option_section, "output_deltaz", False)
+    output_deltaz = options.has_value("output_deltaz_section_name")
     output_deltaz_section_name = options.get_string(
-        option_section, "output_deltaz_section_name", "delta_z_out")
+        option_section, "output_deltaz_section_name", "")
     if sample == "":
         pz = names.wl_number_density
     else:

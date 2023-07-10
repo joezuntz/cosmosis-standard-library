@@ -50,14 +50,11 @@ params:
         meaning: Whether to use one value per bin, If False, use one value for all bins.
         type: bool
         default: true
-    output_deltaz:
-        meaning: If set, compute the mean of the shifted n(z).
-        type: bool
-        default: false
     output_deltaz_section_name:
-        meaning: Specifies the section name of the computed means of the shifted n(z).
+        meaning: If set, compute the mean of the shifted n(z) and writes it to the
+            specified section.
         type: string
-        default: delta_z_out
+        default:
 inputs:
     wl_number_density:
         nbin:
