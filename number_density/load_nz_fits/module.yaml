@@ -8,7 +8,7 @@ attribution: [CosmoSIS Team]
 rules: If you use a file from a particular survey you should cite that survey
 cite: []
 assumptions:
--   Data is provided in FITS extensions NZ_{NAME}
+-   Data is provided in FITS extensions NZ\_{NAME}
 -   There are various subtleties to do with the sampling and form of the n(z) data
 
 explanation: |
@@ -48,12 +48,12 @@ params:
         type: str
         default:
     prefix_extension:
-        meaning: Add the prefix NZ_ to the names in data_sets when looking in the
+        meaning: Add the prefix NZ\_ to the names in data_sets when looking in the
             FITS file
         type: bool
         default: true
     prefix_section:
-        meaning: Add the same NZ_ prefix to the section names used in the block.
+        meaning: Add the same NZ\_ prefix to the section names used in the block.
         type: bool
         default: true
     upsampling:

@@ -71,7 +71,7 @@ inputs:
         w:
             meaning: Dark energy EoS.
             type: real
-            default: -1
+            default: -1.0
         h0:
             meaning: Hubble/100km/s/Mpc
             type: real
@@ -83,7 +83,7 @@ inputs:
         n_run:
             meaning: Scalar spectral index running.
             type: real
-            default: -1
+            default: 0.0
         a_s:
             meaning: Primordial amplitude
             type: real

@@ -23,7 +23,7 @@ explanation: >
 
         We use the fiducial values from de Sainte Agathe et al as done in this paper. 
         We then relate the chi2 to the likelihood:
-                log(like) = -chi2/2
+        log(like) = -chi2/2
         "
 params:
         feedback:

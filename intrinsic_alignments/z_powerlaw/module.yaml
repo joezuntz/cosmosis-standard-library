@@ -1,7 +1,6 @@
-#This is a template for module description files
-name: ia_z_powerlap
+name: ia_z_powerlaw
 version: '2.0'
-purpose: ''
+purpose: 'Add redshift dependence to IA model'
 url: ''
 interface: ia_z_powerlaw.py
 attribution: [CosmoSIS team, Niall Maccrann]
@@ -20,8 +19,9 @@ explanation: |
     Specifically, it takes P_II and P_GI (e.g. as calculated by the la_model module)
     and modifies them to:
 
-    P_II(k,z) -> (1+z)^alpha P_II(k,z)
-    P_GI(k,z) -> (1+z)^alpha P_GI(k,z)
+    :math:`P_{II}(k,z) -> (1+z)^\alpha P_{II}(k,z)`
+
+    :math:`P_{GI}(k,z) -> (1+z)^\alpha P_{GI}(k,z)`
 
     "
 params:
