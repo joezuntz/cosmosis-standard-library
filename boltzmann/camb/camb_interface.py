@@ -304,11 +304,11 @@ def extract_camb_params(block, config, more_config):
     want_perturbations = more_config['mode'] not in [MODE_BG, MODE_THERM]
     want_thermal = more_config['mode'] != MODE_BG
 
-    if block.has_value('sigma_8_input'):
+    if block.has_value(cosmo, 'sigma_8_input'):
         warnings.warn("Parameter sigma8_input will be deprecated in favour of sigma_8.")
-        block['sigma_8'] = block['sigma_8_input']
+        block[cosmo, 'sigma_8'] = block[cosmo, 'sigma_8_input']
 
-    if block.has_value('A_s') and block.has_value('sigma_8'):
+    if block.has_value(cosmo, 'A_s') and block.has_value(cosmo, 'sigma_8'):
         warnings.warn("Parameter A_s is being ignored in favour of sigma_8")
 
     # Set A_s for now, this gets rescaled later if sigma_8 is provided.
