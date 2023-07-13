@@ -45,7 +45,7 @@ params:
     mode:
         meaning: "'total' for cdm+baryon+nu spectrum. 'cb' for cdm+baryon"
         type: str
-        deftault: total
+        default: total
 inputs:
     cosmological_parameters:
         ombh2:

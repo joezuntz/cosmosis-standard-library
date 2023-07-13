@@ -11,17 +11,25 @@ assumptions:
 -   Input C_ell sufficiently well-sampled over chosen range
 -   Ell and theta values consistently chosen
 
-explanation: |
-    "
+explanation: >
     The correlation functions are related to the spectra via Bessel functions:
-    \xi_{+}(theta) = \int_0^\infty C^{ss}_\ell J_{0}(\ell \theta) \ell d\ell / 2\pi
-    \xi_{-}(theta) = \int_0^\infty C^{ss}_\ell J_{4}(\ell \theta) \ell d\ell / 2\pi
-      w{-}(theta) = \int_0^\infty C^{gg}_\ell J_{4}(\ell \theta) \ell d\ell / 2\pi
-    \gamma_t(theta) = \int_0^\infty C^{gs}_\ell J_{(0,4)}(\ell \theta) \ell d\ell / 2\pi
+
+
+    :math:`\xi_{+}(\theta) = \int_0^\infty C^{ss}_\ell J_{0}(\ell \theta) \ell d\ell / 2\pi`
+
+
+    :math:`\xi_{-}(\theta) = \int_0^\infty C^{ss}_\ell J_{4}(\ell \theta) \ell d\ell / 2\pi`
+
+
+    :math:`w{-}(\theta) = \int_0^\infty C^{gg}_\ell J_{4}(\ell \theta) \ell d\ell / 2\pi`
+
+
+    :math:`\gamma_t(\theta) = \int_0^\infty C^{gs}_\ell J_{(0,4)}(\ell \theta) \ell d\ell / 2\pi`
+
 
     where s=shear and g=galaxy position.
     In this module that integral is done via a Hankel Transform.
-    "
+
 params:
     corr_type:
         meaning: Either w, gamma, or xi depending which transforms you want

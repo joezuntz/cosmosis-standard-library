@@ -26,7 +26,7 @@ explanation: |
     and the functional form ansatz in equation 11:
 
     For X as Q, D, or R we use:
-        X(k,a) = [X_0 exp(-k/k_c) + X_inf (1-exp(-k/k_c)) - 1] a^s + 1
+    :math:`X(k,a) = [X_0 \exp{-k/k_c} + X_inf (1-\exp{-k/k_c}) - 1] a^s + 1`
 
     Most of the parameters in this code are the same as those in camb; see
     the camb module information for more details.
@@ -38,6 +38,7 @@ explanation: |
 
     The CosmoSIS team packaged this module into cosmosis form so any issues
     running it here please ask us first.
+
 params:
     scale_dependent:
         meaning: Use scale dependent parameterized functions.  If False, k_c is ignored.
@@ -48,11 +49,12 @@ params:
         type: bool
         default:
     mode:
-        meaning: "Choose from Background, thermal, cmb, or all.\nIn background mode\
-            \ only the expansion history is calculated. In thermal mode the recombination\
-            \ history is computed and rs_zdrag and related quantities also. In cmb\
-            \ mode the CMB power spectra are also calculated. In all mode the matter\
-            \ power spectrum at low redshift and sigma8 are also calculated."
+        meaning: >
+              Choose from Background, thermal, cmb, or all. In background mode
+              only the expansion history is calculated. In thermal mode the recombination
+              history is computed and rs_zdrag and related quantities also. In cmb
+              mode the CMB power spectra are also calculated. In all mode the matter
+              power spectrum at low redshift and sigma8 are also calculated.
         type: str
         default:
     lmax:
@@ -75,33 +77,33 @@ params:
         default:
     do_tensors:
         meaning: Include tensor modes
-        type: ???
+        type: bool
         default: false
     zmin:
         meaning: Min value to save P(k,z)
-        type: ???
+        type: real
         default: 0
     zmax:
         meaning: Max value to save P(k,z)
-        type: ???
+        type: real
         default: 4
     nz:
         meaning: Number of z values to save P(k,z) (default 401, so that dz=0.01)
-        type: ???
+        type: int
         default:
     do_nonlinear:
         meaning: Apply non-linear halofit corrections to matter-power.  Relevant only
             for lensing right now
-        type: ???
+        type: bool
         default: false
     do_lensing:
         meaning: Include lensing of CMB, and save C_ell phi-phi
-        type: ???
+        type: bool
         default: false
     high_ell_template:
         meaning: Required for lensing - set to the file included in the camb dir (no
             default)
-        type: ???
+        type: str
         default:
 inputs:
     modified_gravity:
