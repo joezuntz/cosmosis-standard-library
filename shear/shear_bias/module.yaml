@@ -20,7 +20,9 @@ explanation: |
     Since the bias can be different in different bins we have, for the general case
     including cross-spectra:
 
-    C^{ij}_ell -> (1+m_i)(1+m_j) C^{ij}_ell
+    :math:`C^{ij}_\ell -> (1+m_i)(1+m_j) C^{ij}_\ell`
+
+
 params:
     m_per_bin:
         meaning: If T use a separate m for each bin, otherwise a single global one

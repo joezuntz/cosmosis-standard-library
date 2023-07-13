@@ -55,24 +55,30 @@ class Power3D(object):
             append this suffix to self.section to form section_name
             from which to read in P(k) data.
         """
-        if self.source_specific:
-            self.section_name = self.section + suffix
-            try:
-                self.lin_section_name = self.lin_section + suffix
-            except AttributeError:
-                self.lin_section_name = None
-        else:
-            self.section_name = self.section
-            try:
-                self.lin_section_name = self.lin_section
-            except AttributeError:
-                self.lin_section_name = None
+        self.section_name = self.get_section_name(suffix)
+        self.lin_section_name = self.get_section_name(suffix, lin=True)
 
         # These splines get set later, since they are cosmology dependent
         self.chi_logk_spline = None
         self.lin_z0_logk_spline = None
         self.lin_growth_spline = None
         self.sublin_spline = None
+
+    @classmethod
+    def get_section_name(cls, suffix="", lin=False):
+        if lin:
+            if not hasattr(cls, 'lin_section'):
+                name = None
+            elif cls.source_specific:
+                name = cls.lin_section + suffix
+            else:
+                name = cls.lin_section
+        else:
+            if cls.source_specific:
+                name = cls.section + suffix
+            else:
+                name = cls.section
+        return name
 
     def __hash__(self):
         return hash(self.section_name)
@@ -246,7 +252,7 @@ class Spectrum(object):
     name = "?"
     prefactor_type = ("", "")
 
-    def __init__(self, source, sample_a, sample_b, power_key, save_name=""):
+    def __init__(self, source, sample_a, sample_b, power_key, save_name="", only_bins=None):
         # caches of n(z), w(z), P(k,z), etc.
         self.source = source
         self.sample_a, self.sample_b = sample_a, sample_b
@@ -256,6 +262,11 @@ class Spectrum(object):
             self.section_name = self.name + "_" + self.save_name
         else:
             self.section_name = self.name
+        self.only_bins = only_bins
+        self.input_section_name = power_key[0].section + power_key[1]
+
+    def should_do_bin(self, i):
+        return self.only_bins is None or i in self.only_bins
 
     def nbins(self):
         na = self.source.kernels[self.sample_a].nbin
@@ -1173,6 +1184,31 @@ class SpectrumType(Enum):
         prefactor_type = (None, "mag")
         has_rsd = False
 
+    class GenericclusteringGenericclustering(Spectrum):
+        autocorrelation = True
+        power_3d_type = GalaxyPower3D
+        kernel_types = ("N", "N")
+        name = "galaxy_cl"
+        prefactor_type = (None, None)
+        has_rsd = True
+
+    class GenericclusteringShear(Spectrum):
+        power_3d_type = MatterGalaxyPower3D
+        kernel_types = ("N", "W")
+        autocorrelation = False
+        name = "galaxy_shear_cl"
+        prefactor_type = (None, "lensing")
+        has_rsd = False
+
+    class GenericclusteringIntrinsic(Spectrum):
+        power_3d_type = GalaxyIntrinsicPower3D
+        kernel_types = ("N", "N")
+        autocorrelation = False
+        name = "galaxy_intrinsic_cl"
+        prefactor_type = (None, None)
+        has_rsd = False
+
+
 class SpectrumCalculator(object):
     # It is useful to put this here so we can subclass to add new spectrum
     # types, for example ones done with modified gravity changes.
@@ -1379,6 +1415,14 @@ class SpectrumCalculator(object):
                         save_name = ""
                         power_suffix = ""
 
+                    if power_suffix.startswith("_{") and power_suffix.endswith("}"):
+                        suffix_range = power_suffix[2:-1].split("-")
+                        suffices = [f"_{x}" for x in range(int(suffix_range[0]), int(suffix_range[1])+1)]
+                        only_bins_list = [[i] for i in range(int(suffix_range[0]), int(suffix_range[1])+1)]
+                    else:
+                        suffices = [power_suffix]
+                        only_bins_list = [None]
+
                     sample_name_a = sample_name_a.strip()
                     sample_name_b = sample_name_b.strip()
                     kernel_key_a = (spectrum.kernel_types[0], sample_name_a)
@@ -1386,39 +1430,42 @@ class SpectrumCalculator(object):
                     self.req_kernel_keys.add(kernel_key_a)
                     self.req_kernel_keys.add(kernel_key_b)
 
-                    # power_key is the power_3d class and suffix
-                    power_key = (spectrum.power_3d_type, power_suffix)
+                    for power_suffix, only_bins in zip(suffices, only_bins_list):
 
-                    # The self in the line below is not a mistake - the source objects
-                    # for the spectrum class is the SpectrumCalculator itself
-                    s = spectrum(self, sample_name_a, sample_name_b, power_key, save_name)
-                    self.req_spectra.append(s)
+                        # power_key is the power_3d class and suffix
+                        power_key = (spectrum.power_3d_type, power_suffix)
 
-                    if option_name in self.do_exact_option_names:
-                        print("doing exact for option_name", option_name)
-                        power_options = power_key + (True,)
-                        # It may be that the same power_key, but with do_exact=False is already
-                        # in self.req_power_keys. If this is the case remove it. We don't need it.
-                        # It's dead to us.
-                        try:
-                            self.req_power_options.remove(power_key + (False,))
-                        except KeyError:
-                            pass
-                        self.do_exact_section_names.append(s.section_name)
-                        self.req_power_options.add(power_options)
-                    else:
-                        power_options = power_key + (False,)
-                        if (power_key+(True,)) not in self.req_power_options:
+                        # The self in the line below is not a mistake - the source objects
+                        # for the spectrum class is the SpectrumCalculator itself
+                        s = spectrum(self, sample_name_a, sample_name_b, power_key, save_name, only_bins=only_bins)
+                        self.req_spectra.append(s)
+
+                        if option_name in self.do_exact_option_names:
+                            print("doing exact for option_name", option_name)
+                            power_options = power_key + (True,)
+                            # It may be that the same power_key, but with do_exact=False is already
+                            # in self.req_power_keys. If this is the case remove it. We don't need it.
+                            # It's dead to us.
+                            try:
+                                self.req_power_options.remove(power_key + (False,))
+                            except KeyError:
+                                pass
+                            self.do_exact_section_names.append(s.section_name)
                             self.req_power_options.add(power_options)
+                        else:
+                            power_options = power_key + (False,)
+                            if (power_key+(True,)) not in self.req_power_options:
+                                self.req_power_options.add(power_options)
 
-                    if option_name in self.auto_only_option_names:
-                        self.auto_only_section_names.append(s.section_name)
+                        if option_name in self.auto_only_option_names:
+                            self.auto_only_section_names.append(s.section_name)
 
-                    print("Calculating Limber: "
-                        f"Kernel 1 = {kernel_key_a}, "
-                        f"Kernel 2 = {kernel_key_b}, "
-                        f"P_3D = {power_key[0].__name__} {power_key[1]} "
-                        f"--> Output: {s.section_name}")
+                        print("Calculating Limber: "
+                            f"Kernel 1 = {kernel_key_a}, "
+                            f"Kernel 2 = {kernel_key_b}, "
+                            f"P_3D = {power_key[0].__name__}, "
+                            f"section = {power_key[0].get_section_name(power_key[1])} "
+                            f"--> Output: {s.section_name}")
                 except:
                     raise ValueError("To specify a P(k)->C_ell projection with one or "
                                      "more sets of two different n(z) samples use the "
@@ -1540,6 +1587,8 @@ class SpectrumCalculator(object):
         for power_options in self.req_power_options:
             powertype, suffix, do_exact = power_options
             power = powertype(suffix)
+            if self.verbose:
+                print(f"Loading {power.section_name} 3D power spectrum")
             power.load_from_block(block, self.chi_of_z)
             if do_exact:
                 power.set_nonlimber_splines(block, self.chi_of_z)
@@ -1580,10 +1629,12 @@ class SpectrumCalculator(object):
         spectrum.prepare(block, lin_bias_prefix=self.lin_bias_prefix)
 
         if self.verbose:
-            print(f"computing spectrum {spectrum.__class__.__name__} for samples"
-                  f" ({spectrum.sample_a}, {spectrum.sample_b})")
+            print(f"Computing spectrum {spectrum.__class__.__name__} ({spectrum.section_name}) for samples"
+                  f" ({spectrum.sample_a}, {spectrum.sample_b}) from P(k) {spectrum.input_section_name}")
 
         for i in range(na):
+            if not spectrum.should_do_bin(i+1):
+                continue
             # for auto-correlations C_ij = C_ji so we calculate only one of them,
             # but save both orderings to the block to account for different ordering
             # conventions.
@@ -1593,7 +1644,11 @@ class SpectrumCalculator(object):
                 if spectrum.section_name in self.auto_only_section_names:
                     if j!=i:
                         continue
+                if not spectrum.should_do_bin(j+1):
+                    continue
 
+                if self.verbose:
+                    print(f"    Computing bin pair {i+1}, {j+1}")
                 # For some (user-chosen) spectra we compute the non-limber
                 # spectrum for a subset of the ell range
                 if spectrum.section_name in self.do_exact_section_names:
@@ -1677,10 +1732,6 @@ class SpectrumCalculator(object):
                 # For optimization it is useful to individually report the time
                 # taken for each set of spectra
                 t0 = timer()
-
-                if self.verbose:
-                    print(f"Computing spectrum: {spectrum.__class__.__name__} -> "
-                           f"{spectrum.section_name}")
 
                 self.compute_spectrum(block, spectrum)
 
