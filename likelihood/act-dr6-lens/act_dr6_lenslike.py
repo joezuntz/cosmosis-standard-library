@@ -345,7 +345,7 @@ def generic_lnlike(data_dict,ell_kk,cl_kk,ell_cmb,cl_tt,cl_ee,cl_te,cl_bb,trim_l
         bclkk = np.append(bclkk, d['binmat_planck'] @ clkk_planck)
     delta = d['data_binned_clkk'] - bclkk
     lnlike = -0.5 * np.dot(delta,np.dot(cinv,delta))
-    return lnlike
+    return lnlike, bclkk
 
     
 # =================            
