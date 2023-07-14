@@ -6,6 +6,7 @@ def setup(options):
     variant = options.get_string(option_section, 'variant', default='act_baseline')
     lens_only = options.get_bool(option_section, 'lens_only', default=False)
     like_corrections = options.get_bool(option_section, 'like_corrections', default=False)
+    like_only = options.get_bool(option_section, 'like_only', default=False)
     # lens_only use True if not combining with any primary CMB data
     # like_corrections should be False if lens_only is True
 
@@ -13,6 +14,8 @@ def setup(options):
     # (covariance matrix) and `binmat_act` (binning matrix to be applied to a theory
     # curve starting at ell=0).
     data_dict = act_dr6_lenslike.load_data(variant,lens_only=lens_only,like_corrections=like_corrections)
+
+    data_dict['cosmosis_like_only'] = like_only
     return data_dict
 
 
@@ -24,20 +27,26 @@ def execute(block, config):
     # as well as the TT, EE, TE, BB CMB spectra (needed for likelihood corrections)
     # in uK^2 units. All of these are C_ell (not D_ell), no ell or 2pi factors.
     ell = block[names.cmb_cl, 'ell']
-    f1 = ell * (ell + 1) / 2 / np.pi
+    f1 = ell * (ell + 1) / (2 * np.pi)
     cl_tt = block[names.cmb_cl, 'tt'] / f1
     cl_ee = block[names.cmb_cl, 'ee'] / f1
     cl_te = block[names.cmb_cl, 'te'] / f1
     cl_bb = block[names.cmb_cl, 'bb'] / f1
 
     # Slightly different normalization here
-    f2 = ell * (ell + 1)
-    cl_pp = block[names.cmb_cl, 'pp'] / f2
+    cl_pp = block[names.cmb_cl, 'pp'] / f1
 
     cl_kk = act_dr6_lenslike.pp_to_kk(cl_pp, ell)
 
-    # Then call
-    lnlike = act_dr6_lenslike.generic_lnlike(data_dict,ell, cl_kk, ell, cl_tt, cl_ee, cl_te, cl_bb)
+    # Then call the act code
+    lnlike, bclkk = act_dr6_lenslike.generic_lnlike(data_dict,ell, cl_kk, ell, cl_tt, cl_ee, cl_te, cl_bb)
     block[names.likelihoods, 'act_dr6_lens_like'] = lnlike
+
+    if not data_dict['cosmosis_like_only']:
+        block[names.data_vector, 'act_dr6_lens_theory'] = bclkk
+        block[names.data_vector, 'act_dr6_lens_data'] = data_dict['data_binned_clkk']
+        block[names.data_vector, 'act_dr6_lens_covariance'] = data_dict['cov']
+        block[names.data_vector, 'act_dr6_lens_inverse_covariance'] = data_dict['cinv']
+
 
     return 0
