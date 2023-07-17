@@ -252,7 +252,7 @@ class Spectrum(object):
     name = "?"
     prefactor_type = ("", "")
 
-    def __init__(self, source, sample_a, sample_b, power_key, save_name="", only_bins=None):
+    def __init__(self, source, sample_a, sample_b, power_key, save_name="", only_bins=None, len_only_bins=None):
         # caches of n(z), w(z), P(k,z), etc.
         self.source = source
         self.sample_a, self.sample_b = sample_a, sample_b
@@ -263,6 +263,7 @@ class Spectrum(object):
         else:
             self.section_name = self.name
         self.only_bins = only_bins
+        self.len_only_bins = len_only_bins
         self.input_section_name = power_key[0].section + power_key[1]
 
     def should_do_bin(self, i):
@@ -1437,7 +1438,7 @@ class SpectrumCalculator(object):
 
                         # The self in the line below is not a mistake - the source objects
                         # for the spectrum class is the SpectrumCalculator itself
-                        s = spectrum(self, sample_name_a, sample_name_b, power_key, save_name, only_bins=only_bins)
+                        s = spectrum(self, sample_name_a, sample_name_b, power_key, save_name, only_bins=only_bins, len_only_bins=len(only_bins_list))
                         self.req_spectra.append(s)
 
                         if option_name in self.do_exact_option_names:
@@ -1633,7 +1634,7 @@ class SpectrumCalculator(object):
                   f" ({spectrum.sample_a}, {spectrum.sample_b}) from P(k) {spectrum.input_section_name}")
 
         for i in range(na):
-            if not spectrum.should_do_bin(i+1):
+            if not spectrum.should_do_bin(i+1) and spectrum.len_only_bins == na:
                 continue
             # for auto-correlations C_ij = C_ji so we calculate only one of them,
             # but save both orderings to the block to account for different ordering
@@ -1644,7 +1645,7 @@ class SpectrumCalculator(object):
                 if spectrum.section_name in self.auto_only_section_names:
                     if j!=i:
                         continue
-                if not spectrum.should_do_bin(j+1):
+                if not spectrum.should_do_bin(j+1) and spectrum.kernel_types[0] == spectrum.kernel_types[1]:
                     continue
 
                 if self.verbose:
