@@ -169,6 +169,13 @@ jobs:
           cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3-mead.log
           grep -e 'Likelihood =  6049.94' -e 'Likelihood =  6049.00' output/des-y3-mead.log
 
+      - name: ACT DR6 Lensing
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/act-dr6-lens.ini | tee output/act-dr6.log
+          grep -e "Likelihood =  -9.89" -e Likelihood =  -9.90" output/act-dr6.log
+
       - name: DES Y3 6x2pt
         shell: bash -l {0}
         run: |
