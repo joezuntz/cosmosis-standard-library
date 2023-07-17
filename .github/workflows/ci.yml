@@ -169,6 +169,19 @@ jobs:
           cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3-mead.log
           grep -e 'Likelihood =  6049.94' -e 'Likelihood =  6049.00' output/des-y3-mead.log
 
+      - uses: actions/cache@v2
+        name: ACT Data Cache
+        id: cache-act
+        with:
+          path: likelihood/act-dr6-lens/data/v1.1
+          key: ${{ runner.os }}-act-dr6-v1.1
+
+      - name: Download ACT DR6 Lensing Data
+        if: steps.cache-act.outputs.cache-hit != 'true'
+        run: |
+            cd likelihood/act-dr6-lens/
+            ./get-act-data.sh
+
       - name: ACT DR6 Lensing
         shell: bash -l {0}
         run: |
