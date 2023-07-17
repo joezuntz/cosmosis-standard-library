@@ -264,6 +264,11 @@ inputs:
             meaning: Primordial scalar spectral amplitude
             type: real
             default:
+        sigma_8:
+            meaning: Amplitude of linear perturbations at z=0 on scales of 8 Mpc/h.
+                Only A_s or sigma_8 should be provided.
+            type: real
+            default:
         hubble:
             meaning: Hubble parameter in km/s/Mpc
             type: real
