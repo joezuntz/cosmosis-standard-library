@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge cosmosis "numpy<1.24" cosmosis-build-standard-library
+        run: mamba install -c conda-forge cosmosis cosmosis-build-standard-library jupyter
 
       - name: Build standard library
         shell: bash -l {0}
