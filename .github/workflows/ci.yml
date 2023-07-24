@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge cosmosis cosmosis-build-standard-library jupyter
+        run: mamba install -c conda-forge cosmosis cosmosis-build-standard-library
 
       - name: Build standard library
         shell: bash -l {0}
@@ -113,13 +113,6 @@ jobs:
           source cosmosis-configure
           cosmosis examples/pantheon_plus_shoes.ini -p runtime.sampler=test | tee output/pantheon_plus_shoes_log.txt
           grep 'Likelihood =  -738.23' output/pantheon_plus_shoes_log.txt
-
-      - name: ExampleNotebook
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          rm -f output/pantheon.txt
-          jupyter nbconvert --to notebook --execute "examples/example.ipynb"
 
       - name: DES Y1 likelihood
         shell: bash -l {0}
@@ -267,7 +260,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install git+https://github.com/joezuntz/cosmosis@interactive-use
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt "Cython<3.0"
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter
 
     - name: Build
       run: |
@@ -301,3 +294,10 @@ jobs:
         cosmosis demos/demo9.ini -p multinest.live_points=100
         cosmosis-postprocess output/demo9.txt -o output/demo9
         test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
+
+    - name: ExampleNotebook
+      shell: bash -l {0}
+      run: |
+        source cosmosis-configure
+        rm -f output/pantheon.txt
+        jupyter nbconvert --to notebook --execute "examples/example.ipynb"
