@@ -260,7 +260,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install git+https://github.com/joezuntz/cosmosis@interactive-use
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt "Cython<3.0" jupyter
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter "numpy<1.24"
 
     - name: Build
       run: |
