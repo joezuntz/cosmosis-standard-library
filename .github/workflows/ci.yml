@@ -114,6 +114,13 @@ jobs:
           cosmosis examples/pantheon_plus_shoes.ini -p runtime.sampler=test | tee output/pantheon_plus_shoes_log.txt
           grep 'Likelihood =  -738.23' output/pantheon_plus_shoes_log.txt
 
+      - name: ExampleNotebook
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          rm -f output/pantheon.txt
+          jupyter nbconvert --to notebook --execute "examples/example.ipynb"
+
       - name: DES Y1 likelihood
         shell: bash -l {0}
         run: |
