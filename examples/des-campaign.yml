@@ -1,0 +1,148 @@
+output_dir: "./output/des-y3-campaign"
+
+components:
+  maglim_cuts:
+    params:
+    - set 2pt_like angle_range_xip_1_1   2.475 999.0
+    - set 2pt_like angle_range_xip_1_2   6.21691892 999.0
+    - set 2pt_like angle_range_xip_1_3   6.21691892 999.0
+    - set 2pt_like angle_range_xip_1_4   4.93827423 999.0
+    - set 2pt_like angle_range_xip_2_2   6.21691892 999.0
+    - set 2pt_like angle_range_xip_2_3   6.21691892 999.0
+    - set 2pt_like angle_range_xip_2_4   6.21691892 999.0
+    - set 2pt_like angle_range_xip_3_3   6.21691892 999.0
+    - set 2pt_like angle_range_xip_3_4   6.21691892 999.0
+    - set 2pt_like angle_range_xip_4_4   4.93827423 999.0
+    - set 2pt_like angle_range_xim_1_1   24.75 999.0
+    - set 2pt_like angle_range_xim_1_2   62.16918918 999.0
+    - set 2pt_like angle_range_xim_1_3   62.16918918 999.0
+    - set 2pt_like angle_range_xim_1_4   49.3827423 999.0
+    - set 2pt_like angle_range_xim_2_2   62.16918918 999.0
+    - set 2pt_like angle_range_xim_2_3   78.26637209 999.0
+    - set 2pt_like angle_range_xim_2_4   78.26637209 999.0
+    - set 2pt_like angle_range_xim_3_3   78.26637209 999.0
+    - set 2pt_like angle_range_xim_3_4   78.26637209 999.0
+    - set 2pt_like angle_range_xim_4_4   62.16918918 999.0
+    - set 2pt_like angle_range_gammat_1_1   25.40688358 999.0
+    - set 2pt_like angle_range_gammat_1_2   25.40688358 999.0
+    - set 2pt_like angle_range_gammat_1_3   25.40688358 999.0
+    - set 2pt_like angle_range_gammat_1_4   25.40688358 999.0
+    - set 2pt_like angle_range_gammat_2_1   18.26006735 999.0
+    - set 2pt_like angle_range_gammat_2_2   18.26006735 999.0
+    - set 2pt_like angle_range_gammat_2_3   18.26006735 999.0
+    - set 2pt_like angle_range_gammat_2_4   18.26006735 999.0
+    - set 2pt_like angle_range_gammat_3_1   13.05578642 999.0
+    - set 2pt_like angle_range_gammat_3_2   13.05578642 999.0
+    - set 2pt_like angle_range_gammat_3_3   13.05578642 999.0
+    - set 2pt_like angle_range_gammat_3_4   13.05578642 999.0
+    - set 2pt_like angle_range_gammat_4_1   10.86591189 999.0
+    - set 2pt_like angle_range_gammat_4_2   10.86591189 999.0
+    - set 2pt_like angle_range_gammat_4_3   10.86591189 999.0
+    - set 2pt_like angle_range_gammat_4_4   10.86591189 999.0
+    - set 2pt_like angle_range_gammat_5_1   999.0 999.0
+    - set 2pt_like angle_range_gammat_5_2   999.0 999.0
+    - set 2pt_like angle_range_gammat_5_3   999.0 999.0
+    - set 2pt_like angle_range_gammat_5_4   999.0 999.0
+    - set 2pt_like angle_range_gammat_6_1   999.0 999.0
+    - set 2pt_like angle_range_gammat_6_2   999.0 999.0
+    - set 2pt_like angle_range_gammat_6_3   999.0 999.0
+    - set 2pt_like angle_range_gammat_6_4   999.0 999.0
+    - set 2pt_like angle_range_wtheta_1_1   33.8758448 999.0
+    - set 2pt_like angle_range_wtheta_1_2   33.8758448 999.0
+    - set 2pt_like angle_range_wtheta_1_3   33.8758448 999.0
+    - set 2pt_like angle_range_wtheta_1_4   33.8758448 999.0
+    - set 2pt_like angle_range_wtheta_1_5   999.0 999.0
+    - set 2pt_like angle_range_wtheta_1_6   999.0 999.0
+    - set 2pt_like angle_range_wtheta_2_2   24.3467565 999.0
+    - set 2pt_like angle_range_wtheta_2_3   24.3467565 999.0
+    - set 2pt_like angle_range_wtheta_2_4   24.3467565 999.0
+    - set 2pt_like angle_range_wtheta_2_5   999.0 999.0
+    - set 2pt_like angle_range_wtheta_2_6   999.0 999.0
+    - set 2pt_like angle_range_wtheta_3_3   17.40771522  999.0
+    - set 2pt_like angle_range_wtheta_3_4   17.40771522  999.0
+    - set 2pt_like angle_range_wtheta_3_5   999.0 999.0
+    - set 2pt_like angle_range_wtheta_3_6   999.0 999.0
+    - set 2pt_like angle_range_wtheta_4_4   14.48788252 999.0
+    - set 2pt_like angle_range_wtheta_4_5   999.0 999.0
+    - set 2pt_like angle_range_wtheta_4_6   999.0 999.0
+    - set 2pt_like angle_range_wtheta_5_5   999.0 999.0
+    - set 2pt_like angle_range_wtheta_5_6   999.0 999.0
+    - set 2pt_like angle_range_wtheta_6_6   999.0 999.0
+
+
+runs:
+  - name: fiducial
+    base: examples/des-y3.ini
+    params:
+    - set camb feedback 0
+
+  - name: class
+    parent: fiducial
+    pipeline:
+    - replace camb class extrapolate
+    params:
+    - set extrapolate file boltzmann/extrapolate/extrapolate_power.py
+    - set extrapolate power_spectra_names matter_power_nl matter_power_lin
+    - set extrapolate npoint 10
+    - set extrapolate kmax 500.0
+    - set class file boltzmann/class/class_interface.py
+    - set class version 3.2.0
+    - set class lmax 2850
+    - set class debug T
+    - set class zmax 4.0
+    - set class kmax 100.0
+    - set class nk 700
+    - set class cmb T
+    - set class mpk T
+    - set class lensing T
+    - set class class_non_linear halofit
+
+  - name: maglim
+    parent: fiducial
+    components:
+    - maglim_cuts
+    params:
+    - set DEFAULT 2PT_FILE  likelihood/des-y3/2pt_NG_final_2ptunblind_02_26_21_wnz_maglim_covupdate.fits
+    - set shear_ratio_like data_file likelihood/des-y3/shear_ratio/2pt_NG_final_2ptunblind_02_26_21_wnz_maglim_covupdate_sr.pkl
+    - set shear_ratio_like theta_min_1  8.47 6.07 4.34 2.5 2.5 2.5
+    - set shear_ratio_like theta_min_2  8.47 6.07 4.34 2.5 2.5 2.5
+    - set shear_ratio_like theta_min_3  2.5 2.5 4.34 2.5 2.5 2.5
+    - set shear_ratio_like theta_max 25.4 18.26 13.03 10.87 9.66 9.04
+
+  - name: mira-titan
+    parent: fiducial
+    params:
+    - set camb zmin  0.0
+    - set camb zmax  2.02
+    - set camb nz  100
+    - set delete_nl file utility/delete/delete_section.py
+    - set delete_nl sections matter_power_nl
+    - set cosmic_emu file structure/cosmic_emu_2022/emu.so
+    - set cosmic_emu mode total
+    - set cosmic_emu zmax 2.02
+    - set cosmic_emu nz 100
+    pipeline:
+    - after camb delete_nl cosmic_emu
+
+  - name: shear-only
+    parent: fiducial
+    pipeline:
+    - delete lens_photoz_width lens_photoz_bias
+    - delete pk_to_cl_gg
+    - delete add_magnification
+    - delete 2pt_gal 2pt_gal_shear
+    - delete add_point_mass shear_ratio_like
+    params:
+    - set fits_nz data_sets source
+    - delete pk_to_cl lingal-shear
+    - delete pk_to_cl lingal-intrinsic
+    - delete pk_to_cl lingal-magnification
+    - delete pk_to_cl magnification-shear
+    - delete pk_to_cl magnification-magnification
+    - delete pk_to_cl magnification-intrinsic
+    - set add_intrinsic position-shear F
+    - set 2pt_like data_sets  xip xim
+    values:
+    - delete lens_photoz_errors *
+    - delete bias_lens *
+    - delete mag_alpha_lens *
