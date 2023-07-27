@@ -33,25 +33,13 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge cosmosis cosmosis-build-standard-library
+        run: mamba install -c conda-forge cosmosis cosmosis-build-standard-library "numpy<1.24"
 
       - name: Build standard library
         shell: bash -l {0}
         run: |
           source cosmosis-configure
           make
-
-      - name: Test campaign commands
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis-campaign -l examples/des-campaign.yml | tee output/campaign.log
-          grep -e "mira-titan" campaign.log
-          grep -e "fiducial" campaign.log
-          cosmosis-campaign --run fiducial-test-only examples/des-campaign.yml
-          cosmosis-campaign  examples/des-campaign.yml --status fiducial-test-only > output/campaign.log
-          grep -e "🟢 fiducial-test-only" output/campaign.log
-          
 
       - name: Smail example
         shell: bash -l {0}
@@ -291,6 +279,16 @@ jobs:
         source .github/ci-setup.sh
         python -c "import camb"
 
+    - name: Test campaign commands
+      shell: bash -l {0}
+      run: |
+        source .github/ci-setup.sh
+        cosmosis-campaign -l examples/des-campaign.yml | tee output/campaign.log
+        grep -e "mira-titan" campaign.log
+        grep -e "fiducial" campaign.log
+        cosmosis-campaign --run fiducial-test-only examples/des-campaign.yml
+        cosmosis-campaign  examples/des-campaign.yml --status fiducial-test-only > output/campaign.log
+        grep -e "🟢 fiducial-test-only" output/campaign.log
 
     - name: Demo 2 Planck 2018 Likelihood
       run: |
