@@ -42,7 +42,7 @@ jobs:
           make
 
       - name: Test campaign commands
-        shell: bask -l {0}
+        shell: bash -l {0}
         run: |
           source cosmosis-configure
           cosmosis-campaign -l examples/des-campaign.yml | tee output/campaign.log
