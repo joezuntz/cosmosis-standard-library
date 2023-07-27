@@ -289,6 +289,7 @@ jobs:
         cosmosis-campaign --run fiducial-test-only examples/des-campaign.yml
         cosmosis-campaign  examples/des-campaign.yml --status fiducial-test-only > output/campaign.log
         grep -e "🟢 fiducial-test-only" output/campaign.log
+        cosmosis-campaign  examples/des-campaign.yml --status
 
     - name: Demo 2 Planck 2018 Likelihood
       run: |
