@@ -297,7 +297,6 @@ jobs:
         cosmosis-postprocess demos/demo2.ini -o output/demo2
         test -f output/demo2/comoving_distance.png
 
-
     - name: Demo 9 Low-Resolution Multinest
       run: |
         source .github/ci-setup.sh
