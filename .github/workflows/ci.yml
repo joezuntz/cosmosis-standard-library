@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge cosmosis "numpy<1.24" cosmosis-build-standard-library
+        run: mamba install -c conda-forge "cosmosis>=3.0.1" cosmosis-build-standard-library
 
       - name: Build standard library
         shell: bash -l {0}
@@ -215,7 +215,6 @@ jobs:
 
 
 
-
   apt-get-test:
     runs-on: ubuntu-20.04
     strategy:
@@ -258,9 +257,9 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install cosmosis
+        pip install "cosmosis>=3.0.1"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt Cython
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter
 
     - name: Build
       run: |
@@ -279,6 +278,17 @@ jobs:
         source .github/ci-setup.sh
         python -c "import camb"
 
+    - name: Test campaign commands
+      shell: bash -l {0}
+      run: |
+        source .github/ci-setup.sh
+        cosmosis-campaign -l examples/des-campaign.yml | tee output/campaign.log
+        grep -e "mira-titan" campaign.log
+        grep -e "fiducial" campaign.log
+        cosmosis-campaign --run fiducial-test-only examples/des-campaign.yml
+        cosmosis-campaign  examples/des-campaign.yml --status fiducial-test-only > output/campaign.log
+        grep -e "🟢 fiducial-test-only" output/campaign.log
+        cosmosis-campaign  examples/des-campaign.yml --status
 
     - name: Demo 2 Planck 2018 Likelihood
       run: |
@@ -287,10 +297,16 @@ jobs:
         cosmosis-postprocess demos/demo2.ini -o output/demo2
         test -f output/demo2/comoving_distance.png
 
-
     - name: Demo 9 Low-Resolution Multinest
       run: |
         source .github/ci-setup.sh
         cosmosis demos/demo9.ini -p multinest.live_points=100
         cosmosis-postprocess output/demo9.txt -o output/demo9
         test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
+
+    - name: ExampleNotebook
+      shell: bash -l {0}
+      run: |
+        source cosmosis-configure
+        rm -f output/pantheon.txt
+        jupyter nbconvert --to notebook --execute "examples/example.ipynb"
