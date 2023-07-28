@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge "cosmosis>=3.0" cosmosis-build-standard-library "numpy<1.24"
+        run: mamba install -c conda-forge "cosmosis>=3.01" cosmosis-build-standard-library
 
       - name: Build standard library
         shell: bash -l {0}
@@ -258,9 +258,9 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install "cosmosis>=3.0"
+        pip install "cosmosis>=3.01"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt "Cython<3.0" jupyter "numpy<1.24"
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter
 
     - name: Build
       run: |
