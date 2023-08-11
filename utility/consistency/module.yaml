@@ -67,13 +67,13 @@ explanation: |
 
     relations_file:
         meaning: 'Path to an alternative parameter relations file. Relations should be specified in \
-                  the form \'parameter_a=parameter_b*parameter_b\' with no white space and one per \
+                  the form \'new_parameter=parameter_b*parameter_b\' with no white space and one per \
                   line.'
         type: str
         default:
     extra_relations:
         meaning: 'Extra relations to be added to the default list. Relations should be specified in \
-                  the form \'parameter_a=parameter_b*parameter_b,parameter_c=parameter_d/parameter_e\' 
+                  the form \'new_parameter=parameter_b*parameter_b,new_parameter2=parameter_d/parameter_e\' 
                   with no white space and comma separated.'
         type: str
         default:
