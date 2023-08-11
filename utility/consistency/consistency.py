@@ -55,8 +55,8 @@ def cosmology_consistency(verbose=False, relations_file="", theta=False, extra_r
         if theta:
             relations = relations + THETA_RELATIONS
         if extra_relations:
-            extra_relations = [(rel.split('=')[0], rel.split('=')[1]) \
-                                    for rel in  extra_relations.split(',')]
+            extra_relations = [rel.split('=', 1)
+                               for rel in  extra_relations.replace(' ', '').split(',')]
             relations = relations + extra_relations
     return Consistency(relations, COSMOLOGY_POSSIBLE_DEFAULTS, verbose)
 
