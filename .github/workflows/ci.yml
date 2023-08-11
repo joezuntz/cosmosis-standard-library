@@ -45,7 +45,8 @@ jobs:
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/various-spectra.ini
+          cosmosis examples/various-spectra.ini -p consistency.extra_relations='omega_x=omega_c+100'
+          grep -e 'omega_x = 100.261' output/various-spectra/cosmological_parameters/values.txt
 
       - name: BAO
         shell: bash -l {0}
