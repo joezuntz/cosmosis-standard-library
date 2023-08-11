@@ -9,7 +9,8 @@ def setup(options):
     cosmomc_theta = options.get_bool(option_section, "cosmomc_theta", default=False)
     relations_file = options.get_string(
         option_section, "relations_file", default="")
-    cons = consistency.cosmology_consistency(verbose, relations_file, cosmomc_theta)
+    extra_relations = options.get_string(option_section, "extra_relations", default="")
+    cons = consistency.cosmology_consistency(verbose, relations_file, cosmomc_theta, extra_relations)
     return cons
 
 

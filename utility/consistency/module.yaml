@@ -1,6 +1,6 @@
 #This is a template for module description files
 name: consistency
-version: '1.0'
+version: '1.1'
 purpose: Deduce missing cosmological parameters and check consistency
 url: ''
 interface: consistency_interface.py
@@ -27,7 +27,9 @@ explanation: |
     It matches the CosmoMC version to about 0.2%, which is enough for testing the
     effects of changing prior but not for precision comparison of the value itself.
 
-    The below relations are used by default:
+    The below relations are used by default. These can either be replaced entirely by
+    those in a file given by the relations_file setup parameter or added to as a comma
+    separated list using the extra_relations setup parameter.
 
     omega_m=ommh2/h/h
     omega_b=ombh2/h/h
@@ -67,6 +69,12 @@ explanation: |
         meaning: 'Path to an alternative parameter relations file. Relations should be specified in \
                   the form \'parameter_a=parameter_b*parameter_b\' with no white space and one per \
                   line.'
+        type: str
+        default:
+    extra_relations:
+        meaning: 'Extra relations to be added to the default list. Relations should be specified in \
+                  the form \'parameter_a=parameter_b*parameter_b,parameter_c=parameter_d/parameter_e\' 
+                  with no white space and comma separated.'
         type: str
         default:
 

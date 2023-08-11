@@ -42,7 +42,7 @@ from theta_h0 import theta_to_H0_interface, H0_to_theta_interface
 functions = {'theta_to_H0': theta_to_H0_interface, 'H0_to_theta': H0_to_theta_interface}
 
 
-def cosmology_consistency(verbose=False, relations_file="", theta=False):
+def cosmology_consistency(verbose=False, relations_file="", theta=False, extra_relations=""):
     if relations_file:
         relation_lines = open(relations_file).readlines()
         relations = [line.strip().split('=')
@@ -54,6 +54,10 @@ def cosmology_consistency(verbose=False, relations_file="", theta=False):
         relations = COSMOLOGY_CONSISTENCY_RELATIONS
         if theta:
             relations = relations + THETA_RELATIONS
+        if extra_relations:
+            extra_relations = [(rel.split('=')[0], rel.split('=')[1]) \
+                                    for rel in  extra_relations.split(',')]
+            relations = relations + extra_relations
     return Consistency(relations, COSMOLOGY_POSSIBLE_DEFAULTS, verbose)
 
 
