@@ -14,7 +14,7 @@ assumptions:
 -   'Third pass: tries omega_nu=0 and omega_k=0'
 
 explanation: |
-    "There are various ways of parameterizing cosmologies with different advantages
+    There are various ways of parameterizing cosmologies with different advantages
     in different contexts.  This module takes a set of cosmological parameters and
     tries to use them to deduce the remaining parameters.  For example, if you specify
     ombh2 and h then it computes omega_b.  It has a fairly full set of relations to do this.
@@ -54,8 +54,8 @@ explanation: |
     omega_m=1-omega_lambda-omega_k-omega_nu
     omega_k=1-omega_m-omega_lambda-omega_nu
     omega_nu=1-omega_m-omega_lambda-omega_k
-    mnu=omnuh2 * 93.14
-    omnuh2=mnu / 93.14"
+    mnu=omnuh2*93.14
+    omnuh2=mnu/93.14
 
 params:
     verbose:
@@ -68,15 +68,15 @@ params:
         default: false
 
     relations_file:
-        meaning: 'Path to an alternative parameter relations file. Relations should be specified in \
-                  the form \'new_parameter=parameter_b*parameter_b\' with no white space and one per \
-                  line.'
+        meaning: >
+            Path to an alternative parameter relations file. Relations should be specified in
+            the form 'new_parameter=parameter_b*parameter_b' with one per line.
         type: str
         default:
     extra_relations:
-        meaning: 'Extra relations to be added to the default list. Relations should be specified in \
-                  the form \'new_parameter=parameter_b*parameter_b,new_parameter2=parameter_d/parameter_e\' 
-                  with no white space and comma separated.'
+        meaning: >
+            Extra relations to be added to the default list. Relations should be specified in
+            the form 'new_parameter=parameter_b*parameter_b,new_parameter2=parameter_d/parameter_e' 
         type: str
         default:
 
