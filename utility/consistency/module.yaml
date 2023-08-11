@@ -55,7 +55,9 @@ explanation: |
     omega_k=1-omega_m-omega_lambda-omega_nu
     omega_nu=1-omega_m-omega_lambda-omega_k
     mnu=omnuh2 * 93.14
-    omnuh2=mnu / 93.14"params:
+    omnuh2=mnu / 93.14"
+
+params:
     verbose:
         meaning: 'Whether to print how derived parameters were calculated and what assumptions used'
         type: bool
