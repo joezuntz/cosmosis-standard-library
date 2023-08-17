@@ -258,7 +258,7 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install "cosmosis>=3.0.1"
+        pip install "cosmosis>=3.0.1" "nautilus=0.6.*"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
         pip install fitsio astropy fast-pt "Cython<3.0" jupyter
 
