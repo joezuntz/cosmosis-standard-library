@@ -72,4 +72,16 @@ def execute(block, config):
             section = cosmo
         block[section, param] = value
 
+    if block.has_value(cosmo, "S_8") and block.has_value(cosmo, "omega_m"):
+        sigma_8 = block[cosmo, "S_8"] / (block[cosmo, "omega_m"] / 0.3)**0.5
+
+        if block.has_value(cosmo, "sigma_8"):
+            sigma8_check = block[cosmo, 'sigma_8']
+            if not np.isclose(sigma_8, sigma8_check):
+                raise ValueError("Inconsistent values of sigma_8 and S_8.")
+        elif cons.verbose:
+            print(f"Calculated sigma_8 = {sigma_8} from S_8/(Omega_m/0.3)**0.5")
+
+        block[cosmo, "sigma_8"] = sigma_8
+
     return 0

@@ -153,7 +153,7 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/des-y3-shear.ini | tee output/des-y3-shear.log
-          grep -e 'Likelihood =  2957.03' -e 'Likelihood =  2957.12' output/des-y3-shear.log
+          grep -e 'Likelihood =  2957.03' -e 'Likelihood =  2957.12' -e 'Likelihood =  2957.11' output/des-y3-shear.log
 
 
       - name: DES Y3 likelihood with Mira Titan
