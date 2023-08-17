@@ -20,7 +20,8 @@ def execute(block, config):
 
     # Create dict of all parameters that we have already
     known_parameters = {}
-    for param in cons.parameters:
+
+    for param in list(cons.parameters.keys()) + cons.extra_fixed:
         if '___' in param:
             section, lookup_param = param.split('___')
         else:
