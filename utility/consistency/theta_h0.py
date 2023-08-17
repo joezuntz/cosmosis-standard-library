@@ -106,6 +106,5 @@ def theta_to_H0_interface(params):
     # These are the camb defaults
     num_massive_neutrinos = params.get('num_massive_neutrinos', 1)
     nnu = params.get('nnu', 3.044)
-    YHe = params.get('yhe', None)
 
     return theta_to_H0(theta, omnuh2, omch2, ombh2, omegak, num_massive_neutrinos, nnu)
