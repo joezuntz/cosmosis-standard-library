@@ -349,12 +349,12 @@ def extract_camb_params(block, config, more_config):
         warnings.warn("Parameter omega_nu and omnuh2 are being ignored. Set mnu and num_massive_neutrinos instead.")
 
     # Set h if provided, otherwise look for theta_mc
-    if block.has_value(cosmo, "hubble"):
+    if block.has_value(cosmo, "cosmomc_theta"):
+        cosmology_params["cosmomc_theta"] = block[cosmo, "cosmomc_theta"] / 100
+    elif block.has_value(cosmo, "hubble"):
         cosmology_params["H0"] = block[cosmo, "hubble"]
-    elif block.has_value(cosmo, "h0"):
-        cosmology_params["H0"] = block[cosmo, "h0"]*100
     else:
-        cosmology_params["cosmomc_theta"] = block[cosmo, "cosmomc_theta"]/100
+        cosmology_params["H0"] = block[cosmo, "h0"]*100
 
     p = camb.CAMBparams(
         InitPower = init_power,
