@@ -41,7 +41,6 @@ matter_power_section_names = {
 @contextlib.contextmanager
 def be_quiet_camb():
     original_feedback_level = camb.config.FeedbackLevel
-    print("original", original_feedback_level)
     try:
         camb.set_feedback_level(0)
         yield
@@ -509,7 +508,8 @@ def compute_growth_factor(r, block, P_tot, k, z, more_config):
     if P_tot is None:
         # If we don't have it already, get the default matter power interpolator,
         # which we use for the growth.
-        P_tot = r.get_matter_power_interpolator(nonlinear=False, extrap_kmax=more_config['kmax_extrapolate'])
+        with be_quiet_camb():
+            P_tot = r.get_matter_power_interpolator(nonlinear=False, extrap_kmax=more_config['kmax_extrapolate'])
 
     # Evaluate it at the smallest k, for the 
     kmin = k.min()
@@ -653,14 +653,17 @@ def execute(block, config):
             more_config["n_printed_errors"] += 1
         return 1
 
-    save_derived_parameters(r, block)
-    save_distances(r, block, more_config)
+    with be_quiet_camb():
+        save_derived_parameters(r, block)
+        save_distances(r, block, more_config)
 
     if p.WantTransfer:
-        save_matter_power(r, block, more_config)
+        with be_quiet_camb():
+            save_matter_power(r, block, more_config)
 
     if p.WantCls:
-        save_cls(r, block)
+        with be_quiet_camb():
+            save_cls(r, block)
     
     return 0
 
