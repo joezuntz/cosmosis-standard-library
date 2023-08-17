@@ -4,6 +4,8 @@ import scipy.integrate
 import scipy.optimize
 
 
+
+
 def H0_to_theta(hubble, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k, final=False):
     h = hubble / 100.
     if np.isnan(omnuh2):
@@ -66,27 +68,29 @@ def H0_to_theta_interface(params):
 
 
 def theta_to_H0(theta, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k):
-    get_theta = lambda H0: H0_to_theta(H0, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k)
-    t = get_theta(70.0)
+    t = H0_to_theta(70.0, omega_nu, omnuh2, omega_m, ommh2, omega_c, omch2, omega_b, ombh2, omega_lambda, omlamh2, omega_k)
 
     if np.isnan(t):
         return np.nan
 
-    H0_min = 20.0
-    H0_max = 120.0
+    if np.isnan([ombh2, omch2, theta, omega_k, omnuh2]).any():
+        return np.nan
+    mnu = 93.14 * omnuh2
 
+    original_feedback_level = camb.config.FeedbackLevel
     try:
-        get_theta(H0_min)
-    except ValueError:
-        H0_min = 40.0
-
-    try:
-        get_theta(H0_max)
-    except ValueError:
-        H0_max = 100.0
-
-    f = lambda H0: get_theta(H0) - theta
-    H0 = scipy.optimize.brentq(f, H0_min, H0_max, rtol=5e-5)
+        camb.set_feedback_level(0)
+        p = camb.CAMBparams()
+        p.set_cosmology(ombh2 = ombh2,
+                        omch2 = omch2,
+                        omk = omega_k,
+                        mnu = mnu,
+                        cosmomc_theta = theta)
+        H0 = p.h * 100
+    except:
+        H0 = np.nan
+    finally:
+        camb.config.FeedbackLevel = original_feedback_level
 
     return H0
 
