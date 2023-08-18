@@ -108,13 +108,13 @@ jobs:
         name: Download Planck Artifact
         with:
           name: planck-artifact
-          path: likelihood/planck2018/COM_Likelihood_Data-baseline_R3.00.tar.gz
+          path: likelihood/planck2018/
 
       - uses: actions/download-artifact@v3
         name: Download WMAP Artifact
         with:
           name: wmap-artifact
-          path: likelihood/wmap9/data/wmap_likelihood_full_v5.tar.gz
+          path: likelihood/wmap9/data/
 
       - name: Extract data
         shell: bash -l {0}
