@@ -19,12 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         name: Planck Data Cache
         id: cache-planck
         with:
           path: COM_Likelihood_Data-baseline_R3.00.tar.gz
           key: planck-2018-data
+          enableCrossOsArchive: true
   
       - if: ${{ steps.cache-planck.outputs.cache-hit != 'true' }}
         name: Download Planck
@@ -37,11 +38,10 @@ jobs:
       - name: Cache WMAP data
         id: cache-wmap
         uses: actions/cache@v3
-        env:
-          cache-name: cache-wmap-data
         with:
           path: wmap_likelihood_full_v5.tar.gz
           key: wmap-9-data
+          enableCrossOsArchive: true
           
       - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
         name: Download WMAP data
