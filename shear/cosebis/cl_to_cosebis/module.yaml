@@ -16,14 +16,12 @@ assumptions:
 explanation: |
     COSEBIs (Complete Orthogonal Sets of E/B-Integral) are a set of alternative two-point statistics 
     designed to separate E/B-modes completely on a finite angular range. They also have reasonably localised
-    response to Fourier modes, ell, while also easy to measure from data.
+    response to Fourier modes, ell, while also easy to measure from data. This module calculates both E_n and B_n 
+    log-COSEBIs from https://arxiv.org/abs/1002.2136.
 
     The expectation value of B-modes is zero if there is no B-mode power spectra. 
     To calculate B-mode COSEBIs simply switch input_section_name to take B-mode Cls as input 
     and output_section_name to avoid mixing E/B-modes.
-
-    This module calculates both E_n and B_n log-COSEBIs from https://arxiv.org/abs/1002.2136 
-    and dimensionless COSEBIs from https://arxiv.org/abs/2110.09774. 
 
     For this CosmoSIS edition we include the cl_to_cosebis mode for a KiDS-1000 or DES+KiDS
     joint analysis.  This is taken from the public COSEBIs library of software https://github.com/maricool/2pt_stats
