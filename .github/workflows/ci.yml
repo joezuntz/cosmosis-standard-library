@@ -11,8 +11,46 @@ on:
 
 
 jobs:
+
+  Download_Data:
+    name: Download test data
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        name: Planck Data Cache
+        id: cache-planck
+        with:
+          path: likelihood/planck2018/baseline
+          key: planck-2018-data
+  
+
+      - if: ${{ steps.cache-planck.outputs.cache-hit != 'true' }}
+        name: Download Planck
+        shell: bash -l {0}
+        run: |
+          ./examples/get-planck-data.sh
+
+      - name: Cache WMAP data
+        id: cache-wmap
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-wmap-data
+        with:
+          path: likelihood/wmap9/data/
+          key: wmap-9-data
+  
+      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
+        name: Download WMAP data
+        run:  |
+          ./examples/get-wmap-data.sh
+  
+
   conda_test:
     name: Conda Test
+    needs: Download_Data
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -62,8 +100,6 @@ jobs:
           source cosmosis-configure
           export
           mkdir -p output
-          # Check the downloader works
-          ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
           grep -e 'Likelihood =  -1441.30' -e 'Likelihood =  -1441.46' output/planck.log
@@ -79,16 +115,6 @@ jobs:
           # grep 'Likelihood =  -5968.93' output/class.log
           # This seems to give different results on different systems
 
-      - name: Cache WMAP data
-        id: cache-wmap
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-wmap-data
-        with:
-          path: likelihood/wmap9/data/
-          key: wmap-9-data
-
-      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
         name: Download WMAP data
         run:  |
           ./examples/get-wmap-data.sh
@@ -248,12 +274,6 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}-v2
 
-    - uses: actions/cache@v2
-      name: Planck Data Cache
-      id: cache-planck
-      with:
-        path: likelihood/planck2018/baseline
-        key: ${{ runner.os }}-planck-2018
 
     - name: Install python dependencies
       run: |
