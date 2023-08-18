@@ -15,8 +15,8 @@ assumptions:
 
 explanation: |
     COSEBIs (Complete Orthogonal Sets of E/B-Integral) are a set of alternative two-point statistics 
-    designed to separate E/B-modes completely on a finite angular range. They also have reasonably localised
-    response to Fourier modes, ell, while also easy to measure from data. This module calculates both E_n and B_n 
+    designed to separate E/B-modes completely on a finite angular range. They have a reasonably localised
+    response to Fourier modes, ell, and are also easy to measure from data. This module calculates both E_n and B_n 
     log-COSEBIs from https://arxiv.org/abs/1002.2136.
 
     The expectation value of B-modes is zero if there is no B-mode power spectra. 
