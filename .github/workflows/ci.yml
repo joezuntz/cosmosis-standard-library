@@ -48,16 +48,7 @@ jobs:
         run:  |
           wget https://lambda.gsfc.nasa.gov/data/map/dr5/dcp/likelihood/wmap_likelihood_full_v5.tar.gz
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: wmap-artifact
-          path: wmap_likelihood_full_v5.tar.gz
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: planck-artifact
-          path: COM_Likelihood_Data-baseline_R3.00.tar.gz
-  
 
 
   conda_test:
@@ -103,19 +94,21 @@ jobs:
         run: |
           source cosmosis-configure
           cosmosis examples/bao.ini
-
-      - uses: actions/download-artifact@v3
-        name: Download Planck Artifact
+      
+      - name: Get Cached Planck
+        uses: actions/cache/restore@v3
         with:
-          name: planck-artifact
-          path: likelihood/planck2018/
+          path: wmap_likelihood_full_v5.tar.gz
+          key: planck-2018-data
+          fail-on-cache-miss: true
 
-      - uses: actions/download-artifact@v3
-        name: Download WMAP Artifact
+      - name: Get Cached WMAP
+        uses: actions/cache/restore@v3
         with:
-          name: wmap-artifact
-          path: likelihood/wmap9/data/
-
+          path: wmap_likelihood_full_v5.tar.gz
+          key: wmap-9-data
+          fail-on-cache-miss: true
+          
       - name: Extract data
         shell: bash -l {0}
         run: |
@@ -319,18 +312,20 @@ jobs:
       run: |
         source .github/ci-setup.sh && make
 
-    - uses: actions/download-artifact@v3
-      name: Download Planck artifact
+    - name: Get Cached Planck
+      uses: actions/cache/restore@v3
       with:
-        name: planck-artifact
-        path: likelihood/planck2018/COM_Likelihood_Data-baseline_R3.00.tar.gz
+        path: wmap_likelihood_full_v5.tar.gz
+        key: planck-2018-data
+        fail-on-cache-miss: true
 
-    - uses: actions/download-artifact@v3
-      name: Download WMAP artifact
+    - name: Get Cached WMAP
+      uses: actions/cache/restore@v3
       with:
-        name: wmap-artifact
-        path: likelihood/wmap9/data/wmap_likelihood_full_v5.tar.gz
-
+        path: wmap_likelihood_full_v5.tar.gz
+        key: wmap-9-data
+        fail-on-cache-miss: true
+          
     - name: Extract data
       shell: bash -l {0}
       run: |
