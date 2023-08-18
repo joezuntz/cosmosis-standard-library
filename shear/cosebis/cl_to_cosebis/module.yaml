@@ -1,0 +1,121 @@
+name: cosebis
+version: Jan2023
+purpose: "Calculate COSEBIs from C_ell power spectra"
+url: ""
+interface: cl_to_cosebis.so
+attribution: [Marika Asgari, Patrick Simon]
+rules:
+    "If you use this module then please cite the papers below"
+cite:
+    - "https://arxiv.org/abs/1201.2669"
+    - "https://arxiv.org/abs/1601.00115"
+
+assumptions:
+    - "Flat sky approximation"
+
+explanation: |
+    COSEBIs (Complete Orthogonal Sets of E/B-Integral) are a set of alternative two-point statistics 
+    designed to separate E/B-modes completely on a finite angular range. They also have reasonably localised
+    response to Fourier modes, ell, while also easy to measure from data.
+
+    The expectation value of B-modes is zero if there is no B-mode power spectra. 
+    To calculate B-mode COSEBIs simply switch input_section_name to take B-mode Cls as input 
+    and output_section_name to avoid mixing E/B-modes.
+
+    This module calculates both E_n and B_n log-COSEBIs from https://arxiv.org/abs/1002.2136 
+    and dimensionless COSEBIs from https://arxiv.org/abs/2110.09774. 
+
+    For this CosmoSIS edition we include the cl_to_cosebis mode for a KiDS-1000 or DES+KiDS
+    joint analysis.  This is taken from the public COSEBIs library of software https://github.com/maricool/2pt_stats
+    which includes additional software to convert xi_pm measurements into COSEBIs and calculate covariance matrices.
+    Note the 'maricool' version also includes additional capability to marginalise over an uncertain c-term which we
+    do not include here for simplicity.
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+        theta_min:
+            meaning: "Minimum angular distance between galaxies in arcminutes."
+            type: real
+            default: 0.5
+        theta_max:
+            meaning: "Maximum angular distance between galaxies in arcminutes."
+            type: real
+            default: 300.0
+        n_max:
+            meaning: "Maximum COSEBIs mode to be calculated: n=1,2,.., n_max."
+            type: integer
+            default: 5
+        input_section_name:
+            meaning: "Section name for input cls."
+            type: str
+            default: shear_cl
+        output_section_name:
+            meaning: "Section name for outputs."
+            type: str
+            default: cosebis
+        Wn_Output_FolderName:
+            meaning: "Folder name for Wn files."
+            type: str
+            default: COSEBIS_DIR "/WnLog/"
+        Wn_file_name:
+            meaning: "Wn file name."
+            type: str
+            default: "WnLog"
+        table_precision:
+            meaning: "number of digits used in saved WnLog table"
+            type: int 
+            default: 10
+        number_of_Wn_l_bins:
+            meaning: "number of log ell bins used in saved WnLog table"
+            type: int 
+            default: 100000
+        Roots_n_Norms_FolderName:
+            meaning: "Folder name for Roots and Normalisations."
+            type: str
+            default: COSEBIS_DIR "/TLogsRootsAndNorms"
+inputs:
+    input_section_name:
+        ell:
+            meaning: "Sample ell values for input C_ell"
+            type: real 1d
+            default: 
+        nbin_a:
+            meaning: "Number of redshift bins in the first quantity."
+            type: int
+            default:
+        nbin_b:
+            meaning: "Number of redshift bins in the second quantity. If nbin_a is not equal nbin_b gives an error."
+            type: int
+            default:
+        nbin:
+            meaning: "Number of redshift bins used if nbin_a or b not found."
+            type: int
+            default:
+        bin_i_j:
+            meaning: "C_ell (no l(l+1) factor) for bin i and j."
+            type: real 1d
+            default:
+outputs:
+    output_section_name:
+        n:
+            type: "real 1d"
+            meaning: "Array of mode values n for COSEBIs."
+        bin_i_j:
+            type: "real 1d"
+            meaning: "Array of E_n or B_n, for bin i and j."
+        theta_min:
+            type: real 
+            meaning: "Minimum angle in arcmin"
+        theta_max:
+            type: real
+            meaning: "Maximum angle in arcmin"
+        nbin_a:
+            type: int
+            meaning: "Number of redshift bins in the first quantity."
+        nbin_b:
+            type: int
+            meaning: "Number of redshift bins in the second quantity. Currently nbin_a==nbin_b."
+
+
+
+
