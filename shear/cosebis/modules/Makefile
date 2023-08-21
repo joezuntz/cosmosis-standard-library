@@ -26,12 +26,15 @@ HEADER   = $(OBJS:.o=.h)
 	$(CXX)  $(CXXFLAGS) ${USER_CXXFLAGS} -c $<
 
 # make library
-all: $(HEADER) $(OBJS) 
+all: besselzero04.h $(HEADER) $(OBJS)
 	rm -f $(LIBNAME)
 	ar rv $(LIBNAME) $(OBJS)
 	ranlib $(LIBNAME)
 
+besselzero04.h:
+	python generate-bessel-zeros.py
+
 .PHONY: clean
 clean:
 	rm -f $(LIBNAME)
-	rm -f *.o
+	rm -f *.o besselzero04.h
