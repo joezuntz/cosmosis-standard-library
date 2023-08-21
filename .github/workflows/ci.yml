@@ -76,24 +76,6 @@ jobs:
         shell: bash -l {0}
         run: mamba install -c conda-forge "cosmosis>=3.0.1" cosmosis-build-standard-library
 
-      - name: Build standard library
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          make
-
-      - name: Smail example
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/various-spectra.ini -p consistency.extra_relations='omega_x=omega_c+100'
-          grep -e 'omega_x = 100.261' output/various-spectra/cosmological_parameters/values.txt
-
-      - name: BAO
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/bao.ini
       
       - name: Get Cached Planck
         uses: actions/cache/restore@v3
@@ -119,6 +101,25 @@ jobs:
           pushd likelihood/planck2018
           tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
           popd
+
+      - name: Build standard library
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          make
+
+      - name: Smail example
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/various-spectra.ini -p consistency.extra_relations='omega_x=omega_c+100'
+          grep -e 'omega_x = 100.261' output/various-spectra/cosmological_parameters/values.txt
+
+      - name: BAO
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/bao.ini
 
       - name: CAMB Planck
         shell: bash -l {0}
@@ -293,6 +294,32 @@ jobs:
         sudo apt-get -y install libgsl-dev libfftw3-bin libfftw3-dev libfftw3-3 autotools-dev  autoconf libcfitsio-dev
 
 
+    - name: Get Cached Planck
+      uses: actions/cache/restore@v3
+      with:
+        path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+        key: planck-2018-data
+        fail-on-cache-miss: true
+
+    - name: Get Cached WMAP
+      uses: actions/cache/restore@v3
+      with:
+        path: wmap_likelihood_full_v5.tar.gz
+        key: wmap-9-data
+        fail-on-cache-miss: true
+        
+    - name: Extract data
+      shell: bash -l {0}
+      run: |
+          pushd likelihood/wmap9/data
+          tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
+          mv wmap_likelihood_v5/data/* .
+          popd
+          pushd likelihood/planck2018
+          tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
+          popd
+  
+
     - uses: actions/cache@v2
       name: Load pip cache
       id: cache-pip
@@ -312,30 +339,6 @@ jobs:
       run: |
         source .github/ci-setup.sh && make
 
-    - name: Get Cached Planck
-      uses: actions/cache/restore@v3
-      with:
-        path: wmap_likelihood_full_v5.tar.gz
-        key: planck-2018-data
-        fail-on-cache-miss: true
-
-    - name: Get Cached WMAP
-      uses: actions/cache/restore@v3
-      with:
-        path: wmap_likelihood_full_v5.tar.gz
-        key: wmap-9-data
-        fail-on-cache-miss: true
-          
-    - name: Extract data
-      shell: bash -l {0}
-      run: |
-        pushd likelihood/wmap9/data
-        tar -zxvf wmap_likelihood_full_v5.tar.gz
-        mv wmap_likelihood_v5/data/* .
-        popd
-        pushd likelihood/planck2018
-        tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
-        popd
 
     # I have seen some failures here
     - name: Check camb installation
