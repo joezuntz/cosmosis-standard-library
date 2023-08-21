@@ -98,7 +98,7 @@ jobs:
       - name: Get Cached Planck
         uses: actions/cache/restore@v3
         with:
-          path: wmap_likelihood_full_v5.tar.gz
+          path: COM_Likelihood_Data-baseline_R3.00.tar.gz
           key: planck-2018-data
           fail-on-cache-miss: true
 
@@ -113,11 +113,11 @@ jobs:
         shell: bash -l {0}
         run: |
           pushd likelihood/wmap9/data
-          tar -zxvf wmap_likelihood_full_v5.tar.gz
+          tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
           mv wmap_likelihood_v5/data/* .
           popd
           pushd likelihood/planck2018
-          tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
+          tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
           popd
 
       - name: CAMB Planck
