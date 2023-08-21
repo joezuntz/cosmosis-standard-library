@@ -296,6 +296,16 @@ extern "C" {
 		disable_gsl_error_handling();
 		return status;
 	}
+
+
+	void cleanup(void * config)
+	{
+		// This function is called once at the end of the program
+		// and is typically used to clean up memory or write logs/files
+		COSEBIs_config *config_ = (COSEBIs_config*) config;
+		delete config_->cosebis;
+		delete config_;
+	}
 }// end of extern C
 
 
