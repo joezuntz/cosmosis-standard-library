@@ -7,8 +7,8 @@ def setup(options):
 def execute(block, config):
     suffix = config
 
-    for sec,name in block.keys():
-        if (sec=='intrinsic_alignment_parameters') & (suffix in name):
+    for sec,name in block.keys('intrinsic_alignment_parameters'):
+        if (sec=='intrinsic_alignment_parameters') and (suffix in name):
             out_name = name.replace('_%s'%suffix,'')
             block[sec,out_name] = block[sec,name]
 
