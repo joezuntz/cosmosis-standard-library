@@ -123,8 +123,10 @@ jobs:
           tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
           popd
           # ACT
-          pushd likelihood/act-dr6-lens/
-          tar -zxvf ../../ACT_dr6_likelihood_v1.1.tgz
+          mkdir likelihood/act-dr6-lens/data
+          pushd likelihood/act-dr6-lens/data
+          tar -zxvf ../../../ACT_dr6_likelihood_v1.1.tgz
+          popd
 
       - name: Build standard library
         shell: bash -l {0}
