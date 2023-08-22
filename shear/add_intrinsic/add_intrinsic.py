@@ -79,6 +79,12 @@ def execute(block, config):
         # so in case useful, save the GG term to shear_cl_gg.
         # also check for a b-mode contribution from IAs
         block[shear_shear_gg, 'ell'] = block[shear_shear, 'ell']
+
+        # Add metadata to the backup gg-only section
+        for key in ["nbin_a", "nbin_b", "nbin", "sample_a", "sample_b", "is_auto", "auto_only", "sep_name"]:
+            if block.has_value(shear_shear, key):
+                block[shear_shear_gg, key] = block[shear_shear, key]
+
         for i in range(nbin_shear):
             for j in range(i + 1):
                 bin_ij = 'bin_{0}_{1}'.format(i + 1, j + 1)
