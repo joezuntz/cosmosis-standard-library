@@ -80,7 +80,7 @@ def test_des_y3_mead(capsys):
                  override={("camb", "halofit_version"): "mead2020_feedback"},
                  variables={("halo_model_parameters", "logT_AGN"): "8.2"}
                  )
-    check_likelihood(capsys, "6049.94", "6049.00", "6049.03")
+    check_likelihood(capsys, "6049.94", "6049.00", "6049.03", "6049.04")
 
 def test_act_dr6_lensing(capsys):
     run_cosmosis("examples/act-dr6-lens.ini")
