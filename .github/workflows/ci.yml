@@ -136,12 +136,13 @@ jobs:
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          pytest -vv tests/test_cosmosis_standard_library.py
+          pytest -vv --durations=0 tests/test_cosmosis_standard_library.py
 
       - name: Run Demos
         shell: bash -l {0}
         run: |
-          .github/run-demos.sh
+          source cosmosis-configure
+          pytest -vv --durations=0 tests/test_demos.py
 
 
 
@@ -205,8 +206,10 @@ jobs:
         tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
         popd
         # ACT
-        pushd likelihood/act-dr6-lens/
-        tar -zxvf ../../ACT_dr6_likelihood_v1.1.tgz
+        mkdir likelihood/act-dr6-lens/data
+        pushd likelihood/act-dr6-lens/data
+        tar -zxvf ../../../ACT_dr6_likelihood_v1.1.tgz
+        popd
   
 
     - uses: actions/cache@v2
