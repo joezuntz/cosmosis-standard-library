@@ -96,6 +96,6 @@ def test_euclid_emulator():
 def test_log_w_example():
     run_cosmosis("examples/w_model.ini")
 
-def test_des_kids(capssys):
+def test_des_kids(capsys):
     run_cosmosis("examples/des-y3_and_kids-1000.ini")
     check_likelihood(capsys, "-199.40", "-199.41")
