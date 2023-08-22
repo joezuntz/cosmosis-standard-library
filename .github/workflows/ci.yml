@@ -11,8 +11,49 @@ on:
 
 
 jobs:
+
+  Download_Data:
+    name: Download test data
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v3
+        name: Planck Data Cache
+        id: cache-planck
+        with:
+          path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+          key: planck-2018-data
+          enableCrossOsArchive: true
+  
+      - if: ${{ steps.cache-planck.outputs.cache-hit != 'true' }}
+        name: Download Planck
+        shell: bash -l {0}
+        run: |
+          URL="https://portal.nersc.gov/cfs/lsst/zuntz/planck/COM_Likelihood_Data-baseline_R3.00.tar.gz"
+          FILENAME="COM_Likelihood_Data-baseline_R3.00.tar.gz"
+          wget -O ${FILENAME} ${URL}
+        
+      - name: Cache WMAP data
+        id: cache-wmap
+        uses: actions/cache@v3
+        with:
+          path: wmap_likelihood_full_v5.tar.gz
+          key: wmap-9-data
+          enableCrossOsArchive: true
+          
+      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
+        name: Download WMAP data
+        run:  |
+          wget https://lambda.gsfc.nasa.gov/data/map/dr5/dcp/likelihood/wmap_likelihood_full_v5.tar.gz
+
+
+
+
   conda_test:
     name: Conda Test
+    needs: Download_Data
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,6 +75,32 @@ jobs:
       - name: Install dependencies with conda
         shell: bash -l {0}
         run: mamba install -c conda-forge "cosmosis>=3.0.1" cosmosis-build-standard-library
+
+      
+      - name: Get Cached Planck
+        uses: actions/cache/restore@v3
+        with:
+          path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+          key: planck-2018-data
+          fail-on-cache-miss: true
+
+      - name: Get Cached WMAP
+        uses: actions/cache/restore@v3
+        with:
+          path: wmap_likelihood_full_v5.tar.gz
+          key: wmap-9-data
+          fail-on-cache-miss: true
+          
+      - name: Extract data
+        shell: bash -l {0}
+        run: |
+          pushd likelihood/wmap9/data
+          tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
+          mv wmap_likelihood_v5/data/* .
+          popd
+          pushd likelihood/planck2018
+          tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
+          popd
 
       - name: Build standard library
         shell: bash -l {0}
@@ -62,8 +129,6 @@ jobs:
           source cosmosis-configure
           export
           mkdir -p output
-          # Check the downloader works
-          ./examples/get-planck-data.sh
           # And that the pipeline runs afterwards
           cosmosis examples/planck.ini | tee output/planck.log
           grep -e 'Likelihood =  -1441.30' -e 'Likelihood =  -1441.46' output/planck.log
@@ -79,19 +144,6 @@ jobs:
           # grep 'Likelihood =  -5968.93' output/class.log
           # This seems to give different results on different systems
 
-      - name: Cache WMAP data
-        id: cache-wmap
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-wmap-data
-        with:
-          path: likelihood/wmap9/data/
-          key: wmap-9-data
-
-      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
-        name: Download WMAP data
-        run:  |
-          ./examples/get-wmap-data.sh
 
       - name: WMAP likelihood
         shell: bash -l {0}
@@ -218,6 +270,7 @@ jobs:
 
   apt-get-test:
     runs-on: ubuntu-20.04
+    needs: Download_Data
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10", "3.11"]
@@ -241,6 +294,32 @@ jobs:
         sudo apt-get -y install libgsl-dev libfftw3-bin libfftw3-dev libfftw3-3 autotools-dev  autoconf libcfitsio-dev
 
 
+    - name: Get Cached Planck
+      uses: actions/cache/restore@v3
+      with:
+        path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+        key: planck-2018-data
+        fail-on-cache-miss: true
+
+    - name: Get Cached WMAP
+      uses: actions/cache/restore@v3
+      with:
+        path: wmap_likelihood_full_v5.tar.gz
+        key: wmap-9-data
+        fail-on-cache-miss: true
+        
+    - name: Extract data
+      shell: bash -l {0}
+      run: |
+          pushd likelihood/wmap9/data
+          tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
+          mv wmap_likelihood_v5/data/* .
+          popd
+          pushd likelihood/planck2018
+          tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
+          popd
+  
+
     - uses: actions/cache@v2
       name: Load pip cache
       id: cache-pip
@@ -248,17 +327,11 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}-v2
 
-    - uses: actions/cache@v2
-      name: Planck Data Cache
-      id: cache-planck
-      with:
-        path: likelihood/planck2018/baseline
-        key: ${{ runner.os }}-planck-2018
 
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install "cosmosis>=3.0.1"
+        pip install "cosmosis>=3.2"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
         pip install fitsio astropy fast-pt "Cython<3.0" jupyter
 
@@ -266,12 +339,6 @@ jobs:
       run: |
         source .github/ci-setup.sh && make
 
-    - name: Download Planck 2018 Data
-      if: steps.cache-planck.outputs.cache-hit != 'true'
-      run: |
-          cd likelihood/planck2018
-          curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o COM_Likelihood_Data-baseline_R3.00.tar.gz
-          tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
 
     # I have seen some failures here
     - name: Check camb installation
