@@ -8,7 +8,7 @@ COLIB = ../modules/libcolib.a
 
 
 USER_CXXFLAGS += -I${GSL_INC} -D COSEBIS_DIR="\"${PWD}/../\""
-USER_LDFLAGS += -lcosmosis -L${GSL_LIB}  -lgsl -lgslcblas -lm -L$(MODULE) -lcolib -lstdc++ -lz -Wno-deprecated -I$(MODULE)
+USER_LDFLAGS += -lcosmosis -L${GSL_LIB}  -lgsl -lgslcblas -lm -L$(MODULE) -lcolib -lstdc++ -Wno-deprecated -I$(MODULE)
 
 ifneq (Darwin, $(OS))
   USER_CXXFLAGS+=-Wl,-rpath,${PWD}
