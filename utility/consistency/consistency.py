@@ -58,7 +58,11 @@ def cosmology_consistency(verbose=False, relations_file="", theta=False, extra_r
             extra_relations = [rel.split('=', 1)
                                for rel in  extra_relations.replace(' ', '').split(',')]
             relations = relations + extra_relations
-    return Consistency(relations, COSMOLOGY_POSSIBLE_DEFAULTS, verbose)
+
+    # These params are needed for the stupid CMB theta parameter.
+    # This was a lovely elegant design before we had to support that.
+    extra_fixed_params = ["YHe", "nnu", "num_massive_neutrinos", "TCMB"]
+    return Consistency(relations, COSMOLOGY_POSSIBLE_DEFAULTS, verbose, extra_fixed_params)
 
 
 COSMOLOGY_CONSISTENCY_RELATIONS = [
@@ -97,8 +101,8 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
     ("omega_m", "1-omega_lambda-omega_k"),
     ("omega_k", "1-omega_m-omega_lambda"),
     ("K", "-hubble*hubble*omega_k/299792.458/299792.458"),
-    ("omnuh2", "mnu/93.14"),
-    ("mnu", "omnuh2*93.14"),
+    ("omnuh2", "mnu * ((nnu / 3.0) ** 0.75 / 94.06410581217612 * (TCMB/2.7255)**3)"),
+    ("mnu", "omnuh2 / ((nnu / 3.0) ** 0.75 / 94.06410581217612 * (TCMB/2.7255)**3)"),
 ]
 
 THETA_RELATIONS = [
@@ -129,12 +133,13 @@ class UnderSpecifiedModel(PoorlySpecifiedModel):
 
 
 class Consistency(object):
-    def __init__(self, relations, possible_defaults, verbose=False):
+    def __init__(self, relations, possible_defaults, verbose=False, extra_fixed=None):
         self.relations = relations
         self.parameters = {}
         self.possible_defaults = possible_defaults
         self.verbose = verbose
         self.reset()
+        self.extra_fixed = extra_fixed or []
         self.cached_defaults = None
 
     def __call__(self, parameters):
