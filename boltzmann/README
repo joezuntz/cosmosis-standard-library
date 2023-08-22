@@ -1,4 +1,4 @@
-This repo will contain Boltzmann and similar codes for structure evolution and od other cosmological predictions.
+This repo contains Boltzmann and similar codes for structure evolution and od other cosmological predictions.
 
-The camb directory contains, for now, an unmodified version of CAMB from January 2012.
+The camb directory contains camb_interface.py which imports and interfaces with the python version of CAMB
 

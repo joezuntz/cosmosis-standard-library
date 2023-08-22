@@ -222,6 +222,13 @@ jobs:
           cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3-mead.log
           grep -e 'Likelihood =  6049.94' -e 'Likelihood =  6049.00' output/des-y3-mead.log
 
+      - name: Joint DES Y3 and KiDS-1000 likelihood
+        shell: bash -l {0}
+        run: |
+          source cosmosis-configure
+          cosmosis examples/des-y3_and_kids-1000.ini | tee output/des-y3_and_kids-1000.log
+          grep 'Likelihood =  -199.409' output/des-y3_and_kids-1000.log
+          
       - uses: actions/cache@v2
         name: ACT Data Cache
         id: cache-act
