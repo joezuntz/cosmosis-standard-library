@@ -99,3 +99,8 @@ def test_log_w_example():
 def test_des_kids(capsys):
     run_cosmosis("examples/des-y3_and_kids-1000.ini")
     check_likelihood(capsys, "-199.40", "-199.41")
+
+
+def test_kids(capsys):
+    run_cosmosis("examples/kids-1000.ini")
+    check_likelihood(capsys, "-47.6")
