@@ -96,14 +96,29 @@ class TDCOSMOlenses:
         cosmo = self.cosmosis_cosmo_2_astropy_cosmo(block)
 
         # here the additional parameters required to evaluate the likelihood in accordance with TDCOSMO IV Table 3
-        # todo: add those as nuisance parameters, they are fixed for now
-        kwargs_lens_test = {'lambda_mst': 1.,  # mean in the internal MST distribution
-                        'lambda_mst_sigma': 0.04,  # Gaussian sigma of the distribution of lambda_mst
-                        'alpha_lambda': 0,  # slope of lambda_mst with r_eff/theta_E
+        # todo: check if syntax is correct
+        lambda_mst = block['nuisance_lensing','lambda_mst']
+        lambda_mst_sigma = block['nuisance_lensing','lambda_mst_sigma']
+        alpha_lambda = block['nuisance_lensing','alpha_lambda']
+        a_ani = block['nuisance_lensing','a_ani']
+        a_ani_sigma = block['nuisance_lensing','a_ani_sigma']
+
+        kwargs_lens_test = {'lambda_mst': lambda_mst,  # mean in the internal MST distribution
+                        'lambda_mst_sigma': lambda_mst_sigma,  # Gaussian sigma of the distribution of lambda_mst
+                        'alpha_lambda': alpha_lambda,  # slope of lambda_mst with r_eff/theta_E
                        }
-        kwargs_kin_test = {'a_ani': 1.5,  # mean a_ani anisotropy parameter in the OM model
-                       'a_ani_sigma': 0.3,  # sigma(a_ani)⟨a_ani⟩ is the 1-sigma Gaussian scatter in a_ani
+        kwargs_kin_test = {'a_ani': a_ani,  # mean a_ani anisotropy parameter in the OM model
+                       'a_ani_sigma': a_ani_sigma,  # sigma(a_ani)⟨a_ani⟩ is the 1-sigma Gaussian scatter in a_ani
                       }
+
+        #Default value, for reference
+        # kwargs_lens_test = {'lambda_mst': 1.,  # mean in the internal MST distribution
+        #                 'lambda_mst_sigma': 0.04,  # Gaussian sigma of the distribution of lambda_mst
+        #                 'alpha_lambda': 0,  # slope of lambda_mst with r_eff/theta_E
+        #                }
+        # kwargs_kin_test = {'a_ani': 1.5,  # mean a_ani anisotropy parameter in the OM model
+        #                'a_ani_sigma': 0.3,  # sigma(a_ani)⟨a_ani⟩ is the 1-sigma Gaussian scatter in a_ani
+        #               }
 
         logl = self.likelihood.log_likelihood(cosmo=cosmo, kwargs_lens=kwargs_lens_test, kwargs_kin=kwargs_kin_test)
 
