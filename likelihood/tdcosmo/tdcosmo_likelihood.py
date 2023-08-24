@@ -12,6 +12,9 @@ class TDCOSMOlenses:
 
         #todo: unpack options to select the cosmology. Default is LCDM
         self.cosmo_model = options.get_string("cosmo_model", default='LambdaCDM')
+        self.data_sets = options.get_string("data_sets", default='tdcosmo7')
+        self.num_distribution_draws = options.get_string("num_distribution_draws", default=200)
+
         if self.cosmo_model == 'LambdaCDM':
             self.cosmology = LambdaCDM
         else:
@@ -32,23 +35,19 @@ class TDCOSMOlenses:
         slacs_ifu_likelihood_processed = pickle.load(file)
         file.close()
 
-
-        num_distribution_draws = 200  # number of draws from the hyper-parameter distribution in computing the Monte Carlo integral marginalization
-
         # here we update each individual lens likelihood configuration with the setting of the Monte-Carlo marginalization over hyper-parameter distributions
         for lens in tdcosmo7_likelihood_processed:
-            lens['num_distribution_draws'] = num_distribution_draws
+            lens['num_distribution_draws'] = self.num_distribution_draws
         for lens in slacs_sdss_likelihood_processed:
-            lens['num_distribution_draws'] = num_distribution_draws
+            lens['num_distribution_draws'] = self.num_distribution_draws
         for lens in slacs_ifu_likelihood_processed:
-            lens['num_distribution_draws'] = num_distribution_draws
+            lens['num_distribution_draws'] = self.num_distribution_draws
 
         # ====================
         # TDCOSMO 7 likelihood
         # ====================
 
         # hear we build a likelihood instance for the sample of 7 TDCOSMO lenses,
-        self.data_sets = options.get_string("data_sets", default='tdcosmo7')
         lens_list = []
         if 'tdcosmo7' in self.data_sets:
             lens_list += tdcosmo7_likelihood_processed
@@ -89,8 +88,6 @@ class TDCOSMOlenses:
             raise NotImplementedError()
         else:
             raise ValueError()
-
-
 
         return cosmo
 
