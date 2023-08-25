@@ -1,0 +1,90 @@
+name: tdcosmo
+version: '2020'
+purpose: Likelihood of the TDCOSMO IV analysis
+url: 10.1051/0004-6361/202038861
+interface: tdcosmo_likelihood.py
+attribution:
+  - TDCOSMO IV (Birrer et al.) for the measurement
+  - TBD for the cosmoSIS implementation
+rules: None.
+cite:
+  -
+assumptions:
+  -
+explanation:
+  -
+
+params:
+  data_sets:
+    meaning: Data sets to use. Choose any combination of 'tdcosmo7', 'SLACS_SDSS' and 'SLACS_IFU'. You can use 'tdcosmo+SLAC_SDSS' if you want.
+    type: str
+    default: 'tdcosmo7'
+
+  num_distribution_draws:
+    meaning: Number of random realisation for kinematic computations.
+    type: int
+    default: 200
+
+  #todo : Is the cosmological model defined here ??
+  cosmo_model:
+    meaning: Cosmological model
+    type: str
+    default: 'LambdaCDM'
+
+inputs:
+  #  distances:
+  #    z:
+  #      meaning: Redshifts of samples
+  #      type: real 1d
+  #      default:
+  #    d_a:
+  #      meaning: Angular diameter distance in Mpc
+  #      type: real 1d
+  #      default:
+
+  cosmological_parameters:
+    omega_l:
+      meaning: Dark energy density fraction today
+      type: real
+      default: 0.0
+    h0:
+      meaning: Hubble parameter H0 (km/s/Mpc)
+      type: real
+      default:
+    omega_m:
+      meaning: Dark matter density fraction today
+      type: real
+      default:
+
+  nuisance_lensing:
+    lambda_mst:
+      meaning: Internal Mass sheet degeneracy parameter
+      type: real
+      default: 1.0
+
+    lambda_mst_sigma:
+      meaning: 1-sigma Gaussian scatter in lambda_mst
+      type: real
+      default: 0.04
+
+    alpha_lambda:
+      meaning: Slope of lambda_mst with r_eff/theta_E
+      type: real
+      default: 0.0
+
+    a_ani:
+      meaning: mean a_ani anisotropy parameter in the Osipkov-Merritt model
+      type: real
+      default: 1.5
+
+    a_ani_sigma:
+      meaning: 1-sigma Gaussian scatter in a_ani
+      type: real
+      default: 0.3
+
+outputs:
+  likelihoods:
+    tdcosmo_like:
+      meaning: Total likelihood of the TDCOSMO sample
+      type: real
+

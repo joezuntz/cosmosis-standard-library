@@ -80,11 +80,11 @@ class TDCOSMOlenses:
             #we are falling back to astropy cosmology (might be slow)
             cosmo = self.cosmology(H0=h, Om0=om, Ode0=ol)
         elif self._interpolate_distances_type == 'cosmosis':
-            #use the distance redshift relation of cosmosis
-            z_bg = block['distances', 'z']
-            D_A = block['distances', 'D_A']
+            #use the distance redshift relation of cosmosis, might be the fastest
+            # z_bg = block['distances', 'z']
+            # D_A = block['distances', 'D_A']
             angular_distance = interp1d(z_bg, D_A, kind='linear')
-            # todo to be implemented as in the holicow module
+            # todo to be implemented as in the holicow module, might need to ovewride the astropy.cosmology class with a custom set of distance funcitons
             raise NotImplementedError()
         else:
             raise ValueError()
