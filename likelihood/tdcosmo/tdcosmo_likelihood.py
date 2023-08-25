@@ -96,7 +96,6 @@ class TDCOSMOlenses:
         cosmo = self.cosmosis_cosmo_2_astropy_cosmo(block)
 
         # here the additional parameters required to evaluate the likelihood in accordance with TDCOSMO IV Table 3
-        # todo: check if syntax is correct
         lambda_mst = block['nuisance_lensing','lambda_mst']
         lambda_mst_sigma = block['nuisance_lensing','lambda_mst_sigma']
         alpha_lambda = block['nuisance_lensing','alpha_lambda']

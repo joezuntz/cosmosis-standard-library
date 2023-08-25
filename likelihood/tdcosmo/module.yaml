@@ -84,7 +84,7 @@ inputs:
 
 outputs:
   likelihoods:
-    tdcosmo_like:
+    TDCOSMO_like:
       meaning: Total likelihood of the TDCOSMO sample
       type: real
 
