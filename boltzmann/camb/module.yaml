@@ -567,15 +567,15 @@ outputs:
                 all
             type: real 1d
         pp:
-            meaning: 'Phi-Phi lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiPhi.
+            meaning: 'Phi-Phi lensing spectrum; ell * (ell+1) C_ell^PhiPhi  / 2pi.
                 Only if mode=cmb or all'
             type: real 1d
         pt:
-            meaning: 'Phi-T lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiT.
+            meaning: 'Phi-T lensing spectrum; ell * (ell+1) C_ell^PhiT / 2pi
                 Only if mode=cmb or all'
             type: real 1d
         pe:
-            meaning: 'Phi-E lensing spectrum; note ell scaling: ell * (ell+1) C_ell^PhiE.
+            meaning: 'Phi-E lensing spectrum;  ell * (ell+1) C_ell^PhiE / 2pi
                 Only if mode=cmb or all'
             type: real 1d
     matter_power_lin:
