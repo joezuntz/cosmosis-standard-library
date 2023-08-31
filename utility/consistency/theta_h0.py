@@ -60,7 +60,6 @@ def H0_to_theta_interface(params):
     omnuh2 = params.get('omnuh2', np.nan)
     mnu = params.get('mnu', np.nan)
     TCMB = params.get('TCMB', np.nan)
-    omnuh2 = params.get('omnuh2', np.nan)
     omega_m = params.get('omega_m', np.nan)
     ommh2 = params.get('ommh2', np.nan)
     omega_c = params.get('omega_c', np.nan)
