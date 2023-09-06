@@ -1,9 +1,9 @@
 from cosmosis.datablock import names, option_section as opt
 from cosmosis.datablock.cosmosis_py import errors
 import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline
 import warnings
 import traceback
+import contextlib
 
 # Finally we can now import camb
 import camb
@@ -37,6 +37,15 @@ matter_power_section_names = {
     'v_newtonian_baryon': 'baryon_velocity_power',
     'v_baryon_cdm': 'baryon_cdm_relative_velocity_power',
 }
+
+@contextlib.contextmanager
+def be_quiet_camb():
+    original_feedback_level = camb.config.FeedbackLevel
+    try:
+        camb.set_feedback_level(0)
+        yield
+    finally:
+        camb.set_feedback_level(original_feedback_level)
 
 
 def get_optional_params(block, section, names):
@@ -349,12 +358,12 @@ def extract_camb_params(block, config, more_config):
         warnings.warn("Parameter omega_nu and omnuh2 are being ignored. Set mnu and num_massive_neutrinos instead.")
 
     # Set h if provided, otherwise look for theta_mc
-    if block.has_value(cosmo, "hubble"):
+    if block.has_value(cosmo, "cosmomc_theta"):
+        cosmology_params["cosmomc_theta"] = block[cosmo, "cosmomc_theta"] / 100
+    elif block.has_value(cosmo, "hubble"):
         cosmology_params["H0"] = block[cosmo, "hubble"]
-    elif block.has_value(cosmo, "h0"):
-        cosmology_params["H0"] = block[cosmo, "h0"]*100
     else:
-        cosmology_params["cosmomc_theta"] = block[cosmo, "cosmomc_theta"]/100
+        cosmology_params["H0"] = block[cosmo, "h0"]*100
 
     p = camb.CAMBparams(
         InitPower = init_power,
@@ -366,11 +375,12 @@ def extract_camb_params(block, config, more_config):
         **config,
     )
     # Setting up neutrinos by hand is hard. We let CAMB deal with it instead.
-    p.set_cosmology(ombh2 = block[cosmo, 'ombh2'],
-                    omch2 = block[cosmo, 'omch2'],
-                    omk = block[cosmo, 'omega_k'],
-                    **more_config["cosmology_params"],
-                    **cosmology_params)
+    with be_quiet_camb():
+        p.set_cosmology(ombh2 = block[cosmo, 'ombh2'],
+                        omch2 = block[cosmo, 'omch2'],
+                        omk = block[cosmo, 'omega_k'],
+                        **more_config["cosmology_params"],
+                        **cosmology_params)
 
     # Fix for CAMB version < 1.0.10
     if np.isclose(p.omnuh2, 0) and "nnu" in cosmology_params and not np.isclose(cosmology_params["nnu"], p.num_nu_massless): 
@@ -642,14 +652,17 @@ def execute(block, config):
             more_config["n_printed_errors"] += 1
         return 1
 
-    save_derived_parameters(r, block)
-    save_distances(r, block, more_config)
+    with be_quiet_camb():
+        save_derived_parameters(r, block)
+        save_distances(r, block, more_config)
 
     if p.WantTransfer:
-        save_matter_power(r, block, more_config)
+        with be_quiet_camb():
+            save_matter_power(r, block, more_config)
 
     if p.WantCls:
-        save_cls(r, block)
+        with be_quiet_camb():
+            save_cls(r, block)
     
     return 0
 
