@@ -14,7 +14,7 @@ def setup(options):
 
     # lmax = options.get_int(option_section, 'lmax', default=4000)
     mock = options.get_bool(option_section, 'mock', default=False)
-    nsims_act = options.get_int(option_section, 'nsims_act', default=792). # Number of sims used for covmat; used in Hartlap correction
+    nsims_act = options.get_int(option_section, 'nsims_act', default=792) # Number of sims used for covmat; used in Hartlap correction
     nsims_planck = options.get_int(option_section, 'nsims_planck', default=400) # Number of sims used for covmat; used in Hartlap correction
     # no_like_corrections = options.get_bool(option_section, 'no_like_corrections', default=False)
     # Any ells above this will be discarded; likelihood must at least request ells up to this
