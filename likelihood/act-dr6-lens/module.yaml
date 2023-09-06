@@ -48,10 +48,10 @@ params:
         meaning: "The number of simulations used to create the Planck portion of the covariance matrix."
         type: int
         default: 400
-    no_like_corrections:
-        meaning: "If set to True, will not apply appropriate likelihood norm corrections."
+    like_corrections:
+        meaning: "If set to True, will apply appropriate likelihood norm corrections."
         type: bool
-        default: False
+        default: True
     trim_lmax:
         meaning: "Maximum L to use from the lensing kk spectra."
         type: int

@@ -9,14 +9,14 @@ import numpy as np
 def setup(options):
     variant = options.get_string(option_section, 'variant', default='act_baseline')
     lens_only = options.get_bool(option_section, 'lens_only', default=False)
-    # like_corrections = options.get_bool(option_section, 'like_corrections', default=False)
+    like_corrections = options.get_bool(option_section, 'like_corrections', default=True)
     like_only = options.get_bool(option_section, 'like_only', default=False)
 
     # lmax = options.get_int(option_section, 'lmax', default=4000)
     mock = options.get_bool(option_section, 'mock', default=False)
     nsims_act = options.get_int(option_section, 'nsims_act', default=792). # Number of sims used for covmat; used in Hartlap correction
     nsims_planck = options.get_int(option_section, 'nsims_planck', default=400) # Number of sims used for covmat; used in Hartlap correction
-    no_like_corrections = options.get_bool(option_section, 'no_like_corrections', default=False)
+    # no_like_corrections = options.get_bool(option_section, 'no_like_corrections', default=False)
     # Any ells above this will be discarded; likelihood must at least request ells up to this
     trim_lmax = options.get_int(option_section, 'trim_lmax', default=2998)
     apply_hartlap = options.get_bool(option_section, 'apply_hartlap', default=True)
@@ -32,7 +32,7 @@ def setup(options):
     # curve starting at ell=0).
     # variant,lens_only=lens_only,like_corrections=like_corrections)
     data_dict = act_dr6_lenslike.load_data(variant=variant,lens_only=lens_only,
-                                           like_corrections=not(no_like_corrections),apply_hartlap=apply_hartlap,
+                                           like_corrections=like_corrections,apply_hartlap=apply_hartlap,
                                            mock=mock,nsims_act=nsims_act,nsims_planck=nsims_planck,
                                            trim_lmax=trim_lmax,scale_cov=scale_cov)
 
