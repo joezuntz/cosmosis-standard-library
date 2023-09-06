@@ -1,5 +1,10 @@
 import sys,os
 import numpy as np
+
+# hack because fastpt not yet updated for numpy 1.24
+if not hasattr(np, 'int'):
+    np.int = int
+
 import scipy.interpolate as interpolate
 from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline as intspline
@@ -96,7 +101,6 @@ def get_Pk_basis_funcs(block, pt_type,
     log_knl = np.log(knl)
 
     n_pad = len(klin_fpt)
-
     fastpt = FASTPT(klin_fpt, to_do=['one_loop_dd'],
         low_extrap=-5, high_extrap=3, n_pad=n_pad)
 

@@ -38,14 +38,16 @@ do
     elif [ "$i" == "14" ]; then
         args="-p zeus.samples=15 zeus.nsteps=5"
     elif [ "$i" == "17" ]; then
-        args="-v cosmological_parameters.n_s=0.96 cosmological_parameters.omega_b=0.0468 cosmological_parameters.h0=0.6881"
-    elif [ "$i" == "18" ]; then
-        echo "Skipping demo 18"
-        continue
+        args="-v cosmological_parameters.n_s=0.96 cosmological_parameters.omega_b=0.0468 cosmological_parameters.h0=0.6881 -p test.fatal_errors=T"
     elif [ "$i" == "19" ]; then
         args="-p grid.nsample_dimension=20"
     else
         args=
+    fi
+    if [ "$args" == "" ]; then
+        args="-p runtime.verbosity=debug"
+    else
+        args="$args  runtime.verbosity=debug"
     fi
     echo Running demo $i:  cosmosis demos/demo${i}.ini $args
     time cosmosis demos/demo${i}.ini $args

@@ -1,0 +1,103 @@
+#This is a template for module description files
+name: "EuclidEmulator2"
+version: "1.0.1"
+purpose: "Emulate the boost factors that convert the linear to non-linear power spectrum, including baryon corrections"
+url: "https://github.com/miknab/EuclidEmulator2"
+interface: "euclid_emaulator2_interface.py"
+attribution: ["M. Knabenhans (library)", "Pedro Carrilho (library)", "Joe Zuntz (interface)"]
+rules:
+    "Please cite the paper below."
+cite:
+    - "MNRAS, 505, 2, 2840–2869"
+
+assumptions:
+    - "z range 0-10"
+    - "8.73 x 10-3 h / Mpc ≤ k ≤ 9.41 h / Mpc"
+    - "Simulation suite that went into the emulation"
+
+explanation: |
+    Emulators like EE2 generate an approximation to the non-linear matter power spectrum
+    by scaling the linear matter power spectrum by a boost factor. This boost factor is
+    a function of redshift and wavenumber. 
+    
+    The boost factor is calculated from a set of
+    simulations, and the emulator interpolates between these simulations to generate the
+    boost factor for any redshift and wavenumber.
+    
+    The accuracy of the emulator is limited by the accuracy of the simulations.
+
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    input_section:
+        meaning: Section to use for the input linear matter power spectrum
+        type: str
+        default: matter_power_lin
+    output_section: 
+        meaning: Section to use for the output non-linear matter power spectrum
+        type: str
+        default: matter_power_nl
+
+inputs:
+    cosmological_parameters:
+        A_s:
+            meaning: "Amplitude of the primordial power spectrum"
+            type: real
+            default:
+        n_s:
+            meaning: "Spectral index of the primordial power spectrum"
+            type: real
+            default:
+        Omega_b:
+            meaning: "Baryon density parameter"
+            type: real
+            default:
+        Omega_m:
+            meaning: "Matter density parameter"
+            type: real
+            default:
+        h0:
+            meaning: "Hubble parameter / 100 km/s/Mpc"
+            type: real
+            default:
+        mnu:
+            meaning: "Sum of neutrino masses in eV"
+            type: real
+            default:
+        w:
+            meaning: "Dark energy equation of state parameter"
+            type: real
+            default:
+        wa:
+            meaning: "Dark energy equation of state evoluation parameter"
+            type: real
+            default:
+
+    input_section:
+        k_h:
+            meaning: "Wavenumber in h/Mpc"
+            type: real
+            default:
+        z:
+            meaning: "Redshift"
+            type: real
+            default:
+        P_k:
+            meaning: "Linear matter power spectrum"
+            type: real
+            default:
+
+outputs:
+    output_section:
+        k_h:
+            meaning: "Wavenumber in h/Mpc"
+            type: real
+            default:
+        z:
+            meaning: "Redshift"
+            type: real
+            default:
+        P_k:
+            meaning: "Non-Linear matter power spectrum"
+            type: real
+            default:

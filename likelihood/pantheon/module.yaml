@@ -9,8 +9,8 @@ cite:
 -   Scolnic et al, ApJ, 859, 28
 assumptions:
 -   Pantheon statistical and systematic analysis
-explanation: |
-    " Supernova IA can be used as standardisable candles,
+explanation: >
+    Supernova IA can be used as standardisable candles,
     letting us estimate a redshift-distance relation.
 
     The Pantheon sample collected together a combined SN IA
@@ -31,7 +31,7 @@ explanation: |
     because the various systematic effects that it implements were subsumed
     into a single systematic covariance matrix.  This code therefore omits
     that machinery for simlicitiy.
-    "
+
 params:
     data_file:
         meaning: Optional. File containing supernova measurements
@@ -62,14 +62,14 @@ params:
         type: str
         default: pantheon
     likelihood_only:
-        meaning: Skip saving everything except the likelihood.  This prevents
+        meaning: >
+            Skip saving everything except the likelihood.  This prevents
             you from using e.g. the Fisher matrix sampler but can be faster for quick
             likelihoods
         type: bool
         default: false
     include_norm:
-        meaning: Include the normalizing constant at the start of the likelihood.  May
-            be needed when comparing models.
+        meaning: Include the normalizing constant at the start of the likelihood.  May be needed when comparing models.
         type: bool
         default: false
 inputs:
