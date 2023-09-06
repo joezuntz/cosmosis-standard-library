@@ -102,7 +102,7 @@ class TDCOSMOlenses:
         # here the additional parameters required to evaluate the likelihood in accordance with TDCOSMO IV Table 3
         lambda_mst = block['nuisance_strong_lensing', 'lambda_mst']
         log_lambda_mst_sigma = block['nuisance_strong_lensing', 'log_lambda_mst_sigma']
-        lambda_mst_sigma = np.e**log_lambda_mst_sigma
+        lambda_mst_sigma = 10**log_lambda_mst_sigma
         
         alpha_lambda = block['nuisance_strong_lensing', 'alpha_lambda']
 
@@ -111,10 +111,10 @@ class TDCOSMOlenses:
         # a_ani_sigma = block['nuisance_strong_lensing', 'a_ani_sigma']
         
         log_a_ani = block['nuisance_strong_lensing', 'log_a_ani']
-        a_ani = np.e**log_a_ani
+        a_ani = 10**log_a_ani
         
         log_a_ani_sigma = block['nuisance_strong_lensing', 'log_a_ani_sigma']
-        a_ani_sigma = np.e**log_a_ani_sigma
+        a_ani_sigma = 10**log_a_ani_sigma
 
 
         kwargs_lens_test = {'lambda_mst': lambda_mst,  # mean in the internal MST distribution
