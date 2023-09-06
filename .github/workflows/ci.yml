@@ -134,6 +134,11 @@ jobs:
           source cosmosis-configure
           make
 
+      - name: Install likelihood python dependencies from pip
+        shell: bash -l {0}
+        run: |
+          pip install --index-url https://test.pypi.org/simple/ act_dr6_lenslike
+
       - name: Run Tests
         shell: bash -l {0}
         run: |
