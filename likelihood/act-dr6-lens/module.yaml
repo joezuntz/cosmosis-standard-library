@@ -21,6 +21,10 @@ explanation: |
 
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
+    data_directory:
+        meaning: "Directory to search for data"
+        type: "[module dir]/data"
+        default:
     variant:
         meaning: "The variant of the DR6 lensing likelihood to use. Options are 
                   act_baseline, act_extended, actplanck_baseline, actplanck_extended, act_polonly, act_cibdeproj, act_cinpaint"
@@ -61,9 +65,9 @@ params:
         type: bool
         default: True
     scale_cov:
-        meaning: "A value by which to scale the covariance matrix by a given value (for e.g. making forecasts)."
+        meaning: "A value /as a string/ by which to scale the covariance matrix by a given value (for e.g. making forecasts)."
         type: str
-        default: ""
+        default: ''
     alens:
         meaning: "Whether or not to divide the lensing theory spectrum by an A_lens parameter, if one is being used." 
         type: bool
@@ -104,9 +108,6 @@ outputs:
             meaning: "ACT DR6 lensing likelihood for given selection"
             type: real
     data_vector:
-        act_dr6_lens_theory:
-            meaning: "Predicted theory value, only if like_only=False"
-            type: real 1d
         act_dr6_lens_data:
             meaning: "Binned CLkk data, only if like_only=False"
             type: real 1d

@@ -5,12 +5,21 @@ except ImportError:
 from cosmosis.datablock import option_section, names
 cosmo = names.cosmological_parameters
 import numpy as np
+import os
+
+dirname = os.path.split(__file__)[0]
 
 def setup(options):
     variant = options.get_string(option_section, 'variant', default='act_baseline')
     lens_only = options.get_bool(option_section, 'lens_only', default=False)
     like_corrections = options.get_bool(option_section, 'like_corrections', default=True)
     like_only = options.get_bool(option_section, 'like_only', default=False)
+
+    data_directory = os.path.join(dirname, 'data/v1.1/')
+    data_directory = options.get_string(option_section, 'data_directory', default=data_directory)
+
+    if not os.path.exists(data_directory):
+        raise FileNotFoundError('Required data file not found at {}.\nPlease obtain it and place it correctly.\nThe script get-act-data.sh will download and place it.'.format(data_file))
 
     # lmax = options.get_int(option_section, 'lmax', default=4000)
     mock = options.get_bool(option_section, 'mock', default=False)
@@ -21,17 +30,22 @@ def setup(options):
     trim_lmax = options.get_int(option_section, 'trim_lmax', default=2998)
     apply_hartlap = options.get_bool(option_section, 'apply_hartlap', default=True)
     # Limber integral parameters
-    # limber = options.get_bool(option_section, 'limber', default=False)
+    limber = options.get_bool(option_section, 'limber', default=False)
     # nz = options.get_int(option_section, 'nz', default=100)
     # kmax = options.get_int(option_section, 'kmax', default=10)
-    scale_cov = options.get(option_section, 'scale_cov' default=None)
+    scale_cov = options.get_string(option_section, 'scale_cov', default='')
+    if not scale_cov:
+        scale_cov = None
+    else:
+        scale_cov = float(scale_cov)
     alens = options.get_bool(option_section, 'alens', default=False) # Whether to divide the theory spectrum by Alens
 
     # This dict will now have entries like `data_binned_clkk` (binned data vector), `cov`
     # (covariance matrix) and `binmat_act` (binning matrix to be applied to a theory
     # curve starting at ell=0).
     # variant,lens_only=lens_only,like_corrections=like_corrections)
-    data_dict = act_dr6_lenslike.load_data(variant=variant,lens_only=lens_only,
+    data_dict = act_dr6_lenslike.load_data(ddir=data_directory,
+                                           variant=variant,lens_only=lens_only,
                                            like_corrections=like_corrections,apply_hartlap=apply_hartlap,
                                            mock=mock,nsims_act=nsims_act,nsims_planck=nsims_planck,
                                            trim_lmax=trim_lmax,scale_cov=scale_cov)
@@ -69,17 +83,17 @@ def execute(block, config):
     # if block.has_value(cosmo, 'A_lens'):
         cl_pp /= block[cosmo, "A_lens"]
 
-    if limber:
+    if data_dict['limber']:
         cl_kk = get_limber_clkk()
     else:
         cl_kk = act_dr6_lenslike.pp_to_kk(cl_pp, ell)
 
     # Then call the act code
-    lnlike, bclkk = act_dr6_lenslike.generic_lnlike(data_dict,ell, cl_kk, ell, cl_tt, cl_ee, cl_te, cl_bb, data_dict['trim_lmax'])
+    lnlike = act_dr6_lenslike.generic_lnlike(data_dict,ell, cl_kk, ell, cl_tt, cl_ee, cl_te, cl_bb, data_dict['trim_lmax'])
     block[names.likelihoods, 'act_dr6_lens_like'] = lnlike
 
     if not data_dict['cosmosis_like_only']:
-        block[names.data_vector, 'act_dr6_lens_theory'] = bclkk
+        # block[names.data_vector, 'act_dr6_lens_theory'] = bclkk
         block[names.data_vector, 'act_dr6_lens_data'] = data_dict['data_binned_clkk']
         block[names.data_vector, 'act_dr6_lens_covariance'] = data_dict['cov']
         block[names.data_vector, 'act_dr6_lens_inverse_covariance'] = data_dict['cinv']
