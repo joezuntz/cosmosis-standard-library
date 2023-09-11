@@ -73,7 +73,7 @@ def setup(options):
         rp['wp'] = read_rp(theta_file, 'wp'    , theta_type = 'centers')
         rp_edges['ds'] = None
         rp_edges['wp'] = None
-    
+            
     # projection length
     pimax = options.get_double(option_section, 'pimax', default=100.0)
     
@@ -102,6 +102,8 @@ def setup(options):
     section_names['wp_out'] = options.get_string(option_section, "wp_out", "galaxy_xi")
     section_names['ds_out'] = options.get_string(option_section, "ds_out", "galaxy_shear_xi")
     
+    # print(redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names)
+    
     return redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names
     
 def execute(block, config):
@@ -122,11 +124,15 @@ def execute(block, config):
     # power spectra
     z_nlin, k_nlin, P_nlin = block.get_grid(names.matter_power_nl, "z", "k_h", "P_k")
     mag.set_pk_nlin_data(z_nlin, k_nlin, P_nlin)
-    
+    # print("mag.set_pk_nlin_data(z_nlin, k_nlin, P_nlin)", z_nlin, k_nlin, P_nlin)
     # comoving distance
     h0  = block[names.cosmological_parameters, 'h0']
     z   = block[names.distances, "z"]
+    # print(names.distances)
+    # print(block.keys(section  = 'distances'))
     chi = block[names.distances, "D_C"] * h0
+    # chi = block[names.distances, "d_l"] * block[names.distances, "a"] * h0
+    # print("mag.set_z2chi(z, chi)", z, chi)
     mag.set_z2chi(z, chi)
     
     # unpack radial bin
@@ -166,9 +172,12 @@ def execute(block, config):
         
         # compute magnification bias and apply correction to dSigma overall amplitude
         for j in range(nbin_srce):
+            # print(i,j)
+            # print(block[section_names['nz_source'], "z"], block[section_names['nz_source'], "bin_{0}".format(j+1)])
             mag.set_nz_source(block[section_names['nz_source'], "z"], block[section_names['nz_source'], "bin_{0}".format(j+1)])
             f_ds = block.get_double(section_names['f_ds'], 'bin_{0}_{1}'.format(i+1,j+1), 1.0)
             block[section_names['ds_out']+'_gG', 'bin_{0}_{1}'.format(i+1,j+1)]  = block[section_names['ds_out'], 'bin_{0}_{1}'.format(i+1,j+1)]
             block[section_names['ds_out']      , 'bin_{0}_{1}'.format(i+1,j+1)] += f_ds * mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
+            # print(i,j,zl, f_rp*rp_ds, dlnrp_ds)
     
     return 0

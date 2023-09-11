@@ -176,6 +176,8 @@ class minimalbias_class:
                 k, pklin = self.get_pk_lin_at_z(z)
                 r_aniso, wp_aniso = self._get_wp_Kaiser(k, pklin, fz, pimax)
                 r_iso  , wp_iso   = self._get_wp_pimax(k, pklin, pimax, 0.0)
+                # print(r_aniso, r_iso, r)
+                # print(r_aniso-r, r_iso - r)
                 assert np.all(r_aniso==r) and np.all(r_iso==r), 'r binning do not match.'
                 wp *= wp_aniso/wp_iso
             else:

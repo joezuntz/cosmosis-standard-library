@@ -48,7 +48,9 @@ class dSigma_meascorr_interface:
             # and bin1 is the source bin id.
             bin0, bin1 = mc.get_bin_pair()
             dz = block[biases, 'bias_{0}'.format(bin1+1)]
-            f = mc.get_corr_factor(dz, Omm, w0)
+            z, nz = block['nz_source', 'z' ], block['nz_source', 'bin_%d'%(bin1+1)]
+            f = mc.get_corr_factor(dz, Omm, w0, bin1, z, nz)
+            # print(bin0+1, bin1+1, f)
             block[self.section_name, 'bin_{0}_{1}'.format(bin0+1, bin1+1)] = f
     
     @classmethod

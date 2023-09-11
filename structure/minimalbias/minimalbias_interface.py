@@ -130,6 +130,8 @@ def execute(block, config):
     mb.set_pk_nlin_data(z_nlin, k_nlin, P_nlin)
     
     # z & chi relation
+    # print(block.sections())
+    # print(names.growth_parameters)
     z   = block[names.growth_parameters, "z"]
     f   = block[names.growth_parameters, "f_z"]
     mb.set_z2f(z, f)
