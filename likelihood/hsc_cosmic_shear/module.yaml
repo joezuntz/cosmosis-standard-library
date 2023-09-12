@@ -1,0 +1,128 @@
+name: sacc_like
+version: '1'
+purpose: Generic 2-point measurement Gaussian likelihood using sacc format
+url: ''
+interface: 2pt_like.py
+attribution: [CosmoSIS Team, Niall Maccrann]
+rules: None.
+cite: []
+assumptions:
+-   A Gaussian likelihood approximation for two-point measurements
+-   Data supplied in a specific file format
+
+explanation: |
+    "This module implements a general likelihood of tomographic 2-point measuremnts
+    of various quantities, including galaxy density, cosmic shear, intrinsic alignments,
+    CMB lensing, and the various cross powers between these.
+
+    This is a first version of a general code using the SACC format developed for DESC.
+    See github.com/LSSTDESC/sacc for more details
+    "
+params:
+    data_file:
+        meaning: Filename of the sacc file to use.
+        type: str
+        default:
+    data_sets:
+        meaning: Space-separated list of which data sets from within
+            the file to use for likelihoods.
+        type: str
+        default: all
+    keep_tracers:
+        meaning: Regular expression to select tracers to use.
+        type: str
+        default: ""
+    angle_range_{dataset}_{i}_{j}:
+        meaning: Pair of real numbers. If set, for the given data set and pair of
+            bins, cut down the data used to this angular range  (min and max)
+        type: str
+        default:
+    cut_{dataset}:
+        meaning: Space-separated list of i,j pairs. (no spaces within the pair, just
+            betwen them, e.g. cut_lss = 1,2  1,1  3,4.  Remove this bin from the likelihood.
+        type: str
+        default:
+    "{name}_section":
+        meaning: For each {name} in the data types used from the file, a cosmosis block section
+            to look for the theory predictions in.
+        type: str
+        default: Various depending on name.
+    save_theory:
+        meaning: If set, save the theory predictions used in the likelihood to this sacc file.
+        type: str
+        default:
+    save_realization:
+        meaning: If set, save a simulated data set to this sacc file.
+        type: str
+        default:
+    covariance_realizations:
+        meaning: If >0, assume that the Covariance matrix was estimated from a set
+            of MC simulations and should thus have the Anderson-Hartlap factor applied
+            to increase its size. If zero, assume infinite number of realizations.
+        type: int
+        default: -1
+    sellentin:
+        meaning: If set, use the Sellentin-Heavens 2016 change to the likelihood to
+            account for this distribution of the covariance estimates. This changes
+            the likelihood to a student's-t form. Note that this invalidates the simulated
+            data sets used for the ABC sampler.
+        type: bool
+        default: false
+    like_name:
+        meaning: The name of the likelihood to save.
+        type: str
+        default: 2pt
+    likelihood_only:
+        meaning: Skip saving the covariance, inverse, simulation, etc. Saves some time.
+        type: bool
+        default: false
+    kind:
+        meaning: The interpolation to do into the theory splines.
+            See scipy.interpolate.interp1d.
+        type: str
+        default: cubic
+
+inputs:
+    shear_cl:
+        ell:
+            meaning: If a Fourier-space measurement is used, the angular wave-number
+                of the predicted theory curves.  The name of the section here depends on the data type used from
+                the file. It might be galaxy_cl or shear_cl, for example.
+            type: real 1d
+            default:
+        bin_{i}_{j}:
+            meaning: For various i,j depending what is found in the file, the theory
+                predictions for this value. For example, C_ell.
+            type: real 1d
+            default:
+outputs:
+    likelihoods:
+        2pt_like:
+            meaning: Gaussian likelihood value. Name can be changed in parameter file
+                (see above) for this and the other outputs below.
+            type: real
+    data_vector:
+        2pt_data:
+            meaning: The full vector of data points used in the likelihood
+            type: real 1d
+        2pt_theory:
+            meaning: The full vector of theory points used in the likelihood
+            type: real 1d
+        2pt_covariance:
+            meaning: The covariance matrix used
+            type: real 2d
+        2pt_inverse_covariance:
+            meaning: The inverse covariance matrix (precision matrix) used.
+            type: real 2d
+        2pt_simulation:
+            meaning: A simulated data set from the given theory and covariance matrix.
+            type: real 1d
+        2pt_angle:
+            meaning: The angular scale used for each data point.
+            type: real 1d
+        2pt_bin1:
+            meaning: The first bin index used for each data point
+            type: int 1d
+        2pt_bin2:
+            meaning: The second bin index used for each data point
+            type: int 1d

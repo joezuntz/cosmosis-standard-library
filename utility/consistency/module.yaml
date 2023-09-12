@@ -143,7 +143,7 @@ inputs:
             meaning: Hubble parameter H_0 in km/s/Mpc
             type: real
             default:
-        h:
+        h0:
             meaning: Dimensionless Hubble h = H_0 / 100 km/s/Mpc
             type: real
             default:

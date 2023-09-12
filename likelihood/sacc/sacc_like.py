@@ -1,30 +1,15 @@
 import sacc
-
-import sys
-import os
-dirname = os.path.split(__file__)[0]
-tp_dir = os.path.join(dirname, os.pardir, "2pt")
-sys.path.append(tp_dir)
-
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names, BlockError
-from twopoint_cosmosis import theory_names, type_table
-from astropy.io import fits
-from scipy.interpolate import interp1d
 import numpy as np
-import os
 import re
+import os
+import sys
+this_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(this_dir)
+twopoint_dir = os.path.join(parent_dir, "2pt")
+sys.path.append(twopoint_dir)
 from spec_tools import SpectrumInterp
-default_array = np.repeat(-1.0, 99)
-
-
-def is_default(x):
-    return len(x) == len(default_array) and (x == default_array).all()
-
-
-def convert_nz_steradian(n):
-    return n * (41253.0 * 60. * 60.) / (4 * np.pi)
-
 
 default_sections = {
     "cl_ee": "shear_cl",
@@ -350,7 +335,10 @@ class SaccClLikelihood(GaussianLikelihood):
             try:
                 cl_theory = block[section, f"bin_{i}_{j}"]
             except BlockError:
-                cl_theory = block[section, f"bin_{j}_{i}"]
+                if is_auto:
+                    cl_theory = block[section, f"bin_{j}_{i}"]
+                else:
+                    raise
 
             # check that all the data points share the same window
             # object (window objects contain weights for a set of ell values,
