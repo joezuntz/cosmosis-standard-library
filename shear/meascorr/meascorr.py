@@ -74,7 +74,7 @@ class dSigma_meascorr_class:
         zl = self.zl
         #zs = self.zs - dpz # This is the definition in HSC Y1 2x2pt and HSC Y3 3x2pt analyses.
         zs = z + dpz # This is the definition of CosmoSIS
-        sumwlssigcritinvPz = nz/np.sum(nz)
+        sumwlssigcritinvPz = nz/np.sum(nz)/len(zl)
         
         cosmo = self._get_cosmo(Omm, w0)
 
