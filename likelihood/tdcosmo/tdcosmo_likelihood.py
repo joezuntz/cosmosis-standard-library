@@ -4,7 +4,6 @@ from cosmosis.datablock import names, SectionOptions
 from hierarc.Likelihood.lens_sample_likelihood import LensSampleLikelihood
 from astropy.cosmology import w0waCDM
 from lenstronomy.Cosmo.cosmo_interp import CosmoInterp
-from scipy.interpolate import interp1d
 
 
 class TDCOSMOlenses:
@@ -84,13 +83,12 @@ class TDCOSMOlenses:
             cosmo = w0waCDM(H0=H0, Om0=om, Ode0=ol, Ob0=ob, w0=w0, wa=wa, m_nu=mnu, Neff=nnu)
             cosmo = CosmoInterp(cosmo=cosmo, z_stop=5, num_interp=100)
         elif self._distances_computation_module == 'camb':
-            # todo: need to overwride the astropy.cosmology class with a custom set of distance functions see the class commented at the end of this file
 
             # we use the camb distances
-            # z_bg = block['distances', 'z']
-            # D_A = block['distances', 'D_A']
-            # cosmo = CustomCosmo(z_bg, D_A)
-            raise NotImplementedError()
+            z_bg = block['distances', 'z']
+            D_A = block['distances', 'D_A']
+            # todo: compute K = Ok * c^2/H0^2 as dimensionless units
+            cosmo = CosmoInterp(ang_dist_list=D_A, z_list=z_bg, Ok0=ok, K=None,)
         else:
             raise ValueError()
 
@@ -100,11 +98,22 @@ class TDCOSMOlenses:
         cosmo = self.cosmosis_cosmo_2_astropy_cosmo(block)
 
         # here the additional parameters required to evaluate the likelihood in accordance with TDCOSMO IV Table 3
-        lambda_mst = block['nuisance_lensing', 'lambda_mst']
-        lambda_mst_sigma = block['nuisance_lensing', 'lambda_mst_sigma']
-        alpha_lambda = block['nuisance_lensing', 'alpha_lambda']
-        a_ani = block['nuisance_lensing', 'a_ani']
-        a_ani_sigma = block['nuisance_lensing', 'a_ani_sigma']
+        lambda_mst = block['nuisance_strong_lensing', 'lambda_mst']
+        log_lambda_mst_sigma = block['nuisance_strong_lensing', 'log_lambda_mst_sigma']
+        lambda_mst_sigma = 10**log_lambda_mst_sigma
+        
+        alpha_lambda = block['nuisance_strong_lensing', 'alpha_lambda']
+
+        # We will define this parameter in the block in log space because the prior is uniform in log_ space. 
+        # a_ani = block['nuisance_strong_lensing', 'a_ani']
+        # a_ani_sigma = block['nuisance_strong_lensing', 'a_ani_sigma']
+        
+        log_a_ani = block['nuisance_strong_lensing', 'log_a_ani']
+        a_ani = 10**log_a_ani
+        
+        log_a_ani_sigma = block['nuisance_strong_lensing', 'log_a_ani_sigma']
+        a_ani_sigma = 10**log_a_ani_sigma
+
 
         kwargs_lens_test = {'lambda_mst': lambda_mst,  # mean in the internal MST distribution
                             'lambda_mst_sigma': lambda_mst_sigma,  # Gaussian sigma of the distribution of lambda_mst
