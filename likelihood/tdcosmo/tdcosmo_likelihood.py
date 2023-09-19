@@ -129,12 +129,12 @@ def execute(block, config):
     block[names.likelihoods, "TDCOSMO_like"] = like
     return 0
 
-# todo : ere implement a custom class that have the same method as astropy cosmology, but overwrite the angular diameter computation
+# todo : Here implement a custom class that have the same method as astropy cosmology, but overwrite the angular diameter computation
 # class CustomCosmo(w0waCDM):
 #     def __init__(z_bkg, D_A):
 #         self.z_bkg = z_bkg
 #         self.D_A = D_A
-#         self.angular_distance = np.interp1d(self.z_bkg, self.D_A, kind='linear')
+#         self.angular_distance = interp1d(self.z_bkg, self.D_A, kind='linear')
 #     def Da(z):
 #           return self.angular_distance(z)
 #     def calculate_Dds(self, ok, K, zd, zs, Dd, Ds):
