@@ -40,6 +40,9 @@ def setup(options):
         scale_cov = float(scale_cov)
     varying_cmb_alens = options.get_bool(option_section, 'varying_cmb_alens', default=False) # Whether to divide the theory spectrum by Alens
 
+    if varying_cmb_alens and not block.has_value(cosmo, 'A_lens'):
+        raise RuntimeError('You have specified varying_cmb_alens: True to vary A_lens in the CMB lensing spectra, but given no A_lens value in the parameter file.')
+
     # This dict will now have entries like `data_binned_clkk` (binned data vector), `cov`
     # (covariance matrix) and `binmat_act` (binning matrix to be applied to a theory
     # curve starting at ell=0).
@@ -80,7 +83,6 @@ def execute(block, config):
     cl_pp = block[names.cmb_cl, 'pp'] / f1
 
     if data_dict['varying_cmb_alens']:
-    # if block.has_value(cosmo, 'A_lens'):
         cl_pp /= block[cosmo, "A_lens"]
 
     if data_dict['limber']:
