@@ -38,7 +38,7 @@ def setup(options):
         scale_cov = None
     else:
         scale_cov = float(scale_cov)
-    alens = options.get_bool(option_section, 'alens', default=False) # Whether to divide the theory spectrum by Alens
+    varying_cmb_alens = options.get_bool(option_section, 'varying_cmb_alens', default=False) # Whether to divide the theory spectrum by Alens
 
     # This dict will now have entries like `data_binned_clkk` (binned data vector), `cov`
     # (covariance matrix) and `binmat_act` (binning matrix to be applied to a theory
@@ -52,7 +52,7 @@ def setup(options):
 
     data_dict['cosmosis_like_only'] = like_only
     data_dict['trim_lmax'] = trim_lmax
-    data_dict['alens'] = alens
+    data_dict['varying_cmb_alens'] = varying_cmb_alens
     data_dict['limber'] = limber
     return data_dict
 
@@ -79,7 +79,7 @@ def execute(block, config):
     # Slightly different normalization here
     cl_pp = block[names.cmb_cl, 'pp'] / f1
 
-    if data_dict['alens']:
+    if data_dict['varying_cmb_alens']:
     # if block.has_value(cosmo, 'A_lens'):
         cl_pp /= block[cosmo, "A_lens"]
 

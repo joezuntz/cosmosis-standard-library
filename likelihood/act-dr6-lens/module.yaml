@@ -68,7 +68,7 @@ params:
         meaning: "A value /as a string/ by which to scale the covariance matrix by a given value (for e.g. making forecasts)."
         type: str
         default: ''
-    alens:
+    varying_cmb_alens:
         meaning: "Whether or not to divide the lensing theory spectrum by an A_lens parameter, if one is being used." 
         type: bool
         default: False
