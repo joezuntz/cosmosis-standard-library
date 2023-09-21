@@ -3,6 +3,7 @@ import pickle
 from cosmosis.datablock import names, SectionOptions
 from hierarc.Likelihood.lens_sample_likelihood import LensSampleLikelihood
 from astropy.cosmology import w0waCDM
+from astropy.constants import c
 from lenstronomy.Cosmo.cosmo_interp import CosmoInterp
 
 
@@ -64,7 +65,7 @@ class TDCOSMOlenses:
         :param cosmosis_cosmo: cosmosis cosmology object
         :return ~astropy.cosmology equivalent cosmology object
         """
-        H0 = block['cosmological_parameters', 'h0'] * 100
+        H0 = block['cosmological_parameters', 'h0'] * 100 #in km/s/Mpc
         om = block['cosmological_parameters', 'omega_m']
         ok = block['cosmological_parameters', 'omega_k']
         ob = block['cosmological_parameters', 'omega_b']
@@ -83,12 +84,11 @@ class TDCOSMOlenses:
             cosmo = w0waCDM(H0=H0, Om0=om, Ode0=ol, Ob0=ob, w0=w0, wa=wa, m_nu=mnu, Neff=nnu)
             cosmo = CosmoInterp(cosmo=cosmo, z_stop=5, num_interp=100)
         elif self._distances_computation_module == 'camb':
-
             # we use the camb distances
             z_bg = block['distances', 'z']
-            D_A = block['distances', 'D_A']
-            # todo: compute K = Ok * c^2/H0^2 as dimensionless units
-            cosmo = CosmoInterp(ang_dist_list=D_A, z_list=z_bg, Ok0=ok, K=None,)
+            D_A = block['distances', 'd_A']
+            K = ok * c.to('km/s').value * H0  #in Mpc^-2
+            cosmo = CosmoInterp(ang_dist_list=D_A, z_list=z_bg, Ok0=ok, K=K)
         else:
             raise ValueError()
 
@@ -138,31 +138,3 @@ def execute(block, config):
     block[names.likelihoods, "TDCOSMO_like"] = like
     return 0
 
-# todo : Here implement a custom class that have the same method as astropy cosmology, but overwrite the angular diameter computation
-# class CustomCosmo(w0waCDM):
-#     def __init__(z_bkg, D_A):
-#         self.z_bkg = z_bkg
-#         self.D_A = D_A
-#         self.angular_distance = interp1d(self.z_bkg, self.D_A, kind='linear')
-#     def Da(z):
-#           return self.angular_distance(z)
-#     def calculate_Dds(self, ok, K, zd, zs, Dd, Ds):
-#
-#         # to compute Dds from Dd and Ds, first need to figure out whether the universe is flat
-#
-#         if (np.fabs(ok) < 1.e-6):  # flat Universe, so can use simple formula
-#             Dds = ((1. + zs) * Ds - (1 + zd) * Dd) / (1. + zs)
-#
-#         elif (K > 0):
-#             chis = np.arcsin(Ds * (1. + zs) * np.sqrt(K)) / np.sqrt(K)
-#             chid = np.arcsin(Dd * (1. + zd) * np.sqrt(K)) / np.sqrt(K)
-#             chids = chis - chid
-#             Dds = (1. / (1 + zs)) * (1. / np.sqrt(K)) * np.sin(np.sqrt(K) * chids)
-#
-#         else:  # K<0
-#             chis = np.arcsinh(Ds * (1. + zs) * np.sqrt(-K)) / np.sqrt(-K)
-#             chid = np.arcsinh(Dd * (1. + zd) * np.sqrt(-K)) / np.sqrt(-K)
-#             chids = chis - chid
-#             Dds = (1. / (1 + zs)) * (1. / np.sqrt(-K)) * np.sinh(np.sqrt(-K) * chids)
-#
-#         return Dds

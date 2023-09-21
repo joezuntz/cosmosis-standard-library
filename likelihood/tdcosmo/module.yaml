@@ -5,7 +5,7 @@ url: 10.1051/0004-6361/202038861
 interface: tdcosmo_likelihood.py
 attribution:
   - TDCOSMO IV (Birrer et al.) for the measurement
-  - TBD for the cosmoSIS implementation
+  - Martin Millon, Judith Prat and Simon Birrer for the cosmoSIS implementation
 rules: None.
 cite:
   - TDCOSMO IV, Birrer et al., 2020, A&A, 643, A165
@@ -25,7 +25,7 @@ explanation:
 
 params:
   data_sets:
-    meaning: Data sets to use. Choose any combination of 'tdcosmo7', 'SLACS_SDSS' and 'SLACS_IFU'. You can use 'tdcosmo+SLAC_SDSS' if you want.
+    meaning: Data sets to use. Choose any combination of 'tdcosmo7', 'SLACS_SDSS' and 'SLACS_IFU'. You can use 'tdcosmo7+SLAC_SDSS' for example.
     type: str
     default: 'tdcosmo7'
 
@@ -42,16 +42,6 @@ params:
     default: 'astropy'
 
 inputs:
-  #  distances:
-  #    z:
-  #      meaning: Redshifts of samples
-  #      type: real 1d
-  #      default:
-  #    d_a:
-  #      meaning: Angular diameter distance in Mpc
-  #      type: real 1d
-  #      default:
-
   cosmological_parameters:
     omega_l:
       meaning: Dark energy density fraction today
@@ -66,7 +56,7 @@ inputs:
       type: real
       default:
 
-  nuisance_lensing:
+  nuisance_strong_lensing:
     lambda_mst:
       meaning: Internal Mass sheet degeneracy parameter
       type: real
