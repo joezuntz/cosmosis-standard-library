@@ -5,7 +5,7 @@ url: 10.1051/0004-6361/202038861
 interface: tdcosmo_likelihood.py
 attribution:
   - TDCOSMO IV (Birrer et al.) for the measurement
-  - Martin Millon, Judith Prat and Simon Birrer for the cosmoSIS implementation
+  - Martin Millon, Judit Prat and Simon Birrer for the cosmoSIS implementation
 rules: None.
 cite:
   - TDCOSMO IV, Birrer et al., 2020, A&A, 643, A165
