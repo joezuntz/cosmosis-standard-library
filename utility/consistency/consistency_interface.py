@@ -11,11 +11,11 @@ def setup(options):
         option_section, "relations_file", default="")
     extra_relations = options.get_string(option_section, "extra_relations", default="")
     cons = consistency.cosmology_consistency(verbose, relations_file, cosmomc_theta, extra_relations)
-    return cons
+    return cons, cosmomc_theta
 
 
 def execute(block, config):
-    cons = config
+    cons, cosmomc_theta = config
     cosmo = names.cosmological_parameters
 
     # Create dict of all parameters that we have already
@@ -24,6 +24,12 @@ def execute(block, config):
     # We need TCMB and nnu to get omnuh2 from mnu. If it's not specified use the default
     block.get_double("cosmological_parameters", "TCMB", 2.7255)
     block.get_double("cosmological_parameters", "nnu", 3.044)
+
+    # We need these to get cosmomc_theta from H0 or vice versa, so only get them
+    # if cosmomc_theta mode is active
+    if cosmomc_theta:
+        block.get_double("cosmological_parameters", "w", -1.0)
+        block.get_double("cosmological_parameters", "wa", 0.0)
 
     for param in list(cons.parameters.keys()) + cons.extra_fixed:
         if '___' in param:
@@ -88,5 +94,8 @@ def execute(block, config):
             print(f"Calculated sigma_8 = {sigma_8} from S_8/(Omega_m/0.3)**0.5")
 
         block[cosmo, "sigma_8"] = sigma_8
+
+    # Add a marker to the consistency 
+    block[cosmo, "consistency_module_was_used"] = True
 
     return 0

@@ -251,6 +251,11 @@ def extract_dark_energy_params(block, config, more_config):
 
     dark_energy = de_class()
     if more_config['use_tabulated_w']:
+        if block.has_value(cosmo, "consistency_module_was_used") and block.has_value(cosmo, "cosmomc_theta"):
+            raise RuntimeError("You used the consistency module with cosmomc_theta=T but are also"
+                               "using a tabulated w(a) in camb. The theta-H0 relation as implemeted"
+                               "in the consistency module will not work for models other than w0-wa"
+                               )
         a = block[names.de_equation_of_state, 'a']
         w = block[names.de_equation_of_state, 'w']
         dark_energy.set_w_a_table(a, w)
