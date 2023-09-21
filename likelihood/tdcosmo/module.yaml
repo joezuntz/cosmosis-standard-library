@@ -1,5 +1,5 @@
 name: tdcosmo
-version: '2020'
+version: '2023'
 purpose: Likelihood of the TDCOSMO IV analysis
 url: 10.1051/0004-6361/202038861
 interface: tdcosmo_likelihood.py
@@ -8,7 +8,7 @@ attribution:
   - Martin Millon, Judit Prat and Simon Birrer for the cosmoSIS implementation
 rules: None.
 cite:
-  - TDCOSMO IV, Birrer et al., 2020, A&A, 643, A165
+  - Birrer et al., 2020, A&A, 643, A165
   - Suyu et al., 2010, ApJ, 711, 201
   - Suyu et al., 2014, ApJ, 788, L35
   - Wong et al., 2017, MNRAS, 465, 4895
@@ -19,13 +19,23 @@ cite:
   - Wong et al., 2020, MNRAS, 498, 1420
   - Sahjib et al., 2020, MNRAS, 494, 6072
 assumptions:
-  - test
+  -   Strong lensing modelling details.
+  -   Time delay distance structure
+  -   Hierarchical inference of the mass model and stellar anisotropy parameters
 explanation:
-  - test
+  - "
+    This module contain the likelihood of a 7 time-delay lenses, presented in TDCOSMO IV (Birrer et al., 2020).
+    This module allows us to reproduce the hierarchical inference of the cosmological parameters and of the lens population parameters,
+    which are grouped under the block `nuisance_strong_lensing` (see details below). 
+    
+    Additional data sets such as 'SLACS_SDSS' and 'SLACS_IFU' can be added to the 'tdcosmo7' data set to help constrain these parameters.
+    Adding these 2 data sets requires to make the additional assumption that the lensing galaxy of the 7 TDCOSMO lenses and of the SLACS lenses 
+    come from the same population of galaxies.
+    "
 
 params:
   data_sets:
-    meaning: Data sets to use. Choose any combination of 'tdcosmo7', 'SLACS_SDSS' and 'SLACS_IFU'. You can use 'tdcosmo7+SLAC_SDSS' for example.
+    meaning: Data sets to use. Choose any combination of 'tdcosmo7', 'SLACS_SDSS' and 'SLACS_IFU'. You can use 'tdcosmo7+SLACS_SDSS' or 'tdcosmo7+SLACS_SDSS+SLACS_IFU' for example.
     type: str
     default: 'tdcosmo7'
 
