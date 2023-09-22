@@ -307,6 +307,10 @@ class TwoPointLikelihood(GaussianLikelihood):
         # the thing it does want is the theory vector, for comparison with
         # the data vector
         theory = np.concatenate(theory)
+        # print(theory)
+        # if np.max(np.abs(theory))>1e3:
+        #     raise ValueError(
+        #         "max(|theory|) >1000, that is too extreme, drop this estimation")
 
         if self.moped:
             return np.dot(self.moped_transform, theory)
@@ -346,6 +350,12 @@ class TwoPointLikelihood(GaussianLikelihood):
                 log_det = block[names.data_vector, self.like_name + "_LOG_DET"]
 
             like = -0.5 * log_det - 0.5 * N * np.log(1 + chi2 / (N - 1.))
+            
+            # print('likelihood checkpoint!!!')
+            # print(like)
+            # if like<-10000:
+            #     raise ValueError(
+            #         "Likelihood < -10000 is too extreme, drop this evaluation")
 
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like

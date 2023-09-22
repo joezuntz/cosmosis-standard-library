@@ -165,8 +165,11 @@ def execute(block, config):
         f_wp = block.get_double(section_names['f_wp'], 'bin_{0}'.format(i+1), 1.0) # multiplied to pimax
         
         # update wp
+        # print('enter get_wp()', i)
         block[section_names['wp_out'], 'bin_{0}_{0}'.format(i+1)] = mb.get_wp(zl, f_rp*rp_wp, dlnrp_wp, f_wp*pimax)
-            
+        # print('exit get_wp()', i)
+        
+        # print(mb.get_wp(zl, f_rp*rp_wp, dlnrp_wp, f_wp*pimax))
         # Compute the dSigma without the correction of Sigmacrit
         ds = mb.get_ds(zl, f_rp*rp_ds, dlnrp_ds)
         

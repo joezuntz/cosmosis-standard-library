@@ -53,7 +53,7 @@ class dSigma_meascorr_class:
         zl = self.zl
         #zs = self.zs - dpz # This is the definition in HSC Y1 2x2pt and HSC Y3 3x2pt analyses.
         zs = self.zs + dpz # This is the definition of CosmoSIS
-        sumwlssigcritinvPz = self.sumwlssigcritinvPz
+        sumwlssigcritinvPz = self.sumwlssigcritinvPz/np.sum(self.sumwlssigcritinvPz)
         cosmo = self._get_cosmo(Omm, w0)
 
         zl_rough = np.linspace(zl.min(), zl.max()+0.001,100) # Max has padding
@@ -214,6 +214,7 @@ class wp_meascorr_class:
         cosmo   = self._get_cosmo(Omm, w0)
         cosmo_meas = self._get_cosmo(self.config['Omm'], self.config['w0'])
         pimax_corr = cosmo.inv_efunc(zl_rep)/cosmo_meas.inv_efunc(zl_rep) # pi = c*Delta z/ H_0*E(z), pimax is proportional to **inverse** of E(z).
+        # print(pimax_corr)
         return pimax_corr
     
 class rp_meascorr_class:

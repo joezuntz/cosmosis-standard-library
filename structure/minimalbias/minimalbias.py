@@ -108,7 +108,7 @@ class minimalbias_class:
         return r, xi
         
     def _get_wp_pimax(self, k, pk, pimax, dlnrp):
-        r, xi = self._get_xigg_n(k, pk, 0)
+        r, xi = self._get_xigg_n(k, pk, 0, N_extrap_low=0, N_extrap_high=0 )
         
         rpi = np.logspace(-3, np.log10(pimax), 300)
         rp2d, rpi2d = np.meshgrid(r, rpi)
