@@ -30,7 +30,7 @@ def setup(options):
     trim_lmax = options.get_int(option_section, 'trim_lmax', default=2998)
     apply_hartlap = options.get_bool(option_section, 'apply_hartlap', default=True)
     # Limber integral parameters
-    limber = options.get_bool(option_section, 'limber', default=False)
+    # limber = options.get_bool(option_section, 'limber', default=False)
     # nz = options.get_int(option_section, 'nz', default=100)
     # kmax = options.get_int(option_section, 'kmax', default=10)
     scale_cov = options.get_string(option_section, 'scale_cov', default='')
@@ -56,11 +56,11 @@ def setup(options):
     data_dict['cosmosis_like_only'] = like_only
     data_dict['trim_lmax'] = trim_lmax
     data_dict['varying_cmb_alens'] = varying_cmb_alens
-    data_dict['limber'] = limber
+    # data_dict['limber'] = limber
     return data_dict
 
-def get_limber_clkk():
-    raise NotImplementedError("Direct Limber calcution of Clkk not implemented in cosmosis version of likelihood")
+# def get_limber_clkk():
+#     raise NotImplementedError("Direct Limber calcution of Clkk not implemented in cosmosis version of likelihood")
 
 def execute(block, config):
     data_dict = config
@@ -85,17 +85,18 @@ def execute(block, config):
     if data_dict['varying_cmb_alens']:
         cl_pp /= block[cosmo, "A_lens"]
 
-    if data_dict['limber']:
-        cl_kk = get_limber_clkk()
-    else:
-        cl_kk = act_dr6_lenslike.pp_to_kk(cl_pp, ell)
+    # if data_dict['limber']:
+    #     cl_kk = get_limber_clkk()
+    # else:
+    #     cl_kk = act_dr6_lenslike.pp_to_kk(cl_pp, ell)
+    cl_kk = act_dr6_lenslike.pp_to_kk(cl_pp, ell)
 
     # Then call the act code
-    lnlike = act_dr6_lenslike.generic_lnlike(data_dict,ell, cl_kk, ell, cl_tt, cl_ee, cl_te, cl_bb, data_dict['trim_lmax'])
+    lnlike, bclkk = act_dr6_lenslike.generic_lnlike(data_dict,ell, cl_kk, ell, cl_tt, cl_ee, cl_te, cl_bb, data_dict['trim_lmax'], return_theory=True)
     block[names.likelihoods, 'act_dr6_lens_like'] = lnlike
 
     if not data_dict['cosmosis_like_only']:
-        # block[names.data_vector, 'act_dr6_lens_theory'] = bclkk
+        block[names.data_vector, 'act_dr6_lens_theory'] = bclkk
         block[names.data_vector, 'act_dr6_lens_data'] = data_dict['data_binned_clkk']
         block[names.data_vector, 'act_dr6_lens_covariance'] = data_dict['cov']
         block[names.data_vector, 'act_dr6_lens_inverse_covariance'] = data_dict['cinv']
