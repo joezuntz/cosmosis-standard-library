@@ -23,8 +23,8 @@ explanation: |
 params:
     data_directory:
         meaning: "Directory to search for data"
-        type: "[module dir]/data"
-        default:
+        type: str
+        default: "[module dir]/data"
     variant:
         meaning: "The variant of the DR6 lensing likelihood to use. Options are 
                   act_baseline, act_extended, actplanck_baseline, actplanck_extended, act_polonly, act_cibdeproj, act_cinpaint"
