@@ -3,7 +3,7 @@ version: '1'
 purpose: Generic 2-point measurement Gaussian likelihood using sacc format
 url: ''
 interface: sacc_like.py
-attribution: [CosmoSIS Team, Niall Maccrann]
+attribution: [CosmoSIS Team]
 rules: None.
 cite: []
 assumptions:
