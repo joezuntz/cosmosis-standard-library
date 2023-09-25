@@ -1,0 +1,60 @@
+name: "simple_like"
+version: "1"
+purpose: "Generate a simple 2pt likelihood given data, theory and covariance with no cuts"
+url: ""
+interface: simple_like.py
+attribution: ["Chieh-An Lin", "Tilman Troester", "Marika Asgari", "Catherine Heymans"]
+rules: "None."
+cite: []
+
+assumptions:
+    - "The tomographic data and covariance are ordered in the standard CosmoSIS format"
+
+explanation: |
+    "This is a simple likelihood calculation that was set up for COSEBIs. In principle it could be used for any statistic
+     provided you don't want to make any cuts to the data, theory and covariance (If you want to do something more complex 
+     use 2pt_like.py).  It first reads in the tomographic data vector and covariance matrix from the block.  
+     The theory is then also extracted and ordered according to the CosmoSIS convention.  
+     The likelihood (data-model)^T C^{-1} (data-model) is returned.
+    "
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    data_set: 
+        meaning: Space-separated list of statistic name and angle name to look in for data
+        type: str
+        default: 'En n'
+    data_file: 
+        meaning: Name of FITS file containing the data and covariance matrix
+        type: str
+        default: 
+    like_name: 
+        meaning: The name of the likelihood to save e.g. 'like_name = cosebis' will return cosebis_like to the likelihood block
+        type: str
+        default: cosebis
+    theory_section: 
+        meaning: Name of the block section that is storing the theory that you want to compare the data_set to
+        type: str
+        default: cosebis
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+inputs:
+    cosebis: # The name of the section here depends on theory_section above - assuming the default options here
+        En:
+            meaning: The theory predictions
+            type: real 1d
+            default:
+        n:
+            meaning: If cosebis used, the COSEBIs mode
+            type: real 1d
+            default:
+        bin_{i}_{j}:
+            meaning: For various i,j depending what is found in the file, the theory predictions for this value. 
+            type: real 1d
+            default:
+
+outputs:
+    likelihoods:
+        cosebis_like:
+            meaning: Gaussian likelihood value. Name can be changed in parameter file (see above).
+            type: real

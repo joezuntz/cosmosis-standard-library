@@ -20,6 +20,10 @@ from fastpt.P_extend import k_extend
 import numpy as np
 from time import time
 
+# hack because fastpt not yet updated for numpy 1.24
+if not hasattr(np, 'int'):
+    np.int = int
+
 from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline as intspline
 #import matplotlib as plt

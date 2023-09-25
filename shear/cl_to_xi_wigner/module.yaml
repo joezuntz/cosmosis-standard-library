@@ -16,7 +16,7 @@ explanation: |
 
     There is a general relation [arXiv:1904.09973]
 
-        xi(theta) = sum_l (2*l + 1)/(4pi) C_l d^l_ss'(theta)
+        :math:`\xi(\theta) = \sum_\ell (2*\ell + 1)/(4 \pi) C_\ell d^\ell_{ss'}(\theta)`
 
     to convert between cl and xi of spin s and s' fields, using the reduced
     Wigner d-functions. This is a linear relation that can be written in matrix

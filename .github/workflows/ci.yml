@@ -11,14 +11,68 @@ on:
 
 
 jobs:
+
+  Download_Data:
+    name: Download test data
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v3
+        name: Planck Data Cache
+        id: cache-planck
+        with:
+          path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+          key: planck-2018-data
+          enableCrossOsArchive: true
+  
+      - if: ${{ steps.cache-planck.outputs.cache-hit != 'true' }}
+        name: Download Planck
+        shell: bash -l {0}
+        run: |
+          URL="https://portal.nersc.gov/cfs/lsst/zuntz/planck/COM_Likelihood_Data-baseline_R3.00.tar.gz"
+          FILENAME="COM_Likelihood_Data-baseline_R3.00.tar.gz"
+          wget -O ${FILENAME} ${URL}
+        
+      - name: Cache WMAP data
+        id: cache-wmap
+        uses: actions/cache@v3
+        with:
+          path: wmap_likelihood_full_v5.tar.gz
+          key: wmap-9-data
+          enableCrossOsArchive: true
+          
+      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
+        name: Download WMAP data
+        run:  |
+          wget https://lambda.gsfc.nasa.gov/data/map/dr5/dcp/likelihood/wmap_likelihood_full_v5.tar.gz
+
+      - name: Cache ACT data
+        id: cache-act
+        uses: actions/cache@v3
+        with:
+          path: ACT_dr6_likelihood_v1.1.tgz
+          key: act-dr6-data
+          enableCrossOsArchive: true
+          
+      - if: ${{ steps.cache-act.outputs.cache-hit != 'true' }}
+        name: Download ACT data
+        run:  |
+          wget https://lambda.gsfc.nasa.gov/data/suborbital/ACT/ACT_dr6/likelihood/data/ACT_dr6_likelihood_v1.1.tgz
+
+
+
+
   conda_test:
     name: Conda Test
+    needs: Download_Data
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-latest]
-        pyversion: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        pyversion: ["3.8", "3.9", "3.10", "3.11"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -33,7 +87,46 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge cosmosis "numpy<1.24" cosmosis-build-standard-library
+        run: mamba install -c conda-forge "cosmosis>=3.2" cosmosis-build-standard-library pytest
+      
+      - name: Get Cached Planck
+        uses: actions/cache/restore@v3
+        with:
+          path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+          key: planck-2018-data
+          fail-on-cache-miss: true
+
+      - name: Get Cached WMAP
+        uses: actions/cache/restore@v3
+        with:
+          path: wmap_likelihood_full_v5.tar.gz
+          key: wmap-9-data
+          fail-on-cache-miss: true
+
+      - name: Get Cached ACT
+        uses: actions/cache/restore@v3
+        with:
+          path: ACT_dr6_likelihood_v1.1.tgz
+          key: act-dr6-data
+          fail-on-cache-miss: true
+          
+      - name: Extract data
+        shell: bash -l {0}
+        run: |
+          # WMAP
+          pushd likelihood/wmap9/data
+          tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
+          mv wmap_likelihood_v5/data/* .
+          popd
+          #Planck
+          pushd likelihood/planck2018
+          tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
+          popd
+          # ACT
+          mkdir likelihood/act-dr6-lens/data
+          pushd likelihood/act-dr6-lens/data
+          tar -zxvf ../../../ACT_dr6_likelihood_v1.1.tgz
+          popd
 
       - name: Build standard library
         shell: bash -l {0}
@@ -41,175 +134,26 @@ jobs:
           source cosmosis-configure
           make
 
-      - name: Smail example
+      - name: Run Tests
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          cosmosis examples/various-spectra.ini
-
-      - name: BAO
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/bao.ini
-
-      - name: CAMB Planck
-        shell: bash -l {0}
-        run: |
-          # print out the configuration
-          python -m cosmosis.configure
-          source cosmosis-configure
-          export
-          mkdir -p output
-          # Check the downloader works
-          ./examples/get-planck-data.sh
-          # And that the pipeline runs afterwards
-          cosmosis examples/planck.ini | tee output/planck.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  -1441.30' output/planck.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  -1441.46' output/planck.log; fi
-          
-
-      - name: Class Planck
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/planck_class.ini -p class.mpk=T | tee output/class.log
-          # This may need updating as we modify the class interface
-          # The settings are not optimized
-          # grep 'Likelihood =  -5968.93' output/class.log
-          # This seems to give different results on different systems
-
-      - name: Cache WMAP data
-        id: cache-wmap
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-wmap-data
-        with:
-          path: likelihood/wmap9/data/
-          key: wmap-9-data
-
-      - if: ${{ steps.cache-wmap.outputs.cache-hit != 'true' }}
-        name: Download WMAP data
-        run:  |
-          ./examples/get-wmap-data.sh
-
-      - name: WMAP likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/wmap.ini | tee output/wmap.log
-
-
-      - name: Pantheon emcee
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/pantheon.ini -p emcee.samples=20
-          cosmosis-postprocess examples/pantheon.ini -o output/pantheon
-          test -f output/pantheon/cosmological_parameters--omega_m.png
-
-      - name: PantheonPlusAndShoes
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/pantheon_plus_shoes.ini -p runtime.sampler=test | tee output/pantheon_plus_shoes_log.txt
-          grep 'Likelihood =  -738.23' output/pantheon_plus_shoes_log.txt
-
-      - name: DES Y1 likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y1.ini | tee output/des-y1.log
-          # unchanged in camb 1.4
-          grep 'Likelihood =  5237.3' output/des-y1.log
-
-      - name: DES Y1 likelihood with cl_to_corr
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y1.ini -p 2pt_shear.file=./shear/cl_to_corr/cl_to_corr.py 2pt_shear.corr_type=xi | tee output/des-y1.log
-          # unchanged in camb 1.4
-          grep 'Likelihood =  5237.3' output/des-y1.log
-
-
-      - name: DES Y3 likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3.ini -p pk_to_cl_gg.save_kernels=T pk_to_cl.save_kernels=T | tee output/des-y3.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6043.23' output/des-y3.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6043.34' output/des-y3.log; fi
-
-
-      - name: DES Y3 Class likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3-class.ini
-          # class is not consistent across systems to the level needed here
-
-      - name: DES Y3 cosmic shear likelihood
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3-shear.ini | tee output/des-y3-shear.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  2957.03' output/des-y3-shear.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  2957.12' output/des-y3-shear.log; fi
-
-
-      - name: DES Y3 likelihood with Mira Titan
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3-mira-titan.ini | tee output/des-y3-mt.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6048.0' output/des-y3-mt.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6048.1' output/des-y3-mt.log; fi
-
-      - name: DES Y3 likelihood with Mead nonlinear
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3.ini -v halo_model_parameters.logT_AGN=8.2 -p camb.halofit_version=mead2020_feedback | tee output/des-y3-mead.log
-          OLD_CAMB=$(python -c 'import camb;vs=camb.__version__.split(".");print(float(vs[0]+"."+vs[1])<1.4)')
-          if [ "$OLD_CAMB" == "True" ]; then grep 'Likelihood =  6049.94' output/des-y3-mead.log; fi
-          if [ "$OLD_CAMB" == "False" ]; then grep 'Likelihood =  6049.00' output/des-y3-mead.log; fi
-
-      - name: DES Y3 6x2pt
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/des-y3-6x2.ini
-
-      - name: Euclid emulator
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/euclid-emulator.ini
-          test -f output/euclid-emulator/matter_power_nl/p_k.txt
-
-      - name: Log w example
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          cosmosis examples/w_model.ini | tee output/w_model.log
+          pytest -vv --durations=0 tests/test_cosmosis_standard_library.py
 
       - name: Run Demos
         shell: bash -l {0}
         run: |
-          .github/run-demos.sh
-
+          source cosmosis-configure
+          pytest -vv --durations=0 tests/test_demos.py
 
 
 
   apt-get-test:
     runs-on: ubuntu-20.04
+    needs: Download_Data
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
 
     steps:
     - name: Checkout repository
@@ -230,6 +174,46 @@ jobs:
         sudo apt-get -y install libgsl-dev libfftw3-bin libfftw3-dev libfftw3-3 autotools-dev  autoconf libcfitsio-dev
 
 
+    - name: Get Cached Planck
+      uses: actions/cache/restore@v3
+      with:
+        path: COM_Likelihood_Data-baseline_R3.00.tar.gz
+        key: planck-2018-data
+        fail-on-cache-miss: true
+
+    - name: Get Cached WMAP
+      uses: actions/cache/restore@v3
+      with:
+        path: wmap_likelihood_full_v5.tar.gz
+        key: wmap-9-data
+        fail-on-cache-miss: true
+        
+    - name: Get Cached ACT
+      uses: actions/cache/restore@v3
+      with:
+        path: ACT_dr6_likelihood_v1.1.tgz
+        key: act-dr6-data
+        fail-on-cache-miss: true
+    
+    - name: Extract data
+      shell: bash -l {0}
+      run: |
+        # WMAP
+        pushd likelihood/wmap9/data
+        tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
+        mv wmap_likelihood_v5/data/* .
+        popd
+        #Planck
+        pushd likelihood/planck2018
+        tar -zxvf ../../COM_Likelihood_Data-baseline_R3.00.tar.gz
+        popd
+        # ACT
+        mkdir likelihood/act-dr6-lens/data
+        pushd likelihood/act-dr6-lens/data
+        tar -zxvf ../../../ACT_dr6_likelihood_v1.1.tgz
+        popd
+  
+
     - uses: actions/cache@v2
       name: Load pip cache
       id: cache-pip
@@ -237,30 +221,18 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}-v2
 
-    - uses: actions/cache@v2
-      name: Planck Data Cache
-      id: cache-planck
-      with:
-        path: likelihood/planck2018/baseline
-        key: ${{ runner.os }}-planck-2018
 
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install cosmosis
-        pip install --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt Cython
+        pip install "cosmosis>=3.2" "nautilus-sampler==0.6.*"
+        pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter
 
     - name: Build
       run: |
         source .github/ci-setup.sh && make
 
-    - name: Download Planck 2018 Data
-      if: steps.cache-planck.outputs.cache-hit != 'true'
-      run: |
-          cd likelihood/planck2018
-          curl "http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz" -o COM_Likelihood_Data-baseline_R3.00.tar.gz
-          tar -zxvf COM_Likelihood_Data-baseline_R3.00.tar.gz
 
     # I have seen some failures here
     - name: Check camb installation
@@ -268,18 +240,21 @@ jobs:
         source .github/ci-setup.sh
         python -c "import camb"
 
-
-    - name: Demo 2 Planck 2018 Likelihood
+    - name: Test campaign commands
+      shell: bash -l {0}
       run: |
         source .github/ci-setup.sh
-        cosmosis demos/demo2.ini
-        cosmosis-postprocess demos/demo2.ini -o output/demo2
-        test -f output/demo2/comoving_distance.png
+        cosmosis-campaign -l examples/des-campaign.yml | tee output/campaign.log
+        grep -e "mira-titan" campaign.log
+        grep -e "fiducial" campaign.log
+        cosmosis-campaign --run fiducial-test-only examples/des-campaign.yml
+        cosmosis-campaign  examples/des-campaign.yml --status fiducial-test-only > output/campaign.log
+        grep -e "🟢 fiducial-test-only" output/campaign.log
+        cosmosis-campaign  examples/des-campaign.yml --status
 
-
-    - name: Demo 9 Low-Resolution Multinest
+    - name: ExampleNotebook
+      shell: bash -l {0}
       run: |
-        source .github/ci-setup.sh
-        cosmosis demos/demo9.ini -p multinest.live_points=100
-        cosmosis-postprocess output/demo9.txt -o output/demo9
-        test -f output/demo9/2D_supernova_params--deltam_cosmological_parameters--omega_m.png
+        source cosmosis-configure
+        rm -f output/pantheon.txt
+        jupyter nbconvert --to notebook --execute "examples/example.ipynb"
