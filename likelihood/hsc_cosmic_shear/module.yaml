@@ -16,6 +16,10 @@ explanation: |
     This module is a subclass of the sacc_like likelihood in likelihood/sacc_like.
     See the documentation for that module for more details.
 
+    Note that the analysis presented in Dalal et al used 
+    the power spectrum from the linear BACCO emulator and pyhmcode2016, the
+    interfaces for which are not public immediately. They will be released soon.
+
 params:
     data_file:
         meaning: Filename of the sacc file to use.
