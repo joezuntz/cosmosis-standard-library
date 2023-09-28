@@ -58,7 +58,7 @@ def run_emulator_with_baryons(block,emulator):
     kmask = (k_lin<4.9) & (k_lin>0.0001)
 
     params = {
-        'omega_cold'    :  block['cosmological_parameters','omega_m'],
+        'omega_cold'    :  block['cosmological_parameters','omega_m'] - block['cosmological_parameters','omega_nu'],
         'A_s'           :  block['cosmological_parameters','a_s'],
         'omega_baryon'  :  block['cosmological_parameters','omega_b'],
         'ns'            :  block['cosmological_parameters','n_s'],
@@ -122,9 +122,10 @@ def run_emulator_no_baryons(block,emulator):
 
     Omm = block['cosmological_parameters','omega_m']
     Omb = block['cosmological_parameters','omega_b']
+    Omnu = block['cosmological_parameters','omega_nu']
 
     params = {
-        'omega_cold'    :  Omm,
+        'omega_cold'    :  Omm-Omnu,
         'A_s'   :  block['cosmological_parameters','a_s'],
         'omega_baryon'  :  Omb,
         'ns'            :  block['cosmological_parameters','n_s'],
