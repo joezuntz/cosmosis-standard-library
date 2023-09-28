@@ -93,16 +93,16 @@ inputs:
             meaning:  characteristic halo mass scale for central galaxies, in range 9.0 to 13.0; log scale in Msun/h
             type: real
             default:
-        theta_out: Scaling of r200 to give outer power-law profile scale of hot gas radius. Range 0.0 to 0.477
-            meaning: 
+        theta_out: 
+            meaning: Scaling of r200 to give outer power-law profile scale of hot gas radius. Range 0.0 to 0.477
             type: real
             default:
-        theta_inn: Scaling of r200 to give inner power-law profile scale of hot gas radius. Range -2.0 to -0.522
-            meaning: 
+        theta_inn: 
+            meaning: Scaling of r200 to give inner power-law profile scale of hot gas radius. Range -2.0 to -0.522
             type: real
             default:
-        M_inn: Characteristic mass of inner hot gas; log scale in Msun/h. Range 9.0 to 13.5.
-            meaning: 
+        M_inn: 
+            meaning: Characteristic mass of inner hot gas; log scale in Msun/h. Range 9.0 to 13.5.
             type: real
             default:
 
