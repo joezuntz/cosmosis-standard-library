@@ -133,3 +133,6 @@ def test_kids(capsys):
     run_cosmosis("examples/kids-1000.ini")
     check_likelihood(capsys, "-47.6")
     check_no_camb_warnings(capsys)
+
+def test_bacco():
+    run_cosmosis("examples/bacco.ini")
