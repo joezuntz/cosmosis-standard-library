@@ -2,7 +2,7 @@
 #define TOSTRING_H
 
 #include <string>
-#include <strstream>
+#include <sstream>
 
 using namespace std;
 

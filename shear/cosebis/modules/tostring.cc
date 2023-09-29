@@ -8,32 +8,32 @@ void noBlanks(string& str)
 }
 
 string toString(const int i){
-  ostrstream ost;
+  ostringstream ost;
   ost << i << '\0';
   return ost.str();
 }
 
 string toString(const long l){
-  ostrstream ost;
+  ostringstream ost;
   ost << l << '\0';
   return ost.str();
 }
 
 string toString(const int short us){
-  ostrstream ost;
+  ostringstream ost;
   ost << us << '\0';
   return ost.str();
 }
 
 
 string toString(const int unsigned ui){
-  ostrstream ost;
+  ostringstream ost;
   ost << ui << '\0';
   return ost.str();
 }
 
 string toString(const float f,int precision){
-  ostrstream ost;
+  ostringstream ost;
  
   if (precision)
     ost.precision(precision);
@@ -46,7 +46,7 @@ string toString(const float f,int precision){
 }
 
 string toString(const double d,int precision){
-  ostrstream ost;
+  ostringstream ost;
 
   if (precision)
     ost.precision(precision);
