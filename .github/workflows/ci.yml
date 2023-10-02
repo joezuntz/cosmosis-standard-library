@@ -87,7 +87,7 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge "cosmosis>=3.2" cosmosis-build-standard-library pytest "tensorflow>=2.6.0" deepdish
+        run: mamba install -c conda-forge "cosmosis>=3.2" cosmosis-build-standard-library pytest
       
       - name: Get Cached Planck
         uses: actions/cache/restore@v3
