@@ -23,6 +23,35 @@ runs:
     params:
     - sampler = test
 
+  - name: bacco-nl
+    parent: fiducial
+    params:
+    - bacco.file = structure/baccoemu/baccoemu_interface.py
+    - bacco.mode = nonlinear
+    - camb.nonlinear = none
+    pipeline:
+      - after camb bacco
+
+  - name: bacco-baryons
+    parent: fiducial
+    components:
+    - bacco_baryon_params
+    params:
+    - bacco.file = structure/baccoemu/baccoemu_interface.py
+    - bacco.mode = baryons
+    pipeline:
+      - after camb bacco
+
+  - name: bacco-nl-baryons
+    parent: fiducial
+    components:
+    - bacco_baryon_params
+    params:
+    - bacco.file = structure/baccoemu/baccoemu_interface.py
+    - bacco.mode = nonlinear+baryons
+    pipeline:
+      - after camb bacco
+
   # This run is based on the fiducial run above, with
   # additional changes applied to it on top of the ones above
   - name: class
@@ -120,6 +149,15 @@ runs:
 
 # These components can be re-used in multiple runs above.
 components:
+  bacco_baryon_params:
+    values:
+    - baryon_parameters.M_c =  9.0  14.0  15.0
+    - baryon_parameters.eta = -0.698  -0.3 0.698
+    - baryon_parameters.beta = -1.0  -0.22 0.698
+    - baryon_parameters.M1_z0_cen=   9.0 10.5  13.0
+    - baryon_parameters.theta_out=  0.0 0.25  0.477
+    - baryon_parameters.theta_inn =  -2.0  -0.86  -0.522
+    - baryon_parameters.M_inn = 9.0  13.4  13.5
   maglim_cuts:
     params:
     - 2pt_like.angle_range_xip_1_1  =  2.475 999.0
