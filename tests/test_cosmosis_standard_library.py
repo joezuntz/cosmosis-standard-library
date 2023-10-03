@@ -141,3 +141,21 @@ def test_kids(capsys):
     run_cosmosis("examples/kids-1000.ini")
     check_likelihood(capsys, "-47.6")
     check_no_camb_warnings(capsys)
+
+def test_bacco():
+    # The baseline version just does non-linear matter power
+    run_cosmosis("examples/bacco.ini")
+
+    # This variant emulates NL power with baryonic effects
+    run_cosmosis("examples/bacco.ini",
+                 override={
+                    ("bacco_emulator", "mode"): "nonlinear+baryons",
+                })
+
+    # This variant uses camb to get the NL power and only emulates the baryonic effects
+    run_cosmosis("examples/bacco.ini",
+                 override={
+                    ("bacco_emulator", "mode"): "baryons",
+                    ("camb", "nonlinear"): "pk",
+                    ("camb", "halofit_version"): "takahashi",
+                })
