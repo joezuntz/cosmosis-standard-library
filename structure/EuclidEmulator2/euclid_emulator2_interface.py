@@ -46,10 +46,11 @@ def execute(block, config):
 
     # Get z and k from the NL power section
     z, k, P = block.get_grid(input_section, "z", "k_h", "P_k")
-    _, b = ee2.get_boost(params, z, k)
 
     if len(z) > 100:
         raise ValueError("EuclidEmulator2 only allows up to 100 redshift values")
+
+    _, b = ee2.get_boost(params, z, k)
 
     # Not sure why but b comes back as a dictionary of arrays
     # instead of a 2D array
