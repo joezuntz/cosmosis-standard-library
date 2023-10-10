@@ -31,7 +31,7 @@ char* fortran_clik_protect_string(char* string, int len) {
 // initialize the planck likelihood from an hdf file
 #ifdef ADD0US
 void fortran_clik_init(long* pself,char* hdffilepath,int* fpathlen) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_init__(long* pself,char* hdffilepath,int* fpathlen) {
 #else
 void fortran_clik_init_(long* pself,char* hdffilepath,int* fpathlen) {
@@ -52,7 +52,7 @@ void fortran_clik_init_(long* pself,char* hdffilepath,int* fpathlen) {
 // has_cl = 1 0 0 0 0 0
 #ifdef ADD0US
 void fortran_clik_get_has_cl(long* pself, int* has_cl) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_get_has_cl__(long* pself, int* has_cl) {
 #else
 void fortran_clik_get_has_cl_(long* pself, int* has_cl) {
@@ -68,7 +68,7 @@ void fortran_clik_get_has_cl_(long* pself, int* has_cl) {
 
 #ifdef ADD0US
 void fortran_clik_get_extra_parameter_number(long* pself, int* numnames) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_get_extra_parameter_number__(long* pself, int* numnames) {
 #else
 void fortran_clik_get_extra_parameter_number_(long* pself, int* numnames) {
@@ -84,7 +84,7 @@ void fortran_clik_get_extra_parameter_number_(long* pself, int* numnames) {
 // retrieve the names of extra parameters
 #ifdef ADD0US
 void fortran_clik_get_extra_parameter_names(long* pself, char* names) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_get_extra_parameter_names__(long* pself, char* names) {
 #else
 void fortran_clik_get_extra_parameter_names_(long* pself, char* names) {
@@ -108,7 +108,7 @@ void fortran_clik_get_extra_parameter_names_(long* pself, char* names) {
 
 #ifdef ADD0US
 void fortran_clik_get_version(long* pself, char* names) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_get_version__(long* pself, char* names) {
 #else
 void fortran_clik_get_version_(long* pself, char* names) {
@@ -132,7 +132,7 @@ void fortran_clik_get_version_(long* pself, char* names) {
 // lmax = 2000 2000 -1 2000 -1 -1 -1
 #ifdef ADD0US
 void fortran_get_lmax(long *pself, int* lmax) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_get_lmax__(long *pself, int* lmax) {
 #else
 void fortran_get_lmax_(long *pself, int* lmax) {
@@ -156,7 +156,7 @@ void fortran_get_lmax_(long *pself, int* lmax) {
 
 #ifdef ADD0US
 void fortran_clik_compute(long* pself, double* cl_and_pars, double* lkl) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_compute__(long* pself, double* cl_and_pars, double* lkl) {
 #else
 void fortran_clik_compute_(long* pself, double* cl_and_pars, double* lkl) {
@@ -178,7 +178,7 @@ void fortran_clik_compute_(long* pself, double* cl_and_pars, double* lkl) {
 
 #ifdef ADD0US
 void fortran_clik_compute_with_error(long* pself, double* cl_and_pars, double* lkl,int *ier) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_compute_with_error__(long* pself, double* cl_and_pars, double* lkl,int *ier) {
 #else
 void fortran_clik_compute_with_error_(long* pself, double* cl_and_pars, double* lkl,int *ier) {
@@ -203,7 +203,7 @@ void fortran_clik_compute_with_error_(long* pself, double* cl_and_pars, double* 
 // cleanup
 #ifdef ADD0US
 void fortran_clik_cleanup(long* pself) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_cleanup__(long* pself) {
 #else
 void fortran_clik_cleanup_(long* pself) {
@@ -219,7 +219,7 @@ void fortran_clik_cleanup_(long* pself) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_init(long *pself,char *fpath, int* fpathlen) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_init__(long *pself,char *fpath, int* fpathlen) {
 #else
 void fortran_clik_lensing_init_(long *pself,char *fpath, int* fpathlen) {
@@ -235,7 +235,7 @@ void fortran_clik_lensing_init_(long *pself,char *fpath, int* fpathlen) {
 
 #ifdef ADD0US
 void fortran_clik_try_lensing(int *isl,char *fpath, int* fpathlen) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_try_lensing__(int *isl,char *fpath, int* fpathlen) {
 #else
 void fortran_clik_try_lensing_(int *isl,char *fpath, int* fpathlen) {
@@ -249,7 +249,7 @@ void fortran_clik_try_lensing_(int *isl,char *fpath, int* fpathlen) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_get_lmax(int* lmax,long* *pself) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_get_lmax__(int* lmax,long* *pself) {
 #else
 void fortran_clik_lensing_get_lmax_(int* lmax,long* *pself) {
@@ -261,7 +261,7 @@ void fortran_clik_lensing_get_lmax_(int* lmax,long* *pself) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_get_lmaxs(long *pself, int* lmax) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_get_lmaxs__(long *pself, int* lmax) {
 #else
 void fortran_clik_lensing_get_lmaxs_(long *pself, int* lmax) {
@@ -272,7 +272,7 @@ void fortran_clik_lensing_get_lmaxs_(long *pself, int* lmax) {
 }
 #ifdef ADD0US
 void fortran_clik_lensing_compute(double* res, long *pself, double *pars) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_compute__(double* res, long *pself, double *pars) {
 #else
 void fortran_clik_lensing_compute_(double* res, long *pself, double *pars) {
@@ -298,7 +298,7 @@ void fortran_clik_lensing_compute_(double* res, long *pself, double *pars) {
 // retrieve the names of extra parameters
 #ifdef ADD0US
 void fortran_clik_lensing_get_extra_parameter_names(long* pself, char* names) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_get_extra_parameter_names__(long* pself, char* names) {
 #else
 void fortran_clik_lensing_get_extra_parameter_names_(long* pself, char* names) {
@@ -321,7 +321,7 @@ void fortran_clik_lensing_get_extra_parameter_names_(long* pself, char* names) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_get_extra_parameter_number(long* pself, int* numnames) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_get_extra_parameter_number__(long* pself, int* numnames) {
 #else
 void fortran_clik_lensing_get_extra_parameter_number_(long* pself, int* numnames) {
@@ -336,7 +336,7 @@ void fortran_clik_lensing_get_extra_parameter_number_(long* pself, int* numnames
 
 #ifdef ADD0US
 void fortran_clik_lensing_cleanup(long* pself) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_cleanup__(long* pself) {
 #else
 void fortran_clik_lensing_cleanup_(long* pself) {
@@ -349,7 +349,7 @@ void fortran_clik_lensing_cleanup_(long* pself) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_cltt_fid(long* pself, double *cltt) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_cltt_fid__(long* pself, double *cltt) {
 #else
 void fortran_clik_lensing_cltt_fid_(long* pself, double *cltt) {
@@ -366,7 +366,7 @@ void fortran_clik_lensing_cltt_fid_(long* pself, double *cltt) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_clcmb_fid(long* pself, double *cltt) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_clcmb_fid__(long* pself, double *cltt) {
 #else
 void fortran_clik_lensing_clcmb_fid_(long* pself, double *cltt) {
@@ -386,7 +386,7 @@ void fortran_clik_lensing_clcmb_fid_(long* pself, double *cltt) {
 
 #ifdef ADD0US
 void fortran_clik_lensing_clpp_fid(long* pself, double *cltt) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_lensing_clpp_fid__(long* pself, double *cltt) {
 #else
 void fortran_clik_lensing_clpp_fid_(long* pself, double *cltt) {

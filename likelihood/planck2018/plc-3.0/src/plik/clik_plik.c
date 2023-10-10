@@ -44,7 +44,7 @@ double * lklbs_get_cls(lklbs *self,int ilkl, double *pars, error **err);
 
 #ifdef ADD0US
 void fortran_plik_get_fg(long* pself, double* cl_and_pars, double* vec) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_plik_get_fg__(long* pself, double* cl_and_pars, double* vec) {
 #else
 void fortran_plik_get_fg_(long* pself, double* cl_and_pars, double* vec) {
@@ -80,7 +80,7 @@ void fortran_plik_get_fg_(long* pself, double* cl_and_pars, double* vec) {
 
 #ifdef ADD0US
 void fortran_plik_get_cal_beam(long* pself, double* cl_and_pars, double* vec) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_plik_get_cal_beam__(long* pself, double* cl_and_pars, double* vec) {
 #else
 void fortran_plik_get_cal_beam_(long* pself, double* cl_and_pars, double* vec) {
@@ -116,7 +116,7 @@ void fortran_plik_get_cal_beam_(long* pself, double* cl_and_pars, double* vec) {
 
 #ifdef ADD0US
 void fortran_plik_get_data(long* pself,  double* vec) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_plik_get_data__(long* pself,  double* vec) {
 #else
 void fortran_plik_get_data_(long* pself,  double* vec) {
@@ -137,7 +137,7 @@ void fortran_plik_get_data_(long* pself,  double* vec) {
 
 #ifdef ADD0US
 void fortran_plik_get_vecsize(long* pself,  int* vecs) {
-#elseif ADD2US
+#elif ADD2US
 void fortran_plik_get_vecsize__(long* pself,  int* vecs) {
 #else
 void fortran_plik_get_vecsize_(long* pself,  int* vecs) {
