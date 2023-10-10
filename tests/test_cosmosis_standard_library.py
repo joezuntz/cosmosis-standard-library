@@ -35,7 +35,7 @@ def test_planck(capsys):
     if not os.path.exists("likelihood/planck2018/baseline/plc_3.0/hi_l/plik_lite/plik_lite_v22_TT.clik"):
         pytest.skip("Planck data not found")
     run_cosmosis("examples/planck.ini")
-    check_likelihood(capsys, "-1441.14", "-1441.30", "-1441.46")
+    check_likelihood(capsys, "-1441.14", "-1441.30", "-1441.46", "-502.5")
     check_no_camb_warnings(capsys)
     
 def test_planck_class(capsys):
