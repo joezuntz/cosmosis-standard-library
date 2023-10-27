@@ -12,53 +12,79 @@ assumptions:
 -   Flat sky approximation
 -   GR is assumed in various ways
 
-explanation: |4
-
+explanation: |
     The Limber approximation integrates a 3D power spectrum over the radial
     direction to get a 2D angular power spectrum.  It is an approximation
     which is only valid on smaller scales.
-
-    C_\ell =  A \int_0^{\chi_1} W_1(\chi) W_2(\chi) P(k=(l+0.5)/\chi, z(\chi)) / chi^2 d\chi
-
+    
+    :math:`C_\ell =  A \int_0^{\chi_1} W_1(\chi) W_2(\chi) P(k=(l+0.5)/\chi, z(\chi)) / \chi^2 d\chi`
+    
     The full integral must integrate over k(\ell) also.
     This module is a python interface to a Limber integrator written in C, and can 
     generate a range of different spectra depending on what options you set.
-
+    
     It can generate spectra for any pair of
-        (Shear, Position, Intrinsic, Magnification, Cmbkappa)
+    (Shear, Position, Intrinsic, Magnification, Cmbkappa)
     though beware that for certain combinations and scales the Limber approximation will 
     be inaccurate.
-
+    
     Depending which spectra you ask for, it will look for different input P(k) value:
-
-        Option name                       Input-3d-spectrum                 Default output name
-        
-        shear-shear                       matter_power_nl                   shear_cl
-        weyl-weyl                         weyl_curvature_spectrum_nl        shear_cl
-        shear-intrinsic                   matter_intrinsic_power            shear_cl_gi
-        intrinsic-intrinsic               intrinsic_power                   shear_cl_ii
-        intrinsicb-intrinsicb             intrinsic_power_bb                shear_cl_bb
-        position-position                 matter_power_nl                   galaxy_cl
-        magnification-density             matter_power_nl                   magnification_density_cl
-        magnification-magnification       matter_power_nl                   magnification_cl
-        position-shear                    matter_power_nl                   galaxy_shear_cl
-        density-intrinsic                 matter_intrinsic_power            galaxy_intrinsic_cl
-        magnification-intrinsic           matter_intrinsic_power            magnification_intrinsic_cl
-        magnification-shear               matter_power_nl                   magnification_shear_cl
-        shear-cmbkappa                    matter_power_nl                   shear_cmbkappa_cl
-        cmbkappa-cmbkappa                 matter_power_nl                   cmbkappa_cl
-        intrinsic-cmbkappa                matter_intrinsic_power            intrinsic_cmbkappa_cl
-        density-cmbkappa                  matter_power_nl                   galaxy_cmbkappa_cl
-        fast-shear-shear-ia               matter_power_nl                   shear_cl
-        fast-lingal-shear-ia              matter_power_nl                   galaxy_shear_cl
-        fast-position-shear-ia            matter_power_nl                   galaxy_shear_cl
-        lingal-lingal                     matter_power_nl                   galaxy_cl
-        lingal-shear                      matter_power_nl                   galaxy_shear_cl
-        lingal-magnification              matter_power_nl                   galaxy_magnification_cl
-        lingal-intrinsic                  matter_intrinsic_power            galaxy_intrinsic_cl
-        nlgal-nlgal                       matter_power_nl                   galaxy_cl
-        nlgal-shear                       matter_power_nl                   galaxy_shear_cl
-        nlgal-magnification               matter_power_nl                   galaxy_magnification_cl
+    
+    +-----------------------------+----------------------------+----------------------------+
+    | Option name                 | Input-3d-spectrum          | Default output name        |
+    +=============================+============================+============================+
+    | shear-shear                 | matter_power_nl            | shear_cl                   |
+    +-----------------------------+----------------------------+----------------------------+
+    | weyl-weyl                   | weyl_curvature_spectrum_nl | shear_cl                   |
+    +-----------------------------+----------------------------+----------------------------+
+    | shear-intrinsic             | matter_intrinsic_power     | shear_cl_gi                |
+    +-----------------------------+----------------------------+----------------------------+
+    | intrinsic-intrinsic         | intrinsic_power            | shear_cl_ii                |
+    +-----------------------------+----------------------------+----------------------------+
+    | intrinsicb-intrinsicb       | intrinsic_power_bb         | shear_cl_bb                |
+    +-----------------------------+----------------------------+----------------------------+
+    | position-position           | matter_power_nl            | galaxy_cl                  |
+    +-----------------------------+----------------------------+----------------------------+
+    | magnification-density       | matter_power_nl            | magnification_density_cl   |
+    +-----------------------------+----------------------------+----------------------------+
+    | magnification-magnification | matter_power_nl            | magnification_cl           |
+    +-----------------------------+----------------------------+----------------------------+
+    | position-shear              | matter_power_nl            | galaxy_shear_cl            |
+    +-----------------------------+----------------------------+----------------------------+
+    | density-intrinsic           | matter_intrinsic_power     | galaxy_intrinsic_cl        |
+    +-----------------------------+----------------------------+----------------------------+
+    | magnification-intrinsic     | matter_intrinsic_power     | magnification_intrinsic_cl |
+    +-----------------------------+----------------------------+----------------------------+
+    | magnification-shear         | matter_power_nl            | magnification_shear_cl     |
+    +-----------------------------+----------------------------+----------------------------+
+    | shear-cmbkappa              | matter_power_nl            | shear_cmbkappa_cl          |
+    +-----------------------------+----------------------------+----------------------------+
+    | cmbkappa-cmbkappa           | matter_power_nl            | cmbkappa_cl                |
+    +-----------------------------+----------------------------+----------------------------+
+    | intrinsic-cmbkappa          | matter_intrinsic_power     | intrinsic_cmbkappa_cl      |
+    +-----------------------------+----------------------------+----------------------------+
+    | density-cmbkappa            | matter_power_nl            | galaxy_cmbkappa_cl         |
+    +-----------------------------+----------------------------+----------------------------+
+    | fast-shear-shear-ia         | matter_power_nl            | shear_cl                   |
+    +-----------------------------+----------------------------+----------------------------+
+    | fast-lingal-shear-ia        | matter_power_nl            | galaxy_shear_cl            |
+    +-----------------------------+----------------------------+----------------------------+
+    | fast-position-shear-ia      | matter_power_nl            | galaxy_shear_cl            |
+    +-----------------------------+----------------------------+----------------------------+
+    | lingal-lingal               | matter_power_nl            | galaxy_cl                  |
+    +-----------------------------+----------------------------+----------------------------+
+    | lingal-shear                | matter_power_nl            | galaxy_shear_cl            |
+    +-----------------------------+----------------------------+----------------------------+
+    | lingal-magnification        | matter_power_nl            | galaxy_magnification_cl    |
+    +-----------------------------+----------------------------+----------------------------+
+    | lingal-intrinsic            | matter_intrinsic_power     | galaxy_intrinsic_cl        |
+    +-----------------------------+----------------------------+----------------------------+
+    | nlgal-nlgal                 | matter_power_nl            | galaxy_cl                  |
+    +-----------------------------+----------------------------+----------------------------+
+    | nlgal-shear                 | matter_power_nl            | galaxy_shear_cl            |
+    +-----------------------------+----------------------------+----------------------------+
+    | nlgal-magnification         | matter_power_nl            | galaxy_magnification_cl    |
+    +-----------------------------+----------------------------+----------------------------+
 
 
     For each of the spectra listed above you can set a parameter in the parameter file 
@@ -66,8 +92,11 @@ explanation: |4
     names should be used for it.
 
     You can set either:
+
     shear-shear = T   ; to use the default wl_number_density n(z) section and save to default shear_cl
+
     shear-shear = euclid-ska  ; to cross-correlate n(z) from nz_euclid and nz_ska sections, and save to shear_cl
+
     shear-shear = red-red:shear_cl_red  ; to auto-correlate n(z) from the nz_red section and then save to shear_cl_red
 
     If no spectra are chosen at all then only "shear-shear=T" is assumed.

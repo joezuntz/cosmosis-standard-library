@@ -15,7 +15,7 @@ assumptions:
 -   3-parameter bias model from Clerkin et al l 2014
 
 explanation: |
-    "The GTD bias model provides a benchmark expression for 
+    The GTD bias model provides a benchmark expression for 
     the redshift evolution of galaxy bias on large scales. 
     This is crucial for rigorous comparison or combination 
     of results. Choice of biasing model has a significant 
@@ -28,19 +28,20 @@ explanation: |
     cosmological parameters.
 
     The GTD model is:
-    b(z) = c + (b_0 - c) / D(z)^alpha
+
+    :math:`b(z) = c + (b_0 - c) / D(z)^\alpha`
 
     where D(z) is the growth factor.
 
     The Q model is:
-    b(k) = (1+Q k^2) / (a+A k)
+    
+    :math:`b(k) = (1+Q k^2) / (a+A k)`
      
     This module creates bias fields and/or scales power spectra, 
     depending on the chosen  options
 
     The version of this model without redshift dependence is from Cole et al.
 
-    "
 params:
     bias_only:
         meaning: ) If set, do not use the matter power spectrum, just save the bias

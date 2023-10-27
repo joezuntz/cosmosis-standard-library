@@ -386,7 +386,7 @@ def execute(block, config):
 
         # If saving real-space data we have to convert he Fourier C_ell covariance
         # to the real-space version.  There are various ways to do this; the one
-        # here should be accurate enough for forecasting and testing but not for inference.
+        # here should be accurate enough.
         if real_space:
 
             #If requested, apply bin cuts now - this will speed up the covariance calculation

@@ -22,12 +22,7 @@ cmb_cl = names.cmb_cl
 
 def setup(options):
     class_version = options.get_string(option_section, "version", "3.2.0")
-    pyversion = f"{sys.version_info.major}.{sys.version_info.minor}"
-    install_dir = dirname + f"/class_v{class_version}/classy_install/lib/python{pyversion}/site-packages/"
-    with open(f"{install_dir}/easy-install.pth") as f:
-        pth = f.read().strip()
-        install_dir = install_dir + pth
-
+    install_dir = dirname + f"/class_v{class_version}/classy_install/"
     sys.path.insert(0, install_dir)
 
     import classy
