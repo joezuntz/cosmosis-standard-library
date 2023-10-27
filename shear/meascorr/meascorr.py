@@ -94,6 +94,8 @@ class dSigma_meascorr_class:
     
     def get_corr_factor(self, dpz, Omm, w0, bin1, z, nz):
         dSigma_corr = self._get_dSigma_corr_numerator(dpz, Omm, w0, bin1, z, nz)/self._get_dSigma_corr_denominator(0.0, self.config['Omm'], self.config['w0'])
+        # dSigma_corr = self._get_dSigma_corr_denominator(dpz, Omm, w0)/self._get_dSigma_corr_denominator(0.0, self.config['Omm'], self.config['w0'])
+        
         return dSigma_corr
     
     def reduce(self, nbin):

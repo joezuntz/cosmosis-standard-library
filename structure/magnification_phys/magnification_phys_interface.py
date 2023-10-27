@@ -178,6 +178,5 @@ def execute(block, config):
             f_ds = block.get_double(section_names['f_ds'], 'bin_{0}_{1}'.format(i+1,j+1), 1.0)
             block[section_names['ds_out']+'_gG', 'bin_{0}_{1}'.format(i+1,j+1)]  = block[section_names['ds_out'], 'bin_{0}_{1}'.format(i+1,j+1)]
             block[section_names['ds_out']      , 'bin_{0}_{1}'.format(i+1,j+1)] += f_ds * mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
-            # print(i,j,zl, f_rp*rp_ds, dlnrp_ds)
     
     return 0

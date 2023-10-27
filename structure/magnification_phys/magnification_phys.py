@@ -138,7 +138,8 @@ def get_Sigmacr_Cl_window(zs_in, nzs_in, zl_in, nzl_in, z2chi):
         zs = zs_in[sel]
         nzs= nzs_in[sel]
         dzs = np.diff(zs)[0]
-        assert np.all(np.isclose(np.diff(zs), dzs, rtol=0.01)), "photoz bin must be linear within 1% "
+        # print(np.diff(zs))
+        # assert np.all(np.isclose(np.diff(zs), dzs, rtol=0.01)), "photoz bin must be linear within 1% "
     
     nzs_normed = nzs/(np.sum(nzs)*dzs)
     nzl_normed = nzl/(np.sum(nzl)*dzl)

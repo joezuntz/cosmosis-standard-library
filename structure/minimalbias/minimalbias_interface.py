@@ -149,7 +149,6 @@ def execute(block, config):
         rp_ds = rp['ds']
         dlnrp_wp = 0.0
         dlnrp_ds = 0.0
-    
     # iterate over all lens-source bin pair
     for i in range(nbin_lens):
         # Get representative redshift of i-th lens bin
