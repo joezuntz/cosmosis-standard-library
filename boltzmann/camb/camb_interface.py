@@ -72,6 +72,22 @@ def get_choice(options, name, valid, default=None, prefix=''):
         raise ValueError("Parameter setting '{}' in camb must be one of: {}.  You tried: {}".format(name, valid, choice))
     return prefix + choice
 
+
+def make_z_for_pk(more_config):
+    if "zmid" in more_config:
+        z = np.concatenate((np.linspace(more_config['zmin'], 
+                                        more_config['zmid'], 
+                                        more_config['nz_mid'], 
+                                        endpoint=False),
+                            np.linspace(more_config['zmid'], 
+                                        more_config['zmax'], 
+                                        more_config['nz']-more_config['nz_mid'])))[::-1]
+    else:
+        z = np.linspace(more_config['zmin'], more_config['zmax'], more_config["nz"])[::-1]
+
+    return z
+
+
 def setup(options):
     mode = options.get_string(opt, 'mode', default="all")
     if not mode in MODES:
@@ -162,7 +178,8 @@ def setup(options):
     more_config["transfer_params"]["kmax"] = options.get_double(opt, "kmax", default=10.0)
     # more_config["transfer_params"]["high_precision"] = options.get_bool(opt, "high_precision", default=True)
 
-    more_config['kmin'] = options.get_double(opt, "kmin", default=1e-5)
+    if options.has_value(opt, "kmin"):
+        warnings.warn("Option kmin does not have an effect.")
     more_config['kmax'] = options.get_double(opt, "kmax", more_config["transfer_params"]["kmax"])
     more_config['kmax_extrapolate'] = options.get_double(opt, "kmax_extrapolate", default=more_config['kmax'])
     more_config['nk'] = options.get_int(opt, "nk", default=200)
@@ -400,17 +417,7 @@ def extract_camb_params(block, config, more_config):
     p.set_accuracy(**more_config["accuracy_params"])
 
     if want_perturbations:
-        if "zmid" in more_config:
-            z = np.concatenate((np.linspace(more_config['zmin'], 
-                                            more_config['zmid'], 
-                                            more_config['nz_mid'], 
-                                            endpoint=False),
-                                np.linspace(more_config['zmid'], 
-                                            more_config['zmax'], 
-                                            more_config['nz']-more_config['nz_mid'])))[::-1]
-        else:
-            z = np.linspace(more_config['zmin'], more_config['zmax'], more_config["nz"])[::-1]
-
+        z = make_z_for_pk(more_config)
         p.set_matter_power(redshifts=z, nonlinear=config["NonLinear"] in ["NonLinear_both", "NonLinear_pk"], **more_config["transfer_params"])
 
     return p
@@ -530,8 +537,7 @@ def save_matter_power(r, block, more_config):
     # and the max one extrapolated out too.  We output to the larger
     # of these
     kmax_power = max(more_config['kmax'], more_config['kmax_extrapolate'])
-    k = np.logspace(np.log10(more_config['kmin']), np.log10(kmax_power), more_config['nk'])
-    z = np.linspace(more_config['zmin'], more_config['zmax'], more_config['nz'])
+    z = make_z_for_pk(more_config)[::-1]
 
     P_tot = None
 
@@ -547,6 +553,8 @@ def save_matter_power(r, block, more_config):
             extrap_kmax=more_config['kmax_extrapolate']
         )
         assert P.islog
+        k = np.logspace(np.log10(kcalc[0]), np.log10(kmax_power), more_config['nk'])
+
         # P.P evaluates at k instead of logk
         p_k = P.P(z, k, grid=True)
 
