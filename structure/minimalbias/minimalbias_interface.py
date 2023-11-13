@@ -118,7 +118,6 @@ def execute(block, config):
     
     # Get configuration
     redshifts, rp, rp_edges, mb, pimax, bin_avg, section_names = config
-    
     # number of redshift bins for lens and source.
     nbin_lens = block[section_names['nz_lens'], 'nbin']
     nbin_srce = block[section_names['nz_source'], 'nbin']
@@ -134,13 +133,14 @@ def execute(block, config):
     # print(names.growth_parameters)
     z   = block[names.growth_parameters, "z"]
     f   = block[names.growth_parameters, "f_z"]
+    
     mb.set_z2f(z, f)
     
     # unpack radial bin
     if bin_avg:
         # We input the lower edge of each radial bin
-        rp_wp = rp_edges['wp']
-        rp_ds = rp_edges['ds']
+        rp_wp = rp_edges['wp'][:-1]
+        rp_ds = rp_edges['ds'][:-1]
         dlnrp_wp = np.log(rp_wp[1]/rp_wp[0])
         dlnrp_ds = np.log(rp_ds[1]/rp_ds[0])
     else:
@@ -162,7 +162,6 @@ def execute(block, config):
         # correction factors 
         f_rp = block.get_double(section_names['f_rp'], 'bin_{0}'.format(i+1), 1.0)
         f_wp = block.get_double(section_names['f_wp'], 'bin_{0}'.format(i+1), 1.0) # multiplied to pimax
-        
         # update wp
         # print('enter get_wp()', i)
         block[section_names['wp_out'], 'bin_{0}_{0}'.format(i+1)] = mb.get_wp(zl, f_rp*rp_wp, dlnrp_wp, f_wp*pimax)
@@ -190,7 +189,7 @@ def execute(block, config):
         block[o, "sep_name"] = "rp"
         block[o, "save_name"] = section_names['{}_save_name'.format(n)]
         block[o, "bin_avg"] = bin_avg
-        if n in rp_edges:
+        if bin_avg:
             block[o, "rp_edges"] = rp_edges[n]
             block.put_metadata(o, "rp_edges", "unit", "rad")
     

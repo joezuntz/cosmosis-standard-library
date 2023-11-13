@@ -53,7 +53,7 @@ class minimalbias_class:
         Gives linear matter power spectrum which is linearly interpolated over redshift
         """
         z, k, pk = self.pk_lin_data
-        idx0 = np.argwhere(z<z_in)[0][0]
+        idx0 = np.argwhere(z<z_in)[-1][0]
         idx1 = idx0+1
         z0, pk0 = z[idx0], pk[idx0, :]
         z1, pk1 = z[idx1], pk[idx1, :]
@@ -64,10 +64,14 @@ class minimalbias_class:
         Gives nonlinear matter power spectrum which is linearly interpolated over redshift
         """
         z, k, pk = self.pk_nlin_data
-        idx0 = np.argwhere(z<z_in)[0][0]
+        # print(np.argwhere(z<z_in))
+        idx0 = np.argwhere(z<z_in)[-1][0]
         idx1 = idx0+1
         z0, pk0 = z[idx0], pk[idx0, :]
         z1, pk1 = z[idx1], pk[idx1, :]
+        
+        
+        # print(z_in, z0, z1)
         return k, pk0 + (pk1-pk0) / (z1-z0) * (z_in - z0)
     
     def get_ds(self, z, rp, dlnrp, N_extrap_low=None, N_extrap_high=None):
@@ -75,6 +79,7 @@ class minimalbias_class:
         rp     (array): array of radial bins in unit of Mpc/h, need to be corrected for the measurement effect.
         """
         k, pk = self.get_pk_nlin_at_z(z)
+        # np.savetxt('./output/pk_at_%f_camb.txt'%z, np.array([k,pk]))
         if N_extrap_low is None:
             N_extrap_low = k.size
         if N_extrap_high is None:
@@ -114,6 +119,7 @@ class minimalbias_class:
         rp2d, rpi2d = np.meshgrid(r, rpi)
         s = (rp2d**2+rpi2d**2)**0.5
         xi2d = ius(r, xi, ext=3)(s)
+
         
         wp = 2*integrate.simps(xi2d, rpi, axis=0)
         
@@ -176,8 +182,6 @@ class minimalbias_class:
                 k, pklin = self.get_pk_lin_at_z(z)
                 r_aniso, wp_aniso = self._get_wp_Kaiser(k, pklin, fz, pimax)
                 r_iso  , wp_iso   = self._get_wp_pimax(k, pklin, pimax, 0.0)
-                # print(r_aniso, r_iso, r)
-                # print(r_aniso-r, r_iso - r)
                 assert np.all(r_aniso==r) and np.all(r_iso==r), 'r binning do not match.'
                 wp *= wp_aniso/wp_iso
             else:
