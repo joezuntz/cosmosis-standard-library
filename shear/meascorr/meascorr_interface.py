@@ -17,10 +17,19 @@ class dSigma_meascorr_interface:
         self.bias_section = bias_section
         self.per_bin = per_bin
         self.section_name = options.get_string(option_section, "output_section", "f_ds")
+        
+        Omm = options.get_double(option_section, "Omm", None)
+        w0 = options.get_double(option_section, "w0", None)
             
         # Instantiate the dSigma measurement correction handler
         fname_fits = options.get_string(option_section, 'sumwlssigcritinvPz_file', "")
         self.load_fits(fname_fits)
+       
+        
+        if (Omm != None) and (w0 != None):
+            for mc in self.dSigma_corrs:
+                mc.config['Omm'] = Omm
+                mc.config['w0'] = w0
         
     def load_fits(self, fname_fits):
         hdus = fits.open(fname_fits)
