@@ -60,7 +60,7 @@ def execute(block, config):
     w0         = block[pars, "w"]
     mnu   = block[pars, "mnu"]
     omnuh2     = 0.00064 * (mnu/0.06)
-    Omm        = (ombh2 + omch2 + ombh2)/h**2
+    Omm        = (ombh2 + omch2 + omnuh2)/h**2
     Omk   = block[pars, "omega_k"]
     Omde       = 1.0-Omm-Omk
     wa    = block[pars, "wa"]
@@ -83,7 +83,6 @@ def execute(block, config):
     block[pars, 'omega_m'] = Omm
     block[pars, 'omega_lambda'] = Omde
     block[pars, 'omnuh2'] = omnuh2
-    
     # Compute
     # Dark-emulator computes the linear matter power spectrum in the factorized form:
     #   P_lin(k, z) = D_growth(z) P(k, z=0)
@@ -92,7 +91,7 @@ def execute(block, config):
     Dg = get_Dgrowth_from_z(cosmo, z)
     P0 = pklin_emulator.get(k)
     P0_2d, Dg_2d = np.meshgrid(P0, Dg)
-    pklin_table = P0_2d*Dg_2d
+    pklin_table = P0_2d*Dg_2d**2
     
     # Save 
     block.put_grid(names.matter_power_lin, "z", z, "k_h", k, "p_k", pklin_table)
@@ -114,7 +113,7 @@ def execute(block, config):
     block[names.growth_parameters, "f_z"] = get_fgrowth_from_z(cosmo, z)
     
     # sigma12 and S_8 - other variants of sigma_8
-    sigma12_0 = get_sigmaR(k, P0, 12)
+    sigma12_0 = get_sigmaR(k, P0, 12.0)
     block[names.cosmological_parameters, "sigma_12"] = sigma12_0
     block[names.cosmological_parameters, "S_8"] = sigma8_0*np.sqrt(Omm/0.3)
 
@@ -159,9 +158,10 @@ def execute(block, config):
 # UTILITIES
 # returns growth on a given z array
 def get_Dgrowth_from_z(cosmo, z):
+    # print(z)
     if isinstance(z, (int, float)):
         return cosmo.Dgrowth_from_z(z)
-    elif z.size > 100:
+    elif z.size > 900:
         z_arr = np.linspace(z.min(), z.max(), 100)
         Dp = np.array([cosmo.Dgrowth_from_z(_z) for _z in z_arr])
         return ius(z_arr, Dp)(z)
@@ -169,10 +169,19 @@ def get_Dgrowth_from_z(cosmo, z):
         return np.array([cosmo.Dgrowth_from_z(_z) for _z in z])
 
 def get_fgrowth_from_z(cosmo, z, dz=0.001):
-    zarr= np.array([z-dz, z+dz])
-    lna = -np.log(1+zarr)
-    lnD = np.log(get_Dgrowth_from_z(cosmo, zarr))
-    return (lnD[1,:] - lnD[0,:])/(lna[1,:] - lna[0,:])
+    # zarr= np.array([z-dz, z+dz])
+    # lna = -np.log(1+zarr)
+    # lnD = np.log(get_Dgrowth_from_z(cosmo, zarr))
+    # return (lnD[1,:] - lnD[0,:])/(lna[1,:] - lna[0,:])
+
+    zarr_p = z+dz
+    zarr_m = z-dz
+    lna_p = -np.log(1+zarr_p)
+    lna_m = -np.log(1+zarr_m)
+    
+    lnD_p = np.log(get_Dgrowth_from_z(cosmo, zarr_p))
+    lnD_m = np.log(get_Dgrowth_from_z(cosmo, zarr_m))
+    return (lnD_p - lnD_m)/(lna_p - lna_m)
 
 # Returns spline
 def get_z2D(cosmo, zmin=0, zmax=15, nbin=200):
@@ -198,7 +207,7 @@ def get_z2fz(cosmo, zmin=0, zmax=15, nbin=200, dz=0.001):
 def _window_tophat(kR):
     return 3.*(np.sin(kR)-kR*np.cos(kR))/kR**3
 
-def get_sigmaR(k, pk, R, kmin=1e-4, kmax=1e1, nk=100):
+def get_sigmaR(k, pk, R, kmin=1e-4, kmax=1e3, nk=500):
     ks = np.logspace(np.log10(kmin), np.log10(kmax), nk)
     logks = np.log(ks)
     kR = ks * R
