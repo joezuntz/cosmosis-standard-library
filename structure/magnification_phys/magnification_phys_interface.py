@@ -56,6 +56,7 @@ def setup(options):
     
     # Choice whether we average the signal within finite radial bin.
     bin_avg = options.get_bool(option_section, "bin_avg", False)
+    save_mag = options.get_bool(option_section, "save_mag", False)
     
     # radial bins in reference cosmology for dSigma (ds) and wp
     # In reality these radial bins are defined in unit of Mpc/h in the file,
@@ -104,7 +105,7 @@ def setup(options):
     
     # print(redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names)
     
-    return redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names
+    return redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names, save_mag
     
 def execute(block, config):
     """
@@ -115,7 +116,7 @@ def execute(block, config):
     
     # Get configuration
     # Get configuration
-    redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names = config
+    redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names, save_mag = config
     
     # number of redshift bins for lens and source.
     nbin_lens = block[section_names['nz_lens'], 'nbin']
@@ -138,8 +139,8 @@ def execute(block, config):
     # unpack radial bin
     if bin_avg:
         # We input the lower edge of each radial bin
-        rp_wp = rp_edges['wp']
-        rp_ds = rp_edges['ds']
+        rp_wp = rp_edges['wp'][:-1]
+        rp_ds = rp_edges['ds'][:-1]
         dlnrp_wp = np.log(rp_wp[1]/rp_wp[0])
         dlnrp_ds = np.log(rp_ds[1]/rp_ds[0])
     else:
@@ -178,5 +179,8 @@ def execute(block, config):
             f_ds = block.get_double(section_names['f_ds'], 'bin_{0}_{1}'.format(i+1,j+1), 1.0)
             block[section_names['ds_out']+'_gG', 'bin_{0}_{1}'.format(i+1,j+1)]  = block[section_names['ds_out'], 'bin_{0}_{1}'.format(i+1,j+1)]
             block[section_names['ds_out']      , 'bin_{0}_{1}'.format(i+1,j+1)] += f_ds * mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
+            
+            if save_mag:
+                block['ds_mag', 'bin_{0}_{1}'.format(i+1,j+1)] = mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
     
     return 0

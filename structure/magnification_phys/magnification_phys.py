@@ -58,15 +58,10 @@ class magnification_class:
         return pltable
     
     def _get_clSigmacrit_mag(self):
-        
-        # print(self.nzs['z'], self.nzs['nz'], self.nzl['z'], self.nzl['nz'], )
-        
+                
         window = get_Sigmacr_Cl_window(self.nzs['z'], self.nzs['nz'], 
                                        self.nzl['z'], self.nzl['nz'], 
                                        self.z2chi) # [h/Mpc]
-        # print(window)
-        # np.savetxt('/hildafs/projects/phy200017p/ztq1996/ztq1996/ggl/hsc_y3/modeling/run1-pipeline-test/output/data/window.txt', window)
-        
         H0 = 100/299792.4580 # [h/Mpc]
         Om= self.param['Omm']
         rhocrit = 2.77536627e11 # h^2 M_\odot/Mpc^3
