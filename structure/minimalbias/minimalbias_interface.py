@@ -17,6 +17,8 @@ This module returns the observables after measureemnt corrections:
 This module also take account of the averaging effect within the finite radial bin.
 
 The radial bins are read in this module at the time of setup, and the correction factors introduced above are all computed in a module of 'shear/meascorr/meascorr_interface.py', and the results are saved in data block.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 from cosmosis.datablock import names, option_section
 from minimalbias import minimalbias_class

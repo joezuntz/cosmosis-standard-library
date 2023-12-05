@@ -2,6 +2,8 @@
 Author: Sunao Sugiyama
 Last edit: 2023.05.16
 See Nishimichi et al. (https://arxiv.org/pdf/1811.09504.pdf) for detail.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 import sys
 import os

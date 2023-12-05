@@ -3,6 +3,8 @@ Author: Sunao Sugiyama
 Last edit: 2023.05.17
 
 This computes the magnification bias on g-g lensing in physical scale, i.e. dSigma.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 import numpy as np
 from scipy import integrate

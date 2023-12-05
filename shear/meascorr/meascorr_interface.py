@@ -1,3 +1,13 @@
+"""
+Author: Suano Sugiyama
+
+Product calibration factor for delta_sigma, wp, and rp because of 
+mean redshift shifts and change in Omm and w0. 
+
+Code reviewed by Tianqing Zhang in Oct 2023
+"""
+
+
 from cosmosis.datablock import names, option_section
 from astropy.io import fits
 from meascorr import dSigma_meascorr_class, wp_meascorr_class, rp_meascorr_class

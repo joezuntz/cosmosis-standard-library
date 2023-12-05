@@ -4,6 +4,8 @@ Last edit: 2023.05.16
 
 This does almost the same procedure as structure/minimalbias/minimalbias_interface.py: 
 here we apply measurement corrections to the magnification bias term of dSigma.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 from cosmosis.datablock import names, option_section
 from magnification_phys import magnification_class

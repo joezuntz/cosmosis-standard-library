@@ -5,6 +5,8 @@ Last edit: 2023.05.19
 This is the measureemnt correction module for the projected correlations, dSigma and wp.
 This is independent from the COSMOSIS or other cosmological likelihood packages, and thus
 posrtable module.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 import numpy as np
 import astropy.cosmology

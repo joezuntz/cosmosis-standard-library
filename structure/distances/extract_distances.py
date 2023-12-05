@@ -1,5 +1,7 @@
 """
 Author: Tianqing Zhang
+Last edited: Oct 28th 2023
+Module to calculate various distances from redshifts
 """
 
 import sys
