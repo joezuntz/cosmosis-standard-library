@@ -8,11 +8,15 @@ In consequence almost all the terms in those codes are zero.
 
 """
 
-from cosmosis.gaussian_likelihood import GaussianLikelihood
+# We don't need cosmosis to jaxify our module as it is already a jax module
+cosmosis_jax = False
+
+from cosmosis.gaussian_likelihood_jax import GaussianLikelihood
 from cosmosis.datablock import names
 import os
 import numpy as np
 import sys
+import jax
 
 # Default is to use the binned version of the data since it's much faster
 # You can also downloaded and run the full data if you like, and set the data_file
@@ -68,7 +72,7 @@ class PantheonLikelihood(GaussianLikelihood):
             m_obs = comm.bcast(None, root=0)
             self.mag_obs_err = comm.bcast(None, root=0)
             sys.stderr.write(f"Rank {comm.rank} got {len(z)} supernovae bcast\n")
-
+        print("Pantheon redshift range: {} to {}".format(z.min(), z.max()))
         return z, m_obs
 
     def build_covariance(self):
@@ -98,38 +102,24 @@ class PantheonLikelihood(GaussianLikelihood):
         # later to get the precision matrix that we need for the likelihood.
         return C
 
-    def extract_theory_points(self, block):
-        """
-        Run once per parameter set to extract the mean vector that our
-        data points are compared to.  In this case that means the theory
-        prediction for the magnitudes.
+    def extract_theory_samples(self, block):
+        "Extract relevant theory from block at sample points"
+        z = block[self.x_section, self.x_name]
+        mu = block[self.y_section, self.y_name]
 
-        Note that because I'm not a supernova person I will use the absolute
-        magnitude to change the *theory*, not to change the *data*.  This
-        doesn't make any difference to the mathematics, but does maintain the
-        conceptual distinction between "theory" and "observation" better
-        than the usual way around.
-
-        """
-        import scipy.interpolate
-
-        # Pull out mu and z from the block.
-        # self.x_section etc. are defined above - we make them variables
-        # so that the user can override them in the ini file.
-        # We have to cut off the first element z=0, because mu is not finite
-        # there and this confuses the interpolator.
-        theory_x = block[self.x_section, self.x_name][1:]
-        theory_y = block[self.y_section, self.y_name][1:]
-
-        # This makes an interpolation function
-        f = scipy.interpolate.interp1d(theory_x, theory_y, kind=self.kind)
-
-        # Actually do the interpolation at the data redshifts
-        theory = np.atleast_1d(f(self.data_x))
-
-        # Add the absolute supernova magnitude and return
+        if z[0] == 0:
+            dz = z[1] - z[0]
+            dmu = mu[2] - mu[1]
+            mu[0] = mu[1] + dmu/dz * (-dz)
+        
         M = block[names.supernova_params, "M"]
-        return theory + M
+
+        # This is kind of a hack.  Actually we would like to do the likelihood
+        # with respect to the M parameter, but this has the same effect.
+        block.put_derivative("distances", "mu", names.supernova_params, "M", np.ones_like(mu))
+        return z, mu + M
+
+
 
 
 # This takes our class and turns it into 
