@@ -18,7 +18,7 @@ void fortran_clik_get_extra_parameter_names(long* pself, char* names, int* numna
 void fortran_get_lmax(long *pself, int* lmax);
 void fortran_clik_compute(long* pself, double* cl_and_pars, double* lkl);
 void fortran_clik_cleanup(long* pself);
-#elseif ADD2US
+#elif ADD2US
 void fortran_clik_init__(long* pself,char* hdffilepath,int* fpathlen);
 void fortran_clik_get_has_cl__(long* pself, int* has_cl);
 void fortran_clik_get_extra_parameter_names__(long* pself, char* names, int* numnames);

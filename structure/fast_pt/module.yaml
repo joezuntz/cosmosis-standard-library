@@ -84,7 +84,7 @@ params:
         type: real
         default: 3.0
     C_window:
-        meaning: Taper fourier coefficients at |m| > C_window * N/2
+        meaning: Taper fourier coefficients at :math:`|m|` > C_window * N/2
         type: real
         default: 0.75
     n_pad_fac:

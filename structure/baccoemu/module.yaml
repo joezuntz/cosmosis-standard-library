@@ -1,0 +1,142 @@
+#This is a template for module description files
+name: "bacco_emulator"
+version: "7e0ca8b556da6ad8e11168026078b1d29920adcf"
+purpose: "Emulate the non-linear, baryonified, matter power spectrum"
+url: "https://bitbucket.org/rangulo/baccoemu"
+interface: "baccoemu_interface.py"
+attribution: [Giovanni Aricò, Raul E. Angulo, Sergio Contreras, Lurdes Ondaro-Mallea, Marcos Pellejero-Ibañez, Matteo Zennaro, Jens Stücker, Simon Samuroff]
+rules:
+    Please cite the papers below if you use this code in your research"
+cite:
+    - "https://doi.org/10.1093/mnras/stab1911"
+    - "https://doi.org/10.1093/mnras/stab2018"
+    - "https://doi.org/10.12688/openreseurope.14310.2"
+
+assumptions:
+    - "Neural network emulation of NL baryonic power effcts"
+    - "w0waCDM cosmology"
+
+explanation: |
+    Baccoemu is a collection of cosmological neural-network emulators for large-scale structure statistics
+    in a wide cosmological parameter space, including dynamical dark energy and massive neutrinos. 
+    These emulators were developed as part of the Bacco project.
+    
+    We imported the Bacco Emulator code into this directory because the PyPI version of the code is not recent,
+    and it has some dependencies that we would like to install from conda-forge rather than PyPI (tensorflow).
+    We have to make one change to it to make it work on python 3.8 and 3.9 - replacing the progressbar2
+    library with TQDM. A patch file with this change is included.
+    
+    The license for this package says copyright belongs to the python packaging authority, but that seems unlikely.
+
+# List of parameters that can go in the params.ini file in the section for this module    
+params:
+    mode:
+        meaning:
+            What to emulate; the NL DM-only power, the baryonic boost, or both. Choose from 'nonlinear', 'baryons', 'nonlinear+baryons'. If 'baryons' is chosen then the NL power is read from the block (e.g. from camb). Otherwise the NL power is emulated.
+        type: str
+        default: pk_nl_only
+
+#Inputs for a given choice of a parameter, from the values.ini or from other modules
+#If no such choices, just do one of these omitting mode=something part:
+inputs:
+    matter_power_lin:
+        z:
+            meaning: Redshifts of samples. 
+            type: real 1d
+            default: 
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+            default: 
+        p_k:
+            meaning: Linear power spectrum at samples in (Mpc/h)^-3.
+            type: real 2d
+            default: 
+    matter_power_nl:
+        z:
+            meaning: Redshifts of samples. Only if mode = = "baryons".
+            type: real 1d
+            default: 
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h. Only if mode = = "baryons".
+            type: real 1d
+            default: 
+        p_k:
+            meaning: Linear power spectrum at samples in (Mpc/h)^-3. Only if mode = = "baryons".
+            type: real 2d
+            default: 
+    cosmological_parameters:
+        A_s:
+            meaning: Amplitude of the primordial power spectrum.
+            type: real
+            default:
+        omega_c:
+            meaning: Cold dark matter density parameter
+            type: real
+            default:
+        omega_b:
+            meaning: Baryon density parameter
+            type: real
+            default:
+        n_s:
+            meaning: Primordial power spectrum spectral index.
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter.
+            type: real
+            default:
+        mnu:
+            meaning: Sum of neutrino masses in eV.
+            type: real
+            default:
+        w0:
+            meaning: Dark energy equation of state parameter at z=0
+            type: real
+            default: -1.0
+        wa:
+            meaning: Dark energy equation of state rate of change with scale factor
+            type: real
+            default: 0.0
+    baryon_parameters:
+        M_c: 
+            meaning: Gas mass parameter; log scale in Msun/h. Range 9.0 to 15.0
+            type: real
+            default:
+        eta:
+            meaning: Ejected gas density exponential cut-off scale, in range -0.698 to 0.698 
+            type: real
+            default:
+        beta: 
+            meaning: Gas mass index parameter; log scale, in range -1.0 to 0.698
+            type: real
+            default:
+        M1_z0_cen:
+            meaning:  characteristic halo mass scale for central galaxies, in range 9.0 to 13.0; log scale in Msun/h
+            type: real
+            default:
+        theta_out: 
+            meaning: Scaling of r200 to give outer power-law profile scale of hot gas radius. Range 0.0 to 0.477
+            type: real
+            default:
+        theta_inn: 
+            meaning: Scaling of r200 to give inner power-law profile scale of hot gas radius. Range -2.0 to -0.522
+            type: real
+            default:
+        M_inn: 
+            meaning: Characteristic mass of inner hot gas; log scale in Msun/h. Range 9.0 to 13.5.
+            type: real
+            default:
+
+
+outputs:
+    matter_power_nl:
+        z:
+            meaning: Redshifts of samples. 
+            type: real 1d
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+            type: real 1d
+        p_k:
+            meaning: Non-linear power spectrum at samples in (Mpc/h)^-3, potentially including baryon corrections.
+            type: real 2d

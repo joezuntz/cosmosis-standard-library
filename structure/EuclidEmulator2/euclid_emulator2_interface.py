@@ -16,27 +16,20 @@ def setup(options):
     output_section = options.get_string(option_section, "output_section", default=names.matter_power_nl)
 
     # Set up the path to let us import the emulator
-    pyversion = f"{sys.version_info.major}.{sys.version_info.minor}"
-    install_dir = dirname + f"/ee_install/lib/python{pyversion}/site-packages/"
-    with open(f"{install_dir}/easy-install.pth") as f:
-        pth = f.read().strip()
-        install_dir = install_dir + pth
+    install_dir = f"{dirname}/ee_install/"
     sys.path.insert(0, install_dir)
 
     # check everything imports
     import euclidemu2
-
-    emulator = None
-    # euclidemu2.PyEuclidEmulator()
-
-    return [input_section, output_section, emulator]
+    print("Loaded Euclid Emulator 2 installation at", euclidemu2.__file__)
+    return [input_section, output_section]
 
 
 def execute(block, config):
     import euclidemu2 as ee2
 
     # Recover config information
-    input_section, output_section, emulator = config
+    input_section, output_section = config
 
     # Get cosmo params from block
     pars = names.cosmological_parameters
@@ -53,10 +46,11 @@ def execute(block, config):
 
     # Get z and k from the NL power section
     z, k, P = block.get_grid(input_section, "z", "k_h", "P_k")
-    _, b = ee2.get_boost(params, z, k)
 
     if len(z) > 100:
         raise ValueError("EuclidEmulator2 only allows up to 100 redshift values")
+
+    _, b = ee2.get_boost(params, z, k)
 
     # Not sure why but b comes back as a dictionary of arrays
     # instead of a 2D array

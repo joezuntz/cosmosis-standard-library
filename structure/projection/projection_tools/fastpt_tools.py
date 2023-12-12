@@ -1,5 +1,10 @@
 import sys,os
 import numpy as np
+
+# hack because fastpt not yet updated for numpy 1.24
+if not hasattr(np, 'int'):
+    np.int = int
+
 import scipy.interpolate as interpolate
 from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline as intspline

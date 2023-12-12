@@ -1,0 +1,55 @@
+name: correlated_priors
+version: 1
+purpose: Include correlations between nusiance parameters
+url: ''
+interface: correlated_priors.py
+attribution: ["Tilman Troester", "Chieh-An Lin", "Marika Asgari", "Catherine Heymans"]
+rules: If you use a file from a particular survey you should cite that survey
+cite: []
+assumptions:
+    - "A covariance matrix for the correlated parameters is provided in block ascii format.
+        The matrix must be ordered to match the order of the input parameter list"
+
+explanation: 
+    This module converts a set of uncorrelated parameters into a set of correlated ones following
+    a covariance matrix. The covariance matrix is provided in block ascii format. The matrix must be
+    ordered to match the order of the input parameter list. The output parameters are updated with the
+    cholesky decomposition of the covariance matrix multiplied by the values of the input parameters.
+    The output parameters are then passed to the downstream modules.
+
+    A typical example usage is converting from uncorrelated nuisance parameters following normal distributions
+    to multivariate normal ones.
+
+    In future this functionality should be included in the cosmosis core.
+
+params:
+    uncorrelated_parameters:
+        meaning: The list of parameter names for the uncorrelated parameters that the sampler will vary. The parameters should be in the form "section1/param1  section2/param2 ..."
+        type: str
+        default: 
+
+    output_parameters:
+        meaning:    The list of parameter names for the output sample of correlated parameters.  
+                    These must be named following the relevant expectation of the downstream modules.  
+                    For example the parameter for photo-z bias in bin i is expected to be called bias_i.
+                    The parameters should be in the form "section1/param1  section2/param2 ..."
+        type: str
+        default:
+
+    covariance:
+        meaning:    Location of the covariance matrix defining the correlation between the parameters
+        type: str
+        default:
+
+inputs:
+    input_parameters_sections:
+        names:
+            meaning: The input parameter. The sections and names are defined in the uncorrelated_parameters parameter.
+            type: real
+            default:
+outputs:
+    section1:
+        name1:
+            meaning: The values of the output paramaters, which have the appropriate correlations.  The sections and names are defined in the output_parameters parameter.
+            type: real
+            default:
