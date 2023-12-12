@@ -372,11 +372,11 @@ class Spectrum(object):
         if dchi is None:
             assert (sig_over_dchi is not None)
             dchi = min(K1.sigma / sig_over_dchi, K2.sigma / sig_over_dchi)
-        
+
         # Run the main Limber integral
         c_ell, c_ell_err = limber_integral(ell, K1, K2, P_chi_logk_spline, chimin,
             chimax, dchi, interpolation_cache=self.source.interpolation_cache)
-        # print(c_ell)
+
         # Rescale by the h, Omega_m, etc factor, which depends which spectrum
         # us being computed
         c_ell *= self.get_prefactor(block, bin1, bin2)
