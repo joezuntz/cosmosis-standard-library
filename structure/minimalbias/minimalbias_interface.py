@@ -17,6 +17,8 @@ This module returns the observables after measureemnt corrections:
 This module also take account of the averaging effect within the finite radial bin.
 
 The radial bins are read in this module at the time of setup, and the correction factors introduced above are all computed in a module of 'shear/meascorr/meascorr_interface.py', and the results are saved in data block.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 from cosmosis.datablock import names, option_section
 from minimalbias import minimalbias_class
@@ -118,7 +120,6 @@ def execute(block, config):
     
     # Get configuration
     redshifts, rp, rp_edges, mb, pimax, bin_avg, section_names = config
-    
     # number of redshift bins for lens and source.
     nbin_lens = block[section_names['nz_lens'], 'nbin']
     nbin_srce = block[section_names['nz_source'], 'nbin']
@@ -130,15 +131,18 @@ def execute(block, config):
     mb.set_pk_nlin_data(z_nlin, k_nlin, P_nlin)
     
     # z & chi relation
+    # print(block.sections())
+    # print(names.growth_parameters)
     z   = block[names.growth_parameters, "z"]
     f   = block[names.growth_parameters, "f_z"]
+    
     mb.set_z2f(z, f)
     
     # unpack radial bin
     if bin_avg:
         # We input the lower edge of each radial bin
-        rp_wp = rp_edges['wp']
-        rp_ds = rp_edges['ds']
+        rp_wp = rp_edges['wp'][:-1]
+        rp_ds = rp_edges['ds'][:-1]
         dlnrp_wp = np.log(rp_wp[1]/rp_wp[0])
         dlnrp_ds = np.log(rp_ds[1]/rp_ds[0])
     else:
@@ -147,7 +151,6 @@ def execute(block, config):
         rp_ds = rp['ds']
         dlnrp_wp = 0.0
         dlnrp_ds = 0.0
-    
     # iterate over all lens-source bin pair
     for i in range(nbin_lens):
         # Get representative redshift of i-th lens bin
@@ -161,10 +164,12 @@ def execute(block, config):
         # correction factors 
         f_rp = block.get_double(section_names['f_rp'], 'bin_{0}'.format(i+1), 1.0)
         f_wp = block.get_double(section_names['f_wp'], 'bin_{0}'.format(i+1), 1.0) # multiplied to pimax
-        
         # update wp
+        # print('enter get_wp()', i)
         block[section_names['wp_out'], 'bin_{0}_{0}'.format(i+1)] = mb.get_wp(zl, f_rp*rp_wp, dlnrp_wp, f_wp*pimax)
-            
+        # print('exit get_wp()', i)
+        
+        # print(mb.get_wp(zl, f_rp*rp_wp, dlnrp_wp, f_wp*pimax))
         # Compute the dSigma without the correction of Sigmacrit
         ds = mb.get_ds(zl, f_rp*rp_ds, dlnrp_ds)
         
@@ -186,7 +191,7 @@ def execute(block, config):
         block[o, "sep_name"] = "rp"
         block[o, "save_name"] = section_names['{}_save_name'.format(n)]
         block[o, "bin_avg"] = bin_avg
-        if n in rp_edges:
+        if bin_avg:
             block[o, "rp_edges"] = rp_edges[n]
             block.put_metadata(o, "rp_edges", "unit", "rad")
     

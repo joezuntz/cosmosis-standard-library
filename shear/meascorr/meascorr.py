@@ -5,6 +5,8 @@ Last edit: 2023.05.19
 This is the measureemnt correction module for the projected correlations, dSigma and wp.
 This is independent from the COSMOSIS or other cosmological likelihood packages, and thus
 posrtable module.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 import numpy as np
 import astropy.cosmology
@@ -49,12 +51,11 @@ class dSigma_meascorr_class:
     def _get_cosmo(self, Omm, w0):
         return astropy.cosmology.FlatwCDM(100, Omm, w0=w0)
     
-    def _get_dSigma_corr_numerator(self, dpz, Omm, w0):
+    def _get_dSigma_corr_denominator(self, dpz, Omm, w0):
         zl = self.zl
         #zs = self.zs - dpz # This is the definition in HSC Y1 2x2pt and HSC Y3 3x2pt analyses.
         zs = self.zs + dpz # This is the definition of CosmoSIS
-        sumwlssigcritinvPz = self.sumwlssigcritinvPz
-        
+        sumwlssigcritinvPz = self.sumwlssigcritinvPz/np.sum(self.sumwlssigcritinvPz)
         cosmo = self._get_cosmo(Omm, w0)
 
         zl_rough = np.linspace(zl.min(), zl.max()+0.001,100) # Max has padding
@@ -71,8 +72,36 @@ class dSigma_meascorr_class:
 
         return dSigma_corr_numerator
     
-    def get_corr_factor(self, dpz, Omm, w0):
-        dSigma_corr = self._get_dSigma_corr_numerator(dpz, Omm, w0)/self._get_dSigma_corr_numerator(0.0, self.config['Omm'], self.config['w0'])
+    def _get_dSigma_corr_numerator(self, dpz, Omm, w0, bin1, z, nz):
+        zl = self.zl
+        #zs = self.zs - dpz # This is the definition in HSC Y1 2x2pt and HSC Y3 3x2pt analyses.
+        zs = z + dpz # This is the definition of CosmoSIS
+        sumwlssigcritinvPz = nz/np.sum(nz)/len(zl)
+        
+        cosmo = self._get_cosmo(Omm, w0)
+
+        zl_rough = np.linspace(zl.min(), zl.max()+0.001,100) # Max has padding
+        chi_zl = ius(zl_rough, cosmo.comoving_distance(zl_rough).value)(zl)
+        chi_zs = cosmo.comoving_distance(zs).value
+
+        dSigma_corr_numerator = 0.0
+        for j in range(len(zs)):
+            if chi_zs[j] <= 0.0:
+                continue
+            Sigma_cr_inv_array = 1./sigcrit_prefactor * (1.+zl)*chi_zl*(1.-chi_zl/chi_zs[j])
+            Sigma_cr_inv_array[Sigma_cr_inv_array <0.0] = 0.0
+            dSigma_corr_numerator += np.sum(Sigma_cr_inv_array*sumwlssigcritinvPz[j])
+
+        return dSigma_corr_numerator
+    
+    def get_corr_factor(self, dpz, Omm, w0, bin1, z, nz):
+        # dSigma_corr = self._get_dSigma_corr_numerator(dpz, Omm, w0, bin1, z, nz)/self._get_dSigma_corr_denominator(0.0, self.config['Omm'], self.config['w0'])
+        # print(dpz, Omm, w0)
+        # print(0.0, self.config['Omm'], self.config['w0'])
+        dSigma_corr = self._get_dSigma_corr_denominator(dpz, Omm, w0)/self._get_dSigma_corr_denominator(0.0, self.config['Omm'], self.config['w0'])
+        
+        # print(dSigma_corr)
+        
         return dSigma_corr
     
     def reduce(self, nbin):
@@ -193,6 +222,7 @@ class wp_meascorr_class:
         cosmo   = self._get_cosmo(Omm, w0)
         cosmo_meas = self._get_cosmo(self.config['Omm'], self.config['w0'])
         pimax_corr = cosmo.inv_efunc(zl_rep)/cosmo_meas.inv_efunc(zl_rep) # pi = c*Delta z/ H_0*E(z), pimax is proportional to **inverse** of E(z).
+        # print(pimax_corr)
         return pimax_corr
     
 class rp_meascorr_class:

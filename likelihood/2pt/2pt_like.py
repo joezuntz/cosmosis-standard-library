@@ -346,7 +346,7 @@ class TwoPointLikelihood(GaussianLikelihood):
                 log_det = block[names.data_vector, self.like_name + "_LOG_DET"]
 
             like = -0.5 * log_det - 0.5 * N * np.log(1 + chi2 / (N - 1.))
-
+            
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 

@@ -1,3 +1,13 @@
+"""
+Author: Suano Sugiyama
+
+Product calibration factor for delta_sigma, wp, and rp because of 
+mean redshift shifts and change in Omm and w0. 
+
+Code reviewed by Tianqing Zhang in Oct 2023
+"""
+
+
 from cosmosis.datablock import names, option_section
 from astropy.io import fits
 from meascorr import dSigma_meascorr_class, wp_meascorr_class, rp_meascorr_class
@@ -17,10 +27,19 @@ class dSigma_meascorr_interface:
         self.bias_section = bias_section
         self.per_bin = per_bin
         self.section_name = options.get_string(option_section, "output_section", "f_ds")
+        
+        Omm = options.get_double(option_section, "Omm", None)
+        w0 = options.get_double(option_section, "w0", None)
             
         # Instantiate the dSigma measurement correction handler
         fname_fits = options.get_string(option_section, 'sumwlssigcritinvPz_file', "")
         self.load_fits(fname_fits)
+       
+        
+        if (Omm != None) and (w0 != None):
+            for mc in self.dSigma_corrs:
+                mc.config['Omm'] = Omm
+                mc.config['w0'] = w0
         
     def load_fits(self, fname_fits):
         hdus = fits.open(fname_fits)
@@ -48,7 +67,9 @@ class dSigma_meascorr_interface:
             # and bin1 is the source bin id.
             bin0, bin1 = mc.get_bin_pair()
             dz = block[biases, 'bias_{0}'.format(bin1+1)]
-            f = mc.get_corr_factor(dz, Omm, w0)
+            z, nz = block['nz_source', 'z' ], block['nz_source', 'bin_%d'%(bin1+1)]
+            f = mc.get_corr_factor(dz, Omm, w0, bin1, z, nz)
+            # print(bin0+1, bin1+1, f)
             block[self.section_name, 'bin_{0}_{1}'.format(bin0+1, bin1+1)] = f
     
     @classmethod

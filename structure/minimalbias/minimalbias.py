@@ -1,6 +1,8 @@
 """
 Author: Sunao Sugiyama
 Last edit: 2023.05.17
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 import numpy as np
 from scipy import integrate
@@ -53,7 +55,7 @@ class minimalbias_class:
         Gives linear matter power spectrum which is linearly interpolated over redshift
         """
         z, k, pk = self.pk_lin_data
-        idx0 = np.argwhere(z<z_in)[0][0]
+        idx0 = np.argwhere(z<z_in)[-1][0]
         idx1 = idx0+1
         z0, pk0 = z[idx0], pk[idx0, :]
         z1, pk1 = z[idx1], pk[idx1, :]
@@ -64,10 +66,14 @@ class minimalbias_class:
         Gives nonlinear matter power spectrum which is linearly interpolated over redshift
         """
         z, k, pk = self.pk_nlin_data
-        idx0 = np.argwhere(z<z_in)[0][0]
+        # print(np.argwhere(z<z_in))
+        idx0 = np.argwhere(z<z_in)[-1][0]
         idx1 = idx0+1
         z0, pk0 = z[idx0], pk[idx0, :]
         z1, pk1 = z[idx1], pk[idx1, :]
+        
+        
+        # print(z_in, z0, z1)
         return k, pk0 + (pk1-pk0) / (z1-z0) * (z_in - z0)
     
     def get_ds(self, z, rp, dlnrp, N_extrap_low=None, N_extrap_high=None):
@@ -75,6 +81,7 @@ class minimalbias_class:
         rp     (array): array of radial bins in unit of Mpc/h, need to be corrected for the measurement effect.
         """
         k, pk = self.get_pk_nlin_at_z(z)
+        # np.savetxt('./output/pk_at_%f_camb.txt'%z, np.array([k,pk]))
         if N_extrap_low is None:
             N_extrap_low = k.size
         if N_extrap_high is None:
@@ -108,12 +115,13 @@ class minimalbias_class:
         return r, xi
         
     def _get_wp_pimax(self, k, pk, pimax, dlnrp):
-        r, xi = self._get_xigg_n(k, pk, 0)
+        r, xi = self._get_xigg_n(k, pk, 0, N_extrap_low=0, N_extrap_high=0 )
         
         rpi = np.logspace(-3, np.log10(pimax), 300)
         rp2d, rpi2d = np.meshgrid(r, rpi)
         s = (rp2d**2+rpi2d**2)**0.5
         xi2d = ius(r, xi, ext=3)(s)
+
         
         wp = 2*integrate.simps(xi2d, rpi, axis=0)
         

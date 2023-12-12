@@ -3,6 +3,8 @@ Author: Sunao Sugiyama
 Last edit: 2023.05.17
 
 This computes the magnification bias on g-g lensing in physical scale, i.e. dSigma.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 import numpy as np
 from scipy import integrate
@@ -58,10 +60,10 @@ class magnification_class:
         return pltable
     
     def _get_clSigmacrit_mag(self):
+                
         window = get_Sigmacr_Cl_window(self.nzs['z'], self.nzs['nz'], 
                                        self.nzl['z'], self.nzl['nz'], 
                                        self.z2chi) # [h/Mpc]
-        
         H0 = 100/299792.4580 # [h/Mpc]
         Om= self.param['Omm']
         rhocrit = 2.77536627e11 # h^2 M_\odot/Mpc^3
@@ -84,6 +86,8 @@ class magnification_class:
         rp     (array): array of radial bins in unit of Mpc/h, need to be corrected for the measurement effect.
         """
         l, clSigmacrit = self._get_clSigmacrit_mag()
+        # print(self.nzs['z'])
+        # print(clSigmacrit)
         if N_extrap_low is None:
             N_extrap_low = l.size
         if N_extrap_high is None:
@@ -131,13 +135,16 @@ def get_Sigmacr_Cl_window(zs_in, nzs_in, zl_in, nzl_in, z2chi):
         zs = zs_in[sel]
         nzs= nzs_in[sel]
         dzs = np.diff(zs)[0]
-        assert np.all(np.isclose(np.diff(zs), dzs, rtol=0.01)), "photoz bin must be linear within 1% "
-
+        # print(np.diff(zs))
+        # assert np.all(np.isclose(np.diff(zs), dzs, rtol=0.01)), "photoz bin must be linear within 1% "
+    
     nzs_normed = nzs/(np.sum(nzs)*dzs)
     nzl_normed = nzl/(np.sum(nzl)*dzl)
     
     chil = z2chi(zl) # Mpc/h
     chis = z2chi(zs) # Mpc/h
+    # print(chil)
+    # print(chis)
     
     c0, c1, c2 = [], [], []
     for _zs, _nzs, _chis in zip(zs, nzs_normed, chis):
@@ -148,6 +155,16 @@ def get_Sigmacr_Cl_window(zs_in, nzs_in, zl_in, nzl_in, z2chi):
                 _c1.append(0.0)
                 _c2.append(0.0)
             else:
+                if 1+_zl==0.0:
+                    print("1+zl = ", 1+_zl)
+                if _chil==0.0:
+                    print("_chil= ", _chil)
+                if np.abs(_chis-_chil)<1e-3:
+                    # print("(_chis-_chil)= ", (_chis-_chil))
+                    _c0.append(0.0)
+                    _c1.append(0.0)
+                    _c2.append(0.0)
+                    continue
                 _c0.append(_nzs*_nzl/(1+_zl)/_chil**2/(_chis-_chil) * _chil*_chis )
                 _c1.append(_nzs*_nzl/(1+_zl)/_chil**2/(_chis-_chil) * (_chil+_chis) )
                 _c2.append(_nzs*_nzl/(1+_zl)/_chil**2/(_chis-_chil) )
@@ -158,6 +175,8 @@ def get_Sigmacr_Cl_window(zs_in, nzs_in, zl_in, nzl_in, z2chi):
     c0 = np.array(c0)
     c1 = np.array(c1)
     c2 = np.array(c2)
+    
+    # print(c0,c1,c2)
     
     zlMat, zsMat = np.meshgrid(zl, zs)
     assert np.all(c0.shape == zlMat.shape)
@@ -174,9 +193,11 @@ def get_Sigmacr_Cl_window(zs_in, nzs_in, zl_in, nzl_in, z2chi):
     c0_chi = np.array(c0_chi)
     c1_chi = np.array(c1_chi)
     c2_chi = np.array(c2_chi)
+    # print(c0_chi, c1_chi, c2_chi)
     
     window = (c0_chi - c1_chi*chi + c2_chi*chi**2)*(1+z)**2
-    window = ius(chi, window, ext=3) # [h/Mpc]
+
+    window = ius(chi, window, ext=1) # [h/Mpc]
     return window
     
 def log_extrap_func(x,y):

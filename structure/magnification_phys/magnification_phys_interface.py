@@ -4,6 +4,8 @@ Last edit: 2023.05.16
 
 This does almost the same procedure as structure/minimalbias/minimalbias_interface.py: 
 here we apply measurement corrections to the magnification bias term of dSigma.
+
+Code reviewed by Tianqing Zhang in Oct 2023
 """
 from cosmosis.datablock import names, option_section
 from magnification_phys import magnification_class
@@ -56,6 +58,7 @@ def setup(options):
     
     # Choice whether we average the signal within finite radial bin.
     bin_avg = options.get_bool(option_section, "bin_avg", False)
+    save_mag = options.get_bool(option_section, "save_mag", False)
     
     # radial bins in reference cosmology for dSigma (ds) and wp
     # In reality these radial bins are defined in unit of Mpc/h in the file,
@@ -73,7 +76,7 @@ def setup(options):
         rp['wp'] = read_rp(theta_file, 'wp'    , theta_type = 'centers')
         rp_edges['ds'] = None
         rp_edges['wp'] = None
-    
+            
     # projection length
     pimax = options.get_double(option_section, 'pimax', default=100.0)
     
@@ -102,7 +105,9 @@ def setup(options):
     section_names['wp_out'] = options.get_string(option_section, "wp_out", "galaxy_xi")
     section_names['ds_out'] = options.get_string(option_section, "ds_out", "galaxy_shear_xi")
     
-    return redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names
+    # print(redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names)
+    
+    return redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names, save_mag
     
 def execute(block, config):
     """
@@ -113,7 +118,7 @@ def execute(block, config):
     
     # Get configuration
     # Get configuration
-    redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names = config
+    redshifts, rp, rp_edges, mag, pimax, bin_avg, section_names, save_mag = config
     
     # number of redshift bins for lens and source.
     nbin_lens = block[section_names['nz_lens'], 'nbin']
@@ -122,18 +127,22 @@ def execute(block, config):
     # power spectra
     z_nlin, k_nlin, P_nlin = block.get_grid(names.matter_power_nl, "z", "k_h", "P_k")
     mag.set_pk_nlin_data(z_nlin, k_nlin, P_nlin)
-    
+    # print("mag.set_pk_nlin_data(z_nlin, k_nlin, P_nlin)", z_nlin, k_nlin, P_nlin)
     # comoving distance
     h0  = block[names.cosmological_parameters, 'h0']
     z   = block[names.distances, "z"]
+    # print(names.distances)
+    # print(block.keys(section  = 'distances'))
     chi = block[names.distances, "D_C"] * h0
+    # chi = block[names.distances, "d_l"] * block[names.distances, "a"] * h0
+    # print("mag.set_z2chi(z, chi)", z, chi)
     mag.set_z2chi(z, chi)
     
     # unpack radial bin
     if bin_avg:
         # We input the lower edge of each radial bin
-        rp_wp = rp_edges['wp']
-        rp_ds = rp_edges['ds']
+        rp_wp = rp_edges['wp'][:-1]
+        rp_ds = rp_edges['ds'][:-1]
         dlnrp_wp = np.log(rp_wp[1]/rp_wp[0])
         dlnrp_ds = np.log(rp_ds[1]/rp_ds[0])
     else:
@@ -166,9 +175,14 @@ def execute(block, config):
         
         # compute magnification bias and apply correction to dSigma overall amplitude
         for j in range(nbin_srce):
+            # print(i,j)
+            # print(block[section_names['nz_source'], "z"], block[section_names['nz_source'], "bin_{0}".format(j+1)])
             mag.set_nz_source(block[section_names['nz_source'], "z"], block[section_names['nz_source'], "bin_{0}".format(j+1)])
             f_ds = block.get_double(section_names['f_ds'], 'bin_{0}_{1}'.format(i+1,j+1), 1.0)
             block[section_names['ds_out']+'_gG', 'bin_{0}_{1}'.format(i+1,j+1)]  = block[section_names['ds_out'], 'bin_{0}_{1}'.format(i+1,j+1)]
             block[section_names['ds_out']      , 'bin_{0}_{1}'.format(i+1,j+1)] += f_ds * mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
+            
+            if save_mag:
+                block['ds_mag', 'bin_{0}_{1}'.format(i+1,j+1)] = mag.get_ds_mag(zl, f_rp*rp_ds, dlnrp_ds)
     
     return 0
