@@ -15,12 +15,11 @@ def execute(block, config):
     xlens_val = block[x_section, 'xlens_all']
 
 
-    for i in range(1,6):
-        for j in range(1,4):
-            if j >= i:
-                ggl_bin_label = 'bin_'+str(i)+'_'+str(j)
-                ggl = block['galaxy_shear_xi',ggl_bin_label]
-                ggl_xlens = xlens_val*ggl
-                block['galaxy_shear_xi', ggl_bin_label] = ggl_xlens
+    for i in range(1,6+1):
+        for j in range(1,4+1):
+            ggl_bin_label = 'bin_'+str(i)+'_'+str(j)
+            ggl = block['galaxy_shear_xi',ggl_bin_label]
+            ggl_xlens = xlens_val*ggl
+            block['galaxy_shear_xi', ggl_bin_label] = ggl_xlens
 
     return 0
