@@ -5,16 +5,16 @@ def setup(options):
 	# Get the name of the xlens section
     x_section = options.get_string(option_section,"xlens", "xlens")
 
-    return x_section
+    galaxy_shear_section = options.get_string(option_section, "galaxy_shear_section", default="galaxy_shear_xi")
+    
+    return x_section, galaxy_shear_section
 
 
 def execute(block, config):
 
-    x_section = config
+    x_section, galaxy_shear_section = config
 
     xlens_val = block[x_section, 'xlens_all']
-
-    galaxy_shear_section = options.get_string(option_section, "galaxy_shear_secton", default="galaxy_shear_xi")
 
     n_a, n_b = get_nbins(block, galaxy_shear_section)
     # I default setup, a is lens, b is source, but this could change
@@ -22,11 +22,10 @@ def execute(block, config):
 
     for i in range(1,n_a+1):
         for j in range(1,n_b+1):
-            if j >= i:
-                ggl_bin_label = 'bin_'+str(i)+'_'+str(j)
-                ggl = block[galaxy_shear_section,ggl_bin_label]
-                ggl_xlens = xlens_val*ggl
-                block[galaxy_shear_section, ggl_bin_label] = ggl_xlens
+            ggl_bin_label = 'bin_'+str(i)+'_'+str(j)
+            ggl = block[galaxy_shear_section,ggl_bin_label]
+            ggl_xlens = xlens_val*ggl
+            block[galaxy_shear_section, ggl_bin_label] = ggl_xlens
 
     return 0
 
