@@ -1507,6 +1507,7 @@ class SpectrumCalculator(object):
         self.chi_max = chi_distance.max()
         self.a_of_chi = interp.InterpolatedUnivariateSpline(chi_distance, a_distance)
         self.chi_of_z = interp.InterpolatedUnivariateSpline(z_distance, chi_distance)
+        self.max_z_for_chi = z_distance.max()
         self.dchidz = self.chi_of_z.derivative()
         self.chi_distance = chi_distance
 
@@ -1537,6 +1538,8 @@ class SpectrumCalculator(object):
                     dchi=self.shear_kernel_dchi)
 
             elif kernel_type == 'K' and sample_name == 'cmb':
+                if self.max_z_for_chi < 1000.0:
+                    raise ValueError("To get CMB lensing you need to compute distances to very high z. Consider setting the zmax_logz and n_logz parameters if using CAMB.")
                 chi_star = block['distances','chistar']
                 h0 = block[names.cosmological_parameters, "h0"]
                 self.kernels[sample_name].set_cmblensing_splines(self.chi_of_z, self.a_of_chi, chi_star*h0, clip = self.clip_chi_kernels)

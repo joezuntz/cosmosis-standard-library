@@ -1,7 +1,7 @@
 import os
 from cosmosis import run_cosmosis
 from cosmosis.postprocessing import run_cosmosis_postprocess
-
+import pytest
 
 def run_demo(i, args=None, variables=None):
     if args is None:
@@ -45,12 +45,16 @@ def test_demo1():
     run_demo(1)
 
 def test_demo2():
+    if not os.path.exists("likelihood/planck2018/baseline/plc_3.0/hi_l/plik_lite/plik_lite_v22_TT.clik"):
+        pytest.skip("Planck data not found")
     run_demo(2)
 
 def test_demo3():
     run_demo(3, ["grid.nsample_dimension=10"])
 
 def test_demo4():
+    if not os.path.exists("likelihood/planck2018/baseline/plc_3.0/hi_l/plik_lite/plik_lite_v22_TT.clik"):
+        pytest.skip("Planck data not found")
     run_demo(4, variables=[
         "cosmological_parameters.n_s=0.962",
         "cosmological_parameters.h0=0.680",

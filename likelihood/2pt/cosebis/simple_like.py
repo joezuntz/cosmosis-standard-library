@@ -66,7 +66,6 @@ def setup(options):
     return config
 
 def execute(block, config):
-    print('Gathering theory outputs to calculate the likelihood')
 
     ## Check that the theory has been calculated
     ## For cosebis this requires the cl_to_cosebis_interface to be run
@@ -80,7 +79,6 @@ def execute(block, config):
     nbTomo_max = 1000
     for i in range(nbTomo_max):
         if not block.has_value(section_name, 'bin_%d_%d' % (i+1, i+1)):
-            print('%s stops at bin %d' % (section_name, i))
             break
                 
         for j in range(i, nbTomo_max):
