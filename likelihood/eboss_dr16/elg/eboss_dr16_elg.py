@@ -1,10 +1,8 @@
 import os
-from numpy import log, pi, interp, where, loadtxt, dot, append, linalg, inf
+from numpy import log, pi, interp, where, loadtxt, dot, append, linalg, inf, zeros
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
 from scipy.interpolate import RegularGridInterpolator 
-from scipy import zeros
-from scipy import nan as scipynan
 
 cosmo = section_names.cosmological_parameters
 likes = section_names.likelihoods
