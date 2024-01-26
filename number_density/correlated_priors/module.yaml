@@ -11,43 +11,45 @@ assumptions:
         The matrix must be ordered to match the order of the input parameter list"
 
 explanation: 
-    " We may have a set of nuisance parameters for each tomographic bin that we know to be 
-        correlated.  Examples include the mean redshift uncertainties, shear calibration errors 
-        or slowly-evolving galaxy bias.   This module allows us to include known
-        correlations between the parameters when sampling.
-        This module reads the estimated covariance between a set of parameters.  Through a Cholesky 
-        decomposition, it then returns a set of correlated parameter values for 
-        a given input set of uncorrelated parameters.
-    "
+    This module converts a set of uncorrelated parameters into a set of correlated ones following
+    a covariance matrix. The covariance matrix is provided in block ascii format. The matrix must be
+    ordered to match the order of the input parameter list. The output parameters are updated with the
+    cholesky decomposition of the covariance matrix multiplied by the values of the input parameters.
+    The output parameters are then passed to the downstream modules.
+
+    A typical example usage is converting from uncorrelated nuisance parameters following normal distributions
+    to multivariate normal ones.
+
+    In future this functionality should be included in the cosmosis core.
+
 params:
     uncorrelated_parameters:
-        meaning:    The list of parameter names for the uncorrelated parameters that the sampler will vary
+        meaning: The list of parameter names for the uncorrelated parameters that the sampler will vary. The parameters should be in the form "section1/param1  section2/param2 ..."
         type: str
         default: 
+
     output_parameters:
         meaning:    The list of parameter names for the output sample of correlated parameters.  
                     These must be named following the relevant expectation of the downstream modules.  
-                    For example the parameter for photo-z bias in bin i is expected to be called bias_i
+                    For example the parameter for photo-z bias in bin i is expected to be called bias_i.
+                    The parameters should be in the form "section1/param1  section2/param2 ..."
         type: str
         default:
+
     covariance:
         meaning:    Location of the covariance matrix defining the correlation between the parameters
         type: str
         default:
 
 inputs:
-    cov:
-        meaning:    The covariance matrix read from the covariance file, ordered in the same sense
-                    as the parameter list
-        type: real
-        default:
-    block[input_parameters]:
-        meaning:    The values of the input paramaters in the block
-        type: real
-        default:
+    input_parameters_sections:
+        names:
+            meaning: The input parameter. The sections and names are defined in the uncorrelated_parameters parameter.
+            type: real
+            default:
 outputs:
-    block[output_parameters]:
-        meaning:    The values of the output paramaters in the block are updated with the cholesky
-                    decomposition of cov multipled by the values of the input parameters in the block.
-        type: real
-        default:
+    section1:
+        name1:
+            meaning: The values of the output paramaters, which have the appropriate correlations.  The sections and names are defined in the output_parameters parameter.
+            type: real
+            default:

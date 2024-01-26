@@ -134,6 +134,11 @@ jobs:
           source cosmosis-configure
           make
 
+      - name: Install likelihood python dependencies from pip
+        shell: bash -l {0}
+        run: |
+          pip install "act_dr6_lenslike>=1.0.2"
+
       - name: Run Tests
         shell: bash -l {0}
         run: |
@@ -228,6 +233,10 @@ jobs:
         pip install "cosmosis>=3.2" "nautilus-sampler==0.6.*"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
         pip install fitsio astropy fast-pt "Cython<3.0" jupyter
+
+    - name: Install likelihood python dependencies
+      run: |
+        pip install "act_dr6_lenslike>=1.0.2"
 
     - name: Build
       run: |

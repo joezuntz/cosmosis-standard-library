@@ -32,11 +32,15 @@ def test_bao(capsys):
     check_no_camb_warnings(capsys)
 
 def test_planck(capsys):
+    if not os.path.exists("likelihood/planck2018/baseline/plc_3.0/hi_l/plik_lite/plik_lite_v22_TT.clik"):
+        pytest.skip("Planck data not found")
     run_cosmosis("examples/planck.ini")
-    check_likelihood(capsys, "-1441.14", "-1441.30", "-1441.46")
+    check_likelihood(capsys, "-1441.14", "-1441.30", "-1441.46", "-502.5")
     check_no_camb_warnings(capsys)
     
 def test_planck_class(capsys):
+    if not os.path.exists("likelihood/planck2018/baseline/plc_3.0/hi_l/plik_lite/plik_lite_v22_TT.clik"):
+        pytest.skip("Planck data not found")
     run_cosmosis("examples/planck_class.ini", override={("class","mpk"):"T"})
     check_no_camb_warnings(capsys)
 
@@ -102,6 +106,10 @@ def test_des_y3_mead(capsys):
     check_no_camb_warnings(capsys)
 
 def test_act_dr6_lensing(capsys):
+    try:
+        import act_dr6_lenslike
+    except ImportError:
+        pytest.skip("ACT likelihood code not found")
     run_cosmosis("examples/act-dr6-lens.ini")
     check_likelihood(capsys, "-9.89", "-9.86", "-9.90")
     check_no_camb_warnings(capsys)
@@ -133,3 +141,21 @@ def test_kids(capsys):
     run_cosmosis("examples/kids-1000.ini")
     check_likelihood(capsys, "-47.6")
     check_no_camb_warnings(capsys)
+
+def test_bacco():
+    # The baseline version just does non-linear matter power
+    run_cosmosis("examples/bacco.ini")
+
+    # This variant emulates NL power with baryonic effects
+    run_cosmosis("examples/bacco.ini",
+                 override={
+                    ("bacco_emulator", "mode"): "nonlinear+baryons",
+                })
+
+    # This variant uses camb to get the NL power and only emulates the baryonic effects
+    run_cosmosis("examples/bacco.ini",
+                 override={
+                    ("bacco_emulator", "mode"): "baryons",
+                    ("camb", "nonlinear"): "pk",
+                    ("camb", "halofit_version"): "takahashi",
+                })
