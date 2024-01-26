@@ -159,3 +159,11 @@ def test_bacco():
                     ("camb", "nonlinear"): "pk",
                     ("camb", "halofit_version"): "takahashi",
                 })
+
+def test_hsc_harmonic(capsys):
+    run_cosmosis("examples/hsc-y3-shear.ini")
+    check_likelihood(capsys, "-109.0")
+
+def test_hsc_real(capsys):
+    run_cosmosis("examples/hsc-y3-shea-real.ini")
+    check_likelihood(capsys, "-122.5")
