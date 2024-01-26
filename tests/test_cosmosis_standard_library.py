@@ -165,5 +165,5 @@ def test_hsc_harmonic(capsys):
     check_likelihood(capsys, "-109.0")
 
 def test_hsc_real(capsys):
-    run_cosmosis("examples/hsc-y3-shea-real.ini")
+    run_cosmosis("examples/hsc-y3-shear-real.ini")
     check_likelihood(capsys, "-122.5")
