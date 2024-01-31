@@ -54,7 +54,7 @@ cdef extern from "emulator.h":
 
         EuclidEmulator() except +
 
-        void compute_nlc(Cosmology csm, vector[double] redshift, int n_redshift);
+        void compute_nlc(Cosmology &csm, vector[double] redshift, int n_redshift);
         void write_nlc2file(const string &filename, vector[double] zvec, int n_redshift);
 
 
@@ -77,10 +77,14 @@ cdef class PyCosmology:
 
         self.cosm =new Cosmology((<double>Omega_b), (<double>Omega_m), (<double>Sum_m_nu), (<double>n_s), (<double>h), (<double>w_0), (<double>w_a), (<double>A_s))
 
+     def __dealloc__(self):
+         del self.cosm
+
      # Attribute access
      @property
      def Omega_nu_0(self):
         return self.cosm.Omega_nu_0
+
      @Omega_nu_0.setter
      def Omega_nu_0(self, Omega_nu_0):
         self.cosm.Omega_nu_0 = Omega_nu_0
@@ -93,19 +97,24 @@ cdef class PyEuclidEmulator:
      def __cinit__(self):
         self.ee2 = new EuclidEmulator()
 
+     def __dealloc__(self):
+        del self.ee2
 
-     def compute_nlc(self,PyCosmology csm, redshift, n_redshift):
+     def compute_nlc(self, PyCosmology csm, redshift, n_redshift):
           self.ee2.compute_nlc((<Cosmology *> csm.cosm)[0], redshift, n_redshift)
 
-     def write_nlc2file(self,filename, zvec, n_redshift):
+     def write_nlc2file(self, filename, zvec, n_redshift):
           self.ee2.write_nlc2file(<string>filename, zvec, n_redshift)
 
+     def get_boost(self, cosmo_par_in, redshifts, custom_kvec=None):
+          return get_boost(cosmo_par_in,redshifts, custom_kvec=custom_kvec, ee2=self)
 
 
      # Attribute access
      @property
      def kvec(self):
         return self.ee2.kvec
+
      @kvec.setter
      def kvec(self, kvec):
         self.ee2.kvec = kvec
@@ -113,6 +122,7 @@ cdef class PyEuclidEmulator:
      @property
      def Bvec(self):
         return self.ee2.Bvec
+
      @Bvec.setter
      def Bvec(self, Bvec):
         self.ee2.Bvec = Bvec
@@ -193,7 +203,7 @@ def check_param_range(par_dict): #, csm_index=0): #Only one cosmology for now
                          %( par_dict['wa_fld']))
 
     if A_s_not_in_range:
-        raise ValueError("Parameter range violation: \nA_s is set to %f, but should be in the interval [1.7e-9, 2.5e-9]."
+        raise ValueError("Parameter range violation: \nA_s is set to %e, but should be in the interval [1.7e-9, 2.5e-9]."
                          %( par_dict['A_s']))
 
 
@@ -337,7 +347,7 @@ def convert_to_emu(class_pars_dict):
 
 
 
-def get_boost(cosmo_par_in,redshifts,custom_kvec=None):
+def get_boost(cosmo_par_in,redshifts,custom_kvec=None, ee2=None):
 
     if isinstance(redshifts, (int, float)):
         redshifts = np.asarray([redshifts])
@@ -359,7 +369,8 @@ def get_boost(cosmo_par_in,redshifts,custom_kvec=None):
                       cosmo_par['w0_fld'],
                       cosmo_par['wa_fld'],
                       cosmo_par['A_s'])
-    ee2=PyEuclidEmulator()
+    if ee2 is None:
+        ee2=PyEuclidEmulator()
     ee2.compute_nlc(cosmo,redshifts,len(redshifts))
 
     k=np.asarray(ee2.kvec)
