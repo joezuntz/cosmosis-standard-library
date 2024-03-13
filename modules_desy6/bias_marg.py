@@ -8,13 +8,11 @@ def setup(options):
 	number_lens_bins = options.get_int(option_section,
 		"nbins",6)
 	#Get the name of the bias section
-	#By default look for 'bias_lens' which is
-	#what will be used for Y3
+	#By default look for 'bias_lens'
 	bias_section = options.get_string(option_section,
 		"bias_section", "bias_lens")
 	#Get the name of the bias model
-	#By default look for 'oneloop_eul_bk' which is
-	#what will be used for Y3
+	#By default look for 'oneloop_eul_bk'
 	bias_model = options.get_string(option_section,
 		"bias_model", "oneloop_eul_bk")
 	try:
