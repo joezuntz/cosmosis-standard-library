@@ -1,0 +1,57 @@
+name: desi_y1_bao
+version: "arXiv:2404.03002"
+purpose: Compute the likelihood of expansion history using DESI Y1 BAO data
+url: "https://svn.sdss.org/public/data/eboss/DR16cosmo/tags/v1_0_0/likelihoods/"
+interface: desi_y1_bao.py
+attribution: ""
+rules: ""
+cite: 
+    - "arXiv:2404.03000"
+    - "arXiv:2404.03001"
+    - "arXiv:2404.03002"
+
+assumptions:
+    - ""
+    - ""
+
+explanation: >
+    "This module gives a likelihood of the comoving angular diameter
+    distance D_m and the Hubble parameter H(z).
+    It uses the sound horizon at last-scatter rs_zdrag.
+
+    A correlated Gaussian likelihood is then returned."
+
+params:
+    feedback: 
+        meaning: Whether to print extra output
+        type: bool
+        default: False
+
+inputs:
+    cosmological_parameters:
+        omega_m:
+            meaning: Baryon + cdm density fraction today
+            type: real
+            default:
+        h0:
+            meaning: Hubble parameter H0/(100 km/s/Mpc)
+            type: real
+            default:
+    distances:
+        z:
+            meaning: Redshifts of samples
+            type: real 1d
+            default:
+        d_a:
+            meaning: Angular diameter distance in Mpc
+            type: real 1d
+            default:
+        h:
+            meaning: Hubble parameter with in units of Mpc
+            type: real 1d
+            default:
+outputs:
+    likelihoods:
+        desi_y1_bao_like:
+            meaning: Likelihood of supplied expansion history
+            type: real
