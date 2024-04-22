@@ -143,6 +143,10 @@ def test_kids(capsys):
     check_no_camb_warnings(capsys)
 
 def test_bacco():
+    if sys.version_info > (3, 11):
+        # We don't have tensorflow support in 3.12 yet, so
+        # we can't run baccoemu.
+        return
     # The baseline version just does non-linear matter power
     run_cosmosis("examples/bacco.ini")
 
