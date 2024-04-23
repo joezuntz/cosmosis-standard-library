@@ -3,6 +3,7 @@ from cosmosis import run_cosmosis
 from cosmosis.postprocessing import run_cosmosis_postprocess
 import pytest
 import os
+import sys
 
 def check_likelihood(capsys, expected, *other_possible):
     captured = capsys.readouterr()
