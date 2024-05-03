@@ -17,7 +17,7 @@ class BBNLikelihood(SingleValueGaussianLikelihood):
 
     def build_data(self):
 
-        paper = self.options.get_string("paper", "beringer_2012")        
+        paper = self.options.get_string("paper", "beringer_2012")
 
         if paper == "beringer_2012":
             print("Using Beringer 2012 (PDG) BBN measurement")
@@ -63,7 +63,7 @@ class BBNLikelihood(SingleValueGaussianLikelihood):
             sigma = options.get_float("sigma")
             print("** Overriding sigma with param file value: ", sigma)
 
-        return mean, sigma        
+        return mean, sigma
 
     def extract_theory_points(self, block):
         omega_b = block[self.section, 'omega_b']
