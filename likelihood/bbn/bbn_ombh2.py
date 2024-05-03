@@ -1,6 +1,6 @@
 from cosmosis.datablock import names
 from cosmosis.gaussian_likelihood import SingleValueGaussianLikelihood
-
+import numpy as np
 
 class BBNLikelihood(SingleValueGaussianLikelihood):
     # The mean and standard deviation of the BBN measurements.
