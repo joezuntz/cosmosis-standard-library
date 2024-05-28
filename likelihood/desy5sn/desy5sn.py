@@ -62,7 +62,7 @@ class DESY5SNLikelihood(GaussianLikelihood):
         self.mu_obs = data['MU'][self.ww]
 
         # DES Y5 simulated SN data provides distance modulus.
-        self.mu_obs_err = data['MUERR'][self.ww]
+        self.mu_obs_err = data['MUERR_FINAL'][self.ww]
 
         # Return this to the parent class, which will use it
         # when working out the likelihood
