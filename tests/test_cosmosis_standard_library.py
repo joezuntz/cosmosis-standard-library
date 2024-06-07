@@ -175,3 +175,7 @@ def test_hsc_real(capsys):
         pytest.skip("Sacc not installed")
     run_cosmosis("examples/hsc-y3-shear-real.ini")
     check_likelihood(capsys, "-122.5")
+
+def test_desi(capsys):
+    run_cosmosis("examples/desi.ini")
+    check_likelihood(capsys, "-11.25")
