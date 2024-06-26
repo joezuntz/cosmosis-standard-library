@@ -24,16 +24,15 @@ def setup(options):
     s = ", ".join(mode_choices)
     if mode not in mode_choices:
         raise ValueError(f"Mode parameter in npipe must be one of: {s}, not {mode}")
-    return_all = ("mpp" not in mode) and ("mtt" not in mode)
     calculator = cobaya_jtlik()
     calculator.initialize()
     chi2_method = getattr(calculator, f'get_chi2_{mode}')
-    return calculator, chi2_method, mode, return_all
+    return calculator, chi2_method, mode
 
 
 
 def execute(block, config):
-    calculator, chi2_method, mode, return_all = config
+    calculator, chi2_method, mode = config
 
     c_ells = {}
     ell = block['cmb_cl', 'ell']
@@ -68,12 +67,7 @@ def execute(block, config):
         cl /= factor
 
     # Compute and save likelihood
-    chi2 = chi2_method(c_ells, return_all=return_all)
-    if return_all:
-        like, info = like
-        block["data_vector", "npipe_theory"] = info['pred']
-        block["data_vector", "npipe_data"] = info['meas']
-        block["data_vector", "npipe_inv_cov"] = info['inv_cov']
-    block['likelihoods', 'npipe_like'] = - 0.5 * chi2
+    like = chi2_method(c_ells)    
+    block['likelihoods', 'npipe_like'] = -like / 2
 
     return 0
