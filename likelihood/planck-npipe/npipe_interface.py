@@ -11,8 +11,10 @@ def setup(options):
     marged = options.get_bool(option_section, "use_marginalized", default=True)
     if marged:
         calculator = PlanckPR4LensingMarged()
+        print("Using primary CMB-marginalized PR4 likelihood. TT, EE, TE, BB, will not be used")
     else:
         calculator = PlanckPR4Lensing()
+        print("NOT using primary CMB-marginalized PR4 likelihood. TT, EE, TE, BB, will be used")
     return calculator, marged
 
 
