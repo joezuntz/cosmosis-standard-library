@@ -43,7 +43,7 @@ def execute(block, config):
         nz_bin = gaussian(z, mu[i - 1], sigma[i - 1])
         # the bin may not quite go to zero before we get to the
         # edges so normalize it
-        norm = scipy.integrate.trapz(nz_bin, z)
+        norm = scipy.integrate.trapezoid(nz_bin, z)
         nz_bin /= norm
         # Save n(z)
         block[section, "BIN_%d" % i] = nz_bin
