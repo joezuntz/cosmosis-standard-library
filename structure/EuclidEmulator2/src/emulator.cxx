@@ -21,7 +21,6 @@
 #include <fstream>
 #include <string>
 #include <sys/stat.h> // struct stat and fstat() function
-#include <sys/mman.h> // mmap() function
 #include <fcntl.h>    // declaration of O_RDONLY
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline2d.h>
@@ -47,24 +46,24 @@ EuclidEmulator::EuclidEmulator():
 	{
 
 	read_in_ee2_data_file();
-
 	pc_2d_interp();
 
 }
 
 /* DESTRUCTOR */
 EuclidEmulator::~EuclidEmulator(){
+	delete[] ee2_data;
 	for(int i=0; i<15; i++) {
 		gsl_spline2d_free(logklogz2pc_spline[i]);
+		gsl_interp_accel_free(logk2pc_acc[i]);
+		gsl_interp_accel_free(logz2pc_acc[i]);
 	}
 }
 
 /* FUNCTION TO READ IN THE DATA FILE */
 void EuclidEmulator::read_in_ee2_data_file(){
 	/// VARIABLE DECLARATIONS ///
-	off_t size;
     struct stat s;
-	double *data;
 	double *kptr;
 	int i, ik, iz, idx = 0;
 
@@ -76,39 +75,44 @@ void EuclidEmulator::read_in_ee2_data_file(){
 	}
 
 	// ==== LOAD EUCLIDEMULATOR2 DATA FILE ==== //
-	int fp = open(PATH_TO_EE2_DATA_FILE, O_RDONLY);
-	if(fp == -1) {
+	int fp1 = open(PATH_TO_EE2_DATA_FILE, O_RDONLY);
+	if(fp1 == -1) {
 		cerr << "Unable to open " << PATH_TO_EE2_DATA_FILE << std::endl;
         exit(1);
 	}
 
 	// Get the size of the file. //
-    int status = fstat(fp, & s);
-    size = s.st_size;
+    int status = fstat(fp1, & s);
+	close(fp1);
+    ee2_data_size = s.st_size / sizeof(double);
+	ee2_data = new double[ee2_data_size];
 
 	// Map the file into memory //
-	data = (double *) mmap (0, size, PROT_READ, MAP_PRIVATE, fp, 0);
+	FILE * fp = fopen(PATH_TO_EE2_DATA_FILE, "r");
+	// read the contents of the file into ee2_data
+	fread(ee2_data, ee2_data_size, sizeof(double), fp);
+	fclose(fp);
 
 	// Reading in principal components //
 	for (i=0;i<15;i++) {
-    	this->pc[i] = &data[idx];  // pc[0] = PCA mean
+    	this->pc[i] = ee2_data + idx;
     	idx += nk*nz;
     }
 
 	// Reading in PCE coefficients //
 	for (i=0;i<14;i++) {
-    	this->pce_coeffs[i] = &data[idx];
+    	this->pce_coeffs[i] = ee2_data + idx;
     	idx += n_coeffs[i];
     }
 
 	// Reading in PCE multi-indices //
 	for (i=0;i<14;i++) {
-    	this->pce_multiindex[i] = &data[idx];
+    	this->pce_multiindex[i] = ee2_data + idx;
     	idx += 8*n_coeffs[i];
     }
 
 	// vector of k modes
-    kptr = &data[idx];
+    kptr = ee2_data + idx;
 
     for (i=0;i<nk;i++) {
 		this->kvec[i] = kptr[i];
@@ -117,7 +121,7 @@ void EuclidEmulator::read_in_ee2_data_file(){
     idx += nk;
 
 	// Check if all data has been read in properly
-	assert(idx == size/sizeof(double));
+	assert(idx == ee2_data_size);
 
 }
 
@@ -139,7 +143,7 @@ void EuclidEmulator::pc_2d_interp(){
 
 /* COMPUTE NLC */
 //void EuclidEmulator::compute_nlc(Cosmology csm, double* redshift, int n_redshift, double* kmodes, int n_kmodes){
-void EuclidEmulator::compute_nlc(Cosmology csm, vector<double> redshift, int n_redshift){
+void EuclidEmulator::compute_nlc(Cosmology &csm, vector<double> redshift, int n_redshift){
 	double pc_weight;
 	double basisfunc;
 	double stp_no[n_redshift];
@@ -201,6 +205,10 @@ void EuclidEmulator::compute_nlc(Cosmology csm, vector<double> redshift, int n_r
 		}
 	}
 	//printf("PCA assembled\n");
+	for (int ipar=0; ipar < 8; ipar++){
+		delete[] univ_legendre[ipar];
+	}
+
 }
 
 /* WRITE NLC TO FILE */

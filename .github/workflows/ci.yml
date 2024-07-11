@@ -158,7 +158,7 @@ jobs:
     needs: Download_Data
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11", "3.12"]
 
     steps:
     - name: Checkout repository
@@ -232,7 +232,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install "cosmosis>=3.2" "nautilus-sampler==0.6.*" "numpy<2"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt "Cython<3.0" jupyter
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter sacc
 
     - name: Install likelihood python dependencies
       run: |

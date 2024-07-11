@@ -22,14 +22,15 @@ def setup(options):
     # check everything imports
     import euclidemu2
     print("Loaded Euclid Emulator 2 installation at", euclidemu2.__file__)
-    return [input_section, output_section]
+    emulator = euclidemu2.PyEuclidEmulator()
+    return [input_section, output_section, emulator]
 
 
 def execute(block, config):
     import euclidemu2 as ee2
 
     # Recover config information
-    input_section, output_section = config
+    input_section, output_section, emulator  = config
 
     # Get cosmo params from block
     pars = names.cosmological_parameters
@@ -50,7 +51,7 @@ def execute(block, config):
     if len(z) > 100:
         raise ValueError("EuclidEmulator2 only allows up to 100 redshift values")
 
-    _, b = ee2.get_boost(params, z, k)
+    _, b = emulator.get_boost(params, z, k)
 
     # Not sure why but b comes back as a dictionary of arrays
     # instead of a 2D array

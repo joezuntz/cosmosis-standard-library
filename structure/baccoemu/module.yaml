@@ -31,11 +31,8 @@ explanation: |
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
     mode:
-        meaning: |
-            What to emulate; the NL DM-only power, the baryonic boost, or both.
-            Choose from 'nonlinear', 'baryons', 'nonlinear+baryons'. If 'baryons' is chosen then
-            the NL power is read from the block (e.g. from camb). Otherwise the NL power is
-            emulated.
+        meaning:
+            What to emulate; the NL DM-only power, the baryonic boost, or both. Choose from 'nonlinear', 'baryons', 'nonlinear+baryons'. If 'baryons' is chosen then the NL power is read from the block (e.g. from camb). Otherwise the NL power is emulated.
         type: str
         default: pk_nl_only
 
@@ -46,22 +43,28 @@ inputs:
         z:
             meaning: Redshifts of samples. 
             type: real 1d
+            default: 
         k_h:
             meaning: Wavenumbers k of samples in Mpc/h.
             type: real 1d
+            default: 
         p_k:
             meaning: Linear power spectrum at samples in (Mpc/h)^-3.
             type: real 2d
+            default: 
     matter_power_nl:
         z:
             meaning: Redshifts of samples. Only if mode = = "baryons".
             type: real 1d
+            default: 
         k_h:
             meaning: Wavenumbers k of samples in Mpc/h. Only if mode = = "baryons".
             type: real 1d
+            default: 
         p_k:
             meaning: Linear power spectrum at samples in (Mpc/h)^-3. Only if mode = = "baryons".
             type: real 2d
+            default: 
     cosmological_parameters:
         A_s:
             meaning: Amplitude of the primordial power spectrum.
