@@ -180,3 +180,11 @@ def test_hsc_real(capsys):
         pytest.skip("Sacc not installed")
     run_cosmosis("examples/hsc-y3-shear-real.ini")
     check_likelihood(capsys, "-122.5")
+
+def test_npipe(capsys):
+    try:
+        import planckpr4lensing
+    except ImportError:
+        pytest.skip("Planck PR4 lensing likelihood not found")
+    run_cosmosis("examples/npipe.ini")
+    check_likelihood(capsys, "-4.22", "-4.23")

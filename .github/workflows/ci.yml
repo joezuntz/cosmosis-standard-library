@@ -232,7 +232,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install "cosmosis>=3.2" "nautilus-sampler==0.6.*" "numpy<2"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install fitsio astropy fast-pt "Cython<3.0" jupyter sacc
+        pip install fitsio astropy fast-pt "Cython<3.0" jupyter sacc "git+https://github.com/carronj/planck_PR4_lensing"
 
     - name: Install likelihood python dependencies
       run: |
