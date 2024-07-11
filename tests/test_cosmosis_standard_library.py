@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 from cosmosis import run_cosmosis
 from cosmosis.postprocessing import run_cosmosis_postprocess
+from cosmosis.runtime.handler import activate_segfault_handling
+
 import pytest
 import os
 import sys
+activate_segfault_handling()
 
 def check_likelihood(capsys, expected, *other_possible):
     captured = capsys.readouterr()
