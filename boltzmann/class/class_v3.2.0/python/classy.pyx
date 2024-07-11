@@ -30,7 +30,7 @@ def viewdictitems(d):
         return d.viewitems()
 
 ctypedef np.float_t DTYPE_t
-ctypedef np.int_t DTYPE_i
+# ctypedef np.int_t DTYPE_i
 
 
 
