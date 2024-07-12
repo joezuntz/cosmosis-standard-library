@@ -148,9 +148,11 @@ def test_kids(capsys):
 
 def test_bacco():
     if sys.version_info > (3, 11):
-        # We don't have tensorflow support in 3.12 yet, so
-        # we can't run baccoemu.
-        return
+        pytest.skip("No tensorflow support on python 3.12 yet.")
+    enable_bacco = int(os.environ.get("ENABLE_BACCO", "0"))
+    if not enable_bacco:
+        pytest.skip("Export ENABLE_BACCO=1 to run bacco tests")
+
     # The baseline version just does non-linear matter power
     run_cosmosis("examples/bacco.ini")
 
