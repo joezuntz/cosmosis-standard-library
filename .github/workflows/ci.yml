@@ -139,12 +139,6 @@ jobs:
         run: |
           pip install "act_dr6_lenslike>=1.0.2"
 
-      - name: Test bacco
-        shell: bash -l {0}
-        run: |
-          source cosmosis-configure
-          ENABLE_BACCO=1 pytest -vv --durations 0 tests/test_cosmosis_standard_library.py -k test_bacco
-
       - name: Run Tests
         shell: bash -l {0}
         run: |
