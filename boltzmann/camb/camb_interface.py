@@ -20,6 +20,7 @@ MODES = [MODE_BG, MODE_THERM, MODE_CMB, MODE_POWER, MODE_ALL]
 
 DEFAULT_A_S = 2.1e-9
 
+C_KMS = 299792.458
 
 # See this table for description:
 #https://camb.readthedocs.io/en/latest/transfer_variables.html#transfer-variables
@@ -430,6 +431,9 @@ def save_derived_parameters(r, block):
     for k, v in derived.items():
         block[names.distances, k] = v
     block[names.distances, 'rs_zdrag'] = block[names.distances, 'rdrag']
+    zstar = derived['zstar']
+    shift = r.angular_diameter_distance(zstar) * (1 + zstar) * (p.omegam * p.H0**2)**0.5 / C_KMS
+    block[names.distances, "cmbshift"] = shift
     
     p.omegal = 1 - p.omegam - p.omk
     p.ommh2 = p.omegam * p.h**2
