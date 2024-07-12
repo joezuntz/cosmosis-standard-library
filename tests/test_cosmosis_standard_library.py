@@ -150,7 +150,7 @@ def test_bacco():
     if sys.version_info > (3, 11):
         pytest.skip("No tensorflow support on python 3.12 yet.")
     # skip if running on CI with python 3.9 or 3.10 on macOS
-    if sys.platform == "darwin" and sys.version_info in [(3, 9), (3, 10)] and os.environ.get("CI"):
+    if sys.platform == "darwin" and sys.version_info[:2] in [(3, 9), (3, 10)] and os.environ.get("CI"):
         pytest.skip("Skipping Bacco on MacOS with Python 3.9 or 3.10 when running CI")
 
     # The baseline version just does non-linear matter power
