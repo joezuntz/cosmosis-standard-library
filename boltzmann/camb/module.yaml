@@ -513,6 +513,9 @@ outputs:
         thetarseq:
             meaning: Angle 100 r_s(eq)/DA(zstar)
             type: real
+        cmbshift:
+            meaning: CMB shift parameter equation 69 of Komatsu et al 2009
+            type: real
     growth_parameters:
         z:
             meaning: Redshift samples of other values in this section, (all if mode=power
@@ -602,3 +605,11 @@ outputs:
         p_k:
             meaning: Non-linear power spectrum at samples in (Mpc/h)^-3.
             type: real 2d
+    transfer_func:
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+                Different than the k of power spectra!
+            type: real 1d
+        t_k:
+            meaning: Linear transfer function at z=0.
+            type: real 1d
