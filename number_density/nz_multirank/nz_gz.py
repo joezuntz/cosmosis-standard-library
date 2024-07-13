@@ -12,7 +12,10 @@ from astropy import cosmology
 
 def nz_to_gchi(z, nz, cosmo=cosmology.Planck15):
     from numpy import apply_along_axis, gradient, multiply, newaxis
-    from scipy.integrate import cumulative_trapezoid
+    try:
+        from scipy.integrate import cumulative_trapezoid
+    except ImportError:
+        from scipy.integrate import cumtrapz as cumulative_trapezoid
     chi = cosmo.comoving_distance(z).value
     dchi = apply_along_axis(gradient, -1, chi)
     dz = apply_along_axis(gradient, -1, z)

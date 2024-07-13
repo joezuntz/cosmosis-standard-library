@@ -1578,7 +1578,10 @@ def _smeared_bao_pk(k_lin=None, pk_lin=None, k_emu=None, pk_lin_emu=None, pk_nw=
     :return: smeared BAO pk computed at k_emu
     :rtype: array_like
     """
-    from scipy.integrate import trapezoid
+    try:
+        from scipy.integrate import trapezoid
+    except ImportError:
+        from scipy.integrate import trapz as trapezoid
 
     if grid is None:
         sigma_star_2 = trapezoid(k_lin * pk_lin, x=np.log(k_lin)) / (3 * np.pi**2)
