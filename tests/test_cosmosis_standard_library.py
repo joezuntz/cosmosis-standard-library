@@ -193,3 +193,7 @@ def test_npipe(capsys):
         pytest.skip("Planck PR4 lensing likelihood not found")
     run_cosmosis("examples/npipe.ini")
     check_likelihood(capsys, "-4.22", "-4.23")
+
+def test_desi(capsys):
+    run_cosmosis("examples/desi.ini")
+    check_likelihood(capsys, "-11.25")
