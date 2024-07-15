@@ -464,11 +464,14 @@ outputs:
         d_l:
             meaning: Luminosity distance in Mpc
             type: real 1d
+        d_v:
+            meaning: Angular average of comoving angular diameter and line of sight distance in Mpc
+            type: real 1d
         mu:
             meaning: Distance modulus
             type: real 1d
         h:
-            meaning: Hubble parameter with in units of Mpc
+            meaning: Hubble parameter as function of distance in units of Mpc
             type: real 1d
         age:
             meaning: Age of universe in GYr

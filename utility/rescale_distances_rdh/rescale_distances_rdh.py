@@ -17,11 +17,10 @@ def get_rd_from_camb(h, omega_m, ombh2, N_eff):
 
 def setup(options):
     return {
-        "h_fid": options.get_double(option_section, "h_fid", 0.7),
     }
 
 def execute(block, config):
-    h_fid = config["h_fid"]
+    h_fid = block[names.cosmological_parameters, "h0"]
     rdh_sample = block[names.cosmological_parameters, "rdh"]
     rd_prime = block[names.distances, "rs_zdrag"]
 
