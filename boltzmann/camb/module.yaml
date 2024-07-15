@@ -513,6 +513,9 @@ outputs:
         thetarseq:
             meaning: Angle 100 r_s(eq)/DA(zstar)
             type: real
+        cmbshift:
+            meaning: CMB shift parameter equation 69 of Komatsu et al 2009
+            type: real
     growth_parameters:
         z:
             meaning: Redshift samples of other values in this section, (all if mode=power
