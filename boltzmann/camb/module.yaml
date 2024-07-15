@@ -471,7 +471,7 @@ outputs:
             meaning: Distance modulus
             type: real 1d
         h:
-            meaning: Hubble parameter as function of distance in units of Mpc
+            meaning: Hubble parameter as function of redshift in units of Mpc
             type: real 1d
         age:
             meaning: Age of universe in GYr
