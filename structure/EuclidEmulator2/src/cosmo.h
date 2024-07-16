@@ -33,7 +33,7 @@ class Cosmology{
 		
 		/* Member functions */
 		Cosmology(double Omega_b, double Omega_m, double Sum_m_nu, double n_s, double h, double w_0, double w_a, double A_s);
-		//~Cosmology();
+		~Cosmology();
 		void read_from_file(char *filename);
 		void print_cosmo();
 		void print_cosmo_tf();

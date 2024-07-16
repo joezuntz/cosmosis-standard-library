@@ -52,6 +52,9 @@ class EuclidEmulator{
 		double * univ_legendre[8]; // univariate legendre polynomials
 		double * pce_basisfuncs;		// multivariate legendre polynomials
 
+		double * ee2_data;
+		size_t ee2_data_size;
+
 		/* Private member functions */
 		void read_in_ee2_data_file();
 		void pc_2d_interp();
@@ -65,7 +68,7 @@ class EuclidEmulator{
 		/* Public member functions */
 		EuclidEmulator();
 		~EuclidEmulator();
-		void compute_nlc(Cosmology csm, vector<double> redshift, int n_redshift);
+		void compute_nlc(Cosmology &csm, vector<double> redshift, int n_redshift);
 		void write_nlc2file(const string &filename, vector<double> zvec, int n_redshift);
 };
 

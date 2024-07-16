@@ -464,11 +464,14 @@ outputs:
         d_l:
             meaning: Luminosity distance in Mpc
             type: real 1d
+        d_v:
+            meaning: Angular average of comoving angular diameter and line of sight distance in Mpc
+            type: real 1d
         mu:
             meaning: Distance modulus
             type: real 1d
         h:
-            meaning: Hubble parameter with in units of Mpc
+            meaning: Hubble parameter as function of redshift in units of Mpc
             type: real 1d
         age:
             meaning: Age of universe in GYr
@@ -512,6 +515,9 @@ outputs:
             type: real
         thetarseq:
             meaning: Angle 100 r_s(eq)/DA(zstar)
+            type: real
+        cmbshift:
+            meaning: CMB shift parameter equation 69 of Komatsu et al 2009
             type: real
     growth_parameters:
         z:
@@ -602,3 +608,11 @@ outputs:
         p_k:
             meaning: Non-linear power spectrum at samples in (Mpc/h)^-3.
             type: real 2d
+    transfer_func:
+        k_h:
+            meaning: Wavenumbers k of samples in Mpc/h.
+                Different than the k of power spectra!
+            type: real 1d
+        t_k:
+            meaning: Linear transfer function at z=0.
+            type: real 1d
