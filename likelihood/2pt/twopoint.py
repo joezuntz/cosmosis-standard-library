@@ -83,7 +83,7 @@ class Types(Enum):
     galaxy_shear_minus_real = "G-R"
     cmb_kappa_real = "CKR"
     cmb_kappa_fourier = "CKF"
-    one_point = "OPR"
+    onepoint = "O"
     
     @classmethod
     def lookup(cls, value):
@@ -130,10 +130,10 @@ class OnePointMeasurement(object):
         header = extension.header
 
         i = 1
-        name = 'BIN{}'.format(i)
-        name_x = 'OBS{}'.format(i)
-        name_low = 'OBS_LOW{}'.format(i)
-        name_high = 'OBS_HIGH{}'.format(i)
+        name = 'VALUE{}'.format(i)
+        name_x = 'ANG{}'.format(i)
+        name_low = 'ANGLEMIN{}'.format(i)
+        name_high = 'ANGGLEMAX{}'.format(i)
         nobs = []
         obs = []
         obs_low = []
@@ -142,17 +142,18 @@ class OnePointMeasurement(object):
         while name in data.names:
             obs_in = data[name]
             nobs.append(obs_in)
-            obs.append(data['OBS{}'.format(i)])
-            try:
-                obs_low.append(data['OBS_LOW{}'.format(i)])
-            except:
-                obs_low.append(None)
-            try:
-                obs_high.append(data['OBS_HIGH{}'.format(i)])
-            except:
-                obs_high.append(None)
+            obs.append(data['ANG{}'.format(i)])
+            if 'ANGLEMIN{}'.format(i) in data.names:
+                obs_low.append(data['ANGLEMIN{}'.format(i)])
+            if 'ANGLEMAX{}'.format(i) in data.names:
+                obs_high.append(data['ANGLEMAX{}'.format(i)])
             i += 1
-            name = 'BIN{}'.format(i)
+            name = 'VALUE{}'.format(i)
+            
+        if obs_low == []:
+            obs_low = None
+        if obs_high == []:
+            obs_high = None
             
         N = cls(extension.name, obs, nobs, obs_low, obs_high)
 
@@ -162,15 +163,20 @@ class OnePointMeasurement(object):
         header = fits.Header()
         header[ONEPOINT_SENTINEL] = True
         header['EXTNAME'] = self.name
+        header['NBINS'] = self.nbin
+        header['QUANT1'] = "O"
+        header['QUANT2'] = "O"
 
         columns = []
 
         for i in range(self.nbin):
-            name = 'BIN{}'.format(i + 1)
+            name = 'VALUE{}'.format(i + 1)
             columns.append(fits.Column(name=name, array=self.nobs[i], format='D'))
-            columns.append(fits.Column(name='OBS_LOW{}'.format(i + 1), array=self.obs_low[i], format='D'))
-            columns.append(fits.Column(name='OBS{}'.format(i + 1), array=self.obs[i], format='D'))
-            columns.append(fits.Column(name='OBS_HIGH{}'.format(i + 1), array=self.obs_high[i], format='D'))
+            columns.append(fits.Column(name='ANG{}'.format(i + 1), array=self.obs[i], format='D'))
+            if self.obs_low is not None:
+                columns.append(fits.Column(name='ANGLEMIN{}'.format(i + 1), array=self.obs_low[i], format='D'))
+            if self.obs_high is not None:
+                columns.append(fits.Column(name='ANGLEMAX{}'.format(i + 1), array=self.obs_high[i], format='D'))
             
         extension = fits.BinTableHDU.from_columns(columns, header=header)
         return extension
@@ -198,9 +204,13 @@ class OnePointMeasurement(object):
             else:
                 obs_in = block[section_name, "obs_{}".format(i)]
                 obs.append(obs_in)
-                d_obs = np.log10(obs_in[2]) - np.log10(obs_in[1])
-                obs_low.append(10.0**(np.log10(obs_in) - 0.5 * d_obs))
-                obs_high.append(10.0**(np.log10(obs_in) + 0.5 * d_obs))
+                #d_obs = np.log10(obs_in[2]) - np.log10(obs_in[1])
+                #obs_low.append(10.0**(np.log10(obs_in) - 0.5 * d_obs))
+                #obs_high.append(10.0**(np.log10(obs_in) + 0.5 * d_obs))
+        if obs_low == []:
+            obs_low = None
+        if obs_high == []:
+            obs_high = None
 
         N = cls(output_name, obs, nobs, obs_low, obs_high)
         return N
