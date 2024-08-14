@@ -123,7 +123,7 @@ class SaccClLikelihood(GaussianLikelihood):
         self.sections_for_names = {}
         for name in final_names:
             if self.options.has_value(f"{name}_section"):
-                section = options[f"{name}_section"]
+                section = self.options[f"{name}_section"]
             elif name in default_sections:
                 section = default_sections[name]
             else:
