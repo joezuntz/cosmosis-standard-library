@@ -139,10 +139,11 @@ jobs:
         run: |
           pip install "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"
 
-      - name: Install recent python dependencies
-        if:  ${{ (matrix.pyversion != '3.7') && (matrix.pyversion != '3.8') }}
-        run: |
-            pip install "candl-like"
+      # Not working - don't know why
+      # - name: Install recent python dependencies
+      #   if:  ${{ (matrix.pyversion != '3.7') && (matrix.pyversion != '3.8') }}
+      #   run: |
+      #       pip install "candl-like"
     
       - name: Run Tests
         shell: bash -l {0}
