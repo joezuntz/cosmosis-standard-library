@@ -199,5 +199,9 @@ def test_desi(capsys):
     check_likelihood(capsys, "-11.25")
 
 def test_candl(capsys):
+    try:
+        import candl
+    except ImportError:
+        pytest.skip("Candl not installed")
     run_cosmosis("examples/candl_test.ini")
     check_likelihood(capsys, "-5.83")
