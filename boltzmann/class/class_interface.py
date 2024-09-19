@@ -202,7 +202,8 @@ def get_class_outputs(block, c, config):
     block[distances, 'nz'] = nz
 
     # Save distance samples
-    block[distances, 'd_l'] = np.array([c.luminosity_distance(zi) for zi in z])
+    d_l = np.array([c.luminosity_distance(zi) for zi in z])
+    block[distances, 'd_l'] = d_l
     d_a = np.array([c.angular_distance(zi) for zi in z])
     block[distances, 'd_a'] = d_a
     block[distances, 'd_m'] = d_a * (1 + z)
@@ -214,6 +215,12 @@ def get_class_outputs(block, c, config):
     # Save H(z), which is also in Mpc^-1 units, like in camb
     h_z = np.array([c.Hubble(zi) for zi in z])
     block[distances, 'H'] = h_z
+
+    mu = np.zeros(z.size)
+    mu[0] = -np.inf
+    mu[1:] = 5.0 * np.log10(d_l[1:]) + 25.0
+    block[distances, 'mu'] = mu
+
 
     ##
     # Now the CMB C_ell
