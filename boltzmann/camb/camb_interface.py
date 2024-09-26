@@ -20,6 +20,7 @@ MODES = [MODE_BG, MODE_THERM, MODE_CMB, MODE_POWER, MODE_ALL]
 
 DEFAULT_A_S = 2.1e-9
 
+C_KMS = 299792.458
 
 # See this table for description:
 #https://camb.readthedocs.io/en/latest/transfer_variables.html#transfer-variables
@@ -430,6 +431,9 @@ def save_derived_parameters(r, block):
     for k, v in derived.items():
         block[names.distances, k] = v
     block[names.distances, 'rs_zdrag'] = block[names.distances, 'rdrag']
+    zstar = derived['zstar']
+    shift = r.angular_diameter_distance(zstar) * (1 + zstar) * (p.omegam * p.H0**2)**0.5 / C_KMS
+    block[names.distances, "cmbshift"] = shift
     
     p.omegal = 1 - p.omegam - p.omk
     p.ommh2 = p.omegam * p.h**2
@@ -565,6 +569,16 @@ def save_matter_power(r, block, more_config):
         # Save the linear
         section_name = matter_power_section_names[transfer_type] + "_lin"
         block.put_grid(section_name, "z", z, "k_h", k, "p_k", p_k)
+        
+        # Save the transfer function
+        # Note that the transfer function has different k range and precision as
+        # there is no interpolating function for it in CAMB.
+        # We might consider creating an interpolator ...
+        section_name_transfer = matter_power_section_names[transfer_type] + "_transfer_func"
+        transfer_func = r.get_matter_transfer_data().transfer_z(tt)
+        k_transfer_func = r.get_matter_transfer_data().transfer_z("k/h")
+        block.put_double_array_1d(section_name_transfer, "k_h", k_transfer_func)
+        block.put_double_array_1d(section_name_transfer, "t_k", transfer_func)
 
         # Now if requested we also save the linear version
         if p.NonLinear is not camb.model.NonLinear_none:

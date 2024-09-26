@@ -120,9 +120,12 @@ class DESY5SNLikelihood(GaussianLikelihood):
         # distance modulus
         theory_ynew = 5.0*np.log10((1.0+zcmb)*(1.0+zhel)*np.atleast_1d(f(zcmb))) +25.
 
-        # This offset M will be marginalized in the modified log likelihood computation
-        M = block[names.supernova_params, "M"]
-        return theory_ynew  + M
+        # # This offset M will be marginalized in the modified log likelihood computation
+        # # so it is no longer needed in this likelihood
+        # M = block[names.supernova_params, "M"]
+        # return theory_ynew  + M
+
+        return theory_ynew 
 
     def do_likelihood(self, block):
         #get data x by interpolation

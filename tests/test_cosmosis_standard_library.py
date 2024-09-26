@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 from cosmosis import run_cosmosis
 from cosmosis.postprocessing import run_cosmosis_postprocess
+from cosmosis.runtime.handler import activate_segfault_handling
+
 import pytest
 import os
+import sys
+activate_segfault_handling()
 
 def check_likelihood(capsys, expected, *other_possible):
     captured = capsys.readouterr()
@@ -143,6 +147,12 @@ def test_kids(capsys):
     check_no_camb_warnings(capsys)
 
 def test_bacco():
+    if sys.version_info > (3, 11):
+        pytest.skip("No tensorflow support on python 3.12 yet.")
+    # skip if running on CI with python 3.9 or 3.10 on macOS
+    if sys.platform == "darwin" and sys.version_info[:2] in [(3, 9), (3, 10)] and os.environ.get("CI"):
+        pytest.skip("Skipping Bacco on MacOS with Python 3.9 or 3.10 when running CI")
+
     # The baseline version just does non-linear matter power
     run_cosmosis("examples/bacco.ini")
 
@@ -159,3 +169,31 @@ def test_bacco():
                     ("camb", "nonlinear"): "pk",
                     ("camb", "halofit_version"): "takahashi",
                 })
+
+def test_hsc_harmonic(capsys):
+    try:
+        import sacc
+    except ImportError:
+        pytest.skip("Sacc not installed")
+    run_cosmosis("examples/hsc-y3-shear.ini")
+    check_likelihood(capsys, "-109.0")
+
+def test_hsc_real(capsys):
+    try:
+        import sacc
+    except ImportError:
+        pytest.skip("Sacc not installed")
+    run_cosmosis("examples/hsc-y3-shear-real.ini")
+    check_likelihood(capsys, "-122.5")
+
+def test_npipe(capsys):
+    try:
+        import planckpr4lensing
+    except ImportError:
+        pytest.skip("Planck PR4 lensing likelihood not found")
+    run_cosmosis("examples/npipe.ini")
+    check_likelihood(capsys, "-4.22", "-4.23")
+
+def test_desi(capsys):
+    run_cosmosis("examples/desi.ini")
+    check_likelihood(capsys, "-11.25")

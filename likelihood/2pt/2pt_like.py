@@ -132,9 +132,11 @@ class TwoPointLikelihood(GaussianLikelihood):
         # cut_wtheta = 1,2  1,3  2,3
         bin_cuts = []
         for name in self.used_names:
+            print(">>>>checking",name)
             s = self.two_point_data.get_spectrum(name)
             option_name = "cut_{}".format(name)
             if self.options.has_value(option_name):
+                print(" FOUND CUT OPTION")
                 cuts = self.options[option_name].split()
                 cuts = [eval(cut) for cut in cuts]
                 for b1, b2 in cuts:

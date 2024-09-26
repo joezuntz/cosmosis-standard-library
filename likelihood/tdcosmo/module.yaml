@@ -22,8 +22,7 @@ assumptions:
   -   Strong lensing modelling details.
   -   Time delay distance structure
   -   Hierarchical inference of the mass model and stellar anisotropy parameters
-explanation:
-  - "
+explanation: | 
     This module contain the likelihood of a 7 time-delay lenses, presented in TDCOSMO IV (Birrer et al., 2020).
     This module allows us to reproduce the hierarchical inference of the cosmological parameters and of the lens population parameters,
     which are grouped under the block `nuisance_strong_lensing` (see details below). 
@@ -31,7 +30,6 @@ explanation:
     Additional data sets such as 'SLACS_SDSS' and 'SLACS_IFU' can be added to the 'tdcosmo7' data set to help constrain these parameters.
     Adding these 2 data sets requires to make the additional assumption that the lensing galaxy of the 7 TDCOSMO lenses and of the SLACS lenses 
     come from the same population of galaxies.
-    "
 
 params:
   data_sets:
