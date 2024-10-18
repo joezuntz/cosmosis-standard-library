@@ -11,6 +11,10 @@ def execute(block):
     pk_nonlin = block["matter_power_nl", "p_k"]
     A_mod = block["amod_parameter", "a_mod"]
 
+    # for now assume pk_lin and pk_nonlin are defined on the same grids
+    assert (block["matter_power_lin", "z"] == block["matter_power_nl", "z"]).all()
+    assert (block["matter_power_lin", "k_h"] == block["matter_power_nl", "k_h"]).all()
+
     # calculate new non-linear power
     pk_m = pk_lin + A_mod * (pk_nonlin - pk_lin)
     block["matter_power_nl", "p_k"] = pk_m
