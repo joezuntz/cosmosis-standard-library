@@ -4,6 +4,8 @@ import numpy as np
 # hack because fastpt not yet updated for numpy 1.24
 if not hasattr(np, 'int'):
     np.int = int
+import scipy.integrate
+scipy.integrate.trapz = scipy.integrate.trapezoid
 
 import scipy.interpolate as interpolate
 from scipy.interpolate import interp1d
