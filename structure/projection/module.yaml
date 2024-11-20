@@ -202,6 +202,10 @@ params:
         meaning: Whether to compute RSD in non-limber calculations
         type: bool
         default: False
+    fz_from_block:
+        meaning: Whether to get f(z) used in RSD from the datablock. If False, from spline derivative of P(k,z). 
+        type: bool
+        default: False
 inputs:
     matter_power_nl:
         k_h:
