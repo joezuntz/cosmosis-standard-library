@@ -205,3 +205,7 @@ def test_candl(capsys):
         pytest.skip("Candl not installed")
     run_cosmosis("examples/candl_test.ini")
     check_likelihood(capsys, "-5.83")
+
+def test_lsst_wl(capsys):
+    run_cosmosis("examples/lsst-wl/params.ini", override={("runtime","sampler"):"test"})
+    check_likelihood(capsys, "-9.32")
