@@ -1,17 +1,19 @@
 """
-An interface to the baryonic code.
+An interface to the determine the SP(k) model of baryon feedback 
+suppression to the non-linear matter power spectrum.
 
 """
 
 from cosmosis.datablock import option_section, names as section_names
+from cosmosis.utils import datablock_to_astropy  #new for cosmosis v3.13
+
 import numpy as np
 import astropy.cosmology
 import warnings
 from scipy.interpolate import LinearNDInterpolator
 
-
 # pyspk tells the whole of python to always print every warning over and over again.
-# Undo it like this.
+# Undo it like this so the warning is only printed out once
 warnings_filters = warnings.filters[:]
 import pyspk.model as spk
 warnings.filters = warnings_filters
@@ -29,97 +31,13 @@ round_up = np.vectorize(my_ceil)
 round_down = np.vectorize(my_floor)
 
 
-def set_params(block, model_class):
-    # These pairs are the astropy parameter name and the cosmosis param name
-    params_needed_by_class = {
-        astropy.cosmology.FlatLambdaCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-        ],
-        astropy.cosmology.FlatwCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("w0", "w"),
-        ],
-        astropy.cosmology.Flatw0waCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("w0", "w"),
-            ("wa", "wa"),
-        ],
-        astropy.cosmology.LambdaCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("Ode0", "omega_lambda"),
-        ],
-        astropy.cosmology.wCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("Ode0", "omega_lambda"),
-            ("w0", "w"),
-        ],
-        astropy.cosmology.w0waCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("Ode0", "omega_lambda"),
-            ("w0", "w"),
-            ("wa", "wa"),
-        ],
-        astropy.cosmology.w0wzCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("Ode0", "omega_lambda"),
-            ("w0", "w"),
-            ("wz", "wz"),
-        ],
-        astropy.cosmology.w0wzCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("Ode0", "omega_lambda"),
-            ("w0", "w"),
-            ("wz", "wz"),
-        ],
-        astropy.cosmology.wpwaCDM: [
-            ("H0", "hubble"),
-            ("Om0", "omega_m"),
-            ("Ob0", "omega_b"),
-            ("Ode0", "omega_lambda"),
-            ("wp", "wp"),
-            ("wa", "wa"),
-            ("zp", "zp"),
-        ],
-    }
-
-    params_needed = params_needed_by_class[model_class]
-
-    # Pull the parameters we need out from cosmosis
-    params = {}
-    for astropy_name, cosmosis_name in params_needed:
-        params[astropy_name] = block[
-            section_names.cosmological_parameters, cosmosis_name
-        ]
-
-    # Create the astropy object that does the calculations
-    cosmo = model_class(**params)
-
-    return cosmo
-
-
 def setup(options):
 
     verbose = options.get_bool(option_section, "verbose", default=False)
     SO = options.get_int(option_section, "SO", default=500)
-    model = options.get_string(option_section, "astropy_model", default="None")
     fb_table = options.get_string(option_section, "fb_table", default="")
 
+    # If a baryon fraction - halo mass table is provided, load it and create an interpolator
     if fb_table:
         tab = np.loadtxt(fb_table, skiprows=1, delimiter=",")
         inter = LinearNDInterpolator(tab[:, [0, 1]], tab[:, 2], rescale=True)
@@ -137,107 +55,103 @@ def setup(options):
     config["extrapolate"] = extrapolate
     config["interpolator"] = inter
 
-    # Models available in astropy.cosmology
-    astropy_models = {
-        "flatlambdacdm": astropy.cosmology.FlatLambdaCDM,
-        "flatw0wacdm": astropy.cosmology.Flatw0waCDM,
-        "flatwcdm": astropy.cosmology.FlatwCDM,
-        "lambdacdm": astropy.cosmology.LambdaCDM,
-        "w0wacdm": astropy.cosmology.w0waCDM,
-        "w0wzcdm": astropy.cosmology.w0wzCDM,
-        "wcdm": astropy.cosmology.wCDM,
-        "wpwacdm": astropy.cosmology.wpwaCDM,
-    }
-
-    # Find the model the user has specified
-    model_class = None
-
-    if "None" not in model:
-        model_class = astropy_models.get(model.lower())
-        if model_class is None:
-            raise ValueError(f"[SPK]: Unknown astropy model: {model}")
-
-    config["model_class"] = model_class
+    # Check that the chosen value for the spherical overdensity is either 200 or 500
+    if SO not in [200, 500]:
+        raise ValueError(
+            f"[SPK]: The spherical overdensity SO must be either 200 or 500. You provided: {SO}"
+        )
 
     return config
 
 
-def check_parameter_choice(cosmo, fb_table, spk_params):
+def check_parameter_choice(fb_table, spk_params):
     """
     Look at the parameters provided for SPK and check that
-    they are consistent with exactly one mode.
-
-    This could be simplified.
+    they are consistent with exactly one method.
     """
-    if spk_params["epsilon"] or spk_params["m_pivot"]:
-        modes = [
+    #SP(k) allows for four different methods to fix the fb-Mhalo relation
+    # 1. A power law with 3 parameters, fb_a, fb_pow, fb_pivot and an optional 4th parameter, m_pivot (default 1 M_odot)
+    # 2. A redshift dependent power law with 3 parameters: alpha, beta, gamma (here m_pivot is fixed to 10^14 M_odot)
+    # 3. A redshift dependent double power law with 5 parameters: epsilon, alpha, beta, gamma, m_pivot
+    # 4. A non-parametric table of fb values as a function of redshift and halo mass
+
+    # If fb_table is set, we use method 4 irrespective of the other parameters
+    # Warn the user that their values are not being used in this instance
+    if fb_table:
+        for key, value in spk_params.items():
+            if value:
+                spk_params[key] = None # Reset the value to None
+                warnings.warn(
+                    f"[SPK]: As you have set fb_table in the param file, "+key+" will be ignored."
+                )
+    else:   
+        # If m_pivot is set, we use method 1 or 3 depending on the other parameters       
+        if spk_params["m_pivot"]:
+            modes = [
             (
-                "Power law",
+                "Power law using m_pivot",
                 ["fb_a", "fb_pow", "fb_pivot"],
                 spk_params["fb_a"],
                 spk_params["fb_pow"],
                 spk_params["fb_pivot"],
             ),
-
-            ("Non-parametric fb table", ["fb_table"], fb_table),
             (
                 "Redshift dependent double power law",
-                ["epsilon", "alpha", "beta", "gamma", "m_pivot", "astropy_model"],
+                ["epsilon", "alpha", "beta", "gamma", "m_pivot"],
                 spk_params["epsilon"],
                 spk_params["alpha"],
                 spk_params["beta"],
                 spk_params["gamma"],
                 spk_params["m_pivot"],
-                cosmo,
             ),
-        ]
-    else:
-        modes = [
+            ]
+        # Otherwise it's methods 1 or 2
+        else:
+            modes = [
             (
-                "Power law",
+                "Power law using default m_pivot",
                 ["fb_a", "fb_pow", "fb_pivot"],
                 spk_params["fb_a"],
                 spk_params["fb_pow"],
                 spk_params["fb_pivot"],
             ),
-            ("Non-parametric fb table", ["fb_table"], fb_table),
             (
-                "Redshift dependent power law",
-                ["alpha", "beta", "gamma", "astropy_model"],
+                "Redshift dependent power law using fixed m_pivot",
+                ["alpha", "beta", "gamma"],
                 spk_params["alpha"],
                 spk_params["beta"],
                 spk_params["gamma"],
-                cosmo,
             ),
-        ]
-
-    provided_modes = sum(any(param is not None for param in mode[2:]) for mode in modes)
-
-    # Complain of more than one mode is consistent with the parameters specfified.
-    # This will happen if parameters that should be left unset are supplied.
-    if provided_modes != 1:
-        provided_params = [
-            param
-            for mode in modes
-            for param in mode[1]
-            if mode[2:].count(None) != len(mode[2:])
-        ]
-        raise ValueError(
-            f"[SPK]: Only one mode to specify the baryon fraction should be provided. You provided: {provided_params}"
-        )
-
-    # Now complain if not all parameters are set for a chosen mode.
-    for mode in modes:
-        if any(param is not None for param in mode[2:]):
-            missing_params = [
-                param_name
-                for param_name, param_value in zip(mode[1], mode[2:])
-                if param_value is None
             ]
-            if len(missing_params) != 0:
-                raise ValueError(
-                    f"[SPK]: The following parameter(s) is(are) missing in mode '{mode[0]}': {', '.join(missing_params)}."
-                )
+
+        provided_modes = sum(any(param is not None for param in mode[2:]) for mode in modes)
+
+        # Complain if more than one mode is consistent with the parameters specfified.
+        # This will happen if parameters that should be left unset are supplied.
+        if provided_modes != 1:
+            provided_params = [
+                param
+                for mode in modes
+                for param in mode[1]
+                if mode[2:].count(None) != len(mode[2:])
+            ]
+            raise ValueError(
+                f"[SPK]: Only one method to specify the baryon fraction should be provided. You provided: {provided_params}. \
+                Please either provide f_a, f_b, f_pivot (with or without m_pivot) or epsilon, alpha, beta, gamma and m_pivot."
+            )
+
+        # Now complain if not all parameters are set for a chosen mode.
+        for mode in modes:
+            if any(param is not None for param in mode[2:]):
+                missing_params = [
+                    param_name
+                    for param_name, param_value in zip(mode[1], mode[2:])
+                    if param_value is None
+                ]
+                if len(missing_params) != 0:
+                    raise ValueError(
+                        f"[SPK]: The following parameter(s) is(are) missing in method '{mode[0]}': {', '.join(missing_params)}."
+                    )
 
 def execute(block, config):
     verbose = config["verbose"]
@@ -246,14 +160,11 @@ def execute(block, config):
     extrapolate = config["extrapolate"]
     inter = config["interpolator"]
 
-    # Create our cosmological model
-    model_class = config["model_class"]
+    # Pull the cosmological model from the block in astropy format
+    cosmo = datablock_to_astropy(block)
 
     M_halo = None
     fb = None
-    cosmo = None
-    if model_class:
-        cosmo = set_params(block, model_class)    
 
     # Load the current non-linear matter power spectrum
     section = section_names.matter_power_nl
@@ -280,7 +191,7 @@ def execute(block, config):
 
     # Check that the specified parameters match exactly one
     # sensible mode.
-    check_parameter_choice(cosmo, fb_table, spk_params)
+    check_parameter_choice(fb_table, spk_params)
 
     sup_array = np.empty_like(P)
 
@@ -326,5 +237,7 @@ def execute(block, config):
     section = section_names.matter_power_nl
     block.replace_grid(section, "k_h", k, "z", z_array, "P_k", P_mod)
 
-    # All is good - return
-    return 0
+    # Check for NaNs in the modified power spectrum which occur when 
+    # baryon fraction values outside fitting limits are requested
+    if np.isnan(P_mod).any(): return 1
+    else: return 0
