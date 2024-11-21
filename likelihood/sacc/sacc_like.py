@@ -20,6 +20,8 @@ default_sections = {
     "galaxy_shear_cl_eb": "shear_cl_eb",
     "cl_be": "shear_cl_be",
     "galaxy_shear_cl_be": "shear_cl_be",
+    "galaxy_density_cl": "galaxy_cl",
+    "galaxy_shearDensity_cl_e": "galaxy_shear_cl",
 }
 
 
@@ -38,6 +40,7 @@ class SaccClLikelihood(GaussianLikelihood):
     def __init__(self, options):
         self.save_theory = options.get_string("save_theory", "")
         self.save_realization = options.get_string("save_realization", "")
+        self.flip = options.get_string("flip", "").split()
 
         super().__init__(options)
 
@@ -127,7 +130,7 @@ class SaccClLikelihood(GaussianLikelihood):
             elif name in default_sections:
                 section = default_sections[name]
             else:
-                raise ValueError(f"SACC likelihood does not yet understand data type {data_type}")
+                raise ValueError(f"SACC likelihood does not yet understand data type {name}")
             print(f"Will look for theory prediction for data set {name} in section {section}")
             self.sections_for_names[name] = section
 
@@ -331,6 +334,9 @@ class SaccClLikelihood(GaussianLikelihood):
             # We need to make sure that's fixed in the 
             i = int(b1.split("_")[-1]) + 1
             j = int(b2.split("_")[-1]) + 1
+
+            if data_type in self.flip:
+                i, j = j, i
 
             try:
                 cl_theory = block[section, f"bin_{i}_{j}"]
