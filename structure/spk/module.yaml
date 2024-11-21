@@ -30,6 +30,12 @@ explanation:
     A jupyter notebook with more detailed examples can be found within the pyspk repository at
     https://github.com/jemme07/pyspk/blob/main/examples/pySPk_Examples.ipynb
 
+    WARNING - if the combination of parameters and your choice for the functional form of the 
+    baryon fraction - halo mass relation goes outwith the SP(k) fitting limits, pyspk returns Nan values.
+    This can happen easily at high-z and high-k will return an error to cosmosis.  This SP(k) parameter combination will
+    then be given a likelihood of zero, thus creating a theoretical prior that you should be aware of.
+
+
 # List of parameters that can go in the params.ini file in the section for this module    
 params:
     SO:
@@ -73,15 +79,15 @@ inputs:
         type: float
         default:
     alpha:
-        meaning: method 2 or 3 power law exponent. Do not set for method 1.
+        meaning: sets the method 2 power law exponent, or the method 3 power-law slope at low mass. Do not set for method 1.
         type: float
         default:
     beta:
-        meaning: method 2 or 3 power law exponent. Do not set for method 1.
+        meaning: sets the method 2 power law exponent, or the method 3 power-law slope at high mass. Do not set for method 1.
         type: float
         default:
     gamma:
-        meaning: method 2 or 3 power law exponent. Do not set for method 1.
+        meaning: method 2 or 3 power law exponent to sets the redshift dependence. Do not set for method 1.
         type: float
         default:
 
