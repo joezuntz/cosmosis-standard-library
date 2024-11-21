@@ -65,14 +65,6 @@ def setup(options):
 
 
 def check_parameter_choice(fb_table, spk_params):
-    print (spk_params)
-    #check if spk_params is anything other than None
-    #if not any(spk_params.values()):
-    #    raise ValueError(
-    #        f"[SPK]: No parameters provided for SPK. Please provide at least one parameter."
-    #    )
-    spk_params.values() == None
-    print (spk_params)
     """
     Look at the parameters provided for SPK and check that
     they are consistent with exactly one method.
@@ -132,7 +124,6 @@ def check_parameter_choice(fb_table, spk_params):
             ),
             ]
 
-        print (modes)
         provided_modes = sum(any(param is not None for param in mode[2:]) for mode in modes)
 
         # Complain if more than one mode is consistent with the parameters specfified.
