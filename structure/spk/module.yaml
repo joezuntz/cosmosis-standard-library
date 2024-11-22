@@ -57,35 +57,35 @@ params:
 
 inputs:
     fb_a:
-        meaning: method 1 power law constant.  Do not set for method 2 or 3.
+        meaning: method 1 and 4 power law constant.  Do not set for method 2 or 3.
         type: float
         default: 
     fb_pow:
-        meaning: method 1 power law exponent. Do not set for method 2 or 3.
+        meaning: method 1 and 4 power law exponent. Do not set for method 2 or 3.
         type: float
         default: 
     fb_pivot:
-        meaning: method 1 power law pivot point, Do not set for method 2 or 3.
+        meaning: method 1 and 4 power law pivot point, Do not set for method 2 or 3.
         type: float
         default: 1.0
     m_pivot:
-        meaning: method 1 and 3 power law pivot mass in M_sun units.  Do not set for method 2
+        meaning: method 1 and 3 power law pivot mass in M_sun units.  Do not set for method 2 or 4
         type: float
         default: 1.0 for method 1 (has a fixed value of 10^14 for method 2)
     epsilon:
-        meaning: method 3 normalization parameter. Do not set for method 1 or 2.
+        meaning: method 3 normalization parameter. Do not set for method 1, 2, or 4.
         type: float
         default:
     alpha:
-        meaning: sets the method 2 power law exponent, or the method 3 power-law slope at low mass. Do not set for method 1.
+        meaning: sets the method 2 power law exponent, or the method 3 power-law slope at low mass. Do not set for method 1 or 4.
         type: float
         default:
     beta:
-        meaning: sets the method 2 power law exponent, or the method 3 power-law slope at high mass. Do not set for method 1.
+        meaning: sets the method 2 power law exponent, or the method 3 power-law slope at high mass. Do not set for method 1 or 4.
         type: float
         default:
     gamma:
-        meaning: method 2 or 3 power law exponent to sets the redshift dependence. Do not set for method 1.
+        meaning: method 2 or 3 power law exponent to sets the redshift dependence. Do not set for method 1 or 4.
         type: float
         default:
     matter_power_nl:

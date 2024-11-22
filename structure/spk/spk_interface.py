@@ -69,89 +69,66 @@ def check_parameter_choice(fb_table, spk_params):
     Look at the parameters provided for SPK and check that
     they are consistent with exactly one method.
     """
-    #SP(k) allows for four different methods to fix the fb-Mhalo relation
+    # SP(k) allows for five different methods to fix the fb-Mhalo relation
+    # 0. A non-parametric table of fb values as a function of redshift and halo mass
     # 1. A power law with 3 parameters, fb_a, fb_pow, fb_pivot and an optional 4th parameter, m_pivot (default 1 M_odot)
     # 2. A redshift dependent power law with 3 parameters: alpha, beta, gamma (here m_pivot is fixed to 10^14 M_odot)
     # 3. A redshift dependent double power law with 5 parameters: epsilon, alpha, beta, gamma, m_pivot
     # 4. A non-parametric table of fb values as a function of redshift and halo mass
 
-    # If fb_table is set, we use method 4 irrespective of the other parameters
-    # Warn the user that their values are not being used in this instance
-    if fb_table:
-        for key, value in spk_params.items():
+    spk_parameter_error = f"""SPK inputs were not set correctly. Set exactly one of the following sets of values:
+
+0) fb_table (in the parameters, not values) to use a non-parametric table of fb values as a function of redshift and halo mass
+1) fb_a, fb_pow, fb_pivot, and m_pivot to use a power law with 3 parameters and a custom pivot mass
+2) alpha, beta, gamma, and m_pivot to use a redshift dependent power law with 3 parameters and a custon pivot mass
+3) epsilon, alpha, beta, and gamma to use a redshift dependent double power law
+4) fb_a, fb_pow, and fb_pivot to use a power law with 3 parameters and a fixed pivot mass of 10^14 M_odot
+        
+You set: {spk_params}
+
+    """
+
+    # If fb_table is set, we use method 0 irrespective of the other parameters
+    # so no other parameters should have been set in this case
+    if fb_table is not None:
+        for value in spk_params.values():
             if value:
-                spk_params[key] = None # Reset the value to None
-                warnings.warn(
-                    f"[SPK]: As you have set fb_table in the param file, "+key+" will be ignored."
-                )
-    else:   
-        # If m_pivot is set, we use method 1 or 3 depending on the other parameters       
-        if spk_params["m_pivot"]:
-            modes = [
-            (
-                "Power law using m_pivot",
-                ["fb_a", "fb_pow", "fb_pivot"],
-                spk_params["fb_a"],
-                spk_params["fb_pow"],
-                spk_params["fb_pivot"],
-            ),
-            (
-                "Redshift dependent double power law",
-                ["epsilon", "alpha", "beta", "gamma", "m_pivot"],
-                spk_params["epsilon"],
-                spk_params["alpha"],
-                spk_params["beta"],
-                spk_params["gamma"],
-                spk_params["m_pivot"],
-            ),
-            ]
-        # Otherwise it's methods 1 or 2
-        else:
-            modes = [
-            (
-                "Power law using default m_pivot",
-                ["fb_a", "fb_pow", "fb_pivot"],
-                spk_params["fb_a"],
-                spk_params["fb_pow"],
-                spk_params["fb_pivot"],
-            ),
-            (
-                "Redshift dependent power law using fixed m_pivot",
-                ["alpha", "beta", "gamma"],
-                spk_params["alpha"],
-                spk_params["beta"],
-                spk_params["gamma"],
-            ),
-            ]
+                raise ValueError(spk_parameter_error)
 
-        provided_modes = sum(any(param is not None for param in mode[2:]) for mode in modes)
+    # two little mini-functions to check if all or any of the parameters
+    # in a list are set.
+    is_valid = lambda params: all([spk_params[p] is not None for p in params])
+    any_set = lambda params: any([spk_params[p] is not None for p in params])
 
-        # Complain if more than one mode is consistent with the parameters specfified.
-        # This will happen if parameters that should be left unset are supplied.
-        if provided_modes != 1:
-            provided_params = [
-                param
-                for mode in modes
-                for param in mode[1]
-                if mode[2:].count(None) != len(mode[2:])
-            ]
-            raise ValueError(
-                f"[SPK]: Only one method to specify the baryon fraction should be provided. You provided: {provided_params}. \
-                Please either provide f_a, f_b, f_pivot (with or without m_pivot) or epsilon, alpha, beta, gamma and m_pivot."
-            )
+    # find out which of the possible modes are valid
+    mode1_valid = is_valid(["fb_a", "fb_pow", "fb_pivot", "m_pivot"])
+    mode2_valid = is_valid(["alpha", "beta", "gamma", "m_pivot"])
+    mode3_valid = is_valid(["epsilon", "alpha", "beta", "gamma"])
+    mode4_valid = is_valid(["fb_a", "fb_pow", "fb_pivot"])
 
-        # Now complain if not all parameters are set for a chosen mode.
-        for mode in modes:
-            if any(param is not None for param in mode[2:]):
-                missing_params = [
-                    param_name
-                    for param_name, param_value in zip(mode[1], mode[2:])
-                    if param_value is None
-                ]
-                if len(missing_params) != 0:
-                    raise ValueError(
-                        f"[SPK]: The following parameter(s) is(are) missing in method '{mode[0]}': {', '.join(missing_params)}."
-                    )
+    # This is a little complicated, because the parameters for mode 4
+    # are a subset of those for mode 1. So we can't just check that
+    # exactly one mode is valid. Instead we have to specifically check
+    # that other parameters aren't set.
+
+    # check if any of the other parameters which should not have
+    # been set are in fact set. If so, raise an error.
+    if mode1_valid:
+        if any_set(["alpha", "beta", "gamma", "epsilon"]):
+            raise ValueError(spk_parameter_error)
+    elif mode2_valid:
+        if any_set(["fb_a", "fb_pow", "fb_pivot", "epsilon"]):
+            raise ValueError(spk_parameter_error)
+    elif mode3_valid:
+            raise ValueError(spk_parameter_error)
+    elif mode4_valid:
+        if any_set(["alpha", "beta", "gamma", "m_pivot"]):
+            raise ValueError(spk_parameter_error)
+    else:
+        # Otherwise no model has been found to be fully specified,
+        # so we raise the same error.
+        raise ValueError(spk_parameter_error)
+
 
 def execute(block, config):
     verbose = config["verbose"]
@@ -241,3 +218,47 @@ def execute(block, config):
     # baryon fraction values outside fitting limits are requested
     if np.isnan(P_mod).any(): return 1
     else: return 0
+
+
+def test_check_parameter_choice():
+    import pytest
+    empty = {"fb_a": None, "fb_pow": None, "fb_pivot": None, "m_pivot": None, "alpha": None, "beta": None, "gamma": None, "epsilon": None}
+    # These ones 
+    v1 = empty | {"fb_a": 1, "fb_pow": 2, "fb_pivot": 3, "m_pivot": 4}
+    check_parameter_choice(None, v1)
+    v2 = empty | {"alpha": 1, "beta": 2, "gamma": 3, "m_pivot": 4}
+    check_parameter_choice(None, v2)
+    v3 = empty | {"epsilon": 0, "alpha": 1, "beta": 2, "gamma": 3}
+    check_parameter_choice(None, v3)
+    v4 = empty | {"fb_a": 1, "fb_pow": 2, "fb_pivot": 3}
+    check_parameter_choice(None, v4)
+
+    # These ones should raise an error
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, empty)
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v1 | {"alpha": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v1 | {"epsilon": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v2 | {"fb_a": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v2 | {"epsilon": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v3 | {"fb_a": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v3 | {"fb_a": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(None, v4 | {"alpha": 1})
+    with pytest.raises(ValueError):
+        check_parameter_choice(1, empty | {"alpha": 1})
+    
+# 0) fb_table (in the parameters, not values) to use a non-parametric table of fb values as a function of redshift and halo mass
+# 1) fb_a, fb_pow, fb_pivot, and m_pivot to use a power law with 3 parameters and a custom pivot mass
+# 2) alpha, beta, gamma, and m_pivot to use a redshift dependent power law with 3 parameters and a custon pivot mass
+# 3) epsilon, alpha, beta, and gamma to use a redshift dependent double power law
+# 4) fb_a, fb_pow, and fb_pivot to use a power law with 3 parameters and a fixed pivot mass of 10^14 M_odot
+
+
+if __name__ == "__main__":
+    test_check_parameter_choice()
