@@ -575,6 +575,7 @@ runs:
 components:
   y10_scale_cuts:
     params:
+    # JAZ - not updated following little h
     - sacc_like.angle_range_galaxy_shear_cl_ee_source_0_source_0 = 20 289.53314329989263
     - sacc_like.angle_range_galaxy_shear_cl_ee_source_0_source_1 = 20 289.53314329989263
     - sacc_like.angle_range_galaxy_shear_cl_ee_source_0_source_2 = 20 289.53314329989263
