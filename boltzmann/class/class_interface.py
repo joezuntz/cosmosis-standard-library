@@ -108,7 +108,7 @@ def get_class_inputs(block, config):
     if config["mpk"]:
         params.update({
             'P_k_max_h/Mpc':  config["kmax"],
-            'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
+            # 'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
             'z_max_pk': config['zmax'],
         })
 
