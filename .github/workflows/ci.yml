@@ -275,3 +275,15 @@ jobs:
         source cosmosis-configure
         rm -f output/pantheon.txt
         jupyter nbconvert --to notebook --execute "examples/example.ipynb"
+
+    - name: Run Tests
+      shell: bash -l {0}
+      run: |
+        source cosmosis-configure
+        pytest -vv --durations=0 tests/test_cosmosis_standard_library.py
+
+    - name: Run Demos
+      shell: bash -l {0}
+      run: |
+        source cosmosis-configure
+        pytest -vv --durations=0 tests/test_demos.py
