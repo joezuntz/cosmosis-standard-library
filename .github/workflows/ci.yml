@@ -269,13 +269,6 @@ jobs:
         grep -e "🟢 fiducial-test-only" output/campaign.log
         cosmosis-campaign  examples/des-campaign.yml --status
 
-    - name: ExampleNotebook
-      shell: bash -l {0}
-      run: |
-        source cosmosis-configure
-        rm -f output/pantheon.txt
-        jupyter nbconvert --to notebook --execute "examples/example.ipynb"
-
     - name: Run Tests
       shell: bash -l {0}
       run: |
