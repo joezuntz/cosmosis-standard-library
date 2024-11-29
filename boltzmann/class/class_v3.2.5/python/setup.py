@@ -43,7 +43,7 @@ classy_ext = Extension("classy", [os.path.join(classy_folder, "classy.pyx")],
                            include_dirs=[nm.get_include(), include_folder, heat_folder, recfast_folder, hyrec_folder],
                            libraries=liblist,
                            library_dirs=[root_folder, GCCPATH],
-                            define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+                            # define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
                            #extra_link_args=['-lgomp'],
                            language="c++",
                            extra_compile_args=["-std=c++11"]
