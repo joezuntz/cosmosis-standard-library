@@ -152,8 +152,8 @@ def test_bacco():
     except ImportError:
         pytest.skip("Tensorflow not installed")
     # skip if running on CI with python 3.9 or 3.10 on macOS
-    if sys.platform == "darwin" and sys.version_info[:2] in [(3, 9), (3, 10)] and os.environ.get("CI"):
-        pytest.skip("Skipping Bacco on MacOS with Python 3.9 or 3.10 when running CI")
+    if sys.platform == "darwin" and sys.version_info[:2] in [(3, 9), (3, 10), (3, 11)] and os.environ.get("CI"):
+        pytest.skip("Skipping Bacco on MacOS with Python 3.9-3.11 when running CI")
 
     # The baseline version just does non-linear matter power
     run_cosmosis("examples/bacco.ini")
