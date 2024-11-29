@@ -96,7 +96,14 @@ def test_demo15():
     run_demo(15)
 
 def test_demo16():
-    run_demo(16)
+    try:
+        run_demo(16)
+    except ValueError as error:
+        err = str(error)
+        if "minuit2 wrapper was not compiled" in err:
+            pytest.skip("Minuit2 not available")
+        else:
+            raise
 
 def test_demo17():
     run_demo(17, 
