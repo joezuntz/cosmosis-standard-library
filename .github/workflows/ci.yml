@@ -81,7 +81,6 @@ jobs:
         with:
           activate-environment: cosmosis-env
           channels: conda-forge
-          miniforge-variant: Mambaforge
           miniforge-version: latest
           python-version: ${{ matrix.pyversion }}
 
