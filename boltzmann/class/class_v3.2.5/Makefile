@@ -161,7 +161,7 @@ PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_
 
 all: class libclass.a classy
 
- external/distortions/Greens_data.dat:
+external/distortions/Greens_data.dat:
 	cd external/distortions && gunzip --force -c Greens_data.dat.gz > Greens_data.dat
 
 
