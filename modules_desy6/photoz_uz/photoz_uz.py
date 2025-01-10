@@ -21,26 +21,28 @@ def setup(options):
 
 def execute(block, config):
     pz = 'nz_'+config['sample']
-    uvals = config['bias_section']
-    if rescale:
-        # replace below line with call to rescale the values from an initial unit gaussian.
-        # Otherwise it will use the gaussian prior provided in the cosmosis file
-        # Values should have names ...
-        uvals=uvals
     U = config['basis']
     n_modes = config['n_modes']
     nbin = block[pz, "nbin"]
     z = block[pz, "z"]
-    dz = np.zeros((nbins,len(z)))
+    uvals = config['bias_section']
+    u_ = np.zeros((nbins,n_modes))
     for i in range(1,nbin+1):
         if perbin:
-            dz[i-1,:] = U[:,i-1,:]@np.array([block[uvals, "u_{0}_{1}".format(i-1,j) ] for j in range(n_modes)])
+            u_[i-1,:] = np.array([block[uvals, "u_{0}_{1}".format(i-1,j) ] for j in range(n_modes)])
         else:
-       	    dz[i-1,:] = U[:,i-1,:]@np.array([block[uvals, "u_{0}".format(j) ] for j in range(n_modes)])
+            u_[i-1,:] = np.array([block[uvals, "u_{0}".format(j) ] for j in range(n_modes)])
+    if rescale:
+        # replace below line with call to rescale the values from an initial unit gaussian.
+        # Otherwise it will use the gaussian prior provided in the cosmosis file.
+        # u_ is an array of the values for each bin with shape (nbins,n_modes).
+        # if perbin=False, then the nbins dimension is just repeated entries.
+        u_=u_
     for i in range(1,nbin+1):
+        dz = U[:,i-1,:]@u_[i-1,:]
         bin_name = "bin_%d" % i
         nz = block[pz, bin_name]
-        nz[1:]+=dz[i-1,:]
+        nz[1:]+=dz
         nz /= np.trapz(nz, z)
         block[pz, bin_name] = nz
     return 0
