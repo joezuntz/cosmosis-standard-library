@@ -6,7 +6,6 @@
 #SBATCH -N 2
 #SBATCH --mail-type=FAIL
 
-set -e
 
 ENV=../env
 
@@ -15,7 +14,7 @@ rm -rf output/demo5* output/pantheon* output/mn*
 
 source $CFS/des/zuntz/cosmosis-global/setup-cosmosis3 $ENV
 
-set -x
+set -ex
 
 
 #emcee tests - general mpi4py
