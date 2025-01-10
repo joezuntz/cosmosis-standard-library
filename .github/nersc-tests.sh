@@ -8,18 +8,18 @@
 
 set -e
 
-ENV=2.3
+ENV=../env
 
 rm -rf output/demo5* output/pantheon* output/mn*
 
 
-source $CFS/des/zuntz/cosmosis-global/setup-cosmosis-perlmutter $ENV
+source $CFS/des/zuntz/cosmosis-global/setup-cosmosis3 $ENV
 
 set -x
 
 
 #emcee tests - general mpi4py
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=2
 
 # Test sampler
 cosmosis demos/demo5.ini -p runtime.sampler=test
