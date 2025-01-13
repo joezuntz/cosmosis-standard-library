@@ -33,9 +33,11 @@ def setup(options):
     basis_file = options.get_string(option_section, "basis_file", "")
     percentile_file = options.get_string(option_section, "Percentiles", "")
     n_modes = options.get_int(option_section, "n_modes", 0)
-    z = block[pz, "z"]
-    U = np.loadtxt(basis_file)[:,:n_modes].reshape((n_modes,block[pz, "nbin"],len(z)))
-    Percentiles = np.loadtxt(percentile_file)[:,:n_modes].reshape((n_modes,block[pz, "nbin"],101))
+    n_bins = options.get_int(option_section, "n_bins", 0)
+    U = np.loadtxt(basis_file)[:,:n_modes]
+    lenz = len(U)//n_bins
+    U = U.reshape((n_modes,n_bins,lenz))
+    Percentiles = np.loadtxt(percentile_file)[:,:n_modes].reshape((n_modes,n_bins,101))
     Percentiles_classes=[[Normalizer_cosmosis(Percentiles[jmode][ibin]) for jmode in range(n_modes)] for ibin in range(block[pz, "nbin"])]
     perbin = options.get_string(option_section, "perbin", False)
     rescale = options.get_string(option_section, "rescale", False)
