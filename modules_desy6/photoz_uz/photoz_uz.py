@@ -28,8 +28,6 @@ class Normalizer_cosmosis:
 
 def setup(options):
     sample = options.get_string(option_section, "sample", "")
-    pz = 'nz_'+config['sample']
-    bias_section = sample+"_photoz_u"
     basis_file = options.get_string(option_section, "basis_file", "")
     percentile_file = options.get_string(option_section, "Percentiles", "")
     n_modes = options.get_int(option_section, "n_modes", 0)
