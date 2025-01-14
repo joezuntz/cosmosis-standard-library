@@ -1,86 +1,156 @@
 from builtins import range
 from cosmosis.datablock import option_section, names
 import numpy as np
+from scipy.interpolate import interp1d
 
-class Normalizer_cosmosis:
-    def __init__(self, percentile, gmax, dg, xmax=10, kind='linear'):
-        '''Class to create transformations from the gaussian 
-        to the non-gaussian u distribution
-        input: the percentile array of the initial u array
-        generated with the same gmax, dg convention, 
-        The methods  `degauss` will do  g->u.
-        '''
-        # Establishing matching percentile points
-        gg = np.arange(-gmax,gmax+dg/2, dg)
-        xx = np.copy(percentile)
-        # Clean out any duplicates in the tables.  This is hacky.
-        dup = xx[1:]==xx[:-1]
-        keep = np.concatenate( (np.logical_not(dup), [True]))
-        gg = gg[keep]
-        xx = xx[keep]
-        self.inv = interp1d(gg,xx,kind=kind, bounds_error=False, fill_value=(-xmax,xmax))
-        return
-    def degauss(self,g):
-        '''Return de-Gaussianized values of g'''
-        return self.inv(g)
+def build_degauss(pctile, gmax, dg):
+    '''Return a transformation function from the gaussian 
+    to the non-gaussian u distribution.
+    Arguments:
+    `pctile`:   array of target output values for the lookup table (LUT)
+    `gmax, dg`: input values for the LUT will be (-gmax, -gmax+dg, ..., +gmax)
+    The returned object will be a function  mapping  g->u.'''
 
+    # Establishing matching percentile points
+    gg = np.arange(-gmax,gmax+dg/2, dg)
+    uu = np.copy(pctile)
+    # Clean out any duplicates in the tables.  This is hacky.
+    dup = uu[1:]==uu[:-1]
+    keep = np.concatenate( (np.logical_not(dup), [True]))
+    gg = gg[keep]
+    uu = uu[keep]
+    # The following function will complain if dimension of pctile array does not match
+    # the number of needed g values.
+    return interp1d(gg,uu,kind=kind, bounds_error=False, fill_value=(uu[0], uu[-1]))
 
 def setup(options):
+    '''The available options:
+    `sample`:     either `lens` or `source`
+    `basis_file`: A numpy `npz` file with contents listed below, containing all info 
+                  needed to create n(z)'s
+    `n_modes`:    Number of compressed modes to use (per redshift bin, if each
+                  bin has its own compression).  If omitted or set to <=0, all modes
+                  in the `basis_file` will be used.
+
+    The `basis_file` should contain the following arrays:
+    `nz0`:        Array of shape (n_bins, n_z) giving the mean value of n(z) in each bin.
+    `U`:          An array of shape (n_modes, n_bins, n_z) giving the basis vectors (across n_z redshifts)
+                  for the n(z) functions.  If `perbin==True` then each (imode,ibin) combinations will 
+                  have a distinct coefficient `u_{ibin}_{imode}` as a free parameter.  If `perbin` is
+                  `False`, then there are `u_{imode}` parameters giving a common coefficient to all
+                  bins' n(z)'s.
+    `perbin`:     A scalar that is converted to bool specifying whether modes are distinct per bin.
+    `g_convention`: If this is given, it means that we will construct a lookup table that converts the 
+                  Cosmosis `u` parameter, with a unit Gaussian prior, into the true `u` value used
+                  as basis coefficient.  This array has three entries, `gmax, dg, umax.` The lookup
+                  table will have as its input value an array [-gmax, -gmax+dg, ...0, +gmax].  The
+                  output of the lookup table will be specified by the `pctile` array, and any input
+                  values outside the [-gmax,gmax] interval will be assigned to [-umax,umax] values
+                  of the coefficient.
+
+                  If `g_convention` is not present, then the Cosmosis `u` parameters will be used 
+                  directly as coefficients, with unit normal priors.
+    `pctile`:     This array must given if a `g_convention` is present, and it gives the lookup table
+                  values for the de-gaussianized coefficients.  If `perbin` is `True`, then this array
+                  will have shape `(n_modes, n_bins, n_g)` where `n_g` is the number of g values.  
+                  If `perbin` is `False`, the the pctile array is 2d, `(n_modes, n_g)`.'''
+
+    # Read the configuration variables:
     sample = options.get_string(option_section, "sample", "")
     basis_file = options.get_string(option_section, "basis_file", "")
-    #percentile_file = options.get_string(option_section, "Percentiles", "")
     n_modes = options.get_int(option_section, "n_modes", 0)
-    n_bins = options.get_int(option_section, "n_bins", 0)
-    #U = np.loadtxt(basis_file)[:,:n_modes]
+
+    # Read the basis vectors and record sizes
     npzfile = np.load(basis_file)
-    U=npzfile['U'][:,:n_modes]
-    Percentiles=npzfile['Percentiles'][:,:n_modes]
-    [gmax,dg,Ng]=npzfile['g_convention']
-    lenz = len(U)//n_bins
-    U = U.reshape((n_modes,n_bins,lenz))
-    Percentiles = Percentiles.reshape((n_modes,n_bins,int(Ng)))
-    #Percentiles = np.loadtxt(percentile_file)[:,:n_modes].reshape((n_modes,n_bins,Ng))
-    Percentiles_classes=[[Normalizer_cosmosis(Percentiles[jmode][ibin], gmax, dg) for jmode in range(n_modes)] for ibin in range(n_bins)]
-    perbin = options.get_string(option_section, "perbin", False)
-    rescale = options.get_string(option_section, "rescale", False)
+    nz0 = npzfile['nz0']
+    U=npzfile['U']
+    n_bins = U.shape[1]
+    n_z = U.shape[2]
+    # Decide how many modes to use
+    if n_modes>0:
+        # Check that requested number of modes are available
+        if n_modes>U.shape[0]:
+            raise ValueError('More nz modes requested than available in ' + basis_file)
+        U = U[:,:,:n_modes]
+    else:
+        # Use all available modes
+        n_modes = U.shape[2]
+
+    # Will we be doing one set of modes per bin?
+    perbin = bool(npzfile['perbin'])
+    
+    # Now build degaussianizing functions if specified
+    degauss = []   # Empty list if there is no degaussianizing needed.
+    if 'g_convention' in npzfile:
+        [gmax,dg,umax]=npzfile['g_convention']
+        g = np.arange(-gmax, 
+        # Read the (required) pctile values for lookup tables
+        ### William - usually capitalized words are for names of classes or types; instances
+        ### are lower-case, so I've changed `Percentile`
+        pctile=npzfile['pctile']
+        
+        if perbin:
+            # Build 2d array of degauss functions, indexed as [i_bin, i_mode]
+            degauss = [[build_degauss(pctile[jmode,jbin], gmax, dg) for jmode in range(n_modes)] \
+                       for ibin in range(n_bins)]
+        else:
+            # Build 1d array of degauss functions
+            degauss = [[build_degauss(pctile[jmode], gmax, dg) for jmode in range(n_modes)]         
+
+    # I don't think we need any "rescale" since our u's are now defined as all being unit-variance.
+    # Return extracted information
     return {"sample": sample,
-            "bias_section": bias_section,
+            "nz0":nz0,
             "basis":U,
-            "Percentiles_classes":Percentiles_classes,
+            "degauss":degauss,
             "n_modes":n_modes,
-            "rescale":rescale,
+            "n_bins":n_bins,
             "perbin":perbin}
 
 def execute(block, config):
+    # Read own info
     pz = 'nz_'+config['sample']
+    nz0 = config['nz0']
     U = config['basis']
-    Percentiles_classes = config['Percentiles_classes']
+    degauss = config['degauss']
     n_modes = config['n_modes']
+
+    # Read z values from pz block
     nbin = block[pz, "nbin"]
     z = block[pz, "z"]
-    uvals = config['bias_section']
-    u_ = np.zeros((nbin,n_modes))
-    for i in range(1,nbin+1):
+
+    # Check for match between the basis functions' dimensions and what pz has
+    if config['n_bins'] != nbin:
+        raise ValueError('Bin count in uz config does not match that in pz block')
+    if U.shape[2] != len(z):
+        raise ValueError('Length of basis vectors does not match length of z vector in pz block')
+
+    # Read u values
+    uvals = config['bias_section'] ## ???
+    u_ = np.zeros((nbins,n_modes))
+    for i in range(nbin):
         if perbin:
-            u_[i-1,:] = np.array([block[uvals, "u_{0}_{1}".format(i-1,j) ] for j in range(n_modes)])
+            u_[i,:] = np.array([block[uvals, "u_{0}_{1}".format(i,j) ] for j in range(n_modes)])
+            # Apply the degaussianization, if any:
+            if degauss:
+                for j in n_modes:
+                    u[i,j] = degauss[i][j](u[i,j])
         else:
-            u_[i-1,:] = np.array([block[uvals, "u_{0}".format(j) ] for j in range(n_modes)])
-    if rescale:
-        # replace below line with call to rescale the values from an initial unit gaussian.
-        # Otherwise it will use the gaussian prior provided in the cosmosis file.
-        # u_ is an array of the values for each bin with shape (nbins,n_modes).
-        # if perbin=False, then the nbins dimension is just repeated entries.
-        #u_=u_
-        for ibin in range(nbin):
-            for jmode in range(n_modes):
-                u_[ibin,jmode]=  Percentiles_classes[ibin][jmode].degauss(u_[ibin,jmode])
-    for i in range(1,nbin+1):
-        dz = U[:,i-1,:]@u_[i-1,:]
-        bin_name = "bin_%d" % i
-        nz = block[pz, bin_name]
-        nz[1:]+=dz
-        nz /= np.trapz(nz, z)
-        block[pz, bin_name] = nz
+            u_[i,:] = np.array([block[uvals, "u_{0}".format(j) ] for j in range(n_modes)])
+            if degauss:
+                for j in n_modes:
+                    u[i,j] = degauss[j](u[i,j])
+  
+    # Make the n(z)'s:
+    # U's are indexed as [mode,bin,z], u's are indexed as [bin,mode], nz indexed as (bin,z)
+    nz = nz0 + np.einsum('ijk,ji->jk',U, u_)
+
+    # Save n(z)'s in the pz block.
+    for i in range(nbin):
+        bin_name = "bin_%d" % (i+1)  # Cosmosis labels are 1-indexed
+        ### nz[1:]+=dz   ### ??? Why is 1: here ???
+        nz[i] /= np.trapz(nz[i], z)
+        block[pz, bin_name] = nz[i]
     return 0
 
 def cleanup(config):
