@@ -38,7 +38,7 @@ def setup(options):
     [gmax,dg,Ng]=npzfile['g_convention']
     lenz = len(U)//n_bins
     U = U.reshape((n_modes,n_bins,lenz))
-    Percentiles = Percentiles.reshape((n_modes,n_bins,Ng))
+    Percentiles = Percentiles.reshape((n_modes,n_bins,int(Ng)))
     #Percentiles = np.loadtxt(percentile_file)[:,:n_modes].reshape((n_modes,n_bins,Ng))
     Percentiles_classes=[[Normalizer_cosmosis(Percentiles[jmode][ibin], gmax, dg) for jmode in range(n_modes)] for ibin in range(n_bins)]
     perbin = options.get_string(option_section, "perbin", False)
