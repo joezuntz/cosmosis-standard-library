@@ -33,7 +33,6 @@ def setup(options):
                   in the `basis_file` will be used.
 
     The `basis_file` should contain the following arrays:
-    `nz0`:        Array of shape (n_bins, n_z) giving the mean value of n(z) in each bin.
     `U`:          An array of shape (n_modes, n_bins, n_z) giving the basis vectors (across n_z redshifts)
                   for the n(z) functions.  If `perbin==True` then each (imode,ibin) combinations will 
                   have a distinct coefficient `u_{ibin}_{imode}` as a free parameter.  If `perbin` is
@@ -62,7 +61,6 @@ def setup(options):
 
     # Read the basis vectors and record sizes
     npzfile = np.load(basis_file)
-    nz0 = npzfile['nz0']
     U=npzfile['U']
     n_bins = U.shape[1]
     n_z = U.shape[2]
@@ -99,8 +97,11 @@ def setup(options):
 
     # I don't think we need any "rescale" since our u's are now defined as all being unit-variance.
     # Return extracted information
+
+    # Where to find the parameters for this:
+    bias_section = sample+"_photoz_u"
     return {"sample": sample,
-            "nz0":nz0,
+            "bias_section":bias_section,
             "basis":U,
             "degauss":degauss,
             "n_modes":n_modes,
@@ -143,14 +144,15 @@ def execute(block, config):
   
     # Make the n(z)'s:
     # U's are indexed as [mode,bin,z], u's are indexed as [bin,mode], nz indexed as (bin,z)
-    nz = nz0 + np.einsum('ijk,ji->jk',U, u_)
+    dz = np.einsum('ijk,ji->jk',U, u_)
 
     # Save n(z)'s in the pz block.
     for i in range(nbin):
         bin_name = "bin_%d" % (i+1)  # Cosmosis labels are 1-indexed
-        ### nz[1:]+=dz   ### ??? Why is 1: here ???
-        nz[i] /= np.trapz(nz[i], z)
-        block[pz, bin_name] = nz[i]
+        nz = block[pz, bin_name] 
+        nz[1:]+=dz[i]   ### ??? Why is 1: here ???
+        nz /= np.trapz(nz, z)
+        block[pz, bin_name] = nz
     return 0
 
 def cleanup(config):
