@@ -59,7 +59,7 @@ def execute(block, config):
     nbin = block[pz, "nbin"]
     z = block[pz, "z"]
     uvals = config['bias_section']
-    u_ = np.zeros((nbins,n_modes))
+    u_ = np.zeros((nbin,n_modes))
     for i in range(1,nbin+1):
         if perbin:
             u_[i-1,:] = np.array([block[uvals, "u_{0}_{1}".format(i-1,j) ] for j in range(n_modes)])
