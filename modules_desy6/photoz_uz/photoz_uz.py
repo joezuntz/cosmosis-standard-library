@@ -3,7 +3,7 @@ from cosmosis.datablock import option_section, names
 import numpy as np
 
 class Normalizer_cosmosis:
-    def __init__(self,percentile, gmax=5,xmax=10, kind='linear'):
+    def __init__(self, percentile, gmax, dg, xmax=10, kind='linear'):
         '''Class to create transformations from the gaussian 
         to the non-gaussian u distribution
         input: the percentile array of the initial u array
@@ -11,7 +11,6 @@ class Normalizer_cosmosis:
         The methods  `degauss` will do  g->u.
         '''
         # Establishing matching percentile points
-        dg = 0.1
         gg = np.arange(-gmax,gmax+dg/2, dg)
         xx = np.copy(percentile)
         # Clean out any duplicates in the tables.  This is hacky.
@@ -29,14 +28,20 @@ class Normalizer_cosmosis:
 def setup(options):
     sample = options.get_string(option_section, "sample", "")
     basis_file = options.get_string(option_section, "basis_file", "")
-    percentile_file = options.get_string(option_section, "Percentiles", "")
+    #percentile_file = options.get_string(option_section, "Percentiles", "")
     n_modes = options.get_int(option_section, "n_modes", 0)
     n_bins = options.get_int(option_section, "n_bins", 0)
-    U = np.loadtxt(basis_file)[:,:n_modes]
+    #U = np.loadtxt(basis_file)[:,:n_modes]
+    npzfile = np.load(basis_file)
+    npzfile.files
+    U=npzfile['U'][:,:n_modes]
+    Percentiles=npzfile['Percentiles'][:,:n_modes]
+    [gmax,dg,Ng]=npzfile['g_convention']
     lenz = len(U)//n_bins
     U = U.reshape((n_modes,n_bins,lenz))
-    Percentiles = np.loadtxt(percentile_file)[:,:n_modes].reshape((n_modes,n_bins,101))
-    Percentiles_classes=[[Normalizer_cosmosis(Percentiles[jmode][ibin]) for jmode in range(n_modes)] for ibin in range(block[pz, "nbin"])]
+    Percentiles = Percentiles.reshape((n_modes,n_bins,Ng))
+    #Percentiles = np.loadtxt(percentile_file)[:,:n_modes].reshape((n_modes,n_bins,Ng))
+    Percentiles_classes=[[Normalizer_cosmosis(Percentiles[jmode][ibin], gmax, dg) for jmode in range(n_modes)] for ibin in range(n_bins)]
     perbin = options.get_string(option_section, "perbin", False)
     rescale = options.get_string(option_section, "rescale", False)
     return {"sample": sample,
