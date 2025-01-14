@@ -33,7 +33,6 @@ def setup(options):
     n_bins = options.get_int(option_section, "n_bins", 0)
     #U = np.loadtxt(basis_file)[:,:n_modes]
     npzfile = np.load(basis_file)
-    npzfile.files
     U=npzfile['U'][:,:n_modes]
     Percentiles=npzfile['Percentiles'][:,:n_modes]
     [gmax,dg,Ng]=npzfile['g_convention']
