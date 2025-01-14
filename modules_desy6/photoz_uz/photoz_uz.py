@@ -21,7 +21,7 @@ def build_degauss(pctile, gmax, dg):
     uu = uu[keep]
     # The following function will complain if dimension of pctile array does not match
     # the number of needed g values.
-    return interp1d(gg,uu,kind=kind, bounds_error=False, fill_value=(uu[0], uu[-1]))
+    return interp1d(gg,uu,kind="linear", bounds_error=False, fill_value=(uu[0], uu[-1]))
 
 def setup(options):
     '''The available options:
