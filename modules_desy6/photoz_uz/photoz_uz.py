@@ -123,11 +123,11 @@ def execute(block, config):
     # Check for match between the basis functions' dimensions and what pz has
     if config['n_bins'] != nbin:
         raise ValueError('Bin count in uz config does not match that in pz block')
-    if U.shape[2] != len(z):
+    if U.shape[2] != len(z)-1:
         raise ValueError('Length of basis vectors does not match length of z vector in pz block')
 
     # Read u values
-    uvals = config['bias_section'] ## ???
+    uvals = config['bias_section']
     u_ = np.zeros((nbins,n_modes))
     for i in range(nbin):
         if perbin:
@@ -150,7 +150,7 @@ def execute(block, config):
     for i in range(nbin):
         bin_name = "bin_%d" % (i+1)  # Cosmosis labels are 1-indexed
         nz = block[pz, bin_name] 
-        nz[1:]+=dz[i]   ### ??? Why is 1: here ???
+        nz[1:]+=dz[i]   # Because Cosmosis version should have a zero prepended, for z=0 value
         nz /= np.trapz(nz, z)
         block[pz, bin_name] = nz
     return 0
