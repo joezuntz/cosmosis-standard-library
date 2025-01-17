@@ -80,11 +80,8 @@ def setup(options):
     # Now build degaussianizing functions if specified
     degauss = []   # Empty list if there is no degaussianizing needed.
     if 'g_convention' in npzfile:
-        [gmax,dg,umax]=npzfile['g_convention']
-        g = np.arange(-gmax, 
+        [gmax,dg]=npzfile['g_convention']
         # Read the (required) pctile values for lookup tables
-        ### William - usually capitalized words are for names of classes or types; instances
-        ### are lower-case, so I've changed `Percentile`
         pctile=npzfile['pctile']
         
         if perbin:
@@ -95,7 +92,6 @@ def setup(options):
             # Build 1d array of degauss functions
             degauss = [[build_degauss(pctile[jmode], gmax, dg) for jmode in range(n_modes)]         
 
-    # I don't think we need any "rescale" since our u's are now defined as all being unit-variance.
     # Return extracted information
 
     # Where to find the parameters for this:
