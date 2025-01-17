@@ -41,11 +41,11 @@ def setup(options):
     `perbin`:     A scalar that is converted to bool specifying whether modes are distinct per bin.
     `g_convention`: If this is given, it means that we will construct a lookup table that converts the 
                   Cosmosis `u` parameter, with a unit Gaussian prior, into the true `u` value used
-                  as basis coefficient.  This array has three entries, `gmax, dg, umax.` The lookup
+                  as basis coefficient.  This array has two entries, `gmax, dg` The lookup
                   table will have as its input value an array [-gmax, -gmax+dg, ...0, +gmax].  The
                   output of the lookup table will be specified by the `pctile` array, and any input
-                  values outside the [-gmax,gmax] interval will be assigned to [-umax,umax] values
-                  of the coefficient.
+                  values outside the [-gmax,gmax] interval will be assigned to the min and max values
+                  of the pctile array.
 
                   If `g_convention` is not present, then the Cosmosis `u` parameters will be used 
                   directly as coefficients, with unit normal priors.
