@@ -87,7 +87,7 @@ def setup(options):
         if perbin:
             # Build 2d array of degauss functions, indexed as [i_bin, i_mode]
             degauss = [[build_degauss(pctile[jmode,jbin], gmax, dg) for jmode in range(n_modes)] \
-                       for ibin in range(n_bins)]
+                       for jbin in range(n_bins)]
         else:
             # Build 1d array of degauss functions
             degauss = [build_degauss(pctile[jmode], gmax, dg) for jmode in range(n_modes)]         
