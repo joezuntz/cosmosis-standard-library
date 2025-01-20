@@ -124,7 +124,7 @@ def execute(block, config):
 
     # Read u values
     uvals = config['bias_section']
-    u_ = np.zeros((nbins,n_modes))
+    u_ = np.zeros((nbin,n_modes))
     for i in range(nbin):
         if perbin:
             u_[i,:] = np.array([block[uvals, "u_{0}_{1}".format(i,j) ] for j in range(n_modes)])
