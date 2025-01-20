@@ -130,12 +130,12 @@ def execute(block, config):
             u_[i,:] = np.array([block[uvals, "u_{0}_{1}".format(i,j) ] for j in range(n_modes)])
             # Apply the degaussianization, if any:
             if degauss:
-                for j in n_modes:
+                for j in range(n_modes):
                     u[i,j] = degauss[i][j](u[i,j])
         else:
             u_[i,:] = np.array([block[uvals, "u_{0}".format(j) ] for j in range(n_modes)])
             if degauss:
-                for j in n_modes:
+                for j in range(n_modes):
                     u[i,j] = degauss[j](u[i,j])
   
     # Make the n(z)'s:
