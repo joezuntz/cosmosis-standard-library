@@ -111,7 +111,7 @@ def execute(block, config):
     U = config['basis']
     degauss = config['degauss']
     n_modes = config['n_modes']
-
+    perbin = config['perbin']
     # Read z values from pz block
     nbin = block[pz, "nbin"]
     z = block[pz, "z"]
