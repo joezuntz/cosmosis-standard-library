@@ -69,7 +69,7 @@ def setup(options):
         # Check that requested number of modes are available
         if n_modes>U.shape[0]:
             raise ValueError('More nz modes requested than available in ' + basis_file)
-        U = U[:,:,:n_modes]
+        U = U[:n_modes,:,:]
     else:
         # Use all available modes
         n_modes = U.shape[2]
