@@ -131,12 +131,12 @@ def execute(block, config):
             # Apply the degaussianization, if any:
             if degauss:
                 for j in range(n_modes):
-                    u[i,j] = degauss[i][j](u[i,j])
+                    u_[i,j] = degauss[i][j](u_[i,j])
         else:
             u_[i,:] = np.array([block[uvals, "u_{0}".format(j) ] for j in range(n_modes)])
             if degauss:
                 for j in range(n_modes):
-                    u[i,j] = degauss[j](u[i,j])
+                    u_[i,j] = degauss[j](u_[i,j])
   
     # Make the n(z)'s:
     # U's are indexed as [mode,bin,z], u's are indexed as [bin,mode], nz indexed as (bin,z)
