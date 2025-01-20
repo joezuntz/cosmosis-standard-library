@@ -72,7 +72,7 @@ def setup(options):
         U = U[:n_modes,:,:]
     else:
         # Use all available modes
-        n_modes = U.shape[2]
+        n_modes = U.shape[0]
 
     # Will we be doing one set of modes per bin?
     perbin = bool(npzfile['perbin'])
