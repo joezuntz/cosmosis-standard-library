@@ -90,7 +90,7 @@ def setup(options):
                        for ibin in range(n_bins)]
         else:
             # Build 1d array of degauss functions
-            degauss = [[build_degauss(pctile[jmode], gmax, dg) for jmode in range(n_modes)]         
+            degauss = [build_degauss(pctile[jmode], gmax, dg) for jmode in range(n_modes)]         
 
     # Return extracted information
 
