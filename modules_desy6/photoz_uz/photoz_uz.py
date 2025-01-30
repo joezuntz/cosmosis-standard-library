@@ -107,7 +107,7 @@ def setup(options):
 def execute(block, config):
     # Read own info
     pz = 'nz_'+config['sample']
-    nz0 = config['nz0']
+    # nz0 = config['nz0']
     U = config['basis']
     degauss = config['degauss']
     n_modes = config['n_modes']
@@ -120,6 +120,8 @@ def execute(block, config):
     if config['n_bins'] != nbin:
         raise ValueError('Bin count in uz config does not match that in pz block')
     if U.shape[2] != len(z)-1:
+        print("Shape of U:", U.shape[2])
+        print("Length of z vector:", len(z)-1)
         raise ValueError('Length of basis vectors does not match length of z vector in pz block')
 
     # Read u values
