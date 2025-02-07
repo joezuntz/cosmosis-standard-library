@@ -38,7 +38,20 @@ class PlanckPythonLikelihood(GaussianLikelihood):
             y = self.get_data_points_from_test_output(use_data_from_test)
         else:
             y = self.calculator.mu
+
+        self.effective_ell = self.get_effective_ell()
         return x, y
+
+    def get_effective_ell(self):
+        ell = np.arange(3000)
+        x = ell**2 *(ell+1)/(2*np.pi)
+        # Here we slightly abuse the make_mean_vector function to get the effective ell
+        # we are asking for the weighted mean of the ell values. We are assing in
+        # the ell**2 (ell + 1) / 2pi version because the make_mean_vector is expecting
+        # to get the D_ell values and will divde by ell(ell+1)/2pi to convert to the C_ell.
+        ell_effs = self.calculator.make_mean_vector(x, x, x, ellmin=0)
+        return ell_effs
+
 
     def get_data_points_from_test_output(self, test_output_dir):
         cmb_dir = os.path.join(test_output_dir, "cmb_cl")
@@ -70,6 +83,8 @@ class PlanckPythonLikelihood(GaussianLikelihood):
         except ValueError:
             raise ValueError("CMB spectra not calculated to high enough ell for chosen Planck settings")
         y = self.calculator._cut_vector(y)
+
+        block["data_vector", self.like_name + "_ell"] = self.effective_ell
 
         return y
 
