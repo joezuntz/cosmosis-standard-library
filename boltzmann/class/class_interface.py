@@ -21,7 +21,7 @@ cmb_cl = names.cmb_cl
 
 
 def setup(options):
-    class_version = options.get_string(option_section, "version", "3.2.0")
+    class_version = options.get_string(option_section, "version", "3.2.5")
     install_dir = dirname + f"/class_v{class_version}/classy_install/"
     sys.path.insert(0, install_dir)
 
@@ -33,7 +33,7 @@ def setup(options):
     config = {
         'lmax': options.get_int(option_section, 'lmax', default=2000),
         'zmax': options.get_double(option_section, 'zmax', default=3.0),
-        'kmax': options.get_double(option_section, 'kmax', default=50.0),
+        'kmax': options.get_double(option_section, 'kmax', default=10.0),
         'nk': options.get_int(option_section, 'nk', default=100),
         'debug': options.get_bool(option_section, 'debug', default=False),
         'lensing': options.get_bool(option_section, 'lensing', default=True),
@@ -58,12 +58,13 @@ def setup(options):
 def choose_outputs(config):
     outputs = []
     if config['cmb']:
-        outputs.append("tCl pCl")
+        outputs.append("tCl")
+        outputs.append("pCl")
     if config['lensing']:
         outputs.append("lCl")
     if config["mpk"]:
         outputs.append("mPk")
-    return " ".join(outputs)
+    return ",".join(outputs)
 
 def get_class_inputs(block, config):
 
@@ -76,13 +77,14 @@ def get_class_inputs(block, config):
         'lensing':   'yes' if config['lensing'] else 'no',
         'A_s':       block[cosmo, 'A_s'],
         'n_s':       block[cosmo, 'n_s'],
-        'H0':        100 * block[cosmo, 'h0'],
+        'h':        block[cosmo, 'h0'],
         'omega_b':   block[cosmo, 'ombh2'],
         'omega_cdm': block[cosmo, 'omch2'],
         'tau_reio':  block[cosmo, 'tau'],
         'T_cmb':     block.get_double(cosmo, 'TCMB', default=2.726),
         'N_ur':      nnu - nmassive,
         'N_ncdm':    nmassive,
+        'l_switch_limber': 9,
     }
 
 
@@ -106,7 +108,7 @@ def get_class_inputs(block, config):
     if config["mpk"]:
         params.update({
             'P_k_max_h/Mpc':  config["kmax"],
-            'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
+            # 'z_pk': ', '.join(str(z) for z in np.arange(0.0, config['zmax'], 0.01)),
             'z_max_pk': config['zmax'],
         })
 
