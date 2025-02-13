@@ -33,12 +33,12 @@ class SpectrumInterp(object):
     def __call__(self, angle):
         non_zero = angle>1.e-12
         if self.interp_type == 'loglog':
-            spec = np.exp(self.interp_func(np.log(angle)))
+            spec = np.exp(self.interp_func(np.log(angle, where=angle>0.)))
         elif self.interp_type == 'minus_loglog':
-            spec = -np.exp(self.interp_func(np.log(angle)))
+            spec = -np.exp(self.interp_func(np.log(angle, where=angle>0.)))
         else:
             assert self.interp_type == "log_ang"
-            spec = self.interp_func(np.log(angle))
+            spec = self.interp_func(np.log(angle, where=angle>0.))
         return np.where(non_zero, spec, self.spec0)
 
 def radians_to_arcmin(r):
@@ -107,6 +107,7 @@ def cl_to_xi_plus_and_minus_precomp(cl_input, thetas, G_plus_minus_pre):
     ell_max = G_plus_pre.shape[1] - 1
     ells = np.arange(ell_max + 1)
     N_ell = get_N_ell(ells)
+    print(N_ell)
     N_ell[:2] = 0.
     assert G_plus_pre.shape[0] == G_minus_pre.shape[0] == len(thetas)
     assert G_plus_pre.shape[1] == G_minus_pre.shape[1] == ell_max + 1
