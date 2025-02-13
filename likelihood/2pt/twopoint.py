@@ -27,6 +27,18 @@ ANGULAR_UNIT_TYPES = [
 ANGULAR_UNITS = {unit.name: unit for unit in ANGULAR_UNIT_TYPES}
 
 
+# FITS header keyword indicating 1-point data
+ONEPOINT_SENTINEL = "1PTDATA"
+
+# Please do not add things to this list
+#ONEPOINT_UNIT_TYPES = [
+#    astropy.units.Lsun,
+#    astropy.units.Msun,
+#    astropy.units.mag,
+#]
+#ONEPOINT_UNITS = {unit.name: unit for unit in ONEPOINT_UNIT_TYPES}
+
+
 def sample_cov(xi_arrays, mode='full'):
     """mode should be full, subsample or jk"""
     nsample, npoints = xi_arrays.shape
@@ -71,6 +83,7 @@ class Types(Enum):
     galaxy_shear_minus_real = "G-R"
     cmb_kappa_real = "CKR"
     cmb_kappa_fourier = "CKF"
+    onepoint = "O"
     
     @classmethod
     def lookup(cls, value):
@@ -81,6 +94,127 @@ class Types(Enum):
 
 def dummy_kernel(name):
     return NumberDensity(name, np.zeros(10), np.zeros(10), np.zeros(10), [np.zeros(10)])
+
+
+class OnePointMeasurement(object):
+    """
+    This class contains 1-pt information for a collection of numbered observable bins.
+    It is expected to be used for a single 1-pt type (e.g. stellar mass function) split into
+    stellar mass/luminosity bins.
+
+    Since the main use case for this is 1-pt function, and measurement codes typically
+    produce 2-pt like data sets, but one can pass a histogram as well.
+    """
+
+    def __init__(self, name, obs, nobs, obs_low=None, obs_high=None):
+        self.name = name
+        self.obs = obs
+        self.nbin = len(nobs)
+        self.obs_low = obs_low
+        self.obs_high = obs_high
+        self.nsample = []
+        for i in range(self.nbin):
+            self.nsample.append(len(nobs[i]))
+        self.nobs = nobs
+        
+    def __str__(self):
+        return "<One Point: {}>".format(self.name)
+
+    def __repr__(self):
+        return "<One Point: {}>".format(self.name)
+
+    @classmethod
+    def from_fits(cls, extension):
+        # load in the 1-pt data
+        data = extension.data
+        header = extension.header
+
+        i = 1
+        name = 'VALUE{}'.format(i)
+        name_x = 'ANG{}'.format(i)
+        name_low = 'ANGLEMIN{}'.format(i)
+        name_high = 'ANGGLEMAX{}'.format(i)
+        nobs = []
+        obs = []
+        obs_low = []
+        obs_high = []
+        
+        while name in data.names:
+            obs_in = data[name]
+            nobs.append(obs_in)
+            obs.append(data['ANG{}'.format(i)])
+            if 'ANGLEMIN{}'.format(i) in data.names:
+                obs_low.append(data['ANGLEMIN{}'.format(i)])
+            if 'ANGLEMAX{}'.format(i) in data.names:
+                obs_high.append(data['ANGLEMAX{}'.format(i)])
+            i += 1
+            name = 'VALUE{}'.format(i)
+            
+        if obs_low == []:
+            obs_low = None
+        if obs_high == []:
+            obs_high = None
+            
+        N = cls(extension.name, obs, nobs, obs_low, obs_high)
+
+        return N
+
+    def to_fits(self):
+        header = fits.Header()
+        header[ONEPOINT_SENTINEL] = True
+        header['EXTNAME'] = self.name
+        header['NBINS'] = self.nbin
+        header['QUANT1'] = "O"
+        header['QUANT2'] = "O"
+
+        columns = []
+
+        for i in range(self.nbin):
+            name = 'VALUE{}'.format(i + 1)
+            columns.append(fits.Column(name=name, array=self.nobs[i], format='D'))
+            columns.append(fits.Column(name='ANG{}'.format(i + 1), array=self.obs[i], format='D'))
+            if self.obs_low is not None:
+                columns.append(fits.Column(name='ANGLEMIN{}'.format(i + 1), array=self.obs_low[i], format='D'))
+            if self.obs_high is not None:
+                columns.append(fits.Column(name='ANGLEMAX{}'.format(i + 1), array=self.obs_high[i], format='D'))
+            
+        extension = fits.BinTableHDU.from_columns(columns, header=header)
+        return extension
+
+    @classmethod
+    def from_block(cls, block, section_name, output_name=None):
+        """Load 1pt from cosmosis datablock"""
+        if output_name == None:
+            output_name = section_name
+    
+        nobs = []
+        obs = []
+        obs_low = []
+        obs_high = []
+        for i in range(1, 99999):
+            bin_name = "bin_%d" % i
+            if block.has_value(section_name, bin_name):
+                nobs.append(block[section_name, bin_name])
+            else:
+                break
+            if block.has_value(section_name, "obs_low_{}".format(i)):
+                obs.append(block[section_name, "obs_{}".format(i)])
+                obs_low.append(block[section_name, "obs_low_{}".format(i)])
+                obs_high.append(block[section_name, "obs_high_{}".format(i)])
+            else:
+                obs_in = block[section_name, "obs_{}".format(i)]
+                obs.append(obs_in)
+                #d_obs = np.log10(obs_in[2]) - np.log10(obs_in[1])
+                #obs_low.append(10.0**(np.log10(obs_in) - 0.5 * d_obs))
+                #obs_high.append(10.0**(np.log10(obs_in) + 0.5 * d_obs))
+        if obs_low == []:
+            obs_low = None
+        if obs_high == []:
+            obs_high = None
+
+        N = cls(output_name, obs, nobs, obs_low, obs_high)
+        return N
+
 
 
 class NumberDensity(object):
@@ -578,7 +712,7 @@ class CovarianceMatrixInfo(object):
 
 
 class TwoPointFile(object):
-    def __init__(self, spectra, kernels, windows, covmat_info):
+    def __init__(self, spectra, kernels, nobs, windows, covmat_info):
         if windows is None:
             windows = {}
         self.spectra = spectra
@@ -589,6 +723,7 @@ class TwoPointFile(object):
             dv_start += n_dv
         self.kernels = kernels
         self.windows = windows
+        self.nobs = nobs
         self.covmat_info = covmat_info
         if covmat_info:
             #self.covmat = covmat_info.covmat
@@ -620,6 +755,17 @@ class TwoPointFile(object):
                 "Multiple kernel with name %s found in file" % name)
         else:
             return kernels[0]
+            
+    def get_nobs(self, name):
+        nobs = [obs for obs in self.nobs if nobs.name == name]
+        n = len(nobs)
+        if n == 0:
+            raise ValueError("Observable function with name %s not found in file" % name)
+        elif n > 1:
+            raise ValueError(
+                "Multiple observable functions with name %s found in file" % name)
+        else:
+            return nobs[0]
 
     def _build_spectrum_index(self):
         index = 0
@@ -645,8 +791,8 @@ class TwoPointFile(object):
         if self.covmat is not None:
             mask = np.concatenate(masks)
             self.covmat = self.covmat[mask, :][:, mask]
-            self.covmat_info = CovarianceMatrixInfo(self.covmat_info.name, [
-                                                    s.name for s in self.spectra], [len(s) for s in self.spectra], self.covmat)
+            self.covmat_info = CovarianceMatrixInfo(self.covmat_info.name,
+            [s.name for s in self.spectra] + [o.name for o in self.nobs], [len(s) for s in self.spectra] + [sum(o.nsample) for o in self.nobs], self.covmat)
 
     def mask_bad(self, bad_value):
         "Go through all the spectra masking out data where they are equal to bad_value"
@@ -660,6 +806,10 @@ class TwoPointFile(object):
                 mask.size - mask.sum(), spectrum.name))
             # record the mask vector as we will need it to mask the covmat
             masks.append(mask)
+        if self.nobs is not None:
+            for obs in self.nobs:
+                mask = np.ones(sum(obs.nsample), dtype=bool)
+                masks.append(mask)
         if masks:
             self._mask_covmat(masks)
 
@@ -672,6 +822,10 @@ class TwoPointFile(object):
             spectrum.apply_mask(mask)
             masks.append(mask+n)
             n += len(mask)
+        if self.nobs is not None:
+            for obs in self.nobs:
+                mask = np.ones(sum(obs.nsample), dtype=bool)
+                masks.append(mask)
         if masks:
             self._mask_covmat(masks)
 
@@ -686,8 +840,10 @@ class TwoPointFile(object):
                 s.apply_mask(mask)
             print("Keeping {} points in {}".format(mask.sum(), s.name))
             masks.append(mask)
-            print(mask_points)
-            print(mask)
+        if self.nobs is not None:
+            for obs in self.nobs:
+                mask = np.ones(sum(obs.nsample), dtype=bool)
+                masks.append(mask)
         self._mask_covmat(masks)
 
     def mask_cross(self):
@@ -698,6 +854,10 @@ class TwoPointFile(object):
             print("Masking {} cross-values in {}".format(mask.size -
                                                          mask.sum(), spectrum.name))
             masks.append(mask)
+        if self.nobs is not None:
+            for obs in self.nobs:
+                mask = np.ones(sum(obs.nsample), dtype=bool)
+                masks.append(mask)
         if masks:
             self._mask_covmat(masks)
 
@@ -709,15 +869,15 @@ class TwoPointFile(object):
                 w_full = np.where((spectrum.bin1 == b1) &
                                   (spectrum.bin2 == b2))[0]
                 if (spectrum.name, b1, b2) in bin_cuts:
-                    print("Removing {} bin ({},{}) altogether.".format(
-                        spectrum.name, b1, b2))
+                    #print("Removing {} bin ({},{}) altogether.".format(
+                    #    spectrum.name, b1, b2))
                     mask[w_full] = False
                     continue
 
                 cut = cuts.get((spectrum.name, b1, b2))
                 if cut is None:
-                    print("No cut specified for {} bin ({},{})".format(
-                        spectrum.name, b1, b2))
+                    #print("No cut specified for {} bin ({},{})".format(
+                    #    spectrum.name, b1, b2))
                     continue
 
                 # Actually do the cut
@@ -725,15 +885,19 @@ class TwoPointFile(object):
                 w = np.where((spectrum.bin1 == b1) & (spectrum.bin2 == b2) &
                              ((spectrum.angle < ang_min) | (spectrum.angle > ang_max)))[0]
 
-                print("Cutting {} bin pair ({},{}) to angle range ({} - {}):"
-                      " this removes {} values out of {}".format(
-                    spectrum.name, b1, b2, ang_min, ang_max, len(w), len(w_full)))
+                #print("Cutting {} bin pair ({},{}) to angle range ({} - {}):"
+                #      " this removes {} values out of {}".format(
+                #    spectrum.name, b1, b2, ang_min, ang_max, len(w), len(w_full)))
 
                 mask[w] = False
             masks.append(mask)
             spectrum.apply_mask(mask)
-            print("")
-
+            #print("")
+        if self.nobs is not None:
+            for obs in self.nobs:
+                mask = np.ones(sum(obs.nsample), dtype=bool)
+                masks.append(mask)
+            
         if masks:
             self._mask_covmat(masks)
 
@@ -749,11 +913,14 @@ class TwoPointFile(object):
                 mask = (spectrum.angle > min_scale) & (
                     spectrum.angle < max_scale)
                 spectrum.apply_mask(mask)
-                print("Masking {} values in {} because they had ell or theta outside ({},{})".format(
-                    mask.size - mask.sum(), spectrum.name, min_scale, max_scale))
+                #print("Masking {} values in {} because they had ell or theta outside ({},{})".format(
+                #    mask.size - mask.sum(), spectrum.name, min_scale, max_scale))
                 # record the mask vector as we will need it to mask the covmat
                 masks.append(mask)
-
+        if self.nobs is not None:
+            for obs in self.nobs:
+                mask = np.ones(sum(obs.nsample), dtype=bool)
+                masks.append(mask)
         if masks:
             self._mask_covmat(masks)
 
@@ -762,6 +929,7 @@ class TwoPointFile(object):
         data_sets = [d.lower() for d in data_sets]
         mask = []
         use = []
+        use_obs = []
         for spectrum in self.spectra:
             if spectrum.name.lower() in data_sets:
                 use.append(True)
@@ -769,11 +937,21 @@ class TwoPointFile(object):
             else:
                 use.append(False)
                 mask.append(np.zeros(spectrum.bin1.size, dtype=bool))
+        if self.nobs is not None:
+            for obs in self.nobs:
+                if obs.name.lower() in data_sets:
+                    use_obs.append(True)
+                    mask.append(np.ones(sum(obs.nsample), dtype=bool))
+                else:
+                    use_obs.append(False)
+                    mask.append(np.zeros(sum(obs.nsample), dtype=bool))
         for data_set in data_sets:
-            if not any(spectrum.name.lower() == data_set for spectrum in self.spectra):
+            if not any(spectrum.name.lower() == data_set for spectrum in self.spectra) and not any(obs.name.lower() == data_set for obs in self.nobs):
                 raise ValueError(
                     "Data set called {} not found in two-point data file.".format(data_set))
         self.spectra = [s for (u, s) in zip(use, self.spectra) if u]
+        if self.nobs is not None:
+            self.nobs = [s for (u, s) in zip(use_obs, self.nobs) if u]
         if self.covmat is not None:
             mask = np.concatenate(mask)
             self.covmat = self.covmat[mask, :][:, mask]
@@ -782,7 +960,11 @@ class TwoPointFile(object):
 
         # This gets the covariance array in the right order (before any scale cuts etc.)
         cov = self.covmat_info.covmat
-        if self.covmat_info.names == [spec.name for spec in self.spectra]:
+        if self.nobs is not None:
+            names_list = [spec.name for spec in self.spectra] + [o.name for o in self.nobs]
+        else:
+            names_list = [spec.name for spec in self.spectra]
+        if self.covmat_info.names == names_list:
             # Ordering is already ok
             return cov
         print("Covariance matrix is not in the same order as the 2pt measurement extensions...doing some damn fiddly")
@@ -798,8 +980,13 @@ class TwoPointFile(object):
 
         total_l = 0
         spec_inds = []
-        spec_names = [spec.name for spec in self.spectra]
-        for spectrum in self.spectra:
+        if self.nobs is not None:
+            spec_names = [spec.name for spec in self.spectra] + [o.name for o in self.nobs]
+            specs = self.spectra + self.nobs
+        else:
+            spec_names = [spec.name for spec in self.spectra]
+            specs = self.spectra
+        for spectrum in specs:
             spec_inds.append(cov_names.index(spectrum.name))
             total_l += cov_lengths[cov_names.index(spectrum.name)]
         cov_out = np.zeros((total_l, total_l))
@@ -833,6 +1020,10 @@ class TwoPointFile(object):
         if self.kernels is not None:
             for kernel in self.kernels:
                 hdus.append(kernel.to_fits())
+                
+        if self.nobs is not None:
+            for nobs in self.nobs:
+                hdus.append(nobs.to_fits())
 
         hdulist = fits.HDUList(hdus)
         hdulist.writeto(filename, overwrite=(clobber or overwrite))
@@ -842,6 +1033,7 @@ class TwoPointFile(object):
         fitsfile = fits.open(filename)
         spectra = []
         kernels = []
+        nobs = []
         windows = {}
 
         # Load the covariance matrix from the file, typically stored as
@@ -869,6 +1061,11 @@ class TwoPointFile(object):
         for extension in fitsfile:
             if extension.header.get(NZ_SENTINEL):
                 kernels.append(NumberDensity.from_fits(extension))
+                
+        # We might also have some 1pt functions saved.
+        for extension in fitsfile:
+            if extension.header.get(ONEPOINT_SENTINEL):
+                nobs.append(OnePointMeasurement.from_fits(extension))
 
         # We might also require window functions W(ell) or W(theta). It's also possible
         # that we just use a single sample value of ell or theta instead.
@@ -880,13 +1077,13 @@ class TwoPointFile(object):
                     fitsfile[windows])
 
         # return a new TwoPointFile object with the data we have just loaded
-        return cls(spectra, kernels, windows, covmat_info)
+        return cls(spectra, kernels, nobs, windows, covmat_info)
 
     @classmethod
     def _windows_from_fits(cls, extension):
         raise NotImplementedError("non-sample window functions in ell/theta")
 
-    def plots(self, root, colormap='viridis', savepdf=False, latex=True, plot_spectrum=True, plot_kernel=True, plot_cov=True, cov_vmin=None, save_pickle=False, load_pickle=False, remove_pickle=True, label_legend='', blind_yaxis=False, callback=None):
+    def plots(self, root, colormap='viridis', savepdf=False, latex=True, plot_spectrum=True, plot_kernel=True, plot_1pt=True, plot_cov=True, cov_vmin=None, save_pickle=False, load_pickle=False, remove_pickle=True, label_legend='', blind_yaxis=False, callback=None):
         """
         Makes plot of each for your spectra, kernels and covariance. Allows you to compare the spectra of different files. 
         Options:
@@ -941,7 +1138,7 @@ class TwoPointFile(object):
                 corr_type = 'wtheta'
                 label = r"$w(\theta)$"
                 color = plt.get_cmap(colormap)(0.6)
-
+                
             else:
                 corr_type = None
                 label = None
@@ -1055,6 +1252,22 @@ class TwoPointFile(object):
                 ax.set_ylim(bottom=0)
                 plt.tight_layout()
                 savefig(name)
+                
+        if plot_1pt:
+            for obs in self.nobs:
+                name = "{}_{}.png".format(root, obs.name)
+                plt.figure()
+                fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+                for i, nob in enumerate(obs.nobs):
+                    color = color = plt.get_cmap(colormap)(0.2*i)
+                    ax.plot(obs.obs[i], nob, lw=1.5, color=color)
+                ax.set_xlabel('Observable')
+                ax.set_ylabel('Observable function')
+                ax.set
+                ax.set_xscale('log')
+                ax.set_yscale('log')
+                plt.tight_layout()
+                savefig(name)
 
         if plot_cov:
             def corrmatrix(cov):
@@ -1146,6 +1359,11 @@ class SpectrumCovarianceBuilder(object):
         self.names = None
         self.types = []
         self.total_length = 0
+        self.total_length_1pt = 0
+        self.nobs = []
+        self.obs = []
+        self.obs_name = []
+        self.nbin = []
 
     def add_data_point(self, kernel1, kernel2, type1, type2, bin1, bin2, ang, angbin, value):
         self.kernel1.append(kernel1)
@@ -1162,6 +1380,14 @@ class SpectrumCovarianceBuilder(object):
         spec = kernel1, kernel2, type1, type2
         if spec not in self.types:
             self.types.append(spec)
+            
+    def add_one_point(self, obs_name, nbin, x, angbin, values):
+        self.obs_name.append(obs_name)
+        self.nbin.append(nbin)
+        self.obs.append(x)
+        self.nobs.append(values)
+        #self.angbin.append(angbin)
+        self.total_length_1pt += 1
 
     def _freeze(self):
         self.bin1 = np.array(self.bin1)
@@ -1169,6 +1395,9 @@ class SpectrumCovarianceBuilder(object):
         self.ang = np.array(self.ang)
         self.angbin = np.array(self.angbin)
         self.value = np.array(self.value)
+        self.nbin = np.array(self.nbin)
+        self.obs = np.array(self.obs)
+        self.nobs = np.array(self.nobs)
 
     def set_names(self, names):
         for t in self.types:
@@ -1182,11 +1411,12 @@ class SpectrumCovarianceBuilder(object):
             raise ValueError(
                 "Please provide names for each type in self.types first")
         self._freeze()
-        assert covariance.shape == (self.total_length, self.total_length)
+        assert covariance.shape == (self.total_length + self.total_length_1pt, self.total_length + self.total_length_1pt)
         # get all the unique pairs of type1,type2.  maintain order
         # shouldn't be more than a few types so the list membership test is fast
         master_index_vector = []
         spectra = []
+        onepoint = []
         for kernel1, kernel2, type1, type2 in self.types:
             kernels = (kernel1, kernel2)
             types = (type1, type2)
@@ -1211,10 +1441,21 @@ class SpectrumCovarianceBuilder(object):
                 name, bins, types, kernels, windows, angular_bin, value,
                 angle=angle, angle_unit=angle_unit)
             spectra.append(spectrum)
+    
+        for name in np.unique(self.obs_name):
+            spectrum_index_vector = []
+            for i in range(self.total_length,self.total_length_1pt+self.total_length):
+                master_index_vector.append(i)
+            for i in range(self.total_length_1pt):
+                spectrum_index_vector.append(i)
+            bins = self.nbin[spectrum_index_vector]
+            angular_bin = self.obs[spectrum_index_vector]
+            value = self.nobs[spectrum_index_vector]
+            onepoint.append(OnePointMeasurement('1pt', [angular_bin], [value]))
 
         reordered_covariance = covariance[master_index_vector][:, master_index_vector]
-        covmat_info = CovarianceMatrixInfo("COVMAT", [s.name for s in spectra], 
-                                           [len(s) for s in spectra], reordered_covariance)
+        covmat_info = CovarianceMatrixInfo("COVMAT", [s.name for s in spectra] + [o.name for o in onepoint],
+                                           [len(s) for s in spectra] + [o.nsample for o in onepoint], reordered_covariance)
 
         return spectra, covmat_info
 
