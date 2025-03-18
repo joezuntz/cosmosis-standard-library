@@ -103,11 +103,13 @@ You set: {spk_params}
     # find out which of the possible modes are valid
     mode1_valid = is_valid(["fb_a", "fb_pow", "fb_pivot", "m_pivot"])
     mode2_valid = is_valid(["alpha", "beta", "gamma", "m_pivot"])
-    mode3_valid = is_valid(["epsilon", "alpha", "beta", "gamma"])
+    mode3_valid = is_valid(["alpha", "beta", "gamma", "epsilon", "m_pivot"])
     mode4_valid = is_valid(["fb_a", "fb_pow", "fb_pivot"])
 
     # This is a little complicated, because the parameters for mode 4
-    # are a subset of those for mode 1. So we can't just check that
+    # are a subset of those for mode 1, and those for mode 2 are a subset
+    # of those for mode 3.
+    # So we can't just check that
     # exactly one mode is valid. Instead we have to specifically check
     # that other parameters aren't set.
 
@@ -116,10 +118,11 @@ You set: {spk_params}
     if mode1_valid:
         if any_set(["alpha", "beta", "gamma", "epsilon"]):
             raise ValueError(spk_parameter_error)
+    elif mode3_valid:
+        if any_set(["fb_a", "fb_pow", "fb_pivot"]):
+            raise ValueError(spk_parameter_error)
     elif mode2_valid:
         if any_set(["fb_a", "fb_pow", "fb_pivot", "epsilon"]):
-            raise ValueError(spk_parameter_error)
-    elif mode3_valid:
             raise ValueError(spk_parameter_error)
     elif mode4_valid:
         if any_set(["alpha", "beta", "gamma", "m_pivot"]):
