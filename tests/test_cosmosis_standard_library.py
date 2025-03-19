@@ -88,6 +88,12 @@ def test_des_y3(capsys):
     check_likelihood(capsys, "6043.23", "6043.34", "6043.37", "6043.33")
     check_no_camb_warnings(capsys)
 
+def test_des_y3_plus_planck(capsys):
+    run_cosmosis("examples/des-y3-planck.ini")
+    check_likelihood(capsys, "5679.6", "5679.7")
+    check_no_camb_warnings(capsys)
+
+
 def test_des_y3_class(capsys):
     run_cosmosis("examples/des-y3-class.ini")
     # class is not consistent across systems to the level needed here

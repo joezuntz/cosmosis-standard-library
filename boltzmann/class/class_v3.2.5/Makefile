@@ -161,7 +161,7 @@ PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_
 
 all: class libclass.a classy
 
- external/distortions/Greens_data.dat:
+external/distortions/Greens_data.dat:
 	cd external/distortions && gunzip --force -c Greens_data.dat.gz > Greens_data.dat
 
 
@@ -202,8 +202,7 @@ tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(
 	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
 
 classy: libclass.a python/classy.pyx python/cclassy.pxd
-	# cd python; export CC=$(CC); output=$$($(PYTHON) -m pip install . 2>&1); \
-	cd python; pip install . --target=$(MDIR)/classy_install -vv
+	cd python; $(PYTHON) -m pip install . --target=$(MDIR)/classy_install -vv --no-build-isolation
     # echo "$$output"; \
     # if echo "$$output" | grep -q "ERROR: Cannot uninstall"; then \
     #     site_packages=$$($(PYTHON) -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())" || $(PYTHON) -c "import site; print(site.getsitepackages()[0])") && \
