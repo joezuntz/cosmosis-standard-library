@@ -206,6 +206,15 @@ def test_desi(capsys):
     run_cosmosis("examples/desi_dr1.ini")
     check_likelihood(capsys, "-11.25")
 
+def test_desi_dr1(capsys):
+    run_cosmosis("examples/desi_dr1.ini")
+    check_likelihood(capsys, "-11.25")
+
+def test_desi_dr2(capsys):
+    run_cosmosis("examples/desi_dr2.ini")
+    check_likelihood(capsys, "-93.02")
+
+
 def test_candl(capsys):
     try:
         import candl
