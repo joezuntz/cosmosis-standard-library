@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Planck Data Cache
         id: cache-planck
         with:
@@ -37,7 +37,7 @@ jobs:
         
       - name: Cache WMAP data
         id: cache-wmap
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: wmap_likelihood_full_v5.tar.gz
           key: wmap-9-data
@@ -50,7 +50,7 @@ jobs:
 
       - name: Cache ACT data
         id: cache-act
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ACT_dr6_likelihood_v1.1.tgz
           key: act-dr6-data
@@ -224,7 +224,7 @@ jobs:
         popd
   
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       name: Load pip cache
       id: cache-pip
       with:
