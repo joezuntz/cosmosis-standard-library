@@ -1,75 +1,89 @@
-import os
 from cosmosis.gaussian_likelihood import GaussianLikelihood
 import numpy as np
 import scipy.interpolate
-import scipy.linalg
-from astropy.table import Table
 
-# There are now only two kinds of measurement here.
-# All the measurements except one now include measurements
-# of DV/rd, DM/DH, DM/rd, and DH/rd. The one exception is
-# the BGS measurements which is just DV/rd
-
-# We have marked the other measurements as all NaNs
-# in the data to indicate this
-
-THIS_DIR = os.path.split(__file__)[0]
-DR2_DEFAULT_FILENAME = os.path.join(THIS_DIR, "dr2_data.txt")
-KIND1_DV_RD = "DV/rd"
-KIND2_DM_DH = "DM/DH"
-KIND3_DM_RD = "DM/rd"
-KIND4_DH_RD = "DH/rd"
+# The three different types of measurement
+# of BAO used in this data release
+KIND_DV = 1
+KIND_DM = 2
+KIND_DH = 3
 
 
-def extract_desi_table_data_vector_covariance(data):
-    z = []
-    tracers = []
-    kinds = []
-    data_vector = []
-    cov_blocks = []
+# Data from table 1 of https://arxiv.org/pdf/2404.03002
+DESI_DATA_SETS = {
+    "BGS": {
+        "kind": "d_v",
+        "z_eff": 0.295,
+        "mean": 7.944,
+        "sigma": 0.075,
+    },
+    "LRG1": {
+        "kind": "d_m_d_h",
+        "z_eff": 0.51,
+        "mean": [13.587, 21.863],
+        "sigma": [0.169, 0.427],
+        "corr": -0.475,
+    },
+    "LRG2": {
+        "kind": "d_m_d_h",
+        "z_eff": 0.706,
+        "mean": [17.347, 19.458],
+        "sigma": [0.180, 0.332],
+        "corr": -0.423,
+    },
+    "LRG3+ELG1": {
+        "kind": "d_m_d_h",
+        "z_eff": 0.934,
+        "mean": [21.574, 17.641],
+        "sigma": [0.153, 0.193],
+        "corr": -0.425,
+    },
+    "ELG2": {
+        "kind": "d_m_d_h",
+        "z_eff": 1.321,
+        "mean": [27.605, 14.178],
+        "sigma": [0.320, 0.217],
+        "corr": -0.437,
+    },
+    "QSO": {
+        "kind": "d_m_d_h",
+        "z_eff": 1.484,
+        "mean": [30.519,12.816],
+        "sigma": [0.758,0.513],
+        "corr": -0.489
+    },
+    "Lya": {
+        "kind": "d_m_d_h",
+        "z_eff": 2.330,
+        "mean": [38.988, 8.632],
+        "sigma": [0.531, 0.101],
+        "corr": -0.431,
+    },
+    # LRG3 and ELG1 are combined in the data release
+    # into LRG3+ELG1, above.  We allow them to be separately
+    # used below but throw an error if they are both used.
+    "LRG3": {
+        "kind": "d_m_d_h",
+        "zeff": 0.922,
+        "mean": [21.649, 17.574],
+        "sigma": [0.177,  0.214],
+        "corr": -0.408
+    },
+    "ELG1": {
+        "kind": "d_m_d_h",
+        "zeff": 0.922,
+        "mean": [21.708, 17.811],
+        "sigma": [0.337,   0.295],
+        "corr": -0.452,
 
-    for row in data:
-        tracer = row["Tracer"]
-        zeff = row["zeff"]
+    }
 
-        if np.isnan(row["DM/DH"]):
-            # The BGS sample only measures DV/r_d, and so we
-            # assume that as in the default data file this is labelled
-            # with NaNs in the other columns
-            z.append(zeff)
-            tracers.append(tracer)
-            kinds.append(KIND1_DV_RD)
-            data_vector.append(row["DV/rd"])
-            c = np.zeros((1, 1))
-            c[0, 0] = row["DV/rd_err"]**2
-            cov_blocks.append(c)
-        else:
-            z.extend([zeff, zeff, zeff, zeff])
-            tracers.extend([tracer, tracer, tracer, tracer])
-            kinds.extend([KIND1_DV_RD, KIND2_DM_DH, KIND3_DM_RD, KIND4_DH_RD])
-            data_vector.extend([row[KIND1_DV_RD], row[KIND2_DM_DH], row[KIND3_DM_RD], row[KIND4_DH_RD]])
-            c12 = row["rV,M/H"]
-            c34 = row["rM,H"]
-            sigma1 = row["DV/rd_err"]
-            sigma2 = row["DM/DH_err"]
-            sigma3 = row["DM/rd_err"]
-            sigma4 = row["DH/rd_err"]
-            c = np.zeros((4, 4))
-            c[0, 0] = sigma1**2
-            c[1, 1] = sigma2**2
-            c[2, 2] = sigma3**2
-            c[3, 3] = sigma4**2
-            c[0, 1] = c[1, 0] = c12*sigma1*sigma2
-            c[2, 3] = c[3, 2] = c34*sigma3*sigma4
-            cov_blocks.append(c)
-    
-    covariance = scipy.linalg.block_diag(*cov_blocks)
-    return np.array(z), np.array(tracers), np.array(kinds), np.array(data_vector), covariance
 
+}
 
 class DESILikelihood(GaussianLikelihood):
     """
-    The 2025 DESI DR2 likelihoods from https://arxiv.org/pdf/2503.14738
+    The DR2 2025 DESI likelihoods from https://arxiv.org/pdf/2503.14738
 
     We allow the user to specify which data sets to use, and combine
     them all into one. The data sets are:
@@ -79,15 +93,11 @@ class DESILikelihood(GaussianLikelihood):
     - LRG3+ELG1
     - ELG2
     - QSO
-    - Lya QSO
+    - Lya
 
-    Two data sets are available but not included when using the "all"
-    setting because they are correlated with and superseded by the
-    combined version:
-
-    - LRG3
-    - ELG1
-
+    The LRG3 and ELG1 data sets are also available separately, but
+    cannot be used jointly with the LRG3+ELG1 data set. The default "all"
+    selection leaves out the two individual data sets and just uses the combined one.
     """
     # users can override this if they want to use a different name
     # which can be useful if you want to keep the different likelihoods
@@ -98,89 +108,106 @@ class DESILikelihood(GaussianLikelihood):
     y_section = 'distances'
 
     def __init__(self, options):
-        data_file = options.get_string("data_file", DR2_DEFAULT_FILENAME)
-        self.table = Table.read(data_file, format="ascii.commented_header")
-
         data_sets = options.get_string("desi_data_sets", default="all")
-        available_tracers = list(self.table["Tracer"])
-
         if data_sets == "all":
-            data_sets = available_tracers[:]
-            data_sets.remove("LRG3")
+            data_sets = list(DESI_DATA_SETS.keys())
             data_sets.remove("ELG1")
+            data_sets.remove("LRG3")
         else:
-            data_sets = data_sets.replace(",", " ").split()
+            data_sets = data_sets.split(',')
 
+        if ("ELG1" in data_sets or "LRG3" in data_sets) and "LRG3+ELG1" in data_sets:
+            raise ValueError("You cannot use both DESI's LRG3+ELG1 and ELG1 or LRG3")
+
+        allowed = list(DESI_DATA_SETS.keys())
         for data_set in data_sets:
             data_set = data_set.strip()
-            if data_set not in available_tracers:
-                raise ValueError(f"Unknown DESI data set {data_set}. Valid options are: {available_tracers} (space or comma-separated to use more than one)")
-
-        rows = [available_tracers.index(data_set) for data_set in data_sets]
-        self.table = self.table[rows]
-        print("Using these DESI data sets:\n", self.table["Tracer"])
-
+            if data_set not in allowed:
+                raise ValueError(f"Unknown DESI data set {data_set}. Valid options are: {allowed} (comma-separated to use more than one) or 'all'")
+        self.data_sets = data_sets
         super().__init__(options)
     
 
     def build_data(self):
-        z, tracers, kinds, mu, C = extract_desi_table_data_vector_covariance(self.table)
-        self.kinds = kinds
-        self.tracers = tracers
-        self.table_cov = C
-        
+        z = []
+        mu = []
+        kinds = []
+        for name in self.data_sets:
+            ds = DESI_DATA_SETS[name]
+
+            # collect the effective redshfits for the measurements
+            z.append(ds["z_eff"])
+
+            # The d_v type measurements are just a single number
+            # but the d_m_d_h measurements are two values
+            if ds["kind"] == "d_v":
+                mu.append(ds["mean"])
+                kinds.append(KIND_DV)
+            else:
+                mu.extend(ds["mean"])
+                kinds.append(KIND_DM)
+                kinds.append(KIND_DH)
+                # This makes the z array the same length
+                # as the mu array. But because the D_M and D_H
+                # measurements are at the same redshift we only
+                # need to store the redshift once, and this should
+                # hopefully trigger an error if we mess up later.
+                z.append(ds["z_eff"])
+
+        kinds = np.array(kinds)
+        z = np.array(z)
+        mu = np.array(mu)
 
         # record the indices of the d_v and d_m_d_h measurements
         # for later
-        self.dv_rd_index = np.where(kinds==KIND1_DV_RD)[0]
-        self.dm_dh_index = np.where(kinds==KIND2_DM_DH)[0]
-        self.dm_rd_index = np.where(kinds==KIND3_DM_RD)[0]
-        self.dh_rd_index = np.where(kinds==KIND4_DH_RD)[0]
+        self.dv_index = np.where(kinds==KIND_DV)[0]
+        self.dm_index = np.where(kinds==KIND_DM)[0]
+        self.dh_index = np.where(kinds==KIND_DH)[0]
 
-        self.need_dv = len(self.dv_rd_index) > 0
-        self.need_dm = len(self.dm_dh_index) > 0 or len(self.dm_rd_index) > 0
-        self.need_dh = len(self.dh_rd_index) > 0 or len(self.dm_dh_index) > 0
+        self.any_dv = len(self.dv_index) > 0
+        self.any_dmdh = len(self.dm_index) > 0
 
         return z, mu
 
-
     def build_covariance(self):
-        # This has already been calculated in build_data
-        return self.table_cov
+        n = len(self.data_x)
+        C = np.zeros((n, n))
+        i = 0
+        for name in self.data_sets:
+            ds = DESI_DATA_SETS[name]
+            if ds["kind"] == "d_v":
+                C[i, i] = ds["sigma"]**2
+                i += 1
+            else:
+                C[i, i] = ds["sigma"][0]**2
+                C[i+1, i+1] = ds["sigma"][1]**2
+                C[i, i+1] = C[i+1, i] = ds["corr"]*ds["sigma"][0]*ds["sigma"][1]
+                i += 2
+        return C
 
     def extract_theory_points(self, block):
         z_theory = block[self.x_section, self.x_name]
         y = np.zeros(self.data_x.size)
         r_s = block[self.y_section, "rs_zdrag"]
-        if self.need_dv:
+
+        block["distances", "H0rd"] = block["cosmological_parameters", "H0"] * r_s
+
+        if self.any_dv:
             d_v = block[self.y_section, "d_v"]
-        if self.need_dm:
+            z_data = self.data_x[self.dv_index]
+            f = scipy.interpolate.interp1d(z_theory, d_v/r_s, kind=self.kind)
+            y[self.dv_index] = f(z_data)
+
+        if self.any_dmdh:
+            z_data = self.data_x[self.dm_index]
+
             d_m = block[self.y_section, "d_m"]
-        if self.need_dh:
+            f = scipy.interpolate.interp1d(z_theory, d_m/r_s, kind=self.kind)
+            y[self.dm_index] = f(z_data)
+
             d_h = 1.0 / block[self.y_section, "h"]
-
-        block["distances", "h0rd"] = block["cosmological_parameters", "h0"] * r_s
-
-        if len(self.dv_rd_index):
-            z_data = self.data_x[self.dv_rd_index]
-            f = scipy.interpolate.interp1d(z_theory, d_v / r_s, kind=self.kind)
-            y[self.dv_rd_index] = f(z_data)
-
-        if len(self.dm_dh_index):
-            z_data = self.data_x[self.dm_dh_index]
-            f = scipy.interpolate.interp1d(z_theory, d_m / d_h, kind=self.kind)
-            y[self.dm_dh_index] = f(z_data)
-
-        if len(self.dm_rd_index):
-            z_data = self.data_x[self.dm_rd_index]
-            f = scipy.interpolate.interp1d(z_theory, d_m / r_s, kind=self.kind)
-            y[self.dm_rd_index] = f(z_data)
-
-        if len(self.dh_rd_index):
-            z_data = self.data_x[self.dh_rd_index]
-            f = scipy.interpolate.interp1d(z_theory, d_h / r_s, kind=self.kind)
-            y[self.dh_rd_index] = f(z_data)
-
+            f = scipy.interpolate.interp1d(z_theory, d_h/r_s, kind=self.kind)
+            y[self.dh_index] = f(z_data)
         return y
 
 setup, execute, cleanup = DESILikelihood.build_module()
