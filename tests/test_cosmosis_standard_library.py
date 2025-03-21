@@ -203,7 +203,7 @@ def test_npipe(capsys):
     check_likelihood(capsys, "-4.22", "-4.23")
 
 def test_desi(capsys):
-    run_cosmosis("examples/desi.ini")
+    run_cosmosis("examples/desi_dr1.ini")
     check_likelihood(capsys, "-11.25")
 
 def test_candl(capsys):
