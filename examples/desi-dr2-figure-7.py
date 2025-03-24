@@ -17,21 +17,21 @@ for name, run in campaign.items():
 # These colors match those used in the DESI paper as
 # best I could
 colors = {
-    'All': [(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)],
     'BGS': [(0.729, 0.811, 0.552), (0.517, 0.745, 0.012)],
-    'ELG2': [(0.584, 0.725, 0.772), (0.219, 0.447, 0.6)],
     'LRG1': [(0.996, 0.854, 0.596), (0.956, 0.627, 0.086)],
     'LRG2': [(0.960, 0.678, 0.580), (0.929, 0.262, 0.094)],
     'LRG3+ELG1': [(0.733, 0.603, 0.741), (0.341, 0.211, 0.701)],
-    'Lya QSO': [(0.733, 0.556, 0.749), (0.439, 0.0, 0.474)],
-    'QSO': [(0.662, 0.815, 0.725), (0.247, 0.552, 0.360)]
+    'ELG2': [(0.584, 0.725, 0.772), (0.219, 0.447, 0.6)],
+    'Lya': [(0.733, 0.556, 0.749), (0.439, 0.0, 0.474)],
+    'QSO': [(0.662, 0.815, 0.725), (0.247, 0.552, 0.360)],
+    'All': [(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)],
  }
 
 
 # This is the order we want the contours to be plotted in. It's not the same
 # as the legend order. This is because we don't want the big contours to 
 # cover up the small ones
-order = ["BGS", "LRG1", "QSO", "ELG2", "Lya QSO", "LRG3+ELG1", "LRG2", "All"]
+order = ["BGS", "LRG1", "QSO", "ELG2", "Lya", "LRG3+ELG1", "LRG2", "All"]
 
 
 # The chains are complete now so load them all in
@@ -64,6 +64,11 @@ new_order = [order.index(name) for name in colors.keys()]
 # The rest of this is standard GetDist calls.
 plotter = getdist.plots.get_single_plotter()
 
+xmin = 87.
+xmax = 115.0
+ymin = 0.18
+ymax = 0.55
+lims = [xmin, xmax, ymin, ymax]
 
 plotter.plot_2d(list(single_data_samples.values()),
                 "DISTANCES--H0RD", 
@@ -71,14 +76,14 @@ plotter.plot_2d(list(single_data_samples.values()),
                 filled=True, 
                 colors=[colors[name] for name in single_data_samples.keys()],
                 add_legend_proxy=True,
-                lims=[70, 130, 0.1, 0.7],)
+                lims=lims,)
 
 plotter.plot_2d(combined_sample,
                 "DISTANCES--H0RD",
                 "cosmological_parameters--omega_m", 
                 filled=False, 
                 colors=["k", "k"],
-                lims=[70, 130, 0.1, 0.7],
+                lims=lims,
                 add_legend_proxy=True)
 
 
