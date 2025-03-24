@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Planck Data Cache
         id: cache-planck
         with:
@@ -37,7 +37,7 @@ jobs:
         
       - name: Cache WMAP data
         id: cache-wmap
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: wmap_likelihood_full_v5.tar.gz
           key: wmap-9-data
@@ -50,7 +50,7 @@ jobs:
 
       - name: Cache ACT data
         id: cache-act
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ACT_dr6_likelihood_v1.1.tgz
           key: act-dr6-data
@@ -72,10 +72,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-latest]
-        pyversion: ["3.8", "3.9", "3.10", "3.11"]
+        pyversion: [ "3.9", "3.10", "3.11"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
@@ -86,7 +86,7 @@ jobs:
 
       - name: Install dependencies with conda
         shell: bash -l {0}
-        run: mamba install -c conda-forge "cosmosis==3.9.2" cosmosis-build-standard-library pytest
+        run: mamba install -c conda-forge "cosmosis>=3.18" cosmosis-build-standard-library pytest
       
       - name: Get Cached Planck
         uses: actions/cache/restore@v3
@@ -167,7 +167,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -224,7 +224,7 @@ jobs:
         popd
   
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       name: Load pip cache
       id: cache-pip
       with:
