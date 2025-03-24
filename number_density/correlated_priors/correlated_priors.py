@@ -1,8 +1,6 @@
 import numpy as np
-import os
 
-from cosmosis.datablock import option_section, names
-from cosmosis.datablock.cosmosis_py import errors
+from cosmosis.datablock import option_section
 
 
 def setup(options):
