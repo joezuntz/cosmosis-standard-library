@@ -9,7 +9,7 @@ import numpy as np
 import os
 
 
-foreground_params = {
+foreground_params = [
     "T_effd",
     "beta_d",
     "beta_s",
@@ -32,9 +32,9 @@ foreground_params = {
     "alpha_dE",
     "a_gee",
     "a_psee",
-}
+]
 
-cal_params = {
+cal_params = [
     "calG_all",
     "calE_dr6_pa5_f090",
     "calE_dr6_pa5_f150",
@@ -45,7 +45,7 @@ cal_params = {
     "cal_dr6_pa5_f150",
     "cal_dr6_pa6_f090",
     "cal_dr6_pa6_f150",
-}
+]
 
 dirname = os.path.split(__file__)[0]
 
@@ -72,6 +72,9 @@ def execute(block, config):
     for p in cal_params:
         nuisance[p] = block["act_params", p]
     
+
+
+
     foreground_model = fg.get_foreground_model_totals(**nuisance)
     loglike = act.loglike(cl_dict, foreground_model, **nuisance)
 
