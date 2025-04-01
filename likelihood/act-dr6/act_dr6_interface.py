@@ -73,12 +73,10 @@ def execute(block, config):
         nuisance[p] = block["act_params", p]
     
 
-
-
     foreground_model = fg.get_foreground_model_totals(**nuisance)
     loglike = act.loglike(cl_dict, foreground_model, **nuisance)
 
     # Then call the act code
-    block[names.likelihoods, 'act_dr6_lens_like'] = loglike
+    block[names.likelihoods, 'act_dr6_like'] = loglike
 
     return 0
