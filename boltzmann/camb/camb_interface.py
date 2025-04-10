@@ -345,7 +345,13 @@ def extract_camb_params(block, config, more_config):
 
     # Set A_s for now, this gets rescaled later if sigma_8 is provided.
     if not block.has_value(cosmo, 'A_s'):
-        block[cosmo, 'A_s'] = DEFAULT_A_S
+        if block.has_key(cosmo, 'sigma_8'):
+            block[cosmo, 'A_s'] = DEFAULT_A_S
+        elif block.has_key(cosmo, "log1e10As"):
+            log10As = block[cosmo, "log1e10As"]
+            block[cosmo, 'A_s'] = np.exp(log10As) * 1.0e-10
+        else:
+            raise ValueError("CAMB requires either A_s, log1e10As, or sigma_8")
     
     # if want_perturbations:
     init_power = extract_initial_power_params(block, config, more_config)
