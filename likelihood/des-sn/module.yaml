@@ -25,11 +25,11 @@ params:
     data_file:
         meaning: Optional. File containing supernova measurements
         type: str
-        default: module_dir/lcparam_DS17f.txt
+        default: module_dir/DES-SN5YR_HD.csv
     covmat_file:
         meaning: Optional. File containing supernova measurements
         type: str
-        default: module_dir/lcparam_DS17f.txt
+        default: module_dir/STAT+SYS.txt.gz
     x_section:
         meaning: Datablock section for input theory redshift
         type: str
