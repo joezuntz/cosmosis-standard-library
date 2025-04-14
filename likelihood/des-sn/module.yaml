@@ -39,7 +39,7 @@ params:
         type: str
         default: z
     y_section:
-        meaning: Datablock section for input theory distance modulus
+        meaning: Datablock section for input theory angular diameter distance
         type: str
         default: distances
     y_name:
