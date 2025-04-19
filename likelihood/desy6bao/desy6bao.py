@@ -21,7 +21,8 @@ DM_FIDUCIAL = 3110.6 #in Mpc
 
 def setup(options):
 	section = option_section
-	CHI2_file = os.path.join(ROOT_dir,'likelihood_mean.txt')
+	# file from here: https://github.com/des-science/y6kp-bao-methods/blob/main/des-y6-bao/chi2profile_dvdesy6_cosmoplanck18_covcosmolike.csv
+	CHI2_file = os.path.join(ROOT_dir,'chi2profile_dvdesy6_cosmoplanck18_covcosmolike.txt')
 	chi2 = np.loadtxt(CHI2_file)
 	redshift = options.get_double(section, "redshift", default=REDSHIFT)
 	feedback = options.get_int(option_section, "feedback", default=0)
