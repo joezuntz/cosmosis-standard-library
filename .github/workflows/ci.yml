@@ -175,7 +175,7 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install gfortran-11 swig libopenmpi-dev openmpi-bin libopenblas-dev
         sudo ln -s `which gfortran-11` /usr/local/bin/gfortran
-        sudo apt-get -y install libgsl-dev libfftw3-bin libfftw3-dev libfftw3-3 autotools-dev  autoconf libcfitsio-dev
+        sudo apt-get -y install libgsl-dev libfftw3-bin libfftw3-dev autotools-dev  autoconf libcfitsio-dev
 
 
     - name: Get Cached Planck
