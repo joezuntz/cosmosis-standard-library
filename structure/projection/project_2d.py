@@ -109,7 +109,7 @@ class Power3D(object):
         """
         self.chi_logk_spline = interp.RectBivariateSpline(self.chi_vals, self.logk_vals, self.pk_vals)
 
-    def set_nonlimber_splines(self, block, chi_of_z, k_growth=1.e-3):
+    def set_nonlimber_splines(self, block, chi_of_z, k_growth=1.e-3, fz_from_block=False):
         """
         Set up various splines etc. needed for the exact projection
         calculation
@@ -155,15 +155,21 @@ class Power3D(object):
         P_lin_from_growth = np.outer(growth_vals**2, P_lin_z0_resamp)
         P_sublin_vals = self.pk_vals - P_lin_from_growth
         self.sublin_spline = interp.RectBivariateSpline(self.chi_vals, self.logk_vals, P_sublin_vals)
-
-        # When doing RSD, we also need f(a(\chi)) = dln(D(a(chi)))/dlna
-        a_vals = 1/(1+self.z_vals)
-        # Make ln(D)(ln(a)) spline
-        lnD_of_lna_spline = interp.InterpolatedUnivariateSpline(np.log(a_vals)[::-1], np.log(growth_vals)[::-1])
-        # And take derivative
-        f = (lnD_of_lna_spline.derivative())(np.log(a_vals))
-        # Now can set f(chi) spline.
-        self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(self.chi_vals, f)
+        
+        if  fz_from_block:
+            z_growth = block[names.growth_parameters,'z']
+            chi_growth = chi_of_z(z_growth)
+            f_growth = block[names.growth_parameters,'f_z']
+            self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(chi_growth, f_growth)
+        else:             # standard behavior is to do this spline derivative
+            # When doing RSD, we also need f(a(\chi)) = dln(D(a(chi)))/dlna
+            a_vals = 1/(1+self.z_vals)
+            # Make ln(D)(ln(a)) spline
+            lnD_of_lna_spline = interp.InterpolatedUnivariateSpline(np.log(a_vals)[::-1], np.log(growth_vals)[::-1])
+            # And take derivative
+            f = (lnD_of_lna_spline.derivative())(np.log(a_vals))
+            # Now can set f(chi) spline.
+            self.f_of_chi_spline = interp.InterpolatedUnivariateSpline(self.chi_vals, f)
 
 class MatterPower3D(Power3D):
     section = "matter_power_nl"
@@ -1222,6 +1228,10 @@ class SpectrumCalculator(object):
         self.get_kernel_peaks = options.get_bool(option_section, "get_kernel_peaks", False)
         self.save_kernels = options.get_bool(option_section, "save_kernels", False)
 
+        # Do we want to get the growth rate f(z) from previous datablock calculations
+        # or  by taking a spline derivative of tabulated P(k,z)?
+        self.fz_from_block = options.get_bool(option_section, "fz_from_block", False)
+
         self.limber_ell_start = options.get_int(option_section, "limber_ell_start", 300)
         do_exact_string = options.get_string(option_section, "do_exact", "")
         if do_exact_string=="":
@@ -1595,7 +1605,7 @@ class SpectrumCalculator(object):
                 print(f"Loading {power.section_name} 3D power spectrum")
             power.load_from_block(block, self.chi_of_z)
             if do_exact:
-                power.set_nonlimber_splines(block, self.chi_of_z)
+                power.set_nonlimber_splines(block, self.chi_of_z, fz_from_block = self.fz_from_block)
             power_key = (powertype, suffix)
             self.power[power_key] = power
 
