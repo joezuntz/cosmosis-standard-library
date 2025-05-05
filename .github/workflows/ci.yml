@@ -138,6 +138,11 @@ jobs:
         run: |
           pip install "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"
     
+      - name: Check demo 17 crash
+        run: |
+          source cosmosis-configure
+          python tests/test_demos.py
+              
       - name: Run Tests
         shell: bash -l {0}
         run: |
@@ -248,11 +253,6 @@ jobs:
       run: |
         source .github/ci-setup.sh
         python -c "import camb"
-
-    - name: Check demo 17 crash
-      run: |
-        source cosmosis-configure
-        python tests/test_demos.py
 
     - name: Test campaign commands
       shell: bash -l {0}
