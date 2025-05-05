@@ -20,7 +20,7 @@ try:
     cosmosis_version = cosmosis_version.split('.')
     cosmosis_version = int(cosmosis_version[0]), int(cosmosis_version[1])
     is_newer_than_3_19 = (cosmosis_version[0] > 3) or \
-        (cosmosis_version[0] == 3 and cosmosis_version[1] >= 19)
+        (cosmosis_version[0] == 3 and cosmosis_version[1] > 19)
 except (ValueError, IndexError):
     # fall back to the old version
     is_newer_than_3_19 = False
