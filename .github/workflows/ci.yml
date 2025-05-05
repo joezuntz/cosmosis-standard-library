@@ -271,4 +271,4 @@ jobs:
       shell: bash -l {0}
       run: |
         source cosmosis-configure
-        pytest -vv --durations=0 tests/test_demos.py
+        pytest -s -vv --durations=0 tests/test_demos.py

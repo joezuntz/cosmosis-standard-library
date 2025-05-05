@@ -1,7 +1,9 @@
 import os
 from cosmosis import run_cosmosis
+from cosmosis.runtime.handler import activate_segfault_handling
 from cosmosis.postprocessing import run_cosmosis_postprocess
 import pytest
+activate_segfault_handling()
 
 def run_demo(i, args=None, variables=None):
     if args is None:
