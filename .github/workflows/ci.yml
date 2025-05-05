@@ -139,6 +139,7 @@ jobs:
           pip install "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"
     
       - name: Check demo 17 crash
+        shell: bash -l {0}
         run: |
           source cosmosis-configure
           python tests/test_demos.py
