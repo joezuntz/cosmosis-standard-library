@@ -39,7 +39,8 @@ def execute(block, t):
         else:
             DeltaN = 0.0
     elif input_name == "massless_nu":
-        DeltaN = block[cosmo, "massless_nu"] + block[cosmo, "massive_nu"] - 3.046
+        standard_neutrino_neff = block.get_double(cosmo, "standard_neutrino_neff", default=3.044)
+        DeltaN = block[cosmo, "massless_nu"] + block[cosmo, "massive_nu"] - standard_neutrino_neff
 
 
     # Check for out-of-range parameters
