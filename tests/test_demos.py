@@ -123,3 +123,7 @@ def test_demo18():
 
 def test_demo19():
     run_demo(19, ["grid.nsample_dimension=20"])
+
+
+if __name__ == "__main__":
+    test_demo17()

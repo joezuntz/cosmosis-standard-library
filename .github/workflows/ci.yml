@@ -249,6 +249,11 @@ jobs:
         source .github/ci-setup.sh
         python -c "import camb"
 
+    - name: Check demo 17 crash
+      run: |
+        source cosmosis-configure
+        python tests/test_demos.py
+
     - name: Test campaign commands
       shell: bash -l {0}
       run: |
