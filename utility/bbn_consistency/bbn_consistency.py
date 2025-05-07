@@ -8,7 +8,7 @@ dirname = os.path.split(__file__)[0]
 
 
 def setup(options):
-    default_datafile = os.path.join(dirname, "helium.dat")
+    default_datafile = os.path.join(dirname, "PRIMAT_Yp_DH_ErrorMC_2021.dat")
     # File name for BBN data
     datafile = options.get_string(
         option_section, "data", default=default_datafile)
