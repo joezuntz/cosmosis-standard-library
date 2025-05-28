@@ -252,7 +252,6 @@ def extract_reionization_params(block, config, more_config):
                 use_optical_depth=False,
                 redshift = redshift,
                 delta_redshift = delta_redshift,
-                include_helium_fullreion = include_helium_fullreion,
                 **reion_params,
                 **more_config["reionization_params"],
             )
