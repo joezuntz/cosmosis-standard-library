@@ -242,7 +242,7 @@ def extract_reionization_params(block, config, more_config):
     if more_config["do_reionization"]:
         if more_config['use_optical_depth']:
             tau = block[cosmo, 'tau']
-            reion = camb.reionization.TanhReionization(use_optical_depth=True, optical_depth=tau)
+            reion = camb.reionization.TanhReionization(use_optical_depth=True, optical_depth=tau, **more_config["reionization_params"])
         else:
             sec = 'reionization'
             redshift = block[sec, 'redshift']
