@@ -1,7 +1,9 @@
 import os
 from cosmosis import run_cosmosis
+from cosmosis.runtime.handler import activate_segfault_handling
 from cosmosis.postprocessing import run_cosmosis_postprocess
 import pytest
+activate_segfault_handling()
 
 def run_demo(i, args=None, variables=None):
     if args is None:
@@ -121,3 +123,7 @@ def test_demo18():
 
 def test_demo19():
     run_demo(19, ["grid.nsample_dimension=20"])
+
+
+if __name__ == "__main__":
+    test_demo17()
