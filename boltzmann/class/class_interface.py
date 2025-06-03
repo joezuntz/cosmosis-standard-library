@@ -71,11 +71,30 @@ def choose_outputs(config):
         outputs.append("mPk")
     return ",".join(outputs)
 
+def get_N_ur(nmassive):
+    """
+    Returns the number of massless neutrino species
+        (ultra relativistic species).
+    Values are taken from the CLASS documentation and reflect a 
+    neff = 3.044 for the standard model of cosmology.
+    """
+    if nmassive == 0:
+        return 3.044
+    elif nmassive == 1:
+        return 2.0308
+    elif nmassive == 2:
+        return 1.0176
+    elif nmassive == 3:
+        return 0.0044
+    else:
+        raise ValueError(f"Invalid number of massive neutrinos: {nmassive}. "
+                         "Must be 0, 1, 2, or 3.")
+
 def get_class_inputs(block, config):
 
     # Get parameters from block and give them the
     # names and form that class expects
-    nnu = block.get_double(cosmo, 'nnu', 3.046)
+    nnu = block.get_double(cosmo, 'nnu', 3.044)
     nmassive = block.get_int(cosmo, 'num_massive_neutrinos', default=0)
     params = {
         'output': choose_outputs(config),
@@ -87,7 +106,7 @@ def get_class_inputs(block, config):
         'omega_cdm': block[cosmo, 'omch2'],
         'tau_reio':  block[cosmo, 'tau'],
         'T_cmb':     block.get_double(cosmo, 'TCMB', default=2.726),
-        'N_ur':      nnu - nmassive,
+        'N_ur':      block.get_double(cosmo, 'N_ur', default=get_N_ur(nmassive)),
         'N_ncdm':    nmassive,
         'l_switch_limber': 9,
     }
@@ -273,6 +292,9 @@ def execute(block, config):
         # Set input parameters
         params = get_class_inputs(block, config)
         c.set(params)
+
+        # saves neff if we are using nur, for cases where nur is sampled:
+        block[cosmo, 'nnu'] = c.Neff()
 
         if not config['background_only']:
             # Run perturbation calculations

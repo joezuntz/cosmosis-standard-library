@@ -105,6 +105,10 @@ inputs:
             meaning: The CMB temperature today in Kelvin
             type: real
             default: 2.726
+        N_ur:
+            meaning: Number of ultra-relativistic species. If not given, calculates it from `num_massive_neutrinos` and `nnu` based on the values suggest by CLASS such that N_eff = 3.044.
+            type: real
+            default: get_N_ur()
 outputs:
     cosmological_parameters:
         sigma_8:
