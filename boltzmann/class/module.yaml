@@ -59,10 +59,14 @@ params:
         meaning: Whether to compute matter power spectra
         type: bool
         default: True
-    cmb:
+    lensing:
         meaning: Whether to lens the output CMB power spectra
         type: bool
         default: True
+    background_only:
+        meaning: Run the class module on background only mode. If set to true, it will not calculate any perturbations.
+        type: bool
+        default: False
     debug:
         meaning: Whether to give a fuller traceback on errors
         type: bool

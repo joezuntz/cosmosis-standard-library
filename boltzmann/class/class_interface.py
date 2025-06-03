@@ -41,8 +41,13 @@ def setup(options):
         'mpk': options.get_bool(option_section, 'mpk', default=True),
         'save_matter_power_lin': options.get_bool(option_section, 'save_matter_power_lin', default=True),
         'save_cdm_baryon_power_lin': options.get_bool(option_section, 'save_cdm_baryon_power_lin', default=False),
+        'background_only': options.get_bool(option_section, "background_only", default=False)
     }
 
+    # cannot request cmb or mpk when background_only=True
+    assert not (
+        config['background_only'] and (config['cmb'] or config['mpk'])
+    ), "Cannot request cmb or mpk when background_only=True"
 
     for _, key in options.keys(option_section):
         if key.startswith('class_'):
@@ -152,47 +157,72 @@ def get_class_outputs(block, c, config):
     k = np.logspace(np.log10(kmin), np.log10(kmax), nk)
     nz = len(z)
 
-    # Extract (interpolate) P(k,z) at the requested
-    # sample points.
-    if 'mPk' in c.pars['output']:
-        block[cosmo, 'sigma_8'] = c.sigma8()
+    if not config['background_only']:
+        # Extract (interpolate) P(k,z) at the requested
+        # sample points.
+        if 'mPk' in c.pars['output']:
+            block[cosmo, 'sigma_8'] = c.sigma8()
 
-        # Total matter power spectrum (saved as grid)
-        if config['save_matter_power_lin']:
-            P = np.zeros((k.size, z.size))
-            for i, ki in enumerate(k):
-                for j, zi in enumerate(z):
-                    P[i, j] = c.pk_lin(ki, zi)
-            # We transpose P here to match the camb convention
-            block.put_grid("matter_power_lin", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
+            # Total matter power spectrum (saved as grid)
+            if config['save_matter_power_lin']:
+                P = np.zeros((k.size, z.size))
+                for i, ki in enumerate(k):
+                    for j, zi in enumerate(z):
+                        P[i, j] = c.pk_lin(ki, zi)
+                # We transpose P here to match the camb convention
+                block.put_grid("matter_power_lin", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
 
-        # CDM+baryons power spectrum
-        if config['save_cdm_baryon_power_lin']:
-            P = np.zeros((k.size, z.size))
-            for i, ki in enumerate(k):
-                for j, zi in enumerate(z):
-                    P[i, j] = c.pk_cb_lin(ki, zi)
-            block.put_grid('cdm_baryon_power_lin', 'z', z, 'k_h', k/h0, 'p_k', P.T * h0 **3)
+            # CDM+baryons power spectrum
+            if config['save_cdm_baryon_power_lin']:
+                P = np.zeros((k.size, z.size))
+                for i, ki in enumerate(k):
+                    for j, zi in enumerate(z):
+                        P[i, j] = c.pk_cb_lin(ki, zi)
+                block.put_grid('cdm_baryon_power_lin', 'z', z, 'k_h', k/h0, 'p_k', P.T * h0 **3)
 
-        # Get growth rates and sigma_8
-        D = [c.scale_independent_growth_factor(zi) for zi in z]
-        f = [c.scale_independent_growth_factor_f(zi) for zi in z]
-        fsigma = [c.effective_f_sigma8(zi) for zi in z]
-        sigma_8_z = [c.sigma(8.0, zi, h_units=True) for zi in z]
-        block[names.growth_parameters, "z"] = z
-        block[names.growth_parameters, "sigma_8"] = np.array(sigma_8_z)
-        block[names.growth_parameters, "fsigma_8"] = np.array(fsigma)
-        block[names.growth_parameters, "d_z"] = np.array(D)
-        block[names.growth_parameters, "f_z"] = np.array(f)
-        block[names.growth_parameters, "a"] = 1/(1+z)
+            # Get growth rates and sigma_8
+            D = [c.scale_independent_growth_factor(zi) for zi in z]
+            f = [c.scale_independent_growth_factor_f(zi) for zi in z]
+            fsigma = [c.effective_f_sigma8(zi) for zi in z]
+            sigma_8_z = [c.sigma(8.0, zi, h_units=True) for zi in z]
+            block[names.growth_parameters, "z"] = z
+            block[names.growth_parameters, "sigma_8"] = np.array(sigma_8_z)
+            block[names.growth_parameters, "fsigma_8"] = np.array(fsigma)
+            block[names.growth_parameters, "d_z"] = np.array(D)
+            block[names.growth_parameters, "f_z"] = np.array(f)
+            block[names.growth_parameters, "a"] = 1/(1+z)
 
-        if c.nonlinear_method != 0:
-            for i, ki in enumerate(k):
-                for j, zi in enumerate(z):
-                    P[i, j] = c.pk(ki, zi)
+            if c.nonlinear_method != 0:
+                for i, ki in enumerate(k):
+                    for j, zi in enumerate(z):
+                        P[i, j] = c.pk(ki, zi)
 
-            block.put_grid("matter_power_nl", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
+                block.put_grid("matter_power_nl", "z", z, "k_h", k / h0, "p_k", P.T * h0**3)
 
+        ##
+        # Now the CMB C_ell
+        ##
+        if config["cmb"]:
+            c_ell_data = c.lensed_cl() if config['lensing'] else c.raw_cl()
+            ell = c_ell_data['ell']
+            ell = ell[2:]
+
+            # Save the ell range
+            block[cmb_cl, "ell"] = ell
+
+            # t_cmb is in K, convert to mu_K, and add ell(ell+1) factor
+            tcmb_muk = block[cosmo, 'tcmb'] * 1e6
+            f = ell * (ell + 1.0) / 2 / np.pi * tcmb_muk**2
+
+            # Save each of the four spectra
+            for s in ['tt', 'ee', 'te', 'bb']:
+                block[cmb_cl, s] = c_ell_data[s][2:] * f
+
+            # save the lensing potential power spectrum
+            if config['lensing']:
+                f_lens = ell * (ell + 1.0) / 2 / np.pi
+                for s in ['pp', 'tp']:
+                    block[cmb_cl, s] = c_ell_data[s][2:] * f_lens
 
     ##
     # Distances and related quantities
@@ -232,30 +262,7 @@ def get_class_outputs(block, c, config):
     block[distances, 'mu'] = mu
 
 
-    ##
-    # Now the CMB C_ell
-    ##
-    if config["cmb"]:
-        c_ell_data = c.lensed_cl() if config['lensing'] else c.raw_cl()
-        ell = c_ell_data['ell']
-        ell = ell[2:]
 
-        # Save the ell range
-        block[cmb_cl, "ell"] = ell
-
-        # t_cmb is in K, convert to mu_K, and add ell(ell+1) factor
-        tcmb_muk = block[cosmo, 'tcmb'] * 1e6
-        f = ell * (ell + 1.0) / 2 / np.pi * tcmb_muk**2
-
-        # Save each of the four spectra
-        for s in ['tt', 'ee', 'te', 'bb']:
-            block[cmb_cl, s] = c_ell_data[s][2:] * f
-
-        # save the lensing potential power spectrum
-        if config['lensing']:
-            f_lens = ell * (ell + 1.0) / 2 / np.pi
-            for s in ['pp', 'tp']:
-                block[cmb_cl, s] = c_ell_data[s][2:] * f_lens
 
 
 def execute(block, config):
@@ -267,8 +274,12 @@ def execute(block, config):
         params = get_class_inputs(block, config)
         c.set(params)
 
-        # Run calculations
-        c.compute()
+        if not config['background_only']:
+            # Run perturbation calculations
+            c.compute()
+        else:
+            # class does not need to be run for background only
+            pass
 
         # Extract outputs
         get_class_outputs(block, c, config)
