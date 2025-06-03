@@ -85,7 +85,7 @@ def get_N_ur(nmassive):
     elif nmassive == 2:
         return 1.0176
     elif nmassive == 3:
-        return 0.0044
+        return 0.00441
     else:
         raise ValueError(f"Invalid number of massive neutrinos: {nmassive}. "
                          "Must be 0, 1, 2, or 3.")
