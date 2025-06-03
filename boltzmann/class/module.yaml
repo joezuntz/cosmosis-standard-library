@@ -123,6 +123,12 @@ outputs:
         d_l:
             meaning: Luminosity distance in Mpc
             type: real 1d
+        d_c: 
+            meaning: Comoving Distance in Mpc 
+            type: real 1d
+        d_v: 
+            meaning: Angular average of comoving angular diameter and line of sight distance
+            type: real 1d
         age:
             meaning: Age of universe in GYr
             type: real
@@ -158,4 +164,10 @@ outputs:
         te:
             meaning: ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
                 all
+            type: real 1d
+        pp:
+            meaning: ell*(ell+1) C_ell^PhiPhi / 2pi. The CMB lensing power spectra. Only if lensing=True.
+            type: real 1d
+        tp:
+            meaning: ell*(ell+1) C_ell^PhiT / 2pi. CMB Lensing cross-correlations with temperature. Only if lensing=True.
             type: real 1d
