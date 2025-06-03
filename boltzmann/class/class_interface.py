@@ -243,6 +243,12 @@ def get_class_outputs(block, c, config):
         for s in ['tt', 'ee', 'te', 'bb']:
             block[cmb_cl, s] = c_ell_data[s][2:] * f
 
+        # save the lensing potential power spectrum
+        if config['lensing']:
+            f_lens = ell * (ell + 1.0) / 2 / np.pi
+            for s in ['pp', 'tp']:
+                block[cmb_cl, s] = c_ell_data[s][2:] * f_lens
+
 
 def execute(block, config):
     import classy
