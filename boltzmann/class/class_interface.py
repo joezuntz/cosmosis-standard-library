@@ -218,6 +218,14 @@ def get_class_outputs(block, c, config):
     h_z = np.array([c.Hubble(zi) for zi in z])
     block[distances, 'H'] = h_z
 
+    # Save the comoving distance
+    d_c = np.array([c.comoving_distance(zi) for zi in z])
+    block[distances, 'd_c'] = d_c
+
+    # Save angular average of comoving angular diameter and line of sight distance, like in camb
+    d_v = ((1 + z)**2 * z * d_a**2 / h_z)**(1./3.)
+    block[distances, 'd_v'] = d_v
+
     mu = np.zeros(z.size)
     mu[0] = -np.inf
     mu[1:] = 5.0 * np.log10(d_l[1:]) + 25.0
