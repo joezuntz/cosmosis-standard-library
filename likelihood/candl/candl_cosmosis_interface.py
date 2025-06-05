@@ -3,7 +3,7 @@ try:
     import candl
     import candl.data
 except ImportError:
-    raise RuntimeError('Can not find candl. Try running: pip install candl-like')
+    raise RuntimeError('Can not find candl. Try running: pip install candl-like=1.*')
 
 from cosmosis.datablock import names, SectionOptions
 import numpy as np
