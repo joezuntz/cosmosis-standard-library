@@ -59,10 +59,14 @@ params:
         meaning: Whether to compute matter power spectra
         type: bool
         default: True
-    cmb:
+    lensing:
         meaning: Whether to lens the output CMB power spectra
         type: bool
         default: True
+    background_only:
+        meaning: Run the class module on background only mode. If set to true, it will not calculate any perturbations.
+        type: bool
+        default: False
     debug:
         meaning: Whether to give a fuller traceback on errors
         type: bool
@@ -101,6 +105,10 @@ inputs:
             meaning: The CMB temperature today in Kelvin
             type: real
             default: 2.726
+        N_ur:
+            meaning: Number of ultra-relativistic species. If not given, calculates it from `num_massive_neutrinos` and `nnu` based on the values suggest by CLASS such that N_eff = 3.044.
+            type: real
+            default: get_N_ur()
 outputs:
     cosmological_parameters:
         sigma_8:
@@ -122,6 +130,12 @@ outputs:
             type: real 1d
         d_l:
             meaning: Luminosity distance in Mpc
+            type: real 1d
+        d_c: 
+            meaning: Comoving Distance in Mpc 
+            type: real 1d
+        d_v: 
+            meaning: Angular average of comoving angular diameter and line of sight distance
             type: real 1d
         age:
             meaning: Age of universe in GYr
@@ -158,4 +172,10 @@ outputs:
         te:
             meaning: ell * (ell+1) C_ell^TE / 2 pi in mu K^2. Only if mode=cmb or
                 all
+            type: real 1d
+        pp:
+            meaning: ell*(ell+1) C_ell^PhiPhi / 2pi. The CMB lensing power spectra. Only if lensing=True.
+            type: real 1d
+        tp:
+            meaning: ell*(ell+1) C_ell^PhiT / 2pi. CMB Lensing cross-correlations with temperature. Only if lensing=True.
             type: real 1d
