@@ -46,7 +46,7 @@ def setup(options):
 
     # cannot request cmb or mpk when background_only=True
     assert not (
-        config['background_only'] and (config['cmb'] or config['mpk'])
+        config['background_only'] and (config['cmb'] or config['mpk']) or config['lensing']
     ), "Cannot request cmb or mpk when background_only=True"
 
     for _, key in options.keys(option_section):
