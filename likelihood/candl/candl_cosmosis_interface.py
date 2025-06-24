@@ -199,7 +199,7 @@ class CandlCosmoSISLikelihood:
     def likelihood(self, block):
         """
         Computes the log-likelihood.
-        
+
         Also returns the theory and data vector for the likelihood.
         This is useful for post-processing and plotting.
         """

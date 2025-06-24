@@ -236,6 +236,7 @@ jobs:
     - name: Install recent python dependencies
       run: |
         pip install "candl-like==2.*"
+        pip install "git+https://github.com/Lbalkenhol/candl_data.git"
         
 
     - name: Build
