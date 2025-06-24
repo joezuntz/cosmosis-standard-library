@@ -235,7 +235,7 @@ jobs:
     
     - name: Install recent python dependencies
       run: |
-        pip install "candl-like==1.*"
+        pip install "candl-like==2.*"
         
 
     - name: Build
