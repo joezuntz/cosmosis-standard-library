@@ -75,8 +75,10 @@ def get_N_ur(nmassive):
     """
     Returns the number of massless neutrino species
         (ultra relativistic species).
-    Values are taken from the CLASS documentation and reflect a 
-    neff = 3.044 for the standard model of cosmology.
+    Values are taken from the CLASS documentation: 
+    https://github.com/lesgourg/class_public/blob/0ceb7a9a4c1e444ef5d5d56a8328a0640be91b18/explanatory.ini#L304
+    and reflect a  neff = 3.044 for the standard 
+    model of cosmology.
     """
     if nmassive == 0:
         return 3.044
@@ -299,9 +301,6 @@ def execute(block, config):
         if not config['background_only']:
             # Run perturbation calculations
             c.compute()
-        else:
-            # class does not need to be run for background only
-            pass
 
         # Extract outputs
         get_class_outputs(block, c, config)
