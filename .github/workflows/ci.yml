@@ -137,7 +137,8 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"
-    
+          pip install "candl-like==2.*" "git+https://github.com/Lbalkenhol/candl_data.git"
+
       - name: Run Tests
         shell: bash -l {0}
         run: |
@@ -235,7 +236,8 @@ jobs:
     
     - name: Install recent python dependencies
       run: |
-        pip install "candl-like==1.*"
+        pip install "candl-like==2.*"
+        pip install "git+https://github.com/Lbalkenhol/candl_data.git"
         
 
     - name: Build
