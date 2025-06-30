@@ -67,18 +67,15 @@ class SaccClLikelihood(GaussianLikelihood):
         tracer_patterns = self.options.get_string("keep_tracers", default=".*").split()
         tracer_re = [re.compile(pattern) for pattern in tracer_patterns]
         tracer_pairs = s.get_tracer_combinations()
-        for t1, t2 in tracer_pairs:
-            match1 = any([p.match(t1) for p in tracer_re])
-            match2 = any([p.match(t2) for p in tracer_re])
-            if not match1:
-                miss = t1
-            elif not match2:
-                miss = t2
-            else:
-                miss = ""
+        for tracers in tracer_pairs:
+            matches = [any([p.match(t) for p in tracer_re]) for t in tracers]
+            miss = ""
+            for t, m in zip(tracers, matches):
+                if not m:
+                    miss = t
 
             if miss:
-                print(f"Removing tracer pair {t1}, {t2} because {miss} does not match any pattern in {tracer_patterns}")
+                print(f"Removing tracer combination {tracers} because {miss} does not match any pattern in {tracer_patterns}")
                 s.remove_selection(tracers=(t1,t2))
 
         # The ones we actually used.
@@ -89,11 +86,15 @@ class SaccClLikelihood(GaussianLikelihood):
         # but what can you do?
 
         for name in self.used_names:
-            for t1, t2 in s.get_tracer_combinations(name):
+            for tracers in s.get_tracer_combinations(name):
+                if len(tracers) != 2:
+                    continue
+                t1, t2 = tracers
                 option_name = "angle_range_{}_{}_{}".format(name, t1, t2)
                 if self.options.has_value(option_name):
                     r = self.options.get_double_array_1d(option_name)
                     # TODO: Update for theta limits on xi(theta)
+                    # TODO: Also update for one-point cuts.
                     s.remove_selection(name, (t1, t2), ell__lt=r[0])
                     s.remove_selection(name, (t1, t2), ell__gt=r[1])
 
@@ -102,8 +103,8 @@ class SaccClLikelihood(GaussianLikelihood):
             if self.options.has_value(option_name):
                 cuts = self.options[option_name].split()
                 for cut in cuts:
-                    t1, t2 = cut.split(",")
-                    s.remove_selection(name, (t1, t2))
+                    tracers = cut.split(",")
+                    s.remove_selection(name, tracers)
 
 
         # Info on which likelihoods we do and do not use
