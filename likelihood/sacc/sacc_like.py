@@ -1,27 +1,26 @@
 import sacc
 from cosmosis.gaussian_likelihood import GaussianLikelihood
-from cosmosis.datablock import names, BlockError
+from cosmosis.datablock import names
 import numpy as np
 import re
+from sacc_likelihoods import extract_spectrum_prediction, extract_one_point_prediction
+
 import os
 import sys
-this_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(this_dir)
-twopoint_dir = os.path.join(parent_dir, "2pt")
-sys.path.append(twopoint_dir)
-from spec_tools import SpectrumInterp
 
 default_sections = {
-    "cl_ee": "shear_cl",
-    "galaxy_shear_cl_ee": "shear_cl",
-    "cl_bb": "shear_cl_bb",
-    "galaxy_shear_cl_bb": "shear_cl_bb",
-    "cl_eb": "shear_cl_eb",
-    "galaxy_shear_cl_eb": "shear_cl_eb",
-    "cl_be": "shear_cl_be",
-    "galaxy_shear_cl_be": "shear_cl_be",
-    "galaxy_density_cl": "galaxy_cl",
-    "galaxy_shearDensity_cl_e": "galaxy_shear_cl",
+    "cl_ee": ("spectrum", "shear_cl",),
+    "galaxy_shear_cl_ee": ("spectrum", "shear_cl",),
+    "cl_bb": ("spectrum", "shear_cl_bb",),
+    "galaxy_shear_cl_bb": ("spectrum", "shear_cl_bb",),
+    "cl_eb": ("spectrum", "shear_cl_eb",),
+    "galaxy_shear_cl_eb": ("spectrum", "shear_cl_eb",),
+    "cl_be": ("spectrum", "shear_cl_be",),
+    "galaxy_shear_cl_be": ("spectrum", "shear_cl_be",),
+    "galaxy_density_cl": ("spectrum", "galaxy_cl",),
+    "galaxy_shearDensity_cl_e": ("spectrum", "galaxy_shear_cl",),
+    # Come back and think about the naming here later:
+    "galaxy_stellarmassfunction_hist_log": ("one_point", "smf",),
 }
 
 
@@ -208,41 +207,32 @@ class SaccClLikelihood(GaussianLikelihood):
 
     def extract_theory_points(self, block):
         theory = []
-        # We may want to save these splines for the covariance matrix later
-        self.theory_splines = {}
+        dataset_names = []
 
         # We have a collection of data vectors, one for each spectrum
         # that we include. We concatenate them all into one long vector,
         # so we do the same for our theory data so that they match
 
-        # We will also save angles and bin indices for plotting convenience,
-        # although these are not actually used in the likelihood
-        angle = []
-        bin1 = []
-        bin2 = []
-        dataset_name = []
 
         # Now we actually loop through our data sets
-        for spectrum in self.sacc_data.get_data_types():
-            theory_vector, angle_vector, bin1_vector, bin2_vector = self.extract_spectrum_prediction(
-                block, spectrum)
+        for data_type in self.sacc_data.get_data_types():
+            category, section = self.sections_for_names[data_type]
+            if category == "spectrum":
+                theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip)
+            elif category == "one_point":
+                theory_vector, metadata_vectors = self.extract_one_point_prediction(block, data_type, section)
+
+            # We also save metadata vectors such as the bin indices
+            # and angles, so that we can use them in plotting etc.
+            for name, vector in metadata_vectors.items():
+                block[names.data_vector, f"{data_type}_{name}"] = vector
+
             theory.append(theory_vector)
-            angle.append(angle_vector)
-            bin1.append(bin1_vector)
-            bin2.append(bin2_vector)
+            dataset_names.append(np.repeat(data_type, len(theory_vector)))
 
 
-        # We also collect the ell or theta values.
-        # The gaussian likelihood code itself is not expecting these,
-        # so we just save them here for convenience.
-        angle = np.concatenate(angle)
-        bin1 = np.concatenate(bin1)
-        bin2 = np.concatenate(bin2)
-        # dataset_name = np.concatenate(dataset_name)
-        block[names.data_vector, self.like_name + "_angle"] = angle
-        block[names.data_vector, self.like_name + "_bin1"] = bin1
-        block[names.data_vector, self.like_name + "_bin2"] = bin2
-        # block[names.data_vector, self.like_name+"_name"] = dataset_name
+        dataset_names = np.concatenate(dataset_names)
+        block[names.data_vector, self.like_name+"_name"] = dataset_names
 
         # the thing it does want is the theory vector, for comparison with
         # the data vector
@@ -304,94 +294,6 @@ class SaccClLikelihood(GaussianLikelihood):
             # overwrite the log-likelihood
             block[names.likelihoods, self.like_name + "_LIKE"] = like
 
-    def extract_spectrum_prediction(self, block, data_type):
-
-        s = self.sacc_data
-        section = self.sections_for_names[data_type]
-
-        ell_theory = block[section, "ell"]
-        is_auto = block[section, "is_auto"]
-
-        # We build up these vectors from all the data points.
-        # Only the theory vector is needed for the likelihood - the others
-        # are for convenience, debugging, etc.
-        theory_vector = []
-        angle_vector = []
-        bin1_vector = []
-        bin2_vector = []
-
-
-        # Because we called to_canonical_order when we loaded the data,
-        # we know that the data is grouped by data type, and then by tracers (tomo bins).
-        # So that means we can do a data type at a time and then concatenate them, and
-        # within this do a bin pair at a time, and concatenate them too.
-        for b1, b2 in s.get_tracer_combinations(data_type):
-            # Here we assume that the bin names are formatted such that
-            # they always end with _1, _2, etc. That isn't always true in
-            # sacc, but is somewhat baked into cosmosis in other modules.
-            # It would be nice to update that throughout, but that will
-            # have to wait. Also, cosmosis bins start from 1 not 0.
-            # We need to make sure that's fixed in the 
-            i = int(b1.split("_")[-1]) + 1
-            j = int(b2.split("_")[-1]) + 1
-
-            if data_type in self.flip:
-                i, j = j, i
-
-            try:
-                cl_theory = block[section, f"bin_{i}_{j}"]
-            except BlockError:
-                if is_auto:
-                    cl_theory = block[section, f"bin_{j}_{i}"]
-                else:
-                    raise
-
-            # check that all the data points share the same window
-            # object (window objects contain weights for a set of ell values,
-            # as a matrix), or that none have windows.
-            window = None
-            for d in s.get_data_points(data_type, (b1, b2)):
-                w = d.get_tag('window')
-                if (window is not None) and (w is not window):
-                    raise ValueError("Sacc likelihood currently assumes data types share a window object")
-                window = w
-
-            # We need to interpolate between the sample ell values
-            # onto all the ell values required by the weight function
-            # This will give zero outside the range where we have
-            # calculated the theory
-            cl_theory_spline = SpectrumInterp(ell_theory, cl_theory)
-            if window is not None:
-                ell_window = window.values
-                cl_theory_interpolated = cl_theory_spline(ell_window)
-
-            for d in s.get_data_points(data_type, (b1, b2)):
-                ell_nominal = d['ell']
-                if window is None:
-                    binned_cl_theory = cl_theory_spline(ell_nominal)
-                else:
-                    index = d['window_ind']
-                    weight = window.weight[:, index]
-
-                    # The weight away should hopefully sum to 1 anyway but we should
-                    # probably not rely on that always being true.
-                    binned_cl_theory = (weight @ cl_theory_interpolated) / weight.sum()
-
-                theory_vector.append(binned_cl_theory)
-                angle_vector.append(ell_nominal)
-                bin1_vector.append(i - 1)
-                bin2_vector.append(j - 1)
-
-        # Return the whole collection as a single array
-        theory_vector = np.array(theory_vector)
-
-        # For convenience we also save the angle vector (ell or theta)
-        # and bin indices
-        angle_vector = np.array(angle_vector)
-        bin1_vector = np.array(bin1_vector, dtype=int)
-        bin2_vector = np.array(bin2_vector, dtype=int)
-
-        return theory_vector, angle_vector, bin1_vector, bin2_vector
 
 
 setup, execute, cleanup = SaccClLikelihood.build_module()
