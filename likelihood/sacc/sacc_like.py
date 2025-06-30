@@ -246,8 +246,8 @@ class SaccClLikelihood(GaussianLikelihood):
         theory = np.concatenate(theory)
         print("THEORY:", theory)
         print("DATA:", self.data_y)
-        print("COV[0]", self.cov[0])
-        print("INV[0]", self.inv_cov[0])
+        print("COV", self.cov)
+        print("INV", self.inv_cov)
         return theory
 
     def do_likelihood(self, block):
