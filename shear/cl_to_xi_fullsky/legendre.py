@@ -13,7 +13,8 @@ def sin_filter(ell_max, ell_right):
 def get_N_ell(ell):
     """N_ell (eq. 2.16)"""
     ell = np.atleast_1d(ell)
-    N_ell = np.sqrt(2. / (ell - 1) / ell / (ell + 1) / (ell + 2))
+    N_ell = np.zeros(ell.shape)
+    N_ell[ell > 2] = np.sqrt(2. / (ell[ell > 2] - 1) / ell[ell > 2] / (ell[ell > 2] + 1) / (ell[ell > 2] + 2))
     N_ell[ell < 2] = 0.
     N_ell[ell == 2] = np.sqrt(2. / (4 * 3 * 2))
     return N_ell
