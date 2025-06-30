@@ -132,7 +132,13 @@ class SaccClLikelihood(GaussianLikelihood):
             else:
                 raise ValueError(f"SACC likelihood does not yet understand data type {name}")
             print(f"Will look for theory prediction for data set {name} in section {section}")
-            self.sections_for_names[name] = section
+            if self.options.has_value(f"{name}_category"):
+                category = self.options[f"{name}_category"]
+            elif name in default_sections:
+                category = default_sections[name][0]
+            else:
+                raise ValueError(f"You need to specify {name}_category in the ini file as the data type {name} is not known.")
+            self.sections_for_names[name] = (category, section)
 
 
         # build up the data vector from all the separate vectors.
