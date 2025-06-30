@@ -26,8 +26,8 @@ def extract_one_point_prediction(sacc_data, block, data_type, section):
 
         theory.append(smf_interp)
 
-        mass_min.append(sacc_data.get_tag("min_mass", data_type, t))
-        mass_max.append(sacc_data.get_tag("max_mass", data_type, t))
+        mass_min.append(sacc_data.get_tag("mass_min", data_type, t))
+        mass_max.append(sacc_data.get_tag("mass_max", data_type, t))
         bins.append(np.repeat(b, len(obs_mass)))
 
 
@@ -36,6 +36,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section):
         "mass_max": np.concatenate(mass_max),
         "mass_bin": np.concatenate(bins),
     }
+
     theory_vector = np.concatenate(theory)
 
     return theory_vector, metadata
