@@ -221,7 +221,7 @@ class SaccClLikelihood(GaussianLikelihood):
             if category == "spectrum":
                 theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip)
             elif category == "one_point":
-                theory_vector, metadata_vectors = extract_one_point_prediction(block, data_type, section)
+                theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section)
 
             # We also save metadata vectors such as the bin indices
             # and angles, so that we can use them in plotting etc.
