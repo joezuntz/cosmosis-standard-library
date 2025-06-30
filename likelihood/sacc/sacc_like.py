@@ -244,7 +244,7 @@ class SaccClLikelihood(GaussianLikelihood):
         # the thing it does want is the theory vector, for comparison with
         # the data vector
         theory = np.concatenate(theory)
-
+        print("THEORY:", theory)
         return theory
 
     def do_likelihood(self, block):
