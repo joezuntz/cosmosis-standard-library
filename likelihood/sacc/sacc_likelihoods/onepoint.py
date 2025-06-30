@@ -13,7 +13,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section):
         
         # This should be an n(z) tracer
         tracer = t[0]
-        b = int(tracer.split("_")[1])
+        b = int(tracer.split("_")[1]) + 1
         
         theory_log_mass = block[section, "log_mass"]
         theory_smf = block[section, f"bin_{b}"]
