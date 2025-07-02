@@ -9,6 +9,7 @@ import os
 import sys
 
 default_sections = {
+    # Spectrum default sections
     "cl_ee": ("spectrum", "shear_cl",),
     "galaxy_shear_cl_ee": ("spectrum", "shear_cl",),
     "cl_bb": ("spectrum", "shear_cl_bb",),
@@ -19,8 +20,42 @@ default_sections = {
     "galaxy_shear_cl_be": ("spectrum", "shear_cl_be",),
     "galaxy_density_cl": ("spectrum", "galaxy_cl",),
     "galaxy_shearDensity_cl_e": ("spectrum", "galaxy_shear_cl",),
+    "galaxy_shearDensity_cl_b": ("spectrum", "galaxy_shear_cl",),
+
+    # Real default sections
+    "xi_ee": ("real", "shear_xi",),
+    "galaxy_shear_xi_ee": ("real", "shear_xi",),
+    "xi_bb": ("real", "shear_xi_bb",),
+    "galaxy_shear_xi_bb": ("real", "shear_xi_bb",),
+    "xi_eb": ("real", "shear_xi_eb",),
+    "galaxy_shear_xi_eb": ("real", "shear_xi_eb",),
+    "xi_be": ("real", "shear_xi_be",),
+    "galaxy_shear_xi_be": ("real", "shear_xi_be",),
+    "galaxy_shear_xi_minus": ("real", "shear_xi_minus",),
+    "galaxy_shear_xi_plus": ("real", "shear_xi_plus",),
+    "galaxy_shear_xi_imagMinus": ("real", "shear_xi_minus",),
+    "galaxy_shear_xi_imagPlus": ("real", "shear_xi_plus",),
+    "galaxy_density_xi": ("real", "galaxy_xi",),
+    "galaxy_shearDensity_xi_t": ("real", "galaxy_shear_xi",),
+    "galaxy_shearDensity_xi_x": ("real", "galaxy_shear_xi",),
+
+    # COSEBI's and Psi-stats default sections
+    "galaxy_shear_cosebi_bb": ("cosebi", "cosebis_b"),
+    "galaxy_shear_cosebi_ee": ("cosebi", "cosebis"),
+    "galaxy_shearDensity_cosebi_e": ("cosebi", "psi_stats_gm"),
+    "galaxy_density_cosebi": ("cosebi", "psi_stats_gg"),
+
+    # Bandpowers default sections
+    "galaxy_shear_bandpowers_bb": ("spectrum", "bandpower_shear_b"),
+    "galaxy_shear_bandpowers_ee": ("spectrum", "bandpower_shear_e"),
+    "galaxy_shearDensity_bandpowers_e": ("spectrum", "bandpower_ggl"),
+    "galaxy_shearDensity_bandpowers_b": ("spectrum", "bandpower_ggl_b"),
+    "galaxy_density_bandpowers": ("spectrum", "bandpower_clustering"), 
+
+    # One-point default sections
     # Come back and think about the naming here later:
-    "galaxy_stellarmassfunction_hist_log": ("one_point", "smf",),
+    "galaxy_stellarmassfunction": ("one_point_mass", "smf",),
+    "galaxy_luminosityfunction": ("one_point_lum", "lf",),
 }
 
 
@@ -128,7 +163,7 @@ class SaccClLikelihood(GaussianLikelihood):
             if self.options.has_value(f"{name}_section"):
                 section = self.options[f"{name}_section"]
             elif name in default_sections:
-                section = default_sections[name]
+                section = default_sections[name][1]
             else:
                 raise ValueError(f"SACC likelihood does not yet understand data type {name}")
             print(f"Will look for theory prediction for data set {name} in section {section}")
@@ -224,11 +259,11 @@ class SaccClLikelihood(GaussianLikelihood):
         # Now we actually loop through our data sets
         for data_type in self.sacc_data.get_data_types():
             category, section = self.sections_for_names[data_type]
-            if category == "spectrum":
-                theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip)
-            elif category == "one_point":
-                theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section)
-
+            if "spectrum" in category or "real" in category or "cosebi" in category:
+                theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip, category=category)
+            elif "one_point" in category:
+                theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section, category=category)
+            
             # We also save metadata vectors such as the bin indices
             # and angles, so that we can use them in plotting etc.
             for name, vector in metadata_vectors.items():
@@ -244,10 +279,6 @@ class SaccClLikelihood(GaussianLikelihood):
         # the thing it does want is the theory vector, for comparison with
         # the data vector
         theory = np.concatenate(theory)
-        print("THEORY:", theory)
-        print("DATA:", self.data_y)
-        print("COV", self.cov)
-        print("INV", self.inv_cov)
         return theory
 
     def do_likelihood(self, block):
