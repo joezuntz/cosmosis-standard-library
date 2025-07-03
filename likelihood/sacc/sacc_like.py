@@ -120,7 +120,9 @@ class SaccClLikelihood(GaussianLikelihood):
         # Check for scale cuts. In general, this is a minimum and maximum angle for
         # each spectrum, for each redshift bin combination. Which is clearly a massive pain...
         # but what can you do?
-        
+
+        valid_tags = ["ell", "theta", "cosebis_n", "mass", "lum"]
+        # We only support these tags for now, but we could add more
         for name in self.used_names:
             for tracers in s.get_tracer_combinations(name):
                 if len(tracers) != 2:
@@ -132,21 +134,16 @@ class SaccClLikelihood(GaussianLikelihood):
                 if self.options.has_value(option_name):
                     r = self.options.get_double_array_1d(option_name)
                     tags = np.unique([key for row in s.data if row.data_type is name for key in row.tags])
-                    if "ell" in tags:
-                        s.remove_selection(name, (t1, t2), ell__lt=r[0])
-                        s.remove_selection(name, (t1, t2), ell__gt=r[1])
-                    if "theta" in tags:
-                        s.remove_selection(name, (t1, t2), theta__lt=r[0])
-                        s.remove_selection(name, (t1, t2), theta__gt=r[1])
-                    if "cosebis_n" in tags:
-                        s.remove_selection(name, (t1, t2), cosebis_n__lt=r[0])
-                        s.remove_selection(name, (t1, t2), cosebis_n__gt=r[1])
-                    if "mass" in tags:
-                        s.remove_selection(name, (t1,), mass__lt=r[0])
-                        s.remove_selection(name, (t1,), mass__gt=r[1])
-                    if "lum" in tags:
-                        s.remove_selection(name, (t1,), lum__lt=r[0])
-                        s.remove_selection(name, (t1,), lum__gt=r[1])
+                    for tag in valid_tags:
+                        if tag in tags:
+                            # Determine the tracer tuple based on the tag and data type
+                            tracer_tuple = (t1, t2) if tag in ["ell", "theta", "cosebis_n"] else (t1,)
+                            # Create keyword arguments for lt and gt
+                            kwargs_lt = {f"{tag}__lt": r[0]}
+                            kwargs_gt = {f"{tag}__gt": r[1]}
+                            # Call the remove_selection method
+                            s.remove_selection(name, tracer_tuple, **kwargs_lt)
+                            s.remove_selection(name, tracer_tuple, **kwargs_gt)
 
         for name in self.used_names:
             option_name = "cut_{}".format(name)
@@ -155,7 +152,6 @@ class SaccClLikelihood(GaussianLikelihood):
                 for cut in cuts:
                     tracers = cut.split(",")
                     s.remove_selection(name, tracers)
-
 
         # Info on which likelihoods we do and do not use
         print("Found these data sets in the file:")
