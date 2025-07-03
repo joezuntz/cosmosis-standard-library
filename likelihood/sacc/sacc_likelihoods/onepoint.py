@@ -21,6 +21,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
     mass_min_vector = []
     mass_max_vector= []
     bins_vector = []
+
     for t in tracer_tuples:
         assert len(t) == 1, "One-point likelihoods only support single tracer data types"
         
@@ -36,9 +37,9 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
         theory_spline = SpectrumInterp(x_theory, theory)
 
         window = None
-        w = sacc_data.get_tag("window", data_type, t)
-        if (window is not None) and (w is not window):
-            raise ValueError("Sacc likelihood currently assumes data types share a window object")
+        for w in sacc_data.get_tag("windows", data_type, t):
+            if (window is not None) and (w is not window):
+                raise ValueError("Sacc likelihood currently assumes data types share a window object")
             window = w
 
         # TO-DO: Check if the window thing is ok for 1pt stats and how to do the binning here either way.
