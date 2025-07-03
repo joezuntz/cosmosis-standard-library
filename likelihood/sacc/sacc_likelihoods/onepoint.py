@@ -1,15 +1,17 @@
 import numpy as np
 from cosmosis.datablock import BlockError
+from scipy.interpolate import interp1d
 import pathlib
 import sys
 
+"""
 # Get the SpectrumInterp class from the spec_tools module.
 # Should really put this somewhere else!
 twopoint_dir = pathlib.Path(__file__).parent.parent.parent.resolve() / "2pt"
 print(twopoint_dir)
 sys.path.append(str(twopoint_dir))
 from spec_tools import SpectrumInterp
-
+"""
 
 def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs):
     # data_type = galaxy_stellarmassfunction_hist
@@ -34,7 +36,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
         else:
             x_theory = block[section, f"lum_{b}"]
         theory = block[section, f"bin_{b}"]
-        theory_spline = SpectrumInterp(x_theory, theory)
+        theory_spline = interp1d(x_theory, theory, bounds_error=False, fill_value="extrapolate")
 
         window = None
         for w in sacc_data.get_tag("windows", data_type, t):
