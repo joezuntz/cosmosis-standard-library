@@ -270,17 +270,17 @@ class SaccClLikelihood(GaussianLikelihood):
         # Now we actually loop through our data sets
         for data_type in self.sacc_data.get_data_types():
             category, section = self.sections_for_names[data_type]
-            if "spectrum" in category or "real" in category or "cosebi" in category:
-                extract_prediction = getattr(sacc_likelihoods, self.sacc_like, None)
-                if extract_prediction is None:
-                    raise ValueError(f"2pt likelihood requires the {self.sacc_like} method to be defined")
-                theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, flip=self.flip, options=self.options, category=category)
-            elif "one_point" in category:
+            if "one_point" in category:
                 extract_prediction = getattr(sacc_likelihoods, "onepoint", None)
                 if extract_prediction is None:
                     raise ValueError("1pt likelihood requires the 1pt method to be defined")
                 theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, category=category)
-            
+            else:
+                extract_prediction = getattr(sacc_likelihoods, self.sacc_like, None)
+                if extract_prediction is None:
+                    raise ValueError(f"2pt likelihood requires the {self.sacc_like} method to be defined")
+                theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, flip=self.flip, options=self.options, category=category)
+
             # We also save metadata vectors such as the bin indices
             # and angles, so that we can use them in plotting etc.
             for name, vector in metadata_vectors.items():
