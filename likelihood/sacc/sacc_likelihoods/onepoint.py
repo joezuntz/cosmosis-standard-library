@@ -14,6 +14,8 @@ from spec_tools import SpectrumInterp
 def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs):
     # data_type = galaxy_stellarmassfunction_hist
     # section = smf
+    category = kwargs.get("category")
+
     tracer_tuples = sacc_data.get_tracer_combinations(data_type)
     theory_vector = []
     mass_min_vector = []
@@ -26,7 +28,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
         tracer = t[0]
         b = int(tracer.split("_")[1]) + 1
         
-        if kwargs.get("category", "one_point_mass") == "one_point_mass":
+        if category == "one_point_mass":
             x_theory = block[section, f"mass_{b}"]
         else:
             x_theory = block[section, f"lum_{b}"]
@@ -40,7 +42,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
             window = w
 
         # TO-DO: Check if the window thing is ok for 1pt stats and how to do the binning here either way.
-        if kwargs.get("category", "one_point_mass") == "one_point_mass":
+        if category == "one_point_mass":
             x_nominal = np.array(sacc_data.get_tag("mass", data_type, t))
         else:
             x_nominal = np.array(sacc_data.get_tag("lum", data_type, t))

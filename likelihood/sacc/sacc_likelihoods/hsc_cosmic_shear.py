@@ -45,11 +45,12 @@ def extract_hsc_prediction(sacc_data, block, data_type, section, **kwargs):
     if options is None:
         raise ValueError("HSC likelihood requires options to be passed")
     
-    if kwargs.get("category", "spectrum") == "spectrum":
+    category = kwargs.get("category")
+    if category == "spectrum":
         x_theory = block[section, "ell"]
-    elif kwargs.get("category", "real") == "real":
+    elif category == "real":
         x_theory = block[section, "theta"]
-    elif kwargs.get("category", "cosebi") == "cosebi":
+    elif category == "cosebi":
         x_theory = block[section, "cosebis_n"]
     is_auto = block[section, "is_auto"]
 
@@ -110,13 +111,13 @@ def extract_hsc_prediction(sacc_data, block, data_type, section, **kwargs):
 
         for d in sacc_data.get_data_points(data_type, (b1, b2)):
             index = d['window_ind']
-            if kwargs.get("category", "spectrum") == "spectrum":
+            if category == "spectrum":
                 x_nominal = d['ell']
-            elif kwargs.get("category", "real") == "real":
+            elif category == "real":
                 x_nominal = d['theta']
-            # TO-DO: Not sure if this works for COSEBIs, come back to it later.
-            elif kwargs.get("category", "cosebi") == "cosebi":
-                x_nominal = d["cosebis_n"]
+            #TO-DO: Not sure if this works for COSEBIs, come back to it later.
+            elif category == "cosebi":
+                x_nominal = d['cosebis_n']
             weight = window.weight[:, index]
 
             # The weight away should hopefully sum to 1 anyway but we should
