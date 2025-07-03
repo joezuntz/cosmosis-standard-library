@@ -3,7 +3,7 @@ from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 import numpy as np
 import re
-from sacc_likelihoods import extract_spectrum_prediction, extract_one_point_prediction, extract_hsc_prediction
+import sacc_likelihoods
 
 import os
 import sys
@@ -75,6 +75,7 @@ class SaccClLikelihood(GaussianLikelihood):
         self.save_theory = options.get_string("save_theory", "")
         self.save_realization = options.get_string("save_realization", "")
         self.flip = options.get_string("flip", "").split()
+        self.sacc_like = options.get_string("sacc_like", "2pt")
 
         super().__init__(options)
 
@@ -119,19 +120,33 @@ class SaccClLikelihood(GaussianLikelihood):
         # Check for scale cuts. In general, this is a minimum and maximum angle for
         # each spectrum, for each redshift bin combination. Which is clearly a massive pain...
         # but what can you do?
-
+        
         for name in self.used_names:
             for tracers in s.get_tracer_combinations(name):
                 if len(tracers) != 2:
-                    continue
-                t1, t2 = tracers
-                option_name = "angle_range_{}_{}_{}".format(name, t1, t2)
+                    t1 = tracers[0]
+                    option_name = "angle_range_{}_{}".format(name, t1)
+                else:
+                    t1, t2 = tracers
+                    option_name = "angle_range_{}_{}_{}".format(name, t1, t2)
                 if self.options.has_value(option_name):
                     r = self.options.get_double_array_1d(option_name)
-                    # TODO: Update for theta limits on xi(theta)
-                    # TODO: Also update for one-point cuts.
-                    s.remove_selection(name, (t1, t2), ell__lt=r[0])
-                    s.remove_selection(name, (t1, t2), ell__gt=r[1])
+                    tags = np.unique([key for row in s.data if row.data_type is name for key in row.tags])
+                    if "ell" in tags:
+                        s.remove_selection(name, (t1, t2), ell__lt=r[0])
+                        s.remove_selection(name, (t1, t2), ell__gt=r[1])
+                    if "theta" in tags:
+                        s.remove_selection(name, (t1, t2), theta__lt=r[0])
+                        s.remove_selection(name, (t1, t2), theta__gt=r[1])
+                    if "cosebis_n" in tags:
+                        s.remove_selection(name, (t1, t2), cosebis_n__lt=r[0])
+                        s.remove_selection(name, (t1, t2), cosebis_n__gt=r[1])
+                    if "mass" in tags:
+                        s.remove_selection(name, (t1,), mass__lt=r[0])
+                        s.remove_selection(name, (t1,), mass__gt=r[1])
+                    if "lum" in tags:
+                        s.remove_selection(name, (t1,), lum__lt=r[0])
+                        s.remove_selection(name, (t1,), lum__gt=r[1])
 
         for name in self.used_names:
             option_name = "cut_{}".format(name)
@@ -259,13 +274,16 @@ class SaccClLikelihood(GaussianLikelihood):
         # Now we actually loop through our data sets
         for data_type in self.sacc_data.get_data_types():
             category, section = self.sections_for_names[data_type]
-            if self.like_name == "2pt":
-                if "spectrum" in category or "real" in category or "cosebi" in category:
-                    theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip, category=category)
-                elif "one_point" in category:
-                    theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section, category=category)
-            if self.like_name == "hsc_y3_shear":
-                    theory_vector, metadata_vectors = extract_hsc_prediction(self.sacc_data, block, data_type, section, flip=self.flip, options=self.options, category=category)
+            if "spectrum" in category or "real" in category or "cosebi" in category:
+                extract_prediction = getattr(sacc_likelihoods, self.sacc_like, None)
+                if extract_prediction is None:
+                    raise ValueError(f"2pt likelihood requires the {self.sacc_like} method to be defined")
+                theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, flip=self.flip, options=self.options, category=category)
+            elif "one_point" in category:
+                extract_prediction = getattr(sacc_likelihoods, "onepoint", None)
+                if extract_prediction is None:
+                    raise ValueError("1pt likelihood requires the 1pt method to be defined")
+                theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, category=category)
             
             # We also save metadata vectors such as the bin indices
             # and angles, so that we can use them in plotting etc.
