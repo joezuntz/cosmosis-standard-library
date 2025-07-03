@@ -61,15 +61,15 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
 
         theory_vector.append(binned_theory)
 
-        mass_min_vector.append(sacc_data.get_tag(f"mass_min_{b}", data_type, t))
-        mass_max_vector.append(sacc_data.get_tag(f"mass_max_{b}", data_type, t))
+        mass_min_vector.append(sacc_data.get_tag("mass_min", data_type, t))
+        mass_max_vector.append(sacc_data.get_tag("mass_max", data_type, t))
         bins_vector.append(np.repeat(b, len(binned_theory)))
 
     theory_vector = np.concatenate(theory_vector)
 
     metadata = {
-        #"mass_min": np.concatenate(mass_min_vector),
-        #"mass_max": np.concatenate(mass_max_vector),
+        "mass_min": np.concatenate(mass_min_vector),
+        "mass_max": np.concatenate(mass_max_vector),
         "mass_bin": np.concatenate(bins_vector),
     }
 
