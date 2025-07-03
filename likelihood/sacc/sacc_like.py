@@ -3,7 +3,7 @@ from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 import numpy as np
 import re
-from sacc_likelihoods import extract_spectrum_prediction, extract_one_point_prediction
+from sacc_likelihoods import extract_spectrum_prediction, extract_one_point_prediction, extract_hsc_prediction
 
 import os
 import sys
@@ -69,7 +69,7 @@ class SaccClLikelihood(GaussianLikelihood):
     # results, etc.  This sub-clas does the parts that are specific to this 2-pt
     # likelihood - loading data from a file, getting the specific theory prediction
     # to which to compare it, etc.
-    like_name = "2pt"
+    #like_name = "2pt"
 
     def __init__(self, options):
         self.save_theory = options.get_string("save_theory", "")
@@ -259,10 +259,13 @@ class SaccClLikelihood(GaussianLikelihood):
         # Now we actually loop through our data sets
         for data_type in self.sacc_data.get_data_types():
             category, section = self.sections_for_names[data_type]
-            if "spectrum" in category or "real" in category or "cosebi" in category:
-                theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip, category=category)
-            elif "one_point" in category:
-                theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section, category=category)
+            if self.like_name == "2pt":
+                if "spectrum" in category or "real" in category or "cosebi" in category:
+                    theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip, category=category)
+                elif "one_point" in category:
+                    theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section, category=category)
+            if self.like_name == "hsc_y3_shear":
+                    theory_vector, metadata_vectors = extract_hsc_prediction(self.sacc_data, block, data_type, section, flip=self.flip, options=self.options, category=category)
             
             # We also save metadata vectors such as the bin indices
             # and angles, so that we can use them in plotting etc.

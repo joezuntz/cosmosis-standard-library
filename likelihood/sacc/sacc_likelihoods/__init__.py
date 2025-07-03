@@ -1,2 +1,3 @@
 from .twopoint import extract_spectrum_prediction
 from .onepoint import extract_one_point_prediction
+from .hsc_cosmic_shear import extract_hsc_prediction
