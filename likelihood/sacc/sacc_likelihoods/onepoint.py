@@ -4,15 +4,6 @@ from scipy.interpolate import interp1d
 import pathlib
 import sys
 
-"""
-# Get the SpectrumInterp class from the spec_tools module.
-# Should really put this somewhere else!
-twopoint_dir = pathlib.Path(__file__).parent.parent.parent.resolve() / "2pt"
-print(twopoint_dir)
-sys.path.append(str(twopoint_dir))
-from spec_tools import SpectrumInterp
-"""
-
 def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs):
     # data_type = galaxy_stellarmassfunction_hist
     # section = smf
@@ -49,6 +40,7 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
             x_nominal = np.array(sacc_data.get_tag("mass", data_type, t))
         else:
             x_nominal = np.array(sacc_data.get_tag("lum", data_type, t))
+
         if window is None:
             binned_theory = theory_spline(x_nominal)
         else:
