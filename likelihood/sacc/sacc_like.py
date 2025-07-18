@@ -45,20 +45,11 @@ default_sections = {
     "galaxy_shearDensity_cosebi_e": ("cosebi", "psi_stats_gm"),
     "galaxy_density_cosebi": ("cosebi", "psi_stats_gg"),
 
-    # Bandpowers default sections
-    "galaxy_shear_bandpowers_bb": ("spectrum", "bandpower_shear_b"),
-    "galaxy_shear_bandpowers_ee": ("spectrum", "bandpower_shear_e"),
-    "galaxy_shearDensity_bandpowers_e": ("spectrum", "bandpower_ggl"),
-    "galaxy_shearDensity_bandpowers_b": ("spectrum", "bandpower_ggl_b"),
-    "galaxy_density_bandpowers": ("spectrum", "bandpower_clustering"), 
-
     # One-point default sections
     # Come back and think about the naming here later:
     "galaxy_stellarmassfunction": ("one_point_mass", "smf",),
-    "galaxy_luminosityfunction": ("one_point_lum", "lf",),
+    "galaxy_luminosityfunction": ("one_point_luminosity", "lf",),
 }
-
-
 
 
 class SaccClLikelihood(GaussianLikelihood):
@@ -69,7 +60,7 @@ class SaccClLikelihood(GaussianLikelihood):
     # results, etc.  This sub-clas does the parts that are specific to this 2-pt
     # likelihood - loading data from a file, getting the specific theory prediction
     # to which to compare it, etc.
-    #like_name = "2pt"
+    like_name = "2pt"
 
     def __init__(self, options):
         self.save_theory = options.get_string("save_theory", "")
@@ -121,7 +112,7 @@ class SaccClLikelihood(GaussianLikelihood):
         # each spectrum, for each redshift bin combination. Which is clearly a massive pain...
         # but what can you do?
 
-        valid_tags = ["ell", "theta", "cosebis_n", "mass", "lum"]
+        valid_tags = ["ell", "theta", "cosebis_n", "mass", "luminosity"]
         # We only support these tags for now, but we could add more
         for name in self.used_names:
             for tracers in s.get_tracer_combinations(name):
@@ -272,8 +263,6 @@ class SaccClLikelihood(GaussianLikelihood):
             category, section = self.sections_for_names[data_type]
             if "one_point" in category:
                 extract_prediction = getattr(sacc_likelihoods, "onepoint", None)
-                if extract_prediction is None:
-                    raise ValueError("1pt likelihood requires the 1pt method to be defined")
                 theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, category=category)
             else:
                 extract_prediction = getattr(sacc_likelihoods, self.sacc_like, None)

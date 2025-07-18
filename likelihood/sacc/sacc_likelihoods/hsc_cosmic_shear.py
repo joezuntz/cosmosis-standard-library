@@ -49,6 +49,7 @@ def extract_hsc_prediction(sacc_data, block, data_type, section, **kwargs):
         x_theory = block[section, "ell"]
     elif category == "real":
         x_theory = block[section, "theta"]
+    #TO-DO: Decide on final nomenclature for cosebis and psi-stats!
     elif category == "cosebi":
         x_theory = block[section, "cosebis_n"]
     is_auto = block[section, "is_auto"]
@@ -114,7 +115,7 @@ def extract_hsc_prediction(sacc_data, block, data_type, section, **kwargs):
                 x_nominal = d['ell']
             elif category == "real":
                 x_nominal = d['theta']
-            #TO-DO: Not sure if this works for COSEBIs, come back to it later.
+            #TO-DO: Decide on final nomenclature for cosebis and psi-stats!
             elif category == "cosebi":
                 x_nominal = d['cosebis_n']
             weight = window.weight[:, index]

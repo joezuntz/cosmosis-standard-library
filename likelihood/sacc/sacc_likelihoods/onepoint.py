@@ -5,8 +5,6 @@ import pathlib
 import sys
 
 def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs):
-    # data_type = galaxy_stellarmassfunction_hist
-    # section = smf
     category = kwargs.get("category")
 
     tracer_tuples = sacc_data.get_tracer_combinations(data_type)
@@ -22,10 +20,11 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
         tracer = t[0]
         b = int(tracer.split("_")[1]) + 1
         
+        # This selection below needs to be generalised more 1pt statistics we implement (cluster richness for instance, ...).
         if category == "one_point_mass":
             x_theory = block[section, f"mass_{b}"]
         else:
-            x_theory = block[section, f"lum_{b}"]
+            x_theory = block[section, f"luminosity_{b}"]
         theory = block[section, f"bin_{b}"]
         theory_spline = interp1d(x_theory, theory, bounds_error=False, fill_value="extrapolate")
 
