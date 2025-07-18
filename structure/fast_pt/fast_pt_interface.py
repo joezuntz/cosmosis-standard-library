@@ -16,8 +16,11 @@ Contact Jonathan Blazek with questions.
 import scipy.integrate
 scipy.integrate.trapz = scipy.integrate.trapezoid
 from cosmosis.datablock import names, option_section
-import fastpt.FASTPT as FASTPT
-from fastpt.P_extend import k_extend 
+from fastpt import FASTPT
+try:
+    from fastpt.P_extend import k_extend
+except ModuleNotFoundError:
+    from fastpt.utils.P_extend import k_extend
 import numpy as np
 from time import time
 

@@ -33,6 +33,7 @@ def test_projection(capsys):
 
 def test_bao(capsys):
     run_cosmosis("examples/bao.ini")
+    check_likelihood(capsys, "-157.0", "-157.1", "-156.9")
     check_no_camb_warnings(capsys)
 
 def test_planck(capsys):
