@@ -6,7 +6,6 @@ import sys
 # Get the SpectrumInterp class from the spec_tools module.
 # Should really put this somewhere else!
 twopoint_dir = pathlib.Path(__file__).parent.parent.parent.resolve() / "2pt"
-print(twopoint_dir)
 sys.path.append(str(twopoint_dir))
 from spec_tools import SpectrumInterp
 
