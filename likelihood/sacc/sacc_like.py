@@ -3,12 +3,13 @@ from cosmosis.gaussian_likelihood import GaussianLikelihood
 from cosmosis.datablock import names
 import numpy as np
 import re
-from sacc_likelihoods import extract_spectrum_prediction, extract_one_point_prediction
+import sacc_likelihoods
 
 import os
 import sys
 
 default_sections = {
+    # Spectrum default sections
     "cl_ee": ("spectrum", "shear_cl",),
     "galaxy_shear_cl_ee": ("spectrum", "shear_cl",),
     "cl_bb": ("spectrum", "shear_cl_bb",),
@@ -19,11 +20,36 @@ default_sections = {
     "galaxy_shear_cl_be": ("spectrum", "shear_cl_be",),
     "galaxy_density_cl": ("spectrum", "galaxy_cl",),
     "galaxy_shearDensity_cl_e": ("spectrum", "galaxy_shear_cl",),
+    "galaxy_shearDensity_cl_b": ("spectrum", "galaxy_shear_cl",),
+
+    # Real default sections
+    "xi_ee": ("real", "shear_xi",),
+    "galaxy_shear_xi_ee": ("real", "shear_xi",),
+    "xi_bb": ("real", "shear_xi_bb",),
+    "galaxy_shear_xi_bb": ("real", "shear_xi_bb",),
+    "xi_eb": ("real", "shear_xi_eb",),
+    "galaxy_shear_xi_eb": ("real", "shear_xi_eb",),
+    "xi_be": ("real", "shear_xi_be",),
+    "galaxy_shear_xi_be": ("real", "shear_xi_be",),
+    "galaxy_shear_xi_minus": ("real", "shear_xi_minus",),
+    "galaxy_shear_xi_plus": ("real", "shear_xi_plus",),
+    "galaxy_shear_xi_imagMinus": ("real", "shear_xi_minus",),
+    "galaxy_shear_xi_imagPlus": ("real", "shear_xi_plus",),
+    "galaxy_density_xi": ("real", "galaxy_xi",),
+    "galaxy_shearDensity_xi_t": ("real", "galaxy_shear_xi",),
+    "galaxy_shearDensity_xi_x": ("real", "galaxy_shear_xi",),
+
+    # COSEBI's and Psi-stats default sections
+    "galaxy_shear_cosebi_bb": ("cosebis", "cosebis_b"),
+    "galaxy_shear_cosebi_ee": ("cosebis", "cosebis"),
+    "galaxy_shearDensity_cosebi_e": ("cosebis", "psi_stats_gm"),
+    "galaxy_density_cosebi": ("cosebis", "psi_stats_gg"),
+
+    # One-point default sections
     # Come back and think about the naming here later:
-    "galaxy_stellarmassfunction_hist_log": ("one_point", "smf",),
+    "galaxy_stellarmassfunction": ("one_point_mass", "smf",),
+    "galaxy_luminosityfunction": ("one_point_luminosity", "lf",),
 }
-
-
 
 
 class SaccClLikelihood(GaussianLikelihood):
@@ -40,6 +66,7 @@ class SaccClLikelihood(GaussianLikelihood):
         self.save_theory = options.get_string("save_theory", "")
         self.save_realization = options.get_string("save_realization", "")
         self.flip = options.get_string("flip", "").split()
+        self.sacc_like = options.get_string("sacc_like", "2pt")
 
         super().__init__(options)
 
@@ -85,18 +112,29 @@ class SaccClLikelihood(GaussianLikelihood):
         # each spectrum, for each redshift bin combination. Which is clearly a massive pain...
         # but what can you do?
 
+        valid_tags = ["ell", "theta", "n", "mass", "luminosity"]
+        # We only support these tags for now, but we could add more
         for name in self.used_names:
             for tracers in s.get_tracer_combinations(name):
                 if len(tracers) != 2:
-                    continue
-                t1, t2 = tracers
-                option_name = "angle_range_{}_{}_{}".format(name, t1, t2)
+                    t1 = tracers[0]
+                    option_name = "angle_range_{}_{}".format(name, t1)
+                else:
+                    t1, t2 = tracers
+                    option_name = "angle_range_{}_{}_{}".format(name, t1, t2)
                 if self.options.has_value(option_name):
                     r = self.options.get_double_array_1d(option_name)
-                    # TODO: Update for theta limits on xi(theta)
-                    # TODO: Also update for one-point cuts.
-                    s.remove_selection(name, (t1, t2), ell__lt=r[0])
-                    s.remove_selection(name, (t1, t2), ell__gt=r[1])
+                    tags = np.unique([key for row in s.data if row.data_type is name for key in row.tags])
+                    for tag in valid_tags:
+                        if tag in tags:
+                            # Determine the tracer tuple based on the tag and data type
+                            tracer_tuple = (t1, t2) if tag in ["ell", "theta", "n"] else (t1,)
+                            # Create keyword arguments for lt and gt
+                            kwargs_lt = {f"{tag}__lt": r[0]}
+                            kwargs_gt = {f"{tag}__gt": r[1]}
+                            # Call the remove_selection method
+                            s.remove_selection(name, tracer_tuple, **kwargs_lt)
+                            s.remove_selection(name, tracer_tuple, **kwargs_gt)
 
         for name in self.used_names:
             option_name = "cut_{}".format(name)
@@ -105,7 +143,6 @@ class SaccClLikelihood(GaussianLikelihood):
                 for cut in cuts:
                     tracers = cut.split(",")
                     s.remove_selection(name, tracers)
-
 
         # Info on which likelihoods we do and do not use
         print("Found these data sets in the file:")
@@ -128,7 +165,7 @@ class SaccClLikelihood(GaussianLikelihood):
             if self.options.has_value(f"{name}_section"):
                 section = self.options[f"{name}_section"]
             elif name in default_sections:
-                section = default_sections[name]
+                section = default_sections[name][1]
             else:
                 raise ValueError(f"SACC likelihood does not yet understand data type {name}")
             print(f"Will look for theory prediction for data set {name} in section {section}")
@@ -224,10 +261,14 @@ class SaccClLikelihood(GaussianLikelihood):
         # Now we actually loop through our data sets
         for data_type in self.sacc_data.get_data_types():
             category, section = self.sections_for_names[data_type]
-            if category == "spectrum":
-                theory_vector, metadata_vectors = extract_spectrum_prediction(self.sacc_data, block, data_type, section, flip=self.flip)
-            elif category == "one_point":
-                theory_vector, metadata_vectors = extract_one_point_prediction(self.sacc_data, block, data_type, section)
+            if "one_point" in category:
+                extract_prediction = getattr(sacc_likelihoods, "onepoint", None)
+                theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, category=category)
+            else:
+                extract_prediction = getattr(sacc_likelihoods, self.sacc_like, None)
+                if extract_prediction is None:
+                    raise ValueError(f"2pt likelihood requires the {self.sacc_like} method to be defined")
+                theory_vector, metadata_vectors = extract_prediction(self.sacc_data, block, data_type, section, flip=self.flip, options=self.options, category=category)
 
             # We also save metadata vectors such as the bin indices
             # and angles, so that we can use them in plotting etc.
@@ -244,10 +285,6 @@ class SaccClLikelihood(GaussianLikelihood):
         # the thing it does want is the theory vector, for comparison with
         # the data vector
         theory = np.concatenate(theory)
-        print("THEORY:", theory)
-        print("DATA:", self.data_y)
-        print("COV", self.cov)
-        print("INV", self.inv_cov)
         return theory
 
     def do_likelihood(self, block):

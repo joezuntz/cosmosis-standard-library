@@ -9,18 +9,49 @@ twopoint_dir = pathlib.Path(__file__).parent.parent.parent.resolve() / "2pt"
 sys.path.append(str(twopoint_dir))
 from spec_tools import SpectrumInterp
 
+def load_psf_template(options):
+    filename = options.get_string("psf_file", "")
+    psf_ell_bins = np.load(filename)['arr_0']
+    psf_cl_arr = np.load(filename)['arr_1']
+    filename2 = options.get_string("psf_transformation_file", "")
+    psf_transform_matrix = np.load(filename2)['arr_0']
+    psf_means = np.load(filename2)['arr_1']
+    return psf_ell_bins, psf_cl_arr, psf_transform_matrix, psf_means
 
-def extract_spectrum_prediction(sacc_data, block, data_type, section, **kwargs):
+def compute_psf_template(options, block):
+    alpha2 = block["psf_parameters", "psf_alpha2"]
+    beta2 = block["psf_parameters", "psf_beta2"]
+    alpha4 = block["psf_parameters", "psf_alpha4"]
+    beta4 = block["psf_parameters", "psf_beta4"]
 
+    psf_ell_bins, psf_template, psf_transform_matrix, psf_means = load_psf_template(options)
+        
+    uncorrelated_p_arr = np.array([alpha2, beta2, alpha4, beta4])
+    p_arr = (np.linalg.inv(psf_transform_matrix)@uncorrelated_p_arr.T).T + psf_means
+    delta_cl = np.zeros(len(psf_template[0][0]))
+    for i in range(4):
+        for j in range(4):
+            delta_cl += p_arr[i]*p_arr[j]*psf_template[i][j]
+
+    return delta_cl
+
+
+def extract_hsc_prediction(sacc_data, block, data_type, section, **kwargs):
+    """
+    This is based on the original SACC likelihood, but adds the PSF subtraction
+    """
+    options = kwargs.get("options", None)
+    if options is None:
+        raise ValueError("HSC likelihood requires options to be passed")
+    
     category = kwargs.get("category")
     if category == "spectrum":
         x_theory = block[section, "ell"]
     elif category == "real":
         x_theory = block[section, "theta"]
     #TO-DO: Decide on final nomenclature for cosebis and psi-stats!
-    # Given current cosebis module in standard library, the x_nominal should be simply n
-    elif category == "cosebis":
-        x_theory = block[section, "n"]
+    elif category == "cosebi":
+        x_theory = block[section, "cosebis_n"]
     is_auto = block[section, "is_auto"]
 
     # We build up these vectors from all the data points.
@@ -31,6 +62,7 @@ def extract_spectrum_prediction(sacc_data, block, data_type, section, **kwargs):
     bin1_vector = []
     bin2_vector = []
 
+    psf = compute_psf_template(options, block)
 
     # Because we called to_canonical_order when we loaded the data,
     # we know that the data is grouped by data type, and then by tracers (tomo bins).
@@ -59,43 +91,38 @@ def extract_spectrum_prediction(sacc_data, block, data_type, section, **kwargs):
 
         # check that all the data points share the same window
         # object (window objects contain weights for a set of ell / theta values,
-        # as a matrix), or that none have windows.
+        # as a matrix).
         window = None
         for d in sacc_data.get_data_points(data_type, (b1, b2)):
-            w = d.get_tag('window')
+            w = d['window']
             if (window is not None) and (w is not window):
                 raise ValueError("Sacc likelihood currently assumes data types share a window object")
             window = w
 
+        if window is None:
+            raise ValueError("HSC likelihood assumes a window")
         # We need to interpolate between the sample ell / theta values
         # onto all the ell / theta values required by the weight function
         # This will give zero outside the range where we have
         # calculated the theory
         theory_spline = SpectrumInterp(x_theory, theory)
-        if window is not None:
-            x_window = window.values
-            theory_interpolated = theory_spline(x_window)
+        x_window = window.values
+        theory_interpolated = theory_spline(x_window)
 
         for d in sacc_data.get_data_points(data_type, (b1, b2)):
+            index = d['window_ind']
             if category == "spectrum":
                 x_nominal = d['ell']
             elif category == "real":
                 x_nominal = d['theta']
             #TO-DO: Decide on final nomenclature for cosebis and psi-stats!
-            # Given current cosebis module in standard library, the x_nominal should be simply n
-            elif category == "cosebis":
-                x_nominal = d['n']
+            elif category == "cosebi":
+                x_nominal = d['cosebis_n']
+            weight = window.weight[:, index]
 
-            if window is None:
-                binned_theory = theory_spline(x_nominal)
-            else:
-                index = d['window_ind']
-                weight = window.weight[:, index]
-
-                # The weight away should hopefully sum to 1 anyway but we should
-                # probably not rely on that always being true.
-                # TO-DO: Check this for real statistics, but should be ok.
-                binned_theory = (weight @ theory_interpolated) / weight.sum()
+            # The weight away should hopefully sum to 1 anyway but we should
+            # probably not rely on that always being true.
+            binned_theory = (weight @ theory_interpolated) / weight.sum() + psf[index]
 
             theory_vector.append(binned_theory)
             angle_vector.append(x_nominal)
@@ -118,3 +145,6 @@ def extract_spectrum_prediction(sacc_data, block, data_type, section, **kwargs):
     }
 
     return theory_vector, metadata
+
+
+
