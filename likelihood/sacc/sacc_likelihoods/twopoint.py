@@ -18,8 +18,9 @@ def extract_spectrum_prediction(sacc_data, block, data_type, section, **kwargs):
     elif category == "real":
         x_theory = block[section, "theta"]
     #TO-DO: Decide on final nomenclature for cosebis and psi-stats!
-    elif category == "cosebi":
-        x_theory = block[section, "cosebis_n"]
+    # Given current cosebis module in standard library, the x_nominal should be simply n
+    elif category == "cosebis":
+        x_theory = block[section, "n"]
     is_auto = block[section, "is_auto"]
 
     # We build up these vectors from all the data points.
@@ -81,8 +82,9 @@ def extract_spectrum_prediction(sacc_data, block, data_type, section, **kwargs):
             elif category == "real":
                 x_nominal = d['theta']
             #TO-DO: Decide on final nomenclature for cosebis and psi-stats!
-            elif category == "cosebi":
-                x_nominal = d['cosebis_n']
+            # Given current cosebis module in standard library, the x_nominal should be simply n
+            elif category == "cosebis":
+                x_nominal = d['n']
 
             if window is None:
                 binned_theory = theory_spline(x_nominal)

@@ -40,10 +40,10 @@ default_sections = {
     "galaxy_shearDensity_xi_x": ("real", "galaxy_shear_xi",),
 
     # COSEBI's and Psi-stats default sections
-    "galaxy_shear_cosebi_bb": ("cosebi", "cosebis_b"),
-    "galaxy_shear_cosebi_ee": ("cosebi", "cosebis"),
-    "galaxy_shearDensity_cosebi_e": ("cosebi", "psi_stats_gm"),
-    "galaxy_density_cosebi": ("cosebi", "psi_stats_gg"),
+    "galaxy_shear_cosebi_bb": ("cosebis", "cosebis_b"),
+    "galaxy_shear_cosebi_ee": ("cosebis", "cosebis"),
+    "galaxy_shearDensity_cosebi_e": ("cosebis", "psi_stats_gm"),
+    "galaxy_density_cosebi": ("cosebis", "psi_stats_gg"),
 
     # One-point default sections
     # Come back and think about the naming here later:
@@ -112,7 +112,7 @@ class SaccClLikelihood(GaussianLikelihood):
         # each spectrum, for each redshift bin combination. Which is clearly a massive pain...
         # but what can you do?
 
-        valid_tags = ["ell", "theta", "cosebis_n", "mass", "luminosity"]
+        valid_tags = ["ell", "theta", "n", "mass", "luminosity"]
         # We only support these tags for now, but we could add more
         for name in self.used_names:
             for tracers in s.get_tracer_combinations(name):
@@ -128,7 +128,7 @@ class SaccClLikelihood(GaussianLikelihood):
                     for tag in valid_tags:
                         if tag in tags:
                             # Determine the tracer tuple based on the tag and data type
-                            tracer_tuple = (t1, t2) if tag in ["ell", "theta", "cosebis_n"] else (t1,)
+                            tracer_tuple = (t1, t2) if tag in ["ell", "theta", "n"] else (t1,)
                             # Create keyword arguments for lt and gt
                             kwargs_lt = {f"{tag}__lt": r[0]}
                             kwargs_gt = {f"{tag}__gt": r[1]}
