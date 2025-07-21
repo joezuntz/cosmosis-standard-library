@@ -9,8 +9,8 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
 
     tracer_tuples = sacc_data.get_tracer_combinations(data_type)
     theory_vector = []
-    mass_min_vector = []
-    mass_max_vector= []
+    observable_min_vector = []
+    observable_max_vector= []
     bins_vector = []
 
     for t in tracer_tuples:
@@ -38,8 +38,8 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
         if category == "one_point_mass":
             x_nominal = np.array(sacc_data.get_tag("mass", data_type, t))
         else:
-            x_nominal = np.array(sacc_data.get_tag("lum", data_type, t))
-
+            x_nominal = np.array(sacc_data.get_tag("luminosity", data_type, t))
+        
         if window is None:
             binned_theory = theory_spline(x_nominal)
         else:
@@ -54,19 +54,34 @@ def extract_one_point_prediction(sacc_data, block, data_type, section, **kwargs)
             binned_theory = (weight @ theory_interpolated) / weight.sum()
 
         theory_vector.append(binned_theory)
+        if category == "one_point_mass":
+            observable_min_vector.append(sacc_data.get_tag("mass_min", data_type, t))
+            observable_max_vector.append(sacc_data.get_tag("mass_max", data_type, t))
+        else:
+            observable_min_vector.append(sacc_data.get_tag("luminosity_min", data_type, t))
+            observable_max_vector.append(sacc_data.get_tag("luminosity_max", data_type, t))
 
-        mass_min_vector.append(sacc_data.get_tag("mass_min", data_type, t))
-        mass_max_vector.append(sacc_data.get_tag("mass_max", data_type, t))
         bins_vector.append(np.repeat(b, len(binned_theory)))
 
     theory_vector = np.concatenate(theory_vector)
 
+    if category == "one_point_mass":
+        metadata_kwargs = {
+            "min": "mass_min",
+            "max": "mass_max",
+            "bins": "mass_bin",
+        }
+    else:
+        metadata_kwargs = {
+            "min": "luminosity_min",
+            "max": "luminosity_max",
+            "bins": "luminosity_bin",
+        }
     metadata = {
-        "mass_min": np.concatenate(mass_min_vector),
-        "mass_max": np.concatenate(mass_max_vector),
-        "mass_bin": np.concatenate(bins_vector),
+        metadata_kwargs["min"]: np.concatenate(observable_min_vector),
+        metadata_kwargs["max"]: np.concatenate(observable_max_vector),
+        metadata_kwargs["bins"]: np.concatenate(bins_vector),
     }
-
     return theory_vector, metadata
 
 
