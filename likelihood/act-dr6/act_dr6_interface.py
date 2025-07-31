@@ -2,7 +2,7 @@ try:
     import act_dr6_mflike
     import mflike
 except ImportError:
-    raise RuntimeError('The act_dr6_lenslike python module is required for the act_dr6_like likelihood. Try running: pip install act_dr6_mflike.')
+    raise RuntimeError('The act_dr6_mflike python module is required for the act_dr6_like likelihood. Try running: pip install act_dr6_mflike.')
 from cosmosis.datablock import names
 cosmo = names.cosmological_parameters
 import numpy as np
