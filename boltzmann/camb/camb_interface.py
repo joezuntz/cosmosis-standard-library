@@ -237,6 +237,9 @@ def extract_recombination_params(block, config, more_config):
         )
 
     #Not yet supporting CosmoRec, but not too hard if needed.
+    elif more_config['recombination_model'] == 'cosmorec':
+
+        recomb = camb.recombination.CosmoRec()
 
     return recomb
 
