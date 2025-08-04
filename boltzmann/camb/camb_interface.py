@@ -122,6 +122,8 @@ def setup(options):
     config['want_zdrag'] = mode != MODE_BG
     config['want_zstar'] = config['want_zdrag']
 
+    more_config['recombination_model'] = options.get_string(opt, 'recombination_model', default='recfast')
+
     more_config['want_chistar'] = options.get_bool(opt, 'want_chistar', default=True)
     more_config['n_logz'] = options.get_int(opt, 'n_logz', default=0)
     more_config['zmax_logz'] = options.get_double(opt, 'zmax_logz', default = 1100.)
@@ -205,33 +207,34 @@ Please use any these (separated by spaces): {}""".format(bad_power, good_power))
 # during the execute function
 
 def extract_recombination_params(block, config, more_config):
-    default_recomb = camb.recombination.Recfast()
- 
-    min_a_evolve_Tm = block.get_double('recfast', 'min_a_evolve_Tm', default=default_recomb.min_a_evolve_Tm)
-    RECFAST_fudge = block.get_double('recfast', 'RECFAST_fudge', default=default_recomb.RECFAST_fudge)
-    RECFAST_fudge_He = block.get_double('recfast', 'RECFAST_fudge_He', default=default_recomb.RECFAST_fudge_He)
-    RECFAST_Heswitch = block.get_int('recfast', 'RECFAST_Heswitch', default=default_recomb.RECFAST_Heswitch)
-    RECFAST_Hswitch = block.get_bool('recfast', 'RECFAST_Hswitch', default=default_recomb.RECFAST_Hswitch)
-    AGauss1 = block.get_double('recfast', 'AGauss1', default=default_recomb.AGauss1)
-    AGauss2 = block.get_double('recfast', 'AGauss2', default=default_recomb.AGauss2)
-    zGauss1 = block.get_double('recfast', 'zGauss1', default=default_recomb.zGauss1)
-    zGauss2 = block.get_double('recfast', 'zGauss2', default=default_recomb.zGauss2)
-    wGauss1 = block.get_double('recfast', 'wGauss1', default=default_recomb.wGauss1)
-    wGauss2 = block.get_double('recfast', 'wGauss2', default=default_recomb.wGauss2)
-    
-    recomb = camb.recombination.Recfast(
-        min_a_evolve_Tm = min_a_evolve_Tm, 
-        RECFAST_fudge = RECFAST_fudge, 
-        RECFAST_fudge_He = RECFAST_fudge_He, 
-        RECFAST_Heswitch = RECFAST_Heswitch, 
-        RECFAST_Hswitch = RECFAST_Hswitch, 
-        AGauss1 = AGauss1, 
-        AGauss2 = AGauss2, 
-        zGauss1 = zGauss1, 
-        zGauss2 = zGauss2, 
-        wGauss1 = wGauss1, 
-        wGauss2 = wGauss2, 
-    )
+    if more_config['recombination_model'] == 'recfast':
+        default_recomb = camb.recombination.Recfast()
+     
+        min_a_evolve_Tm = block.get_double('recfast', 'min_a_evolve_Tm', default=default_recomb.min_a_evolve_Tm)
+        RECFAST_fudge = block.get_double('recfast', 'RECFAST_fudge', default=default_recomb.RECFAST_fudge)
+        RECFAST_fudge_He = block.get_double('recfast', 'RECFAST_fudge_He', default=default_recomb.RECFAST_fudge_He)
+        RECFAST_Heswitch = block.get_int('recfast', 'RECFAST_Heswitch', default=default_recomb.RECFAST_Heswitch)
+        RECFAST_Hswitch = block.get_bool('recfast', 'RECFAST_Hswitch', default=default_recomb.RECFAST_Hswitch)
+        AGauss1 = block.get_double('recfast', 'AGauss1', default=default_recomb.AGauss1)
+        AGauss2 = block.get_double('recfast', 'AGauss2', default=default_recomb.AGauss2)
+        zGauss1 = block.get_double('recfast', 'zGauss1', default=default_recomb.zGauss1)
+        zGauss2 = block.get_double('recfast', 'zGauss2', default=default_recomb.zGauss2)
+        wGauss1 = block.get_double('recfast', 'wGauss1', default=default_recomb.wGauss1)
+        wGauss2 = block.get_double('recfast', 'wGauss2', default=default_recomb.wGauss2)
+        
+        recomb = camb.recombination.Recfast(
+            min_a_evolve_Tm = min_a_evolve_Tm, 
+            RECFAST_fudge = RECFAST_fudge, 
+            RECFAST_fudge_He = RECFAST_fudge_He, 
+            RECFAST_Heswitch = RECFAST_Heswitch, 
+            RECFAST_Hswitch = RECFAST_Hswitch, 
+            AGauss1 = AGauss1, 
+            AGauss2 = AGauss2, 
+            zGauss1 = zGauss1, 
+            zGauss2 = zGauss2, 
+            wGauss1 = wGauss1, 
+            wGauss2 = wGauss2, 
+        )
 
     #Not yet supporting CosmoRec, but not too hard if needed.
 
