@@ -157,7 +157,7 @@ def setup(options):
         raise ValueError("halofit_version must be one of : {}.  You put: {}".format(known_halofit_versions, halofit_version))
 
     more_config["accuracy_params"] = get_optional_params(options, opt, 
-                                                        ['AccuracyBoost', 'lSampleBoost', 'lAccuracyBoost', 'DoLateRadTruncation'])
+                                                        ['AccuracyBoost', 'lSampleBoost', 'lAccuracyBoost', 'DoLateRadTruncation', 'min_l_logl_sampling'])
                                                         #  'TimeStepBoost', 'BackgroundTimeStepBoost', 'IntTolBoost', 
                                                         #  'SourcekAccuracyBoost', 'IntkAccuracyBoost', 'TransferkBoost',
                                                         #  'NonFlatIntAccuracyBoost', 'BessIntBoost', 'LensingBoost',
