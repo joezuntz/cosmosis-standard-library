@@ -60,9 +60,9 @@ def execute(block, config):
     act, fg = config
 
     cl_dict = {
-        "tt": block[names.cmb_cl, 'tt'],
-        "te": block[names.cmb_cl, 'te'],
-        "ee": block[names.cmb_cl, 'ee'],
+        "tt": np.append(np.array([0,0]), block[names.cmb_cl, 'tt']),
+        "te": np.append(np.array([0,0]), block[names.cmb_cl, 'te']),
+        "ee": np.append(np.array([0,0]), block[names.cmb_cl, 'ee']),
     }
 
     nuisance = {}
