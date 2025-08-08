@@ -236,7 +236,7 @@ def extract_recombination_params(block, config, more_config):
             wGauss2 = wGauss2, 
         )
 
-    #Not yet supporting CosmoRec, but not too hard if needed.
+    #Not yet supporting CosmoRec by default, but not too hard to compile in camb yourself if needed.
     elif more_config['recombination_model'] == 'cosmorec':
 
         recomb = camb.recombination.CosmoRec()
