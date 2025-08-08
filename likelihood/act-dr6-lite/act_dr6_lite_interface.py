@@ -1,7 +1,7 @@
 try:
     import act_dr6_cmbonly
 except ImportError:
-    raise RuntimeError('The act_dr6_cmbonly python module is required for the act_dr6_lite likelihood.')
+    raise RuntimeError('The act_dr6_cmbonly python module is required for the act_dr6_lite likelihood. It can be obtained from https://github.com/ACTCollaboration/DR6-ACT-lite')
 from cosmosis.datablock import names
 cosmo = names.cosmological_parameters
 import numpy as np
