@@ -8,7 +8,7 @@ dirname = os.path.split(__file__)[0]
 
 
 def setup(options):
-    default_datafile = os.path.join(dirname, "helium.dat")
+    default_datafile = os.path.join(dirname, "PRIMAT_Yp_DH_ErrorMC_2021.dat")
     # File name for BBN data
     datafile = options.get_string(
         option_section, "data", default=default_datafile)
@@ -39,7 +39,8 @@ def execute(block, t):
         else:
             DeltaN = 0.0
     elif input_name == "massless_nu":
-        DeltaN = block[cosmo, "massless_nu"] + block[cosmo, "massive_nu"] - 3.046
+        standard_neutrino_neff = block.get_double(cosmo, "standard_neutrino_neff", default=3.044)
+        DeltaN = block[cosmo, "massless_nu"] + block[cosmo, "massive_nu"] - standard_neutrino_neff
 
 
     # Check for out-of-range parameters
