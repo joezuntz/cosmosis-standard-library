@@ -126,7 +126,7 @@ def test_act_dr6_lensing(capsys):
     check_no_camb_warnings(capsys)
 
 def test_des_y3_5x2pt(capsys):
-    run_cosmosis("examples/des-y3-5x2.ini")
+    run_cosmosis("examples/des-y3-5x2pt.ini")
     check_no_camb_warnings(capsys)
 
 
