@@ -49,6 +49,11 @@ def test_planck_class(capsys):
     run_cosmosis("examples/planck_class.ini", override={("class","mpk"):"T"})
     check_no_camb_warnings(capsys)
 
+def test_planck_lite(capsys):
+    run_cosmosis("examples/planck_lite.ini", override={("camb","feedback"):"0"})
+    check_likelihood(capsys, "-2864.26", )
+    check_no_camb_warnings(capsys)
+
 def test_wmap(capsys):
     if not os.path.exists("likelihood/wmap9/data/lowlP/mask_r3_p06_jarosik.fits"):
         pytest.skip("WMAP data not found")
