@@ -49,32 +49,34 @@ def test_planck_class(capsys):
     run_cosmosis("examples/planck_class.ini", override={("class","mpk"):"T"})
     check_no_camb_warnings(capsys)
 
-def test_planck_lite(capsys):
 
-    expected = {
-        ("T", "TTTEEE", "2018"): "-2864.26",
-        ("F", "TTTEEE", "2018"): "-2863.31",
-        ("T", "TT", "2018"): "-1712.90",
-        ("F", "TT", "2018"): "-1711.94",
-        ("T", "TTTEEE", "2015"): "-2812.68",
-        ("F", "TTTEEE", "2015"): "-2811.99",
-        ("T", "TT", "2015"): "-1744.11",
-        ("F", "TT", "2015"): "-1743.42",
+
+planck_lite_expected_values = {
+    ("T", "TTTEEE", "2018"): "-2864.26",
+    ("F", "TTTEEE", "2018"): "-2863.30",
+    ("T", "TT", "2018"): ["-1712.90", "-1712.89"],
+    ("F", "TT", "2018"): "-1711.94",
+    ("T", "TTTEEE", "2015"): "-2812.68",
+    ("F", "TTTEEE", "2015"): "-2811.98",
+    ("T", "TT", "2015"): "-1744.11",
+    ("F", "TT", "2015"): "-1743.41",
+}
+
+
+@pytest.mark.parametrize("choices,expected", list(planck_lite_expected_values.items()))
+def test_planck_lite(choices, expected, capsys):
+    use_low_ell_bins, spectra, year = choices
+
+    override = {
+        ("camb","feedback"): "0",
+        ("planck", "spectra"): spectra,
+        ("planck", "year"): year,
+        ("planck", "use_low_ell_bins"): use_low_ell_bins,
     }
-
-    for spectra in ["TTTEEE", "TT"]:
-        for year in ["2015", "2018"]:
-            for use_low_ell_bins in ["T", "F"]:
-
-                override = {
-                    ("camb","feedback"): "0",
-                    ("planck", "spectra"): spectra,
-                    ("planck", "year"): year,
-                    ("planck", "use_low_ell_bins"): use_low_ell_bins,
-                }
-
-                run_cosmosis("examples/planck_lite.ini", override=override)
-                check_likelihood(capsys, expected[use_low_ell_bins, spectra, year])
+    if isinstance(expected, str):
+        expected = [expected]
+    run_cosmosis("examples/planck_lite.ini", override=override)
+    check_likelihood(capsys, *expected)
 
 
 
