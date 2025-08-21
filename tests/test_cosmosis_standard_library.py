@@ -49,6 +49,38 @@ def test_planck_class(capsys):
     run_cosmosis("examples/planck_class.ini", override={("class","mpk"):"T"})
     check_no_camb_warnings(capsys)
 
+
+
+planck_lite_expected_values = {
+    ("T", "TTTEEE", "2018"): "-2864.26",
+    ("F", "TTTEEE", "2018"): "-2863.30",
+    ("T", "TT", "2018"): ["-1712.90", "-1712.89"],
+    ("F", "TT", "2018"): "-1711.94",
+    ("T", "TTTEEE", "2015"): "-2812.68",
+    ("F", "TTTEEE", "2015"): "-2811.98",
+    ("T", "TT", "2015"): "-1744.11",
+    ("F", "TT", "2015"): "-1743.41",
+}
+
+
+@pytest.mark.parametrize("choices,expected", list(planck_lite_expected_values.items()))
+def test_planck_lite(choices, expected, capsys):
+    use_low_ell_bins, spectra, year = choices
+
+    override = {
+        ("camb","feedback"): "0",
+        ("planck", "spectra"): spectra,
+        ("planck", "year"): year,
+        ("planck", "use_low_ell_bins"): use_low_ell_bins,
+    }
+    if isinstance(expected, str):
+        expected = [expected]
+    run_cosmosis("examples/planck_lite.ini", override=override)
+    check_likelihood(capsys, *expected)
+
+
+
+
 def test_wmap(capsys):
     if not os.path.exists("likelihood/wmap9/data/lowlP/mask_r3_p06_jarosik.fits"):
         pytest.skip("WMAP data not found")
