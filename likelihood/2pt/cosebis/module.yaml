@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: cosebis_likelihood
 version: 1
 purpose: Likelihood for COSEBIs (Complete Orthogonal Sets of E/B-Integrals) measurements

@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: add_gammat_point_mass
 version: 1
 purpose: Add point mass contributions to galaxy-galaxy lensing (gamma_t) signal

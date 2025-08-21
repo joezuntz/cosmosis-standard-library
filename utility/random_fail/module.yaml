@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: random_fail
 version: 1
 purpose: Randomly fail pipeline runs for testing purposes

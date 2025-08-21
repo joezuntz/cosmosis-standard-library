@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: load_nz_sacc
 version: 1
 purpose: Load number density n(z) from a SACC file for weak lensing

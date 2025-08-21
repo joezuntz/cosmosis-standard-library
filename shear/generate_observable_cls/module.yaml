@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: generate_observable_cls
 version: 1
 purpose: Generate observable C_ell from theoretical power spectra including systematic effects

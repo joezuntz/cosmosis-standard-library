@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: photoz_distortion
 version: 1
 purpose: Apply photometric redshift systematic biases to n(z) distributions

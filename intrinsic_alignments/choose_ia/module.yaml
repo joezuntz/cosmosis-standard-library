@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: choose_ia
 version: 1
 purpose: Select intrinsic alignment parameters from suffixed versions

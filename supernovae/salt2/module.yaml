@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: salt2
 version: 1
 purpose: SALT2 supernova distance modulus likelihood

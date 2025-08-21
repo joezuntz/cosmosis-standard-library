@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: nla_higher_order
 version: 1
 purpose: Compute higher-order terms for nonlinear alignment model

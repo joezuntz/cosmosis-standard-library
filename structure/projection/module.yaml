@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: project_2d
 version: 1.0
 purpose: Project 3D power spectra to 2D tomographic bins using the Limber approximation

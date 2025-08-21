@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: "act_dr6"
 version: "1.0.0"
 purpose: "Full Multi-Frequency primary CMB from ACT DR6 data including systematics and foregrounds."

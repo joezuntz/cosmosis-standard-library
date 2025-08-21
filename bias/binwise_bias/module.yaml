@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: binwise_bias
 version: 1
 purpose: Apply galaxy bias on a per-bin basis to galaxy power spectra

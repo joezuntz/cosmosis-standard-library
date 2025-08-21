@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: multigauss
 version: 1
 purpose: ABC simulation of multi-Gaussian likelihood for calibrated parameters
