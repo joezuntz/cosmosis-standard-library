@@ -1,0 +1,74 @@
+#This is a template for module description files
+name: luminosity_scaling
+version: 1
+purpose: Apply luminosity-dependent scaling to intrinsic alignment power spectra
+url: ''
+interface: ia_lum_powerlaw.py
+attribution: [CosmoSIS Team, Based on Joachimi et al 2011]
+rules: []
+cite: 
+-   https://arxiv.org/abs/1008.3491
+assumptions:
+-   Luminosity scaling follows power law dependence
+-   Interpolation table provides luminosity information
+
+explanation: |
+    "This module applies luminosity-dependent scaling to intrinsic alignment 
+    power spectra based on the method described in Joachimi et al (2011).
+    The scaling follows a power law in luminosity.
+    
+    The module requires an interpolation table that provides luminosity
+    information as a function of redshift and limiting magnitude for the
+    specific galaxy sample being analyzed."
+
+params:
+    survey:
+        meaning: Survey name identifier
+        type: str
+        default:
+    data:
+        meaning: Path to interpolation table file
+        type: str
+        default:
+    mode:
+        meaning: Method to use ('luminosity_function' or 'interpolation_table')
+        type: str
+        default:
+
+inputs:
+    intrinsic_alignment_parameters:
+        z:
+            meaning: Redshift values for IA power spectra
+            type: real 1d
+            default:
+        k_h:
+            meaning: Wavenumber values in h/Mpc
+            type: real 1d
+            default:
+        P_II:
+            meaning: Intrinsic-intrinsic power spectrum
+            type: real 2d
+            default:
+        P_GI:
+            meaning: Galaxy-intrinsic cross power spectrum
+            type: real 2d
+            default:
+        beta:
+            meaning: Luminosity scaling exponent
+            type: real
+            default:
+
+outputs:
+    intrinsic_alignment_parameters:
+        z:
+            meaning: Redshift values for scaled IA power spectra
+            type: real 1d
+        k_h:
+            meaning: Wavenumber values in h/Mpc
+            type: real 1d
+        P_II:
+            meaning: Luminosity-scaled intrinsic-intrinsic power spectrum
+            type: real 2d
+        P_GI:
+            meaning: Luminosity-scaled galaxy-intrinsic cross power spectrum
+            type: real 2d
