@@ -50,9 +50,34 @@ def test_planck_class(capsys):
     check_no_camb_warnings(capsys)
 
 def test_planck_lite(capsys):
-    run_cosmosis("examples/planck_lite.ini", override={("camb","feedback"):"0"})
-    check_likelihood(capsys, "-2864.26", )
-    check_no_camb_warnings(capsys)
+
+    expected = {
+        ("T", "TTTEEE", "2018"): "-2864.26",
+        ("F", "TTTEEE", "2018"): "-2863.31",
+        ("T", "TT", "2018"): "-1712.90",
+        ("F", "TT", "2018"): "-1711.94",
+        ("T", "TTTEEE", "2015"): "-2812.68",
+        ("F", "TTTEEE", "2015"): "-2811.99",
+        ("T", "TT", "2015"): "-1744.11",
+        ("F", "TT", "2015"): "-1743.42",
+    }
+
+    for spectra in ["TTTEEE", "TT"]:
+        for year in ["2015", "2018"]:
+            for use_low_ell_bins in ["T", "F"]:
+
+                override = {
+                    ("camb","feedback"): "0",
+                    ("planck", "spectra"): spectra,
+                    ("planck", "year"): year,
+                    ("planck", "use_low_ell_bins"): use_low_ell_bins,
+                }
+
+                run_cosmosis("examples/planck_lite.ini", override=override)
+                check_likelihood(capsys, expected[use_low_ell_bins, spectra, year])
+
+
+
 
 def test_wmap(capsys):
     if not os.path.exists("likelihood/wmap9/data/lowlP/mask_r3_p06_jarosik.fits"):
