@@ -1,0 +1,110 @@
+#This is a template for module description files
+name: nla_higher_order
+version: 1
+purpose: Compute higher-order terms for nonlinear alignment model
+url: ''
+interface: nla_higher_order.c
+attribution: [CosmoSIS Team, Based on Hirata & Seljak 2004, 2010]
+rules: []
+cite:
+-   https://arxiv.org/abs/astro-ph/0406275
+-   Hirata & Seljak 2010 correction
+assumptions:
+-   Higher-order perturbation theory for intrinsic alignments
+-   Scale-independent galaxy bias
+
+explanation: |
+    "This module computes higher-order terms for the nonlinear alignment model
+    based on equations from Hirata & Seljak (2004) with corrections from
+    Hirata & Seljak (2010).
+    
+    The module calculates E-mode and B-mode intrinsic alignment power spectra
+    including higher-order perturbative corrections. It uses either linear
+    or nonlinear matter power spectra as input depending on configuration."
+
+params:
+    nla_model:
+        meaning: Whether to use nonlinear (true) or linear (false) matter power spectrum
+        type: bool
+        default: true
+
+inputs:
+    cosmological_parameters:
+        Omega_m:
+            meaning: Matter density parameter
+            type: real
+            default:
+        h0:
+            meaning: Reduced Hubble parameter h = H0/(100 km/s/Mpc)
+            type: real
+            default:
+    growth_parameters:
+        z:
+            meaning: Redshift values for growth factor
+            type: real 1d
+            default:
+        d_z:
+            meaning: Linear growth factor D(z)
+            type: real 1d
+            default:
+    bias_field:
+        k_h:
+            meaning: Wavenumber values in h/Mpc for bias
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift values for bias
+            type: real 1d
+            default:
+        b_g:
+            meaning: Galaxy bias values (assumed scale-independent)
+            type: real 2d
+            default:
+    matter_power_nl:
+        k_h:
+            meaning: Wavenumber values in h/Mpc (if nla_model=true)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift values (if nla_model=true)
+            type: real 1d
+            default:
+        p_k:
+            meaning: Nonlinear matter power spectrum (if nla_model=true)
+            type: real 2d
+            default:
+    matter_power_lin:
+        k_h:
+            meaning: Wavenumber values in h/Mpc (if nla_model=false)
+            type: real 1d
+            default:
+        z:
+            meaning: Redshift values (if nla_model=false)
+            type: real 1d
+            default:
+        p_k:
+            meaning: Linear matter power spectrum (if nla_model=false)
+            type: real 2d
+            default:
+
+outputs:
+    intrinsic_power:
+        k_h:
+            meaning: Wavenumber values in h/Mpc
+            type: real 1d
+        z:
+            meaning: Redshift values
+            type: real 1d
+        p_k:
+            meaning: Higher-order intrinsic E-mode power spectrum
+            type: real 2d
+    intrinsic_power_bb:
+        k_h:
+            meaning: Wavenumber values in h/Mpc
+            type: real 1d
+        z:
+            meaning: Redshift values
+            type: real 1d
+        p_k:
+            meaning: Higher-order intrinsic B-mode power spectrum
+            type: real 2d

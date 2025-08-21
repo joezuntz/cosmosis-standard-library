@@ -64,12 +64,12 @@ params:
         default: sigma_crit_inv_lens_source
 
 inputs:
-    {bias_section}:
-        {bias_prefix}{i}:
-            meaning: Point mass bias parameter for lens bin i
+    bias_section:
+        bias_parameter:
+            meaning: Point mass bias parameter for lens bins
             type: real
             default:
-    {lens_nz_section}:
+    lens_nz_section:
         nbin:
             meaning: Number of lens redshift bins
             type: int
@@ -78,11 +78,11 @@ inputs:
             meaning: Redshift sample values for lenses
             type: real 1d
             default:
-        bin_{i}:
+        bin_i:
             meaning: Lens n(z) for bin i
             type: real 1d
             default:
-    {source_nz_section}:
+    source_nz_section:
         nbin:
             meaning: Number of source redshift bins
             type: int
@@ -91,16 +91,16 @@ inputs:
             meaning: Redshift sample values for sources
             type: real 1d
             default:
-        bin_{i}:
+        bin_i:
             meaning: Source n(z) for bin i
             type: real 1d
             default:
-    {gammat_section}:
+    gammat_section:
         theta:
             meaning: Angular separation values (if add_togammat=true)
             type: real 1d
             default:
-        bin_{i}_{j}:
+        bin_i_j:
             meaning: Galaxy-galaxy lensing signal for lens bin i, source bin j
             type: real 1d
             default:
@@ -124,15 +124,15 @@ inputs:
             default:
 
 outputs:
-    {gammat_section}:
-        bin_{i}_{j}:
+    gammat_section:
+        bin_i_j:
             meaning: Modified gamma_t with point mass contribution (if add_togammat=true)
             type: real 1d
     point_mass:
-        bin_{i}_{j}:
+        bin_i_j:
             meaning: Point mass contribution coefficient for lens bin i, source bin j
             type: real
-    {sigcrit_inv_section}:
-        sigma_crit_inv_{i}_{j}:
+    sigcrit_inv_section:
+        sigma_crit_inv_i_j:
             meaning: Critical surface density inverse for lens bin i, source bin j
             type: real

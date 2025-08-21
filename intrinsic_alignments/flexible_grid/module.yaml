@@ -1,0 +1,24 @@
+#This is a template for module description files
+name: flexible_grid
+version: 1
+purpose: Flexible intrinsic alignment implementation using grid-based bias model
+url: ''
+interface: bias_JB_interface.py
+attribution: [CosmoSIS Team]
+rules: []
+cite: []
+assumptions:
+-   Bias model with flexible grid implementation
+-   Compatible with Joachimi-Bridle IA framework
+
+explanation: |
+    "This module implements a flexible grid-based approach for intrinsic
+    alignment modeling. It provides a more flexible framework for IA
+    calculations that can accommodate various bias models and galaxy
+    populations using grid-based interpolation methods."
+
+params: {}
+
+inputs: {}
+
+outputs: {}

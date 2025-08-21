@@ -51,7 +51,7 @@ params:
         default:
 
 inputs:
-    {sample}:
+    sample_section:
         nzbin:
             meaning: Number of redshift bins
             type: int
@@ -114,7 +114,7 @@ inputs:
             default:
 
 outputs:
-    {sample}:
+    sample_section:
         z:
             meaning: Extended redshift grid including padding
             type: real 1d

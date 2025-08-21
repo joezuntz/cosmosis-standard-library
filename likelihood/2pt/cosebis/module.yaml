@@ -1,0 +1,32 @@
+#This is a template for module description files
+name: cosebis_likelihood
+version: 1
+purpose: Likelihood for COSEBIs (Complete Orthogonal Sets of E/B-Integrals) measurements
+url: ''
+interface: simple_like.py
+attribution: [CosmoSIS Team]
+rules: []
+cite:
+-   COSEBIs methodology papers
+assumptions:
+-   COSEBIs measurements available with covariance matrix
+-   Gaussian likelihood approximation
+
+explanation: |
+    "This module implements a likelihood for COSEBIs (Complete Orthogonal Sets
+    of E/B-Integrals) measurements. COSEBIs are a complete set of functions
+    that can extract all E/B mode information from cosmic shear data while
+    naturally separating E and B modes.
+    
+    The module compares theoretical COSEBIs predictions with observational
+    data using a Gaussian likelihood approximation."
+
+params: {}
+
+inputs: {}
+
+outputs:
+    likelihoods:
+        cosebis_like:
+            meaning: Log-likelihood from COSEBIs data comparison
+            type: real

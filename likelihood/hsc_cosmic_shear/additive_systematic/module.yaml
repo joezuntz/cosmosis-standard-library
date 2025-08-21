@@ -1,0 +1,26 @@
+#This is a template for module description files
+name: additive_systematic
+version: 1
+purpose: Model additive systematic errors for HSC cosmic shear analysis
+url: ''
+interface: sys_model.py
+attribution: [CosmoSIS Team, HSC Collaboration]
+rules: []
+cite:
+-   HSC cosmic shear papers
+assumptions:
+-   Additive systematics can be modeled with simple parametric forms
+-   Systematics are additive to the cosmic shear signal
+
+explanation: |
+    "This module models additive systematic errors for the Hyper Suprime-Cam
+    (HSC) cosmic shear analysis. It implements parametric models for
+    systematics that are added to the theoretical cosmic shear correlation
+    functions to account for observational effects that are not captured
+    by the standard cosmological model."
+
+params: {}
+
+inputs: {}
+
+outputs: {}

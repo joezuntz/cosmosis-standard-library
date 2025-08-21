@@ -1,0 +1,27 @@
+#This is a template for module description files
+name: generate_observable_cls
+version: 1
+purpose: Generate observable C_ell from theoretical power spectra including systematic effects
+url: ''
+interface: generate_observable_spectra_interface.py
+attribution: [CosmoSIS Team]
+rules: []
+cite: []
+assumptions:
+-   Observable spectra can be computed from theoretical power spectra
+-   Systematic effects can be included in the transformation
+
+explanation: |
+    "This module generates observable angular power spectra C_ell from
+    theoretical power spectra, including the effects of observational
+    systematics, masking, and other survey-specific effects.
+    
+    The module transforms theoretical predictions into the form that
+    would actually be measured by a survey, accounting for factors
+    like incomplete sky coverage, noise, and systematic errors."
+
+params: {}
+
+inputs: {}
+
+outputs: {}
