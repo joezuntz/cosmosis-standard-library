@@ -8,7 +8,6 @@ rules: []
 cite: []
 assumptions:
 -   Fiducial CMB power spectra are provided as external data files
--   Power spectra are in standard cosmological format
 
 explanation: |
     "This module replaces computed CMB power spectra with fiducial values
@@ -21,7 +20,7 @@ explanation: |
 
 params:
     data_dir:
-        meaning: Directory containing fiducial power spectra files
+        meaning: Directory containing fiducial power spectra files (should contain clTT.txt, clTE.txt, etc.)
         type: str
         default: data/
     replace_pp:

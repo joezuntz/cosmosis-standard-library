@@ -1,12 +1,12 @@
 name: planck_npipe
 version: 1
 purpose: Planck NPIPE CMB lensing likelihood
-url: ''
+url: https://github.com/carronj/planck_PR4_lensing
 interface: npipe_interface.py
-attribution: [CosmoSIS Team, Planck Collaboration]
+attribution: [CosmoSIS Team (interface), J. Carron, A. Lewis, M. Mirmelstein]
 rules: []
 cite:
--   Planck NPIPE data release
+-   https://arxiv.org/abs/2206.07773
 assumptions:
 -   Planck NPIPE lensing power spectrum measurements
 -   Optional CMB primary anisotropy marginalization

@@ -1,15 +1,15 @@
 name: owls
 version: 1
 purpose: Apply baryonic feedback effects to matter power spectrum using OWLS simulations
-url: ''
+url: https://virgo.dur.ac.uk/2010/02/12/OWLS/
 interface: owls_interface.py
-attribution: [CosmoSIS Team, OWLS Collaboration]
+attribution: [CosmoSIS Team, VIRGO Consortium]
 rules: []
 cite:
--   OWLS simulation papers
+-   Baryon boosts from OWLS simulations
 assumptions:
 -   OWLS simulation results can be interpolated to desired cosmology
--   Baryonic effects modify only the matter power spectrum amplitude
+-   Baryonic effects modify only the matter power spectrum
 
 explanation: |
     "This module applies baryonic feedback effects to the nonlinear matter

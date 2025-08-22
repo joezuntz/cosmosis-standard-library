@@ -7,8 +7,7 @@ attribution: [CosmoSIS Team]
 rules: []
 cite: []
 assumptions:
--   Full-sky Legendre transform between C_ell and xi(theta)
--   Angular binning and scale cuts are handled appropriately
+-   ell values have sufficient range
 
 explanation: |
     "This module transforms angular power spectra C_ell to real-space correlation

@@ -3,12 +3,11 @@ version: 1
 purpose: Compute intrinsic alignment power spectra using Tidal Alignment + Tidal Torquing model
 url: ''
 interface: tatt_interface.py
-attribution: [CosmoSIS Team]
+attribution: [Jonathan Blazek]
 rules: []
-cite: []
+cite: [https://journals.aps.org/prd/abstract/10.1103/PhysRevD.100.103506]
 assumptions:
--   FastPT module provides perturbation theory IA terms
--   TATT model includes both tidal alignment and tidal torquing effects
+-   TATT model for intrinsic alignments
 
 explanation: |
     "This module implements the Tidal Alignment + Tidal Torquing (TATT) model
@@ -25,7 +24,7 @@ explanation: |
 
 params:
     sub_lowk:
-        meaning: Whether to subtract low-k values to reduce numerical issues
+        meaning: Whether to subtract the lowest k value of the spectrum from the rest
         type: bool
         default: false
     ia_model:

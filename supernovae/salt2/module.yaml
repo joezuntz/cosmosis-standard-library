@@ -6,7 +6,7 @@ interface: salt2_interface.py
 attribution: [CosmoSIS Team, K. Barbary]
 rules: []
 cite:
--   SALT2 supernova analysis
+-   https://www.aanda.org/articles/aa/abs/2007/16/aa6930-06/aa6930-06.html
 assumptions:
 -   SALT2 light curve fitting has been performed
 -   Supernova data includes distance modulus and light curve parameters

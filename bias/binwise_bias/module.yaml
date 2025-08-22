@@ -13,7 +13,8 @@ assumptions:
 explanation: |
     "This module applies galaxy bias on a per-bin basis to galaxy power spectra.
     It reads bias values for each redshift bin and applies them to the appropriate
-    auto- and cross-power spectra.
+    auto- and cross-power spectra. Note that it only affects the galaxy_cl spectra
+    not any galaxy-matter spectra.
     
     For each pair of bins (i,j), the power spectrum is multiplied by b_i * b_j
     where b_i and b_j are the bias values for bins i and j respectively."

@@ -11,8 +11,8 @@ assumptions:
 -   All bins have the same redshift grid
 
 explanation: |
-    "This module loads number density n(z) distributions from a SACC (Sky Area
-    Calculation Codes) file format. SACC is a standard format for storing
+    "This module loads number density n(z) distributions from a SACC (Save All 
+    Correlations and Covariances) file format. SACC is a standard format for storing
     cosmological survey data including n(z) information.
     
     The module searches for tracers matching the specified data set names and

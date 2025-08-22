@@ -3,9 +3,9 @@ version: 1
 purpose: Add point mass contributions to galaxy-galaxy lensing (gamma_t) signal
 url: ''
 interface: add_gammat_point_mass.py
-attribution: [CosmoSIS Team]
+attribution: [Niall Maccrann]
 rules: []
-cite: []
+cite: [https://doi.org/10.1093/mnras/stz2761]
 assumptions:
 -   Point mass contributions follow 1/theta^2 angular dependence
 -   Critical surface density can be computed from geometry or fiducial cosmology

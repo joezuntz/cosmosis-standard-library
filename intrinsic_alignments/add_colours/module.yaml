@@ -2,8 +2,8 @@ name: add_colours
 version: 1
 purpose: Combine red and blue galaxy intrinsic alignment signals based on color fractions
 url: ''
-interface: add_colours_interface.py
-attribution: [CosmoSIS Team]
+interface: add_colours.py
+attribution: [Simon Samuroff]
 rules: []
 cite: []
 assumptions:
