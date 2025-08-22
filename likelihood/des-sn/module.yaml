@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: des-y5-sn
 version: '1.0'
 purpose: Compute the likelihood of DES Y5 Supernova data

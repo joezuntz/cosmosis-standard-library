@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: "act_dr6_lite"
 version: "1.0.1"
 purpose: "Foreground-marginalised primary CMB (CMB-only) from ACT DR6 data."
