@@ -61,32 +61,26 @@ jobs:
         run:  |
           wget https://lambda.gsfc.nasa.gov/data/suborbital/ACT/ACT_dr6/likelihood/data/ACT_dr6_likelihood_v1.1.tgz
       
-      - name: Install cobaya
-        id: install-cobaya
-        run: |
-          pip install cobaya
-          # get the cobaya packages directory
-          python -c 'import cobaya.install;p=cobaya.install.resolve_packages_path();print("packages_path="+p)' >> "$GITHUB_OUTPUT"
 
-
-      - name: Cache NPIPE data
+      - name: Cache cobaya installables
         id: cache-npipe
         uses: actions/cache@v4
         with:
-          path: ${{ steps.install-cobaya.outputs.packages_path }}
-          key: hillipop-lollipop-data
+          path: ./cobaya-data
+          key: cobaya-installs-v1
           enableCrossOsArchive: true
           
       - if: ${{ steps.cache-npipe.outputs.cache-hit != 'true' }}
-        name: Download NPIPE data
+        name: Download cobaya installables
         run:  |
-          cobaya-install planck_2020_lollipop.lowlB
-          cobaya-install planck_2020_lollipop.lowlE
-          cobaya-install planck_2020_lollipop.lowlEB
-          cobaya-install planck_2020_hillipop.TT
-          cobaya-install planck_2020_hillipop.TE
-          cobaya-install planck_2020_hillipop.EE
-          cobaya-install planck_2020_hillipop.TTTEEE
+          pip install cobaya
+          cobaya-install -p ./cobaya-data planck_2020_lollipop.lowlB
+          cobaya-install -p ./cobaya-data planck_2020_lollipop.lowlE
+          cobaya-install -p ./cobaya-data planck_2020_lollipop.lowlEB
+          cobaya-install -p ./cobaya-data planck_2020_hillipop.TT
+          cobaya-install -p ./cobaya-data planck_2020_hillipop.TE
+          cobaya-install -p ./cobaya-data planck_2020_hillipop.EE
+          cobaya-install -p ./cobaya-data planck_2020_hillipop.TTTEEE
 
 
 
