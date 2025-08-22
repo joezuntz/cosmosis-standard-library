@@ -37,7 +37,7 @@ inputs:
             type: real 1d
         ee:
             meaning: E polarization power spectrum C_ell^EE
-                        type: real 1d
+            type: real 1d
         bb:
             meaning: B polarization power spectrum C_ell^BB
             type: real 1d
@@ -131,6 +131,6 @@ inputs:
 outputs:
     likelihoods:
         name: hillipop_like
-            meaning: Hillipop likelihood
-            type: real
+        meaning: Hillipop likelihood
+        type: real
 

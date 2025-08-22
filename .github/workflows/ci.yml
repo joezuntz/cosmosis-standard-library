@@ -129,7 +129,14 @@ jobs:
           path: ACT_dr6_likelihood_v1.1.tgz
           key: act-dr6-data
           fail-on-cache-miss: true
-          
+
+      - name: Get Cached Cobaya
+        uses: actions/cache/restore@v3
+        with:
+          path: ./cobaya-data
+          key: cobaya-installs-v1
+          fail-on-cache-miss: true
+
       - name: Extract data
         shell: bash -l {0}
         run: |
@@ -221,7 +228,15 @@ jobs:
         path: ACT_dr6_likelihood_v1.1.tgz
         key: act-dr6-data
         fail-on-cache-miss: true
-    
+
+    - name: Get Cached Cobaya
+      uses: actions/cache/restore@v3
+      with:
+        path: ./cobaya-data
+        key: cobaya-installs-v1
+        fail-on-cache-miss: true
+        
+
     - name: Extract data
       shell: bash -l {0}
       run: |

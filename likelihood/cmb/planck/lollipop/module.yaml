@@ -43,5 +43,5 @@ inputs:
 outputs:
     likelihoods:
         name: lollipop_like
-            meaning: Lollipop likelihood
-            type: real
+        meaning: Lollipop likelihood
+        type: real
