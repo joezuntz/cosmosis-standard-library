@@ -37,6 +37,7 @@ def execute(block, config):
     z, k, P_II_blue = block.get_grid(section_ia,  "z", "k_h", "P_II_blue")
     z, k, P_GI_red = block.get_grid(section_ia,  "z", "k_h", "P_GI_red")
     z, k, P_GI_blue = block.get_grid(section_ia,  "z", "k_h", "P_GI_blue")
+
     # Geometric mean of the red and blue II components
     P_II_red_blue = np.sqrt(P_II_red * P_II_blue)
 
