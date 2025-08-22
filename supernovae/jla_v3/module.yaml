@@ -60,6 +60,10 @@ params:
         meaning: Dir for other files. Use jla_vab_covmatrix.dat
         type: str
         default:
+    verbosity:
+        meaning: Verbosity level for output. 0 for no feedback, higher for more
+        type: int
+        default: 2
 inputs:
     distances:
         z:

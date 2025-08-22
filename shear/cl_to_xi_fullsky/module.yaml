@@ -103,6 +103,18 @@ inputs:
             meaning: Shear power spectrum for bins i,j
             type: real 1d
             default:
+        sample_a:
+            meaning: Name identifier for first tomographic sample
+            type: str
+            default:
+        sample_b:
+            meaning: Name identifier for second tomographic sample
+            type: str
+            default:
+        is_auto:
+            meaning: Whether this is an autocorrelation (True) or cross-correlation (False)
+            type: bool
+            default:
     shear_cl_bb:
         ell:
             meaning: Angular multipole values for B-modes (if xi_type='EB')
@@ -142,6 +154,36 @@ outputs:
         bin_{i}_{j}:
             meaning: xi+ correlation function for bins i,j
             type: real 1d
+        nbin_a:
+            meaning: Number of redshift bins in first quantity
+            type: int
+        nbin_b:
+            meaning: Number of redshift bins in second quantity
+            type: int
+        sample_a:
+            meaning: Name identifier for first tomographic sample
+            type: str
+        sample_b:
+            meaning: Name identifier for second tomographic sample
+            type: str
+        is_auto:
+            meaning: Whether this is an autocorrelation (True) or cross-correlation (False)
+            type: bool
+        cl_section:
+            meaning: Name of input section that C_ell values were read from
+            type: str
+        sep_name:
+            meaning: Name of the separation variable ('theta')
+            type: str
+        save_name:
+            meaning: Custom save name if specified
+            type: str
+        bin_avg:
+            meaning: Whether bin averaging was used
+            type: bool
+        theta_edges:
+            meaning: Theta bin edges in radians (if bin_avg=True)
+            type: real 1d
     shear_xi_minus:
         theta:
             meaning: Angular separation values in arcmin
@@ -151,6 +193,36 @@ outputs:
             type: int
         bin_{i}_{j}:
             meaning: xi- correlation function for bins i,j
+            type: real 1d
+        nbin_a:
+            meaning: Number of redshift bins in first quantity
+            type: int
+        nbin_b:
+            meaning: Number of redshift bins in second quantity
+            type: int
+        sample_a:
+            meaning: Name identifier for first tomographic sample
+            type: str
+        sample_b:
+            meaning: Name identifier for second tomographic sample
+            type: str
+        is_auto:
+            meaning: Whether this is an autocorrelation (True) or cross-correlation (False)
+            type: bool
+        cl_section:
+            meaning: Name of input section that C_ell values were read from
+            type: str
+        sep_name:
+            meaning: Name of the separation variable ('theta')
+            type: str
+        save_name:
+            meaning: Custom save name if specified
+            type: str
+        bin_avg:
+            meaning: Whether bin averaging was used
+            type: bool
+        theta_edges:
+            meaning: Theta bin edges in radians (if bin_avg=True)
             type: real 1d
     galaxy_xi:
         theta:
