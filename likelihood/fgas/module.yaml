@@ -67,7 +67,7 @@ inputs:
             type: real
             default:
     distances:
-        Z:
+        z:
             meaning: Redshift
             type: real 1d
             default:
@@ -125,6 +125,6 @@ inputs:
             default:
 outputs:
     likelihoods:
-        FGAS_LIKE:
+        fgas_like:
             meaning: Likelihood of the galaxy cluster gas-mass fractions
             type: real
