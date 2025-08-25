@@ -75,11 +75,11 @@ jobs:
         run:  |
           pip install cobaya planck-2020-lollipop planck-2020-hillipop
           export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
+          cobaya-install planck_2020_lollipop.lowlEB
+          cobaya-install planck_2020_hillipop.TT
           ls -l
           echo " ... AND ..."
           ls -l $COBAYA_PACKAGES_PATH
-          cobaya-install planck_2020_lollipop.lowlEB
-          cobaya-install planck_2020_hillipop.TT
 
       - name: Show cobaya content
         id: cache-npipe-show
@@ -143,6 +143,9 @@ jobs:
       - name: Extract data
         shell: bash -l {0}
         run: |
+          ls -l
+          echo " ... AND ..."
+          ls -l $COBAYA_PACKAGES_PATH
           # WMAP
           pushd likelihood/wmap9/data
           tar -zxvf ../../../wmap_likelihood_full_v5.tar.gz
