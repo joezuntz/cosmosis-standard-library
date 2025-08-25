@@ -75,13 +75,8 @@ jobs:
         run:  |
           pip install cobaya planck-2020-lollipop planck-2020-hillipop
           export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
-          cobaya-install planck_2020_lollipop.lowlB
-          cobaya-install planck_2020_lollipop.lowlE
           cobaya-install planck_2020_lollipop.lowlEB
           cobaya-install planck_2020_hillipop.TT
-          cobaya-install planck_2020_hillipop.TE
-          cobaya-install planck_2020_hillipop.EE
-          cobaya-install planck_2020_hillipop.TTTEEE
 
       - name: Show cobaya content
         id: cache-npipe-show
