@@ -257,3 +257,10 @@ def test_candl(capsys):
         pytest.skip("Candl not installed")
     run_cosmosis("examples/candl_test.ini")
     check_likelihood(capsys, "-5.83")
+
+
+def test_hillipop_lollipop(capsys):
+    if os.getenv("GITHUB_ACTIONS"):
+        pytest.skip("The caching for cobaya is not working on github actions")
+    run_cosmosis("examples/planck-hillipop-lollipop.ini")
+    check_likelihood(capsys, "-6476.91", "-6476.90")
