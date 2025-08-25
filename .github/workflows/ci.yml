@@ -60,30 +60,6 @@ jobs:
         name: Download ACT data
         run:  |
           wget https://lambda.gsfc.nasa.gov/data/suborbital/ACT/ACT_dr6/likelihood/data/ACT_dr6_likelihood_v1.1.tgz
-      
-
-      - name: Cache cobaya installables
-        id: cache-npipe
-        uses: actions/cache@v4
-        with:
-          path: ./cobaya-data
-          key: cobaya-installs-v2
-          enableCrossOsArchive: true
-          
-      - if: ${{ steps.cache-npipe.outputs.cache-hit != 'true' }}
-        name: Download cobaya installables
-        run:  |
-          pip install cobaya planck-2020-lollipop planck-2020-hillipop
-          export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
-          cobaya-install planck_2020_lollipop.lowlEB
-          cobaya-install planck_2020_hillipop.TT
-
-      - name: Show cobaya content
-        id: cache-npipe-show
-        run: |
-          export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
-          ls -R ${COBAYA_PACKAGES_PATH}
-        
 
 
   conda_test:
@@ -131,19 +107,6 @@ jobs:
           key: act-dr6-data
           fail-on-cache-miss: true
 
-      - name: Get Cached Cobaya
-        uses: actions/cache/restore@v3
-        with:
-          path: ./cobaya-data
-          key: cobaya-installs-v2
-          fail-on-cache-miss: true
-
-      - name: Show cobaya content
-        id: cache-npipe-show
-        run: |
-          export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
-          ls -R ${COBAYA_PACKAGES_PATH}
-
       - name: Extract data
         shell: bash -l {0}
         run: |
@@ -174,13 +137,11 @@ jobs:
           export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
           pip install "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"
           pip install "candl-like==2.*" "git+https://github.com/Lbalkenhol/candl_data.git"
-          pip install planck-2020-lollipop planck-2020-hillipop
 
       - name: Run Tests
         shell: bash -l {0}
         run: |
           source cosmosis-configure
-          export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
           pytest -vv --durations=0 tests/test_cosmosis_standard_library.py
 
       - name: Run Demos
@@ -238,13 +199,6 @@ jobs:
         key: act-dr6-data
         fail-on-cache-miss: true
 
-    - name: Get Cached Cobaya
-      uses: actions/cache/restore@v3
-      with:
-        path: ./cobaya-data
-        key: cobaya-installs-v2
-        fail-on-cache-miss: true
-        
 
     - name: Extract data
       shell: bash -l {0}
@@ -278,7 +232,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         pip install cosmosis "nautilus-sampler==1.0.1" "scipy" "numpy>=2"
         pip install -v --no-cache-dir --no-binary=mpi4py,camb mpi4py camb
-        pip install astropy fast-pt "Cython>=3.0" jupyter sacc "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"  cobaya planck-2020-lollipop planck-2020-hillipop
+        pip install astropy fast-pt "Cython>=3.0" jupyter sacc "act_dr6_lenslike>=1.0.2" "git+https://github.com/carronj/planck_PR4_lensing"
     
     - name: Install recent python dependencies
       run: |
@@ -313,7 +267,6 @@ jobs:
       shell: bash -l {0}
       run: |
         source cosmosis-configure
-        export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
         pytest -vv --durations=0 tests/test_cosmosis_standard_library.py
 
     - name: Run Demos
