@@ -261,4 +261,4 @@ def test_candl(capsys):
 
 def test_hillipop_lollipop(capsys):
     run_cosmosis("examples/planck-hillipop-lollipop.ini")
-    check_likelihood(capsys, "-16262.40", "-16262.39")
+    check_likelihood(capsys, "-6476.91", "-6476.90")

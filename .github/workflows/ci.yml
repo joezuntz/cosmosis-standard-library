@@ -75,6 +75,9 @@ jobs:
         run:  |
           pip install cobaya planck-2020-lollipop planck-2020-hillipop
           export COBAYA_PACKAGES_PATH=$PWD/cobaya-data
+          ls -l
+          echo " ... AND ..."
+          ls -l $COBAYA_PACKAGES_PATH
           cobaya-install planck_2020_lollipop.lowlEB
           cobaya-install planck_2020_hillipop.TT
 
