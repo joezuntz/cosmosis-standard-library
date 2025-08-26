@@ -35,6 +35,10 @@ params:
         meaning: Suffix to add to output section names
         type: str
         default: ""
+    param_name:
+        meaning: Suffix to use when searching for ia parameters
+        type: str
+        default: ""
     do_galaxy_intrinsic:
         meaning: Whether to compute galaxy-intrinsic cross power
         type: bool
