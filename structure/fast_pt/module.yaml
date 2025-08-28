@@ -95,6 +95,10 @@ params:
         meaning: Print extra output
         type: bool
         default: False
+    P_window:
+        meaning: Power window parameter
+        type: real
+        default:
 
 
 

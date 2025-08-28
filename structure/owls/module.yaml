@@ -38,6 +38,14 @@ params:
         meaning: Path to OWLS power table file (required for fixed/scaled modes)
         type: str
         default:
+    nterm:
+        meaning: Number of Chebyshev terms (required for chebyshev mode)
+        type: int
+        default:
+    powtable:
+        meaning: Path to OWLS power table file (required for fixed/scaled modes)
+        type: str
+        default:
 
 inputs:
     OWLS:
