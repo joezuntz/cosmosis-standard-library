@@ -1,6 +1,6 @@
 name: "lollipop"
 version: "1.0"
-purpose: "Likelihood of the Planck low-ell data polarizaton data from the  PR4 analysis, using the Lollipop likelihood code."
+purpose: "Likelihood of the Planck low-ell data polarizaton data from the PR4 analysis, using the Lollipop likelihood code."
 url: "https://github.com/planck-npipe/lollipop/"
 interface: "lollipop_interface.py"
 attribution: []
@@ -42,6 +42,6 @@ inputs:
 
 outputs:
     likelihoods:
-        name: lollipop_like
-        meaning: Lollipop likelihood
-        type: real
+        lollipop_like:
+            meaning: Lollipop likelihood
+            type: real

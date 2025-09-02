@@ -130,7 +130,7 @@ inputs:
 
 outputs:
     likelihoods:
-        name: hillipop_like
-        meaning: Hillipop likelihood
-        type: real
+        hillipop_like:
+            meaning: Hillipop likelihood
+            type: real
 
