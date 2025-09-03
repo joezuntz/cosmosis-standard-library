@@ -264,3 +264,7 @@ def test_hillipop_lollipop(capsys):
         pytest.skip("The caching for cobaya is not working on github actions")
     run_cosmosis("examples/planck-hillipop-lollipop.ini")
     check_likelihood(capsys, "-6476.91", "-6476.90")
+
+def test_decam(capsys):
+    run_cosmosis("examples/decam-13k.ini", override={("runtime","sampler"):"test"})
+    check_likelihood(capsys, "9442.38")
