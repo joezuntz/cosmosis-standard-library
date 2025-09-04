@@ -347,6 +347,7 @@ def execute(block, config):
         #the covariance calculation.
         #So the following checks the types of Cl_ab and Cl_cd, and from that infers
         #the required spectra.
+        
         types = []
         for spec in cl_theory_spec_list:
             type_i, type_j = spec.types
@@ -378,6 +379,7 @@ def execute(block, config):
                     else:
                         print("Tried to, but can't generate noise for spectrum %s"%cl_section)
                         raise ValueError
+                    print('adding noise')
                     cl_spec.set_noise(noise)
 
                 cl_specs.append( cl_spec )

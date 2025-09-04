@@ -13,7 +13,7 @@ fullsky_path = os.path.join(dirname,"..","..","shear","cl_to_xi_fullsky")
 sys.path.append(fullsky_path)
 import legendre
 from collections import OrderedDict
-
+import matplotlib.pyplot as plt
 CL2XI_TYPES=["00","02+","22+","22-"]
 
 """
@@ -385,6 +385,7 @@ class InterpolatedTheorySpectrum(TheorySpectrum):
 
     def get_obs_spec_values( self, bin1, bin2, angle ):
         spec_vals = np.array([self.get_spectrum_value(bin1, bin2, a)[0] for a in angle])
+        #print(f'get_obs_spec_values (bin {bin1}, bin {bin2}): ', spec_vals)
         noise = self.get_noise_spec_values( bin1, bin2, angle )
         return spec_vals + noise
 
@@ -440,6 +441,8 @@ def downsample_block( angle_lims_orig, angle_mids_orig, cov_orig, n_out ):
             cov_out[i,j] = np.matmul( weights[orig_inds_i], np.matmul( cov_orig[cov_orig_inds_ij], weights[orig_inds_j] ) )/sum_w_i/sum_w_j
     return cov_out, angle_mids_out
 
+ells  = np.genfromtxt('lsst1/galaxy_cl/ell.txt')
+d_ell_bin = np.concatenate(([ells[0]], np.diff(ells)))
 class ClCov( object ):
     """
     Class for computing cl covariance
@@ -449,6 +452,7 @@ class ClCov( object ):
         self.types = [ t.types for t in self.theory_spectra ]
         self.names = [t.name for t in self.theory_spectra ]
         self.fsky = fsky
+        
 
     def get_cov_diag_ijkl( self, name1, name2, ij, kl, ell_max, ell_min=0, noise_only=False):
         # From Joachimi & Bridle 2010 0911.2454
@@ -457,14 +461,16 @@ class ClCov( object ):
         # superscripts indicate redshift bin pairs, subscripts quantities (shear or galaxy over-density etc.)
         ell_vals = np.arange(ell_min, ell_max+1)
         n_ell = len(ell_vals)
-
+        #ell_vals = ells
         c_ij_12 = self.theory_spectra[ self.names.index(name1) ]
         c_kl_34 = self.theory_spectra[ self.names.index(name2) ]
 
         cl2_sum = self.get_cl2sum_ijkl( c_ij_12, c_kl_34, ij, kl, ell_vals, 
             noise_only=noise_only )
         n_modes = self.fsky * (2*ell_vals+1)
+        #n_modes = self.fsky * (2*ell_vals+1)*d_ell_bin
         cov_diag  = ( cl2_sum ) / n_modes  
+
         return cov_diag  
 
     def get_cl2sum_ijkl( self, c_ij_12, c_kl_34, ij, kl, ells, noise_only=False):
@@ -479,6 +485,7 @@ class ClCov( object ):
 
         bin_pairs = [ (i,k), (j,l), (i,l), (j,k) ]
         type_pairs = [ (type_1,type_3), (type_2,type_4), (type_1,type_4), (type_2,type_3) ]
+        #print('type_pairs: ', type_pairs)
         cl2_sum = np.zeros_like(ells, dtype=float)
         c_ells = []
         for bin_pair,type_pair in zip(bin_pairs, type_pairs):
@@ -506,16 +513,19 @@ class ClCov( object ):
         #of C(ell_lims[i],...,ell_lims[i+1]-1)
         #First construct the output array
         n_spectra = len(self.theory_spectra)
+        print('n_spectra: ', n_spectra)
         n_ell = len(ell_lims) - 1
+        print('n_ell: ', n_ell)
         n_dv = 0
         cl_lengths = []
         for s in self.theory_spectra:
             l = n_ell * len(s.bin_pairs)
+            print('l: ', l)
             n_dv += l
             cl_lengths.append(l)
         covmat = np.zeros((n_dv, n_dv))
         ell_max = ell_lims[-1]
-        
+        print('ell_lims: ', ell_lims)
         #Get the starting index in the full datavector for each spectrum
         #this will be used later for adding covariance blocks to the full matrix.
         cl_starts = []
@@ -526,18 +536,23 @@ class ClCov( object ):
         #Now loop through pairs of Cls and pairs of bin pairs filling the covariance matrix
         for i_cl in range(n_spectra):
             cl_spec_i = self.theory_spectra[i_cl]
+            print('type ', i_cl, 'is_auto? ', cl_spec_i.is_auto)
             for j_cl in range(i_cl, n_spectra):
                 cl_spec_j = self.theory_spectra[j_cl]
                 cov_blocks = {} #collect cov_blocks in this dictionary
                 for i_bp, bin_pair_i in enumerate(cl_spec_i.bin_pairs):
                     for j_bp, bin_pair_j in enumerate(cl_spec_j.bin_pairs):
-                        print(f"Computing covariance {i_cl},{j_cl} pairs <{bin_pair_i} {bin_pair_j}>")
+                        #print(f"Computing covariance {i_cl},{j_cl} pairs <{bin_pair_i} {bin_pair_j}>")
                         #First check if we've already calculated this
                         if (i_cl == j_cl) and cl_spec_i.is_auto and ( j_bp < i_bp ):
                             cl_var_binned = cov_blocks[j_bp, i_bp]
                         else:
                             #First calculate the unbinned Cl covariance
                             ell_max = ell_lims[-1]
+                            #cl_var_binned = self.get_cov_diag_ijkl( cl_spec_i.name, 
+                            #    cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, 
+                            #    ell_min=ell_lims[0], noise_only=noise_only )
+                            
                             cl_var_unbinned = self.get_cov_diag_ijkl( cl_spec_i.name, 
                                 cl_spec_j.name, bin_pair_i, bin_pair_j, ell_max, 
                                 ell_min=ell_lims[0], noise_only=noise_only )
@@ -553,7 +568,7 @@ class ClCov( object ):
                                 cl_var_unbinned_bin = cl_var_unbinned[ell_vals_bin_inds]
                                 cl_var_binned[ell_bin] = np.sum((2*ell_vals_bin+1)**2 * 
                                     cl_var_unbinned_bin) / np.sum(2*ell_vals_bin+1)**2
-
+                            
                             cov_blocks[i_bp, j_bp] = cl_var_binned
 
                         #Now work out where this goes in the full covariance matrix
@@ -566,6 +581,19 @@ class ClCov( object ):
                         covmat[ cov_inds ] = np.diag(cl_var_binned)
                         cov_inds_T = np.ix_( inds_j, inds_i )
                         covmat[ cov_inds_T ] = np.diag(cl_var_binned)
+        print("covmat.shape: ", covmat.shape)
+        cmap = 'seismic'
+        cov = covmat
+        ndata = cov.shape[0]
+        pp_norm = np.zeros((ndata,ndata))
+        for i in range(ndata):
+            for j in range(ndata):
+                pp_norm[i][j] = cov[i][j]/np.sqrt(cov[i][i]*cov[j][j])      
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        im3 = ax.imshow(pp_norm, cmap=cmap, vmin=-1, vmax=1)
+        fig.colorbar(im3, orientation='vertical')
+        plt.show()
 
         print("Completed covariance")
         print("   Signed log det:", np.linalg.slogdet(covmat))

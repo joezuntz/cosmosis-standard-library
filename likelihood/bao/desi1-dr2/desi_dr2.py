@@ -14,55 +14,76 @@ DESI_DATA_SETS = {
     "BGS": {
         "kind": "d_v",
         "z_eff": 0.295,
-        "mean": 7.93,
-        "sigma": 0.15,
+        "mean": 7.944,
+        "sigma": 0.075,
     },
     "LRG1": {
         "kind": "d_m_d_h",
         "z_eff": 0.51,
-        "mean": [13.62, 20.98],
-        "sigma": [0.25, 0.61],
-        "corr": -0.445,
+        "mean": [13.587, 21.863],
+        "sigma": [0.169, 0.427],
+        "corr": -0.475,
     },
     "LRG2": {
         "kind": "d_m_d_h",
         "z_eff": 0.706,
-        "mean": [16.85, 20.08],
-        "sigma": [0.32, 0.60],
-        "corr": -0.420,
+        "mean": [17.347, 19.458],
+        "sigma": [0.180, 0.332],
+        "corr": -0.423,
     },
     "LRG3+ELG1": {
         "kind": "d_m_d_h",
-        "z_eff": 0.930,
-        "mean": [21.71, 17.88],
-        "sigma": [0.28, 0.35],
-        "corr": -0.389,
+        "z_eff": 0.934,
+        "mean": [21.574, 17.641],
+        "sigma": [0.153, 0.193],
+        "corr": -0.425,
     },
     "ELG2": {
         "kind": "d_m_d_h",
-        "z_eff": 1.317,
-        "mean": [27.79, 13.82],
-        "sigma": [0.69, 0.42],
-        "corr": -0.444,
+        "z_eff": 1.321,
+        "mean": [27.605, 14.178],
+        "sigma": [0.320, 0.217],
+        "corr": -0.437,
     },
     "QSO": {
-        "kind": "d_v",
-        "z_eff": 1.491,
-        "mean": 26.07,
-        "sigma": 0.67,
+        "kind": "d_m_d_h",
+        "z_eff": 1.484,
+        "mean": [30.519,12.816],
+        "sigma": [0.758,0.513],
+        "corr": -0.489
     },
-    "Lya QSO": {
+    "Lya": {
         "kind": "d_m_d_h",
         "z_eff": 2.330,
-        "mean": [39.71, 8.52],
-        "sigma": [0.94, 0.17],
-        "corr": -0.477,
+        "mean": [38.988, 8.632],
+        "sigma": [0.531, 0.101],
+        "corr": -0.431,
     },
+    # LRG3 and ELG1 are combined in the data release
+    # into LRG3+ELG1, above.  We allow them to be separately
+    # used below but throw an error if they are both used.
+    "LRG3": {
+        "kind": "d_m_d_h",
+        "zeff": 0.922,
+        "mean": [21.649, 17.574],
+        "sigma": [0.177,  0.214],
+        "corr": -0.408
+    },
+    "ELG1": {
+        "kind": "d_m_d_h",
+        "zeff": 0.922,
+        "mean": [21.708, 17.811],
+        "sigma": [0.337,   0.295],
+        "corr": -0.452,
+
+    }
+
+
 }
 
 class DESILikelihood(GaussianLikelihood):
     """
-    The 2024 DESI likelihoods from https://arxiv.org/pdf/2404.03002
+    The DR2 2025 DESI likelihoods from https://arxiv.org/pdf/2503.14738
 
     We allow the user to specify which data sets to use, and combine
     them all into one. The data sets are:
@@ -72,8 +93,11 @@ class DESILikelihood(GaussianLikelihood):
     - LRG3+ELG1
     - ELG2
     - QSO
-    - Lya QSO
+    - Lya
 
+    The LRG3 and ELG1 data sets are also available separately, but
+    cannot be used jointly with the LRG3+ELG1 data set. The default "all"
+    selection leaves out the two individual data sets and just uses the combined one.
     """
     # users can override this if they want to use a different name
     # which can be useful if you want to keep the different likelihoods
@@ -84,20 +108,27 @@ class DESILikelihood(GaussianLikelihood):
     y_section = 'distances'
 
     def __init__(self, options):
-        data_sets = options.get_string("desi_data_sets")
-        data_sets = data_sets.split(',')
+        data_sets = options.get_string("desi_data_sets", default="all")
+        if data_sets == "all":
+            data_sets = list(DESI_DATA_SETS.keys())
+            data_sets.remove("ELG1")
+            data_sets.remove("LRG3")
+        else:
+            data_sets = data_sets.split(',')
+
+        if ("ELG1" in data_sets or "LRG3" in data_sets) and "LRG3+ELG1" in data_sets:
+            raise ValueError("You cannot use both DESI's LRG3+ELG1 and ELG1 or LRG3")
 
         allowed = list(DESI_DATA_SETS.keys())
         for data_set in data_sets:
             data_set = data_set.strip()
             if data_set not in allowed:
-                raise ValueError(f"Unknown DESI data set {data_set}. Valid options are: {allowed} (comma-separated to use more than one)")
+                raise ValueError(f"Unknown DESI data set {data_set}. Valid options are: {allowed} (comma-separated to use more than one) or 'all'")
         self.data_sets = data_sets
         super().__init__(options)
     
 
     def build_data(self):
-        print("...building data...")
         z = []
         mu = []
         kinds = []
@@ -121,7 +152,7 @@ class DESILikelihood(GaussianLikelihood):
                 # measurements are at the same redshift we only
                 # need to store the redshift once, and this should
                 # hopefully trigger an error if we mess up later.
-                z.append(-1.0)
+                z.append(ds["z_eff"])
 
         kinds = np.array(kinds)
         z = np.array(z)
@@ -139,7 +170,6 @@ class DESILikelihood(GaussianLikelihood):
         return z, mu
 
     def build_covariance(self):
-        print("...building covariance...")
         n = len(self.data_x)
         C = np.zeros((n, n))
         i = 0
@@ -152,18 +182,15 @@ class DESILikelihood(GaussianLikelihood):
                 C[i, i] = ds["sigma"][0]**2
                 C[i+1, i+1] = ds["sigma"][1]**2
                 C[i, i+1] = C[i+1, i] = ds["corr"]*ds["sigma"][0]*ds["sigma"][1]
-                i += 2   
+                i += 2
         return C
 
     def extract_theory_points(self, block):
-        #print("...extracting theory points...")
-        #print('x_section: ', self.x_section)
-        #print(block.keys(section=self.x_section))
         z_theory = block[self.x_section, self.x_name]
         y = np.zeros(self.data_x.size)
         r_s = block[self.y_section, "rs_zdrag"]
-        #print('r_s: ', r_s)
-        block["distances", "h0rd"] = block["cosmological_parameters", "h0"] * r_s
+
+        block["distances", "H0rd"] = block["cosmological_parameters", "H0"] * r_s
 
         if self.any_dv:
             d_v = block[self.y_section, "d_v"]
@@ -181,9 +208,6 @@ class DESILikelihood(GaussianLikelihood):
             d_h = 1.0 / block[self.y_section, "h"]
             f = scipy.interpolate.interp1d(z_theory, d_h/r_s, kind=self.kind)
             y[self.dh_index] = f(z_data)
-        #print("return y = ", y)    
         return y
-    
 
-print("...building the module...")
 setup, execute, cleanup = DESILikelihood.build_module()

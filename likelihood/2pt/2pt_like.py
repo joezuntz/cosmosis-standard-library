@@ -176,7 +176,7 @@ class TwoPointLikelihood(GaussianLikelihood):
         # Just concatenation
         data_vector = np.concatenate(
             [spectrum.value for spectrum in self.two_point_data.spectra])
-
+        print('self.two_point_data.spectra: ', self.two_point_data.spectra)
         # Make sure
         if len(data_vector) == 0:
             raise ValueError(

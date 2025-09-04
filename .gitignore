@@ -13,6 +13,8 @@ likelihood/planck/plc-1.0/buildir
 likelihood/planck/plc-1.0/bin/
 likelihood/planck/plc-1.0/lib/
 output/
+lsst1/
+emu_models/
 boltzmann/class/class_v2.4.1/class
 boltzmann/class/class_v2.4.1/classy_install/
 boltzmann/class/class_v2.4.1/build/

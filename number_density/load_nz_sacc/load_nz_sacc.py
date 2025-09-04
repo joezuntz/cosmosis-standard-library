@@ -28,9 +28,12 @@ def setup(options):
 
         if data_set not in data:
             data[data_set] = {}
-        index = int(tracer.name.split("_")[-1])
+        print('tracer: ', tracer.name)    
+        #index = int(tracer.name.split("_")[-1])
+        index = int(tracer.name[-1])
         z = tracer.z
         nz = tracer.nz
+        print(nz)
         data[data_set][index] = (z, nz)
 
     output = {}
@@ -65,9 +68,14 @@ def execute(block, config):
     for name, (z, nz) in list(config.items()):
         nbin = len(nz)
         ns = len(z)
+
+        if name == 'nz_src':
+            name = 'nz_source'
+
         block[name, "nbin"] = nbin
         block[name, "nz"] = ns
         block[name, "z"] = z
+        print('name: ', name)
         for i, n in nz.items():
             block[name, "bin_{0}".format(i + 1)] = n
     return 0
