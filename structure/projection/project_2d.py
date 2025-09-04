@@ -1701,30 +1701,15 @@ class SpectrumCalculator(object):
             self.load_distance_splines(block)
             self.load_lensing_prefactor(block)
             self.load_lensing_weyl_prefactor(block)
-            self.load_kernels(block)
 
             # Loading the kernels can often fail, so we catch that specifically
             # and explain the causes
-            try:
-                t0 = timer()
-                self.load_kernels(block)
-                t1 = timer()
-                if self.verbose:
-                    t = timedelta(seconds=t1-t0)
-                    print(f"Time to set up kernels: {t}")
-            except NullSplineError:
-                sys.stderr.write("Failed to load one of the kernels (n(z) or W(z)) "
-                                 "needed to compute 2D spectra\n"
-                                 "Often this is because you are in a weird part of "
-                                 "parameter space, but if it is \n"
-                                 "consistent then you may wish to look into it in "
-                                 "more detail. Set fatal_errors=T to do so.\n")
-
-                # This parameter makes it easier to debug problems with this module
-                if self.fatal_errors:
-                    raise
-
-                return 1
+            t0 = timer()
+            self.load_kernels(block)
+            t1 = timer()
+            if self.verbose:
+                t = timedelta(seconds=t1-t0)
+                print(f"Time to set up kernels: {t}")
 
             # We can optionally save the kernels that go into the
             # integration as well.  This is useful for e.g. plotting
