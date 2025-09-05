@@ -373,9 +373,10 @@ class SaccClLikelihood(GaussianLikelihood):
                     index = d['window_ind']
                     weight = window.weight[:, index]
 
-                    # The weight away should hopefully sum to 1 anyway but we should
-                    # probably not rely on that always being true.
-                    binned_cl_theory = (weight @ cl_theory_interpolated) / weight.sum()
+                    # We don't automatically renormalize the weights.
+                    # Some contexts, like the output from NaMaster,
+                    # use non-unit-sum weights
+                    binned_cl_theory = (weight @ cl_theory_interpolated)
 
                 theory_vector.append(binned_cl_theory)
                 angle_vector.append(ell_nominal)
