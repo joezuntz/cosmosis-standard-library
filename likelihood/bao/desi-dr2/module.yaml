@@ -1,4 +1,3 @@
-#This is a template for module description files
 name: "desi_dr2"
 version: "arxiv"
 purpose: "DESI BAO likelihood from DR2 data"

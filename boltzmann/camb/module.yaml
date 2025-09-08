@@ -219,6 +219,10 @@ params:
         meaning: Whether to use the tau parametrization of reionization instead of z.
         type: bool
         default: true
+    recombination_model:
+        meaning: Which model to use for recombination physics. Choose from recfast, cosmorec
+        type: str
+        default: "recfast"
     DoLateRadTruncation:
         meaning: Whether to use smooth approx to radiation perturbations after decoupling
             on small scales, saving evolution of irrelevant osciallatory multipole
