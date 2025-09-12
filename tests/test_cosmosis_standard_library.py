@@ -264,6 +264,10 @@ def test_candl(capsys):
 def test_hillipop_lollipop(capsys):
     if os.getenv("GITHUB_ACTIONS"):
         pytest.skip("The caching for cobaya is not working on github actions")
+    try:
+        import planck_2020_lollipop
+    except ImportError:
+        pytest.skip("Planck 2020 lollipop likelihood not found")
     run_cosmosis("examples/planck-hillipop-lollipop.ini")
     check_likelihood(capsys, "-6476.91", "-6476.90")
 
