@@ -163,6 +163,8 @@ def test_des_y3_5x2pt(capsys):
 
 
 def test_des_y3_6x2pt(capsys):
+    if not os.path.exists("likelihood/planck2018/baseline/plc_3.0/lensing/smicadx12_Dec5_ftl_mv2_ndclpp_p_teb_consext8_CMBmarged.clik_lensing"):
+        pytest.skip("Planck data not found")
     run_cosmosis("examples/des-y3-6x2pt.ini")
     check_no_camb_warnings(capsys)
 
